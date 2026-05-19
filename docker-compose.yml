@@ -1,0 +1,64 @@
+services:
+  web:
+    build:
+      context: ./apps/web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web:/app
+      - web_node_modules:/app/node_modules
+
+  api:
+    build:
+      context: ./apps/api
+    ports:
+      - "8000:8000"
+    environment:
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://aifood:aifood@postgres:5432/aifood}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aifood}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aifood}
+      POSTGRES_DB: ${POSTGRES_DB:-aifood}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aifood} -d ${POSTGRES_DB:-aifood}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  web_node_modules:
+  postgres_data:
+  redis_data:
