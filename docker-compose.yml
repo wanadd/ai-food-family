@@ -6,6 +6,8 @@ services:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:-}
+      NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME: ${NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME:-}
     depends_on:
       - api
     volumes:
@@ -20,6 +22,8 @@ services:
     environment:
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_WEBAPP_URL: ${TELEGRAM_WEBAPP_URL:-http://localhost:3000}
+      TELEGRAM_MENU_BUTTON_TEXT: ${TELEGRAM_MENU_BUTTON_TEXT:-Открыть приложение}
       DATABASE_URL: ${DATABASE_URL:-postgresql://aifood:aifood@postgres:5432/aifood}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
     depends_on:

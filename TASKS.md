@@ -12,10 +12,12 @@
 ## Next
 
 - [ ] Install dependencies and run the stack locally
-- [ ] Add Telegram Mini App SDK to the frontend
-- [ ] Add Telegram bot token configuration
+- [x] Add Telegram Mini App SDK to the frontend
+- [x] Add Telegram bot token configuration
+- [x] Telegram auth + user creation in PostgreSQL
 - [ ] Define MVP user flow
 - [ ] Add API routes for the first product feature
+- [x] Onboarding flow (9 steps, progress save)
 - [ ] Add basic frontend screens for the first product feature
 
 ## Later

@@ -58,3 +58,13 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Run PostgreSQL and Redis locally (or via `docker compose up postgres redis`) and set `DATABASE_URL` / `REDIS_URL` in `apps/api/.env`.
+
+## Telegram Mini App
+
+See [docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md) for BotFather, HTTPS tunnel, and auth verification.
+
+Required env:
+
+- `TELEGRAM_BOT_TOKEN` — backend validates `initData`
+- `TELEGRAM_WEBAPP_URL` — public HTTPS URL of the frontend (menu button)
+- `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` — link button on the landing page

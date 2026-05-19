@@ -1,6 +1,9 @@
-import { HealthStatus } from "@/components/HealthStatus";
+import Link from "next/link";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { HealthStatus } from "@/components/HealthStatus";
+import { OpenMiniAppButton } from "@/components/OpenMiniAppButton";
+import { TelegramAuthPanel } from "@/components/TelegramAuthPanel";
+import { apiUrl } from "@/lib/api";
 
 export default function Home() {
   return (
@@ -13,9 +16,20 @@ export default function Home() {
           AI Food Family
         </h1>
         <p className="mt-4 text-lg leading-relaxed text-slate-600">
-          Monorepo готов: Next.js + Tailwind на фронте, FastAPI на бэке,
-          PostgreSQL и Redis в Docker Compose.
+          Авторизация через Telegram initData, сохранение пользователя в
+          PostgreSQL и кнопка открытия Mini App.
         </p>
+
+        <div className="mt-6 space-y-4 border-t border-slate-200 pt-6">
+          <Link
+            href="/onboarding"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            Пройти onboarding
+          </Link>
+          <OpenMiniAppButton />
+          <TelegramAuthPanel />
+        </div>
 
         <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
           <div>

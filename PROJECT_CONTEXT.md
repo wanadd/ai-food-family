@@ -23,7 +23,9 @@ The project uses a monorepo layout:
 - PostgreSQL: port `5432`, default DB/user/password `aifood`.
 - Redis: port `6379`.
 - Frontend calls the API via `NEXT_PUBLIC_API_URL`.
-- Telegram Mini App SDK is not wired yet.
+- Telegram Web App SDK (`@twa-dev/sdk` + official script)
+- Auth via validated `initData` → `POST /auth/telegram` → user in PostgreSQL
+- Bot menu button auto-configured when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBAPP_URL` are set
 
 ## Product Notes
 
