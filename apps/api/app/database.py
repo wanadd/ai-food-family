@@ -14,7 +14,7 @@ class Base(DeclarativeBase):
 
 
 def init_db() -> None:
-    from app.models import user, user_profile  # noqa: F401
+    from app.models import family, user, user_profile  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 

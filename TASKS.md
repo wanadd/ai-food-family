@@ -18,6 +18,7 @@
 - [ ] Define MVP user flow
 - [ ] Add API routes for the first product feature
 - [x] Onboarding flow (9 steps, progress save)
+- [x] Family system (create, members, roles, goals, restrictions)
 - [ ] Add basic frontend screens for the first product feature
 
 ## Later

@@ -24,3 +24,6 @@ class User(Base):
     )
 
     profile = relationship("UserProfile", back_populates="user", uselist=False)
+    family_membership = relationship(
+        "FamilyMember", back_populates="user", uselist=False
+    )

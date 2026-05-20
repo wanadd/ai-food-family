@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import WebApp from "@twa-dev/sdk";
+import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 import { OnboardingComplete } from "@/components/onboarding/OnboardingComplete";
 import { ProgressBar } from "@/components/onboarding/ProgressBar";
@@ -68,8 +68,9 @@ export function OnboardingWizard() {
       const local = loadLocalOnboarding();
       let merged = local;
 
-      if (WebApp.initData) {
-        const remote = await fetchRemoteOnboarding(WebApp.initData);
+      const telegramInitData = getTelegramInitData();
+      if (telegramInitData) {
+        const remote = await fetchRemoteOnboarding(telegramInitData);
         merged = mergeOnboarding(local, remote);
       }
 
@@ -86,13 +87,14 @@ export function OnboardingWizard() {
     saveLocalOnboarding(next);
     setSaveHint("Сохранено локально");
 
-    if (!WebApp.initData) {
+    const telegramInitData = getTelegramInitData();
+    if (!telegramInitData) {
       return;
     }
 
     setSaving(true);
     try {
-      await saveRemoteOnboarding(WebApp.initData, next);
+      await saveRemoteOnboarding(telegramInitData, next);
       setSaveHint("Синхронизировано с сервером");
     } catch {
       setSaveHint("Не удалось синхронизировать — данные в браузере");

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
 from app.health import run_health_checks
-from app.routers import auth, onboarding
+from app.routers import auth, families, onboarding
 from app.telegram.bot import setup_menu_button
 
 
@@ -35,6 +35,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(onboarding.router)
+app.include_router(families.router)
 
 
 @app.get("/")

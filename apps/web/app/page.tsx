@@ -27,6 +27,12 @@ export default function Home() {
           >
             Пройти onboarding
           </Link>
+          <Link
+            href="/family"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-emerald-600 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+          >
+            Моя семья
+          </Link>
           <OpenMiniAppButton />
           <TelegramAuthPanel />
         </div>

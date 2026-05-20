@@ -9,9 +9,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import WebApp from "@twa-dev/sdk";
 
 import { authenticateWithTelegram, type AuthUser } from "@/lib/api";
+import { getTelegramInitData, loadTelegramWebApp } from "@/lib/telegram-webapp";
 
 type TelegramContextValue = {
   isTelegram: boolean;
@@ -27,7 +27,20 @@ type TelegramContextValue = {
 
 const TelegramContext = createContext<TelegramContextValue | null>(null);
 
+const defaultContext: TelegramContextValue = {
+  isTelegram: false,
+  initData: "",
+  platform: "unknown",
+  colorScheme: "light",
+  user: null,
+  isNewUser: false,
+  isAuthenticating: false,
+  authError: null,
+  retryAuth: () => {},
+};
+
 export function TelegramProvider({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -39,20 +52,32 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   const [colorScheme, setColorScheme] = useState("light");
 
   useEffect(() => {
-    WebApp.ready();
-    WebApp.expand();
-    setInitData(WebApp.initData);
-    setIsTelegram(WebApp.initData.length > 0);
-    setPlatform(WebApp.platform);
-    setColorScheme(WebApp.colorScheme);
-    document.documentElement.style.setProperty(
-      "--tg-theme-bg-color",
-      WebApp.themeParams.bg_color ?? "#f8fafc",
-    );
+    setMounted(true);
+
+    async function init() {
+      const webApp = await loadTelegramWebApp();
+      if (!webApp) {
+        return;
+      }
+
+      webApp.ready();
+      webApp.expand();
+      setInitData(webApp.initData);
+      setIsTelegram(webApp.initData.length > 0);
+      setPlatform(webApp.platform);
+      setColorScheme(webApp.colorScheme);
+      document.documentElement.style.setProperty(
+        "--tg-theme-bg-color",
+        webApp.themeParams.bg_color ?? "#f8fafc",
+      );
+    }
+
+    init();
   }, []);
 
   const authenticate = useCallback(async () => {
-    if (!WebApp.initData) {
+    const telegramInitData = getTelegramInitData();
+    if (!telegramInitData) {
       setAuthError("Откройте приложение через Telegram Mini App");
       return;
     }
@@ -61,7 +86,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     setAuthError(null);
 
     try {
-      const result = await authenticateWithTelegram(WebApp.initData);
+      const result = await authenticateWithTelegram(telegramInitData);
       setUser(result.user);
       setIsNewUser(result.is_new);
     } catch (error) {
@@ -75,11 +100,11 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isTelegram) {
+    if (!mounted || !isTelegram) {
       return;
     }
     authenticate();
-  }, [authenticate, authAttempt, isTelegram]);
+  }, [authenticate, authAttempt, isTelegram, mounted]);
 
   const value = useMemo<TelegramContextValue>(
     () => ({
@@ -104,6 +129,14 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       user,
     ],
   );
+
+  if (!mounted) {
+    return (
+      <TelegramContext.Provider value={defaultContext}>
+        {children}
+      </TelegramContext.Provider>
+    );
+  }
 
   return (
     <TelegramContext.Provider value={value}>{children}</TelegramContext.Provider>
