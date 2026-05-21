@@ -39,6 +39,9 @@ RESTRICTION_LABELS = {
     "kids_friendly": "подходит детям",
 }
 
+# Member restrictions may include allergy codes; merge for label lookup.
+MEMBER_RESTRICTION_LABELS = RESTRICTION_LABELS | ALLERGY_LABELS
+
 BUDGET_LABELS = {
     "economy": "эконом (до 500 ₽/день)",
     "medium": "средний (500–900 ₽/день)",

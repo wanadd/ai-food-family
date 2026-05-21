@@ -12,6 +12,7 @@ from app.services.menu_labels import (
     COOKING_TIME_LABELS,
     DIET_LABELS,
     GOAL_LABELS,
+    MEMBER_RESTRICTION_LABELS,
     RESTRICTION_LABELS,
     label_map,
 )
@@ -114,7 +115,7 @@ def _format_member_block(
 ) -> str:
     return (
         f"- {name} ({role}): цели — {_join_labels(goals, GOAL_LABELS)}; "
-        f"ограничения/аллергии — {_join_labels(restrictions, RESTRICTION_LABELS + ALLERGY_LABELS)}"
+        f"ограничения/аллергии — {_join_labels(restrictions, MEMBER_RESTRICTION_LABELS)}"
     )
 
 
