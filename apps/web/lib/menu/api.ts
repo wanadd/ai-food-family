@@ -1,4 +1,5 @@
-import { apiUrl } from "@/lib/api";
+import { apiFetch, apiGet } from "@/lib/api-client";
+import type { AppMode } from "@/lib/app-mode/types";
 
 import type {
   MenuGenerateResponse,
@@ -6,45 +7,23 @@ import type {
   SelectedMenu,
 } from "./types";
 
-async function menuFetch<T>(
-  path: string,
-  initData: string,
-  init?: RequestInit,
-): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
-      ...init?.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? `HTTP ${response.status}`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
 export async function generateMenus(
   initData: string,
+  mode: AppMode,
 ): Promise<MenuGenerateResponse> {
-  return menuFetch<MenuGenerateResponse>("/menus/generate", initData, {
+  return apiFetch<MenuGenerateResponse>(initData, mode, "/menus/generate", {
     method: "POST",
   });
 }
 
 export async function replaceDish(
   initData: string,
+  mode: AppMode,
   menu: MenuVariant,
   mealIndex: number,
   hint?: string,
 ): Promise<MenuVariant> {
-  return menuFetch<MenuVariant>("/menus/replace-dish", initData, {
+  return apiFetch<MenuVariant>(initData, mode, "/menus/replace-dish", {
     method: "POST",
     body: JSON.stringify({ menu, meal_index: mealIndex, hint: hint || null }),
   });
@@ -52,9 +31,10 @@ export async function replaceDish(
 
 export async function selectMenu(
   initData: string,
+  mode: AppMode,
   menu: MenuVariant,
 ): Promise<SelectedMenu> {
-  return menuFetch<SelectedMenu>("/menus/select", initData, {
+  return apiFetch<SelectedMenu>(initData, mode, "/menus/select", {
     method: "POST",
     body: JSON.stringify({ menu }),
   });
@@ -62,19 +42,7 @@ export async function selectMenu(
 
 export async function fetchSelectedMenu(
   initData: string,
+  mode: AppMode,
 ): Promise<SelectedMenu | null> {
-  const response = await fetch(`${apiUrl}/menus/selected`, {
-    headers: { "X-Telegram-Init-Data": initData },
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const text = await response.text();
-  if (!text) {
-    return null;
-  }
-
-  return JSON.parse(text) as SelectedMenu;
+  return apiGet<SelectedMenu>(initData, mode, "/menus/selected");
 }

@@ -34,6 +34,8 @@ class MenuVariant(BaseModel):
 
 class MenuGenerateResponse(BaseModel):
     menus: list[MenuVariant] = Field(min_length=3, max_length=3)
+    scope_mode: str = "personal"
+    context_label: str = ""
     family_name: str | None = None
     members_count: int = 0
     generated_with_ai: bool = False
@@ -51,7 +53,9 @@ class SelectMenuRequest(BaseModel):
 
 class SelectedMenuResponse(BaseModel):
     id: int
-    family_id: int
+    scope_mode: str
+    user_id: int
+    family_id: int | None
     variant: MenuVariantType
     menu: MenuVariant
     selected_at: datetime

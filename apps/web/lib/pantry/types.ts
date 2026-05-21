@@ -1,6 +1,8 @@
 export type PantryItem = {
   id: number;
-  family_id: number;
+  scope_mode: string;
+  user_id: number | null;
+  family_id: number | null;
   name: string;
   quantity: string;
   expires_at: string;
@@ -12,7 +14,9 @@ export type PantryItem = {
 };
 
 export type PantryList = {
-  family_id: number;
+  scope_mode: string;
+  user_id: number | null;
+  family_id: number | null;
   items: PantryItem[];
   active_count: number;
   expired_count: number;

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { ModeBanner } from "@/components/app-mode/ModeBanner";
+import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
 import {
@@ -16,10 +18,11 @@ import type { MenuVariant, MenuVariantType } from "@/lib/menu/types";
 import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 export function MenuGenerator() {
+  const { mode } = useAppMode();
   const [initData, setInitData] = useState("");
   const [menus, setMenus] = useState<MenuVariant[]>([]);
   const [activeVariant, setActiveVariant] = useState<MenuVariantType>("quick");
-  const [familyName, setFamilyName] = useState<string | null>(null);
+  const [contextLabel, setContextLabel] = useState("");
   const [membersCount, setMembersCount] = useState(0);
   const [generatedWithAi, setGeneratedWithAi] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<MenuVariantType | null>(
@@ -31,20 +34,22 @@ export function MenuGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MenuVariant | null>(null);
 
-  const loadSelected = useCallback(async (telegramInitData: string) => {
-    const selected = await fetchSelectedMenu(telegramInitData);
-    if (selected) {
-      setSelectedVariant(selected.variant);
-    }
-  }, []);
+  const loadSelected = useCallback(
+    async (telegramInitData: string, appMode: typeof mode) => {
+      const selected = await fetchSelectedMenu(telegramInitData, appMode);
+      setSelectedVariant(selected?.variant ?? null);
+    },
+    [],
+  );
 
   useEffect(() => {
     const data = getTelegramInitData();
     setInitData(data);
+    setMenus([]);
     if (data) {
-      loadSelected(data);
+      loadSelected(data, mode);
     }
-  }, [loadSelected]);
+  }, [loadSelected, mode]);
 
   async function handleGenerate() {
     if (!initData) {
@@ -53,9 +58,9 @@ export function MenuGenerator() {
     setGenerating(true);
     setError(null);
     try {
-      const result = await generateMenus(initData);
+      const result = await generateMenus(initData, mode);
       setMenus(result.menus);
-      setFamilyName(result.family_name);
+      setContextLabel(result.context_label);
       setMembersCount(result.members_count);
       setGeneratedWithAi(result.generated_with_ai);
       setActiveVariant("quick");
@@ -75,7 +80,7 @@ export function MenuGenerator() {
     setSelecting(true);
     setError(null);
     try {
-      await selectMenu(initData, menu);
+      await selectMenu(initData, mode, menu);
       setSelectedVariant(menu.variant);
     } catch (err) {
       setError(
@@ -95,6 +100,7 @@ export function MenuGenerator() {
     try {
       const updated = await replaceDish(
         initData,
+        mode,
         replaceTarget,
         mealIndex,
       );
@@ -139,7 +145,7 @@ export function MenuGenerator() {
         </Link>
         <h1 className="mt-3 text-2xl font-bold text-stone-900">AI Меню</h1>
         <p className="mt-1 text-sm text-stone-500">
-          Три варианта на день с учётом семьи, целей и ограничений
+          Три варианта на день с учётом вашего профиля и ограничений
         </p>
         <div className="mt-3 flex gap-4 text-xs font-semibold">
           <Link href="/pantry" className="text-teal-700">
@@ -152,6 +158,7 @@ export function MenuGenerator() {
       </header>
 
       <main className="mx-auto max-w-lg space-y-6 px-5 py-8">
+        <ModeBanner />
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -160,8 +167,8 @@ export function MenuGenerator() {
 
         <section className="rounded-2xl border border-stone-200 bg-white p-5">
           <p className="text-sm text-stone-600">
-            Учитываются профиль онбординга и все участники семьи: цели, диеты,
-            аллергии, бюджет и время готовки.
+            Учитываются ваш onboarding, остатки, цели, диеты, аллергии, бюджет и
+            время готовки. В семейном режиме — данные всех участников.
           </p>
           <button
             type="button"
@@ -177,9 +184,8 @@ export function MenuGenerator() {
           <>
             <div className="flex items-center justify-between text-sm">
               <p className="text-stone-600">
-                {familyName
-                  ? `Семья «${familyName}» · ${membersCount} чел.`
-                  : "Профиль без семьи"}
+                {contextLabel}
+                {membersCount > 1 ? ` · ${membersCount} чел.` : ""}
               </p>
               <span
                 className={`rounded-full px-2.5 py-1 text-xs font-semibold ${

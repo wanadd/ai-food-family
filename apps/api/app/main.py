@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
 from app.health import run_health_checks
-from app.routers import auth, families, menus, notifications, onboarding, pantry, recipes, shopping_lists
+from app.routers import auth, families, menus, notifications, onboarding, pantry, recipes, shopping_lists, users
 from app.services.notification_scheduler import run_notification_scheduler
 from app.telegram.bot import setup_menu_button
 
@@ -44,6 +44,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(users.router)
 app.include_router(onboarding.router)
 app.include_router(families.router)
 app.include_router(menus.router)

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { ModeBanner } from "@/components/app-mode/ModeBanner";
+import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
 import {
   fetchShoppingList,
@@ -16,6 +18,7 @@ import { getTelegramInitData } from "@/lib/telegram-webapp";
 const POLL_INTERVAL_MS = 4000;
 
 export function ShoppingListView() {
+  const { mode } = useAppMode();
   const [initData, setInitData] = useState("");
   const [list, setList] = useState<ShoppingList | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,13 +28,13 @@ export function ShoppingListView() {
   const updatedAtRef = useRef<string | null>(null);
 
   const loadList = useCallback(
-    async (telegramInitData: string, silent = false) => {
+    async (telegramInitData: string, appMode: typeof mode, silent = false) => {
       if (!silent) {
         setLoading(true);
       }
       setError(null);
       try {
-        const data = await fetchShoppingList(telegramInitData);
+        const data = await fetchShoppingList(telegramInitData, appMode);
         if (
           silent &&
           updatedAtRef.current &&
@@ -63,8 +66,8 @@ export function ShoppingListView() {
       setLoading(false);
       return;
     }
-    loadList(data);
-  }, [loadList]);
+    loadList(data, mode);
+  }, [loadList, mode]);
 
   useEffect(() => {
     if (!initData) {
@@ -73,12 +76,12 @@ export function ShoppingListView() {
 
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") {
-        loadList(initData, true);
+        loadList(initData, mode, true);
       }
     }, POLL_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
-  }, [initData, loadList]);
+  }, [initData, mode, loadList]);
 
   const grouped = useMemo(() => {
     if (!list) {
@@ -95,7 +98,7 @@ export function ShoppingListView() {
       CATEGORY_ORDER.map((category, index) => [category, index]),
     );
 
-    return [...buckets.entries()].sort(
+    return Array.from(buckets.entries()).sort(
       ([a], [b]) =>
         (orderIndex[a] ?? CATEGORY_ORDER.length) -
         (orderIndex[b] ?? CATEGORY_ORDER.length),
@@ -109,7 +112,7 @@ export function ShoppingListView() {
     setSyncing(true);
     setError(null);
     try {
-      const data = await syncShoppingList(initData);
+      const data = await syncShoppingList(initData, mode);
       updatedAtRef.current = data.updated_at;
       setList(data);
     } catch (err) {
@@ -128,7 +131,7 @@ export function ShoppingListView() {
     setTogglingId(itemId);
     setError(null);
     try {
-      const data = await toggleShoppingItem(initData, itemId, checked);
+      const data = await toggleShoppingItem(initData, mode, itemId, checked);
       updatedAtRef.current = data.updated_at;
       setList(data);
     } catch (err) {
@@ -179,11 +182,12 @@ export function ShoppingListView() {
           Список покупок
         </h1>
         <p className="mt-1 text-sm text-stone-500">
-          Общий для семьи · синхронизация каждые 4 сек
+          Из выбранного меню · синхронизация каждые 4 сек
         </p>
       </header>
 
       <main className="mx-auto max-w-lg space-y-6 px-5 py-8">
+        <ModeBanner />
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}

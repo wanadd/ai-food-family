@@ -11,11 +11,11 @@ class FamilyMenuSelection(Base):
     __tablename__ = "family_menu_selections"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    family_id: Mapped[int] = mapped_column(
-        ForeignKey("families.id", ondelete="CASCADE"), index=True
-    )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    family_id: Mapped[int | None] = mapped_column(
+        ForeignKey("families.id", ondelete="CASCADE"), index=True, nullable=True
     )
     variant: Mapped[str] = mapped_column(String(16))
     menu_data: Mapped[dict] = mapped_column(JSONB)
@@ -24,4 +24,4 @@ class FamilyMenuSelection(Base):
     )
 
     family = relationship("Family")
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[user_id])

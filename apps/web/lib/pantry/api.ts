@@ -1,44 +1,21 @@
-import { apiUrl } from "@/lib/api";
+import { apiFetch } from "@/lib/api-client";
+import type { AppMode } from "@/lib/app-mode/types";
 
 import type { PantryItem, PantryItemDraft, PantryList } from "./types";
 
-async function pantryFetch<T>(
-  path: string,
+export async function fetchPantry(
   initData: string,
-  init?: RequestInit,
-): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
-      ...init?.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? `HTTP ${response.status}`);
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json() as Promise<T>;
-}
-
-export async function fetchPantry(initData: string): Promise<PantryList> {
-  return pantryFetch<PantryList>("/pantry/me", initData);
+  mode: AppMode,
+): Promise<PantryList> {
+  return apiFetch<PantryList>(initData, mode, "/pantry/me");
 }
 
 export async function addPantryItem(
   initData: string,
+  mode: AppMode,
   draft: PantryItemDraft,
 ): Promise<PantryItem> {
-  return pantryFetch<PantryItem>("/pantry/items", initData, {
+  return apiFetch<PantryItem>(initData, mode, "/pantry/items", {
     method: "POST",
     body: JSON.stringify(draft),
   });
@@ -46,10 +23,11 @@ export async function addPantryItem(
 
 export async function updatePantryItem(
   initData: string,
+  mode: AppMode,
   itemId: number,
   draft: Partial<PantryItemDraft>,
 ): Promise<PantryItem> {
-  return pantryFetch<PantryItem>(`/pantry/items/${itemId}`, initData, {
+  return apiFetch<PantryItem>(initData, mode, `/pantry/items/${itemId}`, {
     method: "PATCH",
     body: JSON.stringify(draft),
   });
@@ -57,9 +35,10 @@ export async function updatePantryItem(
 
 export async function deletePantryItem(
   initData: string,
+  mode: AppMode,
   itemId: number,
 ): Promise<void> {
-  await pantryFetch<void>(`/pantry/items/${itemId}`, initData, {
+  await apiFetch<void>(initData, mode, `/pantry/items/${itemId}`, {
     method: "DELETE",
   });
 }

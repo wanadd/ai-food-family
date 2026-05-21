@@ -11,7 +11,9 @@ export type ShoppingListItem = {
 };
 
 export type ShoppingList = {
-  family_id: number;
+  scope_mode: string;
+  user_id: number | null;
+  family_id: number | null;
   menu_title: string | null;
   items: ShoppingListItem[];
   total_count: number;

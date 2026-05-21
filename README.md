@@ -1,6 +1,8 @@
 # AI Food Family
 
-Telegram Mini App project with a Next.js frontend and a FastAPI backend.
+Telegram Mini App for personal or family meal planning — Next.js frontend and FastAPI backend.
+
+**Personal mode** works out of the box after Telegram login. **Family mode** is optional (create a family, then switch modes on the home screen).
 
 ## Project Structure
 

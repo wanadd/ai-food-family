@@ -55,4 +55,8 @@ class FamilyMember(Base):
     )
 
     family = relationship("Family", back_populates="members")
-    user = relationship("User", back_populates="family_membership")
+    user = relationship(
+        "User",
+        back_populates="family_membership",
+        foreign_keys=[user_id],
+    )

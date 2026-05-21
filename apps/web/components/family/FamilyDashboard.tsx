@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getTelegramInitData } from "@/lib/telegram-webapp";
 
+import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MemberCard } from "@/components/family/MemberCard";
 import { MemberForm } from "@/components/family/MemberForm";
 import {
@@ -17,6 +18,7 @@ import type { Family, FamilyMember } from "@/lib/family/types";
 import { EMPTY_MEMBER_DRAFT, type MemberDraft } from "@/lib/family/types";
 
 export function FamilyDashboard() {
+  const { refreshContext } = useAppMode();
   const [initData, setInitData] = useState("");
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,6 +65,7 @@ export function FamilyDashboard() {
       const created = await createFamily(initData, familyName.trim());
       setFamily(created);
       setFamilyName("");
+      await refreshContext();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create family");
     } finally {
@@ -172,9 +175,9 @@ export function FamilyDashboard() {
         <Link href="/" className="text-xs font-semibold text-emerald-700">
           ← Назад
         </Link>
-        <h1 className="mt-3 text-2xl font-bold text-stone-900">Семья</h1>
+        <h1 className="mt-3 text-2xl font-bold text-stone-900">Семейный режим</h1>
         <p className="mt-1 text-sm text-stone-500">
-          Создайте семью и настройте цели и ограничения для каждого члена
+          Опционально: общие меню, покупки и остатки для всей семьи
         </p>
       </header>
 
@@ -188,10 +191,10 @@ export function FamilyDashboard() {
         {!family ? (
           <section className="rounded-2xl border border-stone-200 bg-white p-6">
             <h2 className="text-lg font-semibold text-stone-900">
-              Создать семью
+              Подключить семейный режим
             </h2>
             <p className="mt-2 text-sm text-stone-500">
-              Вы станете администратором с полным доступом к настройкам
+              После создания на главной появится переключатель «Личный / Семейный»
             </p>
             <input
               value={familyName}

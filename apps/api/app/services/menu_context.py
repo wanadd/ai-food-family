@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.pantry import FamilyPantryItem
 from app.models.user import User
 from app.services import family as family_service
-from app.services.pantry import format_leftovers_for_prompt, get_active_items
+from app.services.app_scope import AppScope
 from app.services.menu_labels import (
     ALLERGY_LABELS,
     BUDGET_LABELS,
@@ -16,10 +16,13 @@ from app.services.menu_labels import (
     label_map,
 )
 from app.services.onboarding import get_or_create_profile
+from app.services.pantry import format_leftovers_for_prompt, get_active_items_for_scope
 
 
 @dataclass
 class MenuGenerationContext:
+    scope_mode: str
+    context_label: str
     family_name: str | None
     members_count: int
     prompt_text: str
@@ -27,26 +30,31 @@ class MenuGenerationContext:
     leftovers: list[FamilyPantryItem] = field(default_factory=list)
 
 
-def build_menu_context(db: Session, user: User) -> MenuGenerationContext:
+def build_menu_context(db: Session, user: User, scope: AppScope) -> MenuGenerationContext:
     profile = get_or_create_profile(db, user)
     family = family_service.get_family_for_user(db, user)
+    leftovers = get_active_items_for_scope(db, scope)
 
-    lines: list[str] = ["Сформируй меню на один день для всей семьи."]
+    lines: list[str] = ["Сформируй меню на один день."]
 
-    leftovers: list[FamilyPantryItem] = []
-
-    if family is None:
-        lines.append("Семья не создана — ориентируйся на профиль одного пользователя.")
-        lines.append(_format_user_block(user.first_name or "Пользователь", profile))
+    if scope.is_personal:
+        lines.append("Режим: личный (один пользователь).")
+        lines.append(_format_user_block(user.first_name or "Вы", profile))
+        lines.extend(_format_leftovers_block(leftovers))
         return MenuGenerationContext(
+            scope_mode="personal",
+            context_label="Личный режим",
             family_name=None,
             members_count=1,
             prompt_text="\n".join(lines),
-            has_family=False,
+            has_family=family is not None,
             leftovers=leftovers,
         )
 
-    lines.append(f"Семья: {family.name}. Участников: {len(family.members)}.")
+    if family is None:
+        raise ValueError("Family scope without family membership")
+
+    lines.append(f"Режим: семейный. Семья: {family.name}. Участников: {len(family.members)}.")
     for member in family.members:
         lines.append(
             _format_member_block(
@@ -56,14 +64,13 @@ def build_menu_context(db: Session, user: User) -> MenuGenerationContext:
                 member.restrictions or [],
             )
         )
-
     lines.append("Профиль того, кто заказывает меню:")
     lines.append(_format_user_block(user.first_name or "Вы", profile))
-
-    leftovers = get_active_items(db, family.id)
     lines.extend(_format_leftovers_block(leftovers))
 
     return MenuGenerationContext(
+        scope_mode="family",
+        context_label=f"Семья «{family.name}»",
         family_name=family.name,
         members_count=len(family.members),
         prompt_text="\n".join(lines),
@@ -74,9 +81,7 @@ def build_menu_context(db: Session, user: User) -> MenuGenerationContext:
 
 def _format_leftovers_block(items: list[FamilyPantryItem]) -> list[str]:
     if not items:
-        return [
-            "Остатки в холодильнике: не указаны.",
-        ]
+        return ["Остатки в холодильнике: не указаны."]
     lines = [
         "Остатки в холодильнике (ОБЯЗАТЕЛЬНО использовать в меню, "
         "минимизировать закупки этих продуктов; сначала трать то, что скоро истекает):",

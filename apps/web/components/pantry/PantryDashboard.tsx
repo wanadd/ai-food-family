@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { ModeBanner } from "@/components/app-mode/ModeBanner";
+import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { PantryItemCard } from "@/components/pantry/PantryItemCard";
 import { PantryItemForm } from "@/components/pantry/PantryItemForm";
 import {
@@ -20,6 +22,7 @@ import {
 import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 export function PantryDashboard() {
+  const { mode } = useAppMode();
   const [initData, setInitData] = useState("");
   const [items, setItems] = useState<PantryItem[]>([]);
   const [activeCount, setActiveCount] = useState(0);
@@ -33,11 +36,11 @@ export function PantryDashboard() {
     expires_at: defaultExpiryDate(),
   });
 
-  const loadPantry = useCallback(async (telegramInitData: string) => {
+  const loadPantry = useCallback(async (telegramInitData: string, appMode: typeof mode) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchPantry(telegramInitData);
+      const data = await fetchPantry(telegramInitData, appMode);
       setItems(data.items);
       setActiveCount(data.active_count);
     } catch (err) {
@@ -53,11 +56,11 @@ export function PantryDashboard() {
     const data = getTelegramInitData();
     setInitData(data);
     if (data) {
-      loadPantry(data);
+      loadPantry(data, mode);
     } else {
       setLoading(false);
     }
-  }, [loadPantry]);
+  }, [loadPantry, mode]);
 
   const { activeItems, expiredItems } = useMemo(() => {
     const active = items.filter((item) => !item.is_expired);
@@ -76,14 +79,14 @@ export function PantryDashboard() {
     setSaving(true);
     setError(null);
     try {
-      await addPantryItem(initData, {
+      await addPantryItem(initData, mode, {
         name: draft.name.trim(),
         quantity: draft.quantity.trim(),
         expires_at: draft.expires_at,
       });
       resetDraft();
       setShowForm(false);
-      await loadPantry(initData);
+      await loadPantry(initData, mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось добавить");
     } finally {
@@ -98,14 +101,14 @@ export function PantryDashboard() {
     setSaving(true);
     setError(null);
     try {
-      await updatePantryItem(initData, editingItem.id, {
+      await updatePantryItem(initData, mode, editingItem.id, {
         name: draft.name.trim(),
         quantity: draft.quantity.trim(),
         expires_at: draft.expires_at,
       });
       setEditingItem(null);
       resetDraft();
-      await loadPantry(initData);
+      await loadPantry(initData, mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
     } finally {
@@ -122,8 +125,8 @@ export function PantryDashboard() {
     }
     setError(null);
     try {
-      await deletePantryItem(initData, item.id);
-      await loadPantry(initData);
+      await deletePantryItem(initData, mode, item.id);
+      await loadPantry(initData, mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось удалить");
     }
@@ -169,7 +172,7 @@ export function PantryDashboard() {
         </Link>
         <h1 className="mt-3 text-2xl font-bold text-stone-900">Остатки</h1>
         <p className="mt-1 text-sm text-stone-500">
-          Общий холодильник семьи · учитывается в AI меню
+          Учитывается при генерации AI меню
         </p>
         <Link
           href="/menu"
@@ -180,6 +183,7 @@ export function PantryDashboard() {
       </header>
 
       <main className="mx-auto max-w-lg space-y-6 px-5 py-8">
+        <ModeBanner />
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}

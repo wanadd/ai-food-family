@@ -11,8 +11,11 @@ class FamilyShoppingList(Base):
     __tablename__ = "family_shopping_lists"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    family_id: Mapped[int] = mapped_column(
-        ForeignKey("families.id", ondelete="CASCADE"), unique=True, index=True
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=True, index=True
+    )
+    family_id: Mapped[int | None] = mapped_column(
+        ForeignKey("families.id", ondelete="CASCADE"), unique=True, nullable=True, index=True
     )
     menu_selection_id: Mapped[int | None] = mapped_column(
         ForeignKey("family_menu_selections.id", ondelete="SET NULL"),
@@ -24,4 +27,5 @@ class FamilyShoppingList(Base):
     )
 
     family = relationship("Family")
+    owner = relationship("User", foreign_keys=[user_id])
     menu_selection = relationship("FamilyMenuSelection")

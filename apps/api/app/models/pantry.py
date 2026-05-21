@@ -10,8 +10,11 @@ class FamilyPantryItem(Base):
     __tablename__ = "family_pantry_items"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    family_id: Mapped[int] = mapped_column(
-        ForeignKey("families.id", ondelete="CASCADE"), index=True
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    family_id: Mapped[int | None] = mapped_column(
+        ForeignKey("families.id", ondelete="CASCADE"), index=True, nullable=True
     )
     name: Mapped[str] = mapped_column(String(120))
     quantity: Mapped[str] = mapped_column(String(80))
@@ -27,4 +30,5 @@ class FamilyPantryItem(Base):
     )
 
     family = relationship("Family")
-    added_by = relationship("User")
+    owner = relationship("User", foreign_keys=[user_id])
+    added_by = relationship("User", foreign_keys=[added_by_user_id])

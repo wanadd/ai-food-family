@@ -5,10 +5,12 @@ from app.models.pantry import FamilyPantryItem
 from app.models.recipe import Recipe, RecipeFavorite
 from app.models.shopping_list import FamilyShoppingList
 from app.models.user import User
+from app.models.user_preferences import UserPreferences
 from app.models.user_profile import UserProfile
 
 __all__ = [
     "User",
+    "UserPreferences",
     "UserProfile",
     "Family",
     "FamilyMember",

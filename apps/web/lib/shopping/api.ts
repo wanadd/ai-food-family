@@ -1,53 +1,34 @@
-import { apiUrl } from "@/lib/api";
+import { apiFetch } from "@/lib/api-client";
+import type { AppMode } from "@/lib/app-mode/types";
 
 import type { ShoppingList } from "./types";
 
-async function shoppingFetch<T>(
-  path: string,
-  initData: string,
-  init?: RequestInit,
-): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
-      ...init?.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? `HTTP ${response.status}`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
 export async function fetchShoppingList(
   initData: string,
+  mode: AppMode,
 ): Promise<ShoppingList> {
-  return shoppingFetch<ShoppingList>("/shopping-lists/me", initData);
+  return apiFetch<ShoppingList>(initData, mode, "/shopping-lists/me");
 }
 
 export async function syncShoppingList(
   initData: string,
+  mode: AppMode,
 ): Promise<ShoppingList> {
-  return shoppingFetch<ShoppingList>("/shopping-lists/sync", initData, {
+  return apiFetch<ShoppingList>(initData, mode, "/shopping-lists/sync", {
     method: "POST",
   });
 }
 
 export async function toggleShoppingItem(
   initData: string,
+  mode: AppMode,
   itemId: string,
   checked: boolean,
 ): Promise<ShoppingList> {
-  return shoppingFetch<ShoppingList>(
-    `/shopping-lists/items/${itemId}`,
+  return apiFetch<ShoppingList>(
     initData,
+    mode,
+    `/shopping-lists/items/${itemId}`,
     {
       method: "PATCH",
       body: JSON.stringify({ checked }),

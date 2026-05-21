@@ -17,7 +17,9 @@ class PantryItemUpdate(BaseModel):
 
 class PantryItemResponse(BaseModel):
     id: int
-    family_id: int
+    scope_mode: str
+    user_id: int | None = None
+    family_id: int | None = None
     name: str
     quantity: str
     expires_at: date
@@ -31,7 +33,9 @@ class PantryItemResponse(BaseModel):
 
 
 class PantryListResponse(BaseModel):
-    family_id: int
+    scope_mode: str
+    user_id: int | None = None
+    family_id: int | None = None
     items: list[PantryItemResponse]
     active_count: int
     expired_count: int

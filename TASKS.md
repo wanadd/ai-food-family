@@ -8,27 +8,26 @@
 - [x] FastAPI backend with health checks
 - [x] Docker Compose (web, api, PostgreSQL, Redis)
 - [x] Environment examples
+- [x] Add Telegram Mini App SDK to the frontend
+- [x] Add Telegram bot token configuration
+- [x] Telegram auth + user creation in PostgreSQL
+- [x] Onboarding flow (9 steps, progress save) — per user
+- [x] Family system (optional, create members, roles, goals)
+- [x] Personal + family app modes (`X-App-Mode`, mode switcher on home)
+- [x] AI menu generation (personal or family scope)
+- [x] Shopping list (personal or family, no family required)
+- [x] Telegram reminders (buy, cook, time settings)
+- [x] Pantry leftovers (personal or family)
+- [x] Recipe database (search, filters, favorites per user)
+- [x] Production deploy (Timeweb Cloud, nginx, HTTPS, DEPLOY.md)
 
 ## Next
 
 - [ ] Install dependencies and run the stack locally
-- [x] Add Telegram Mini App SDK to the frontend
-- [x] Add Telegram bot token configuration
-- [x] Telegram auth + user creation in PostgreSQL
-- [ ] Define MVP user flow
-- [ ] Add API routes for the first product feature
-- [x] Onboarding flow (9 steps, progress save)
-- [x] Family system (create, members, roles, goals, restrictions)
-- [x] AI menu generation (3 variants, ingredients, select, replace dish)
-- [x] Shopping list (merge ingredients, categories, check off, family sync)
-- [x] Telegram reminders (buy, cook, time settings)
-- [x] Pantry leftovers (add, quantity, expiry, AI menu integration)
-- [x] Recipe database (search, filters, favorites)
-- [ ] Add basic frontend screens for the first product feature
+- [ ] Database migration script for existing deployments (nullable `user_id` on scoped tables)
 
 ## Later
 
-- [ ] Add authentication/Telegram init data validation
 - [ ] Add automated tests
-- [ ] Add production deployment configuration
 - [ ] Add CI checks
+- [ ] Invite family members by link

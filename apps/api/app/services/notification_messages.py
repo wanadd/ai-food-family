@@ -1,41 +1,26 @@
 from sqlalchemy.orm import Session
 
-from app.models.menu_selection import FamilyMenuSelection
-from app.models.shopping_list import FamilyShoppingList
 from app.models.user import User
 from app.schemas.menu import MenuVariant
 from app.schemas.shopping_list import ShoppingListItem
-from app.services import family as family_service
-from app.services.menu_labels import VARIANT_META
-
-MEAL_LABELS = {
-    "breakfast": "Завтрак",
-    "lunch": "Обед",
-    "dinner": "Ужин",
-    "snack": "Перекус",
-}
+from app.services.app_scope import get_or_create_preferences, resolve_scope
+from app.services.shopping_list import _get_latest_selection, _get_or_create_list
 
 
 def build_buy_reminder_text(db: Session, user: User) -> str:
-    membership = family_service.get_user_membership(db, user)
-    if membership is None:
-        return (
-            "🛒 <b>Напоминание о покупках</b>\n\n"
-            "Создайте семью и выберите меню — список покупок "
-            "соберётся автоматически."
-        )
+    prefs = get_or_create_preferences(db, user)
+    try:
+        scope = resolve_scope(db, user, prefs.active_mode)
+    except Exception:
+        scope = resolve_scope(db, user, "personal")
 
-    shopping_list = (
-        db.query(FamilyShoppingList)
-        .filter(FamilyShoppingList.family_id == membership.family_id)
-        .one_or_none()
-    )
+    shopping_list = _get_or_create_list(db, scope)
+    mode_label = "семейный" if scope.is_family else "личный"
 
-    if shopping_list is None or not shopping_list.items:
+    if not shopping_list.items:
         return (
-            "🛒 <b>Напоминание о покупках</b>\n\n"
-            "Выберите меню в приложении — и мы соберём список "
-            "ингредиентов для всей семьи."
+            f"🛒 <b>Напоминание о покупках</b> ({mode_label} режим)\n\n"
+            "Выберите меню в приложении — список покупок соберётся автоматически."
         )
 
     items = [ShoppingListItem.model_validate(raw) for raw in shopping_list.items]
@@ -43,9 +28,8 @@ def build_buy_reminder_text(db: Session, user: User) -> str:
 
     if not unchecked:
         return (
-            "🛒 <b>Напоминание о покупках</b>\n\n"
-            "Отлично! Все позиции в списке отмечены. "
-            "Можно планировать меню на завтра."
+            f"🛒 <b>Напоминание о покупках</b> ({mode_label} режим)\n\n"
+            "Все позиции отмечены. Можно планировать меню на следующий день."
         )
 
     preview = "\n".join(
@@ -56,46 +40,47 @@ def build_buy_reminder_text(db: Session, user: User) -> str:
         extra = f"\n<i>…и ещё {len(unchecked) - 5}</i>"
 
     return (
-        f"🛒 <b>Напоминание: пора закупиться!</b>\n\n"
+        f"🛒 <b>Напоминание: пора закупиться!</b> ({mode_label})\n\n"
         f"Осталось <b>{len(unchecked)}</b> из {len(items)} позиций:\n"
         f"{preview}{extra}"
     )
 
 
 def build_cook_reminder_text(db: Session, user: User) -> str:
-    membership = family_service.get_user_membership(db, user)
-    if membership is None:
-        return (
-            "👨‍🍳 <b>Напоминание о готовке</b>\n\n"
-            "Создайте семью и выберите меню на день — "
-            "мы напомним, что приготовить."
-        )
+    prefs = get_or_create_preferences(db, user)
+    try:
+        scope = resolve_scope(db, user, prefs.active_mode)
+    except Exception:
+        scope = resolve_scope(db, user, "personal")
 
-    selection = (
-        db.query(FamilyMenuSelection)
-        .filter(FamilyMenuSelection.family_id == membership.family_id)
-        .order_by(FamilyMenuSelection.selected_at.desc())
-        .first()
-    )
+    selection = _get_latest_selection(db, scope)
+    mode_label = "семейный" if scope.is_family else "личный"
 
     if selection is None:
         return (
-            "👨‍🍳 <b>Напоминание о готовке</b>\n\n"
-            "Меню на сегодня ещё не выбрано. "
-            "Откройте AI Меню и нажмите «Выбрать»."
+            f"👨‍🍳 <b>Напоминание о готовке</b> ({mode_label} режим)\n\n"
+            "Меню на сегодня ещё не выбрано. Откройте AI Меню и нажмите «Выбрать»."
         )
 
     menu = MenuVariant.model_validate(selection.menu_data)
+    from app.services.menu_labels import VARIANT_META
+
+    meal_labels = {
+        "breakfast": "Завтрак",
+        "lunch": "Обед",
+        "dinner": "Ужин",
+        "snack": "Перекус",
+    }
     variant_label = VARIANT_META.get(menu.variant, {}).get("title", menu.title)
 
     meal_lines = "\n".join(
-        f"• <b>{MEAL_LABELS.get(meal.meal_type, meal.meal_type)}</b>: "
+        f"• <b>{meal_labels.get(meal.meal_type, meal.meal_type)}</b>: "
         f"{meal.name} ({meal.prep_time_minutes} мин)"
         for meal in menu.meals
     )
 
     return (
-        f"👨‍🍳 <b>Пора готовить!</b>\n\n"
+        f"👨‍🍳 <b>Пора готовить!</b> ({mode_label})\n\n"
         f"Меню: <i>{menu.title}</i> ({variant_label})\n\n"
         f"{meal_lines}\n\n"
         f"⏱ Суммарно у плиты: ~{menu.total_prep_minutes} мин"

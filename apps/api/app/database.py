@@ -22,6 +22,7 @@ def init_db() -> None:
         recipe,
         shopping_list,
         user,
+        user_preferences,
         user_profile,
     )
 

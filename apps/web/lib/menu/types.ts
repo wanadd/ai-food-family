@@ -28,6 +28,8 @@ export type MenuVariant = {
 
 export type MenuGenerateResponse = {
   menus: MenuVariant[];
+  scope_mode: string;
+  context_label: string;
   family_name: string | null;
   members_count: number;
   generated_with_ai: boolean;
@@ -35,7 +37,9 @@ export type MenuGenerateResponse = {
 
 export type SelectedMenu = {
   id: number;
-  family_id: number;
+  scope_mode: string;
+  user_id: number;
+  family_id: number | null;
   variant: MenuVariantType;
   menu: MenuVariant;
   selected_at: string;

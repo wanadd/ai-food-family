@@ -16,7 +16,9 @@ class ShoppingListItem(BaseModel):
 
 
 class ShoppingListResponse(BaseModel):
-    family_id: int
+    scope_mode: str
+    user_id: int | None = None
+    family_id: int | None = None
     menu_title: str | None = None
     items: list[ShoppingListItem]
     total_count: int

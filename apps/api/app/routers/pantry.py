@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
+from app.deps import get_app_scope, get_current_user
+from app.services.app_scope import AppScope
 from app.models.user import User
 from app.schemas.pantry import (
     PantryItemCreate,
@@ -17,10 +18,11 @@ router = APIRouter(prefix="/pantry", tags=["pantry"])
 
 @router.get("/me", response_model=PantryListResponse)
 def get_my_pantry(
+    scope: AppScope = Depends(get_app_scope),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PantryListResponse:
-    return pantry_service.list_pantry(db, user)
+    return pantry_service.list_pantry(db, user, scope)
 
 
 @router.post(
@@ -30,26 +32,28 @@ def get_my_pantry(
 )
 def add_pantry_item(
     payload: PantryItemCreate,
+    scope: AppScope = Depends(get_app_scope),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PantryItemResponse:
-    return pantry_service.add_item(db, user, payload)
+    return pantry_service.add_item(db, user, scope, payload)
 
 
 @router.patch("/items/{item_id}", response_model=PantryItemResponse)
 def update_pantry_item(
     item_id: int,
     payload: PantryItemUpdate,
+    scope: AppScope = Depends(get_app_scope),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PantryItemResponse:
-    return pantry_service.update_item(db, user, item_id, payload)
+    return pantry_service.update_item(db, user, scope, item_id, payload)
 
 
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_pantry_item(
     item_id: int,
-    user: User = Depends(get_current_user),
+    scope: AppScope = Depends(get_app_scope),
     db: Session = Depends(get_db),
 ) -> None:
-    pantry_service.delete_item(db, user, item_id)
+    pantry_service.delete_item(db, scope, item_id)

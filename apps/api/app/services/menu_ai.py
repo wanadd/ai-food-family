@@ -134,11 +134,12 @@ def _parse_menus(raw_menus: list[dict[str, Any]]) -> list[MenuVariant]:
 
 
 def _generate_fallback(context: MenuGenerationContext) -> list[MenuVariant]:
-    family_note = (
-        f"для семьи «{context.family_name}» ({context.members_count} чел.)"
-        if context.has_family
-        else "для вашего профиля"
-    )
+    if context.scope_mode == "family" and context.family_name:
+        family_note = (
+            f"для семьи «{context.family_name}» ({context.members_count} чел.)"
+        )
+    else:
+        family_note = "для личного профиля"
     templates = {
         "quick": {
             "meals": [
