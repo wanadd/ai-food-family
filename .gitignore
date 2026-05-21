@@ -11,8 +11,12 @@ venv/
 # Environment files
 .env
 .env.local
+.env.production
 apps/web/.env.local
 apps/api/.env
+
+# SSL / certbot local copies (production uses Docker volumes)
+deploy/certbot/
 
 # Build output
 .next/

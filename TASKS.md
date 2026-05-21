@@ -19,6 +19,11 @@
 - [ ] Add API routes for the first product feature
 - [x] Onboarding flow (9 steps, progress save)
 - [x] Family system (create, members, roles, goals, restrictions)
+- [x] AI menu generation (3 variants, ingredients, select, replace dish)
+- [x] Shopping list (merge ingredients, categories, check off, family sync)
+- [x] Telegram reminders (buy, cook, time settings)
+- [x] Pantry leftovers (add, quantity, expiry, AI menu integration)
+- [x] Recipe database (search, filters, favorites)
 - [ ] Add basic frontend screens for the first product feature
 
 ## Later

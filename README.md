@@ -59,6 +59,10 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Run PostgreSQL and Redis locally (or via `docker compose up postgres redis`) and set `DATABASE_URL` / `REDIS_URL` in `apps/api/.env`.
 
+## Production deploy (Timeweb Cloud)
+
+See [DEPLOY.md](DEPLOY.md) for VPS setup with **nginx**, **HTTPS** (Let's Encrypt), and `docker-compose.prod.yml`.
+
 ## Telegram Mini App
 
 See [docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md) for BotFather, HTTPS tunnel, and auth verification.

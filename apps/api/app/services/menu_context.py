@@ -1,0 +1,118 @@
+from dataclasses import dataclass, field
+
+from sqlalchemy.orm import Session
+
+from app.models.pantry import FamilyPantryItem
+from app.models.user import User
+from app.services import family as family_service
+from app.services.pantry import format_leftovers_for_prompt, get_active_items
+from app.services.menu_labels import (
+    ALLERGY_LABELS,
+    BUDGET_LABELS,
+    COOKING_TIME_LABELS,
+    DIET_LABELS,
+    GOAL_LABELS,
+    RESTRICTION_LABELS,
+    label_map,
+)
+from app.services.onboarding import get_or_create_profile
+
+
+@dataclass
+class MenuGenerationContext:
+    family_name: str | None
+    members_count: int
+    prompt_text: str
+    has_family: bool
+    leftovers: list[FamilyPantryItem] = field(default_factory=list)
+
+
+def build_menu_context(db: Session, user: User) -> MenuGenerationContext:
+    profile = get_or_create_profile(db, user)
+    family = family_service.get_family_for_user(db, user)
+
+    lines: list[str] = ["Сформируй меню на один день для всей семьи."]
+
+    leftovers: list[FamilyPantryItem] = []
+
+    if family is None:
+        lines.append("Семья не создана — ориентируйся на профиль одного пользователя.")
+        lines.append(_format_user_block(user.first_name or "Пользователь", profile))
+        return MenuGenerationContext(
+            family_name=None,
+            members_count=1,
+            prompt_text="\n".join(lines),
+            has_family=False,
+            leftovers=leftovers,
+        )
+
+    lines.append(f"Семья: {family.name}. Участников: {len(family.members)}.")
+    for member in family.members:
+        lines.append(
+            _format_member_block(
+                member.display_name,
+                member.role,
+                member.goals or [],
+                member.restrictions or [],
+            )
+        )
+
+    lines.append("Профиль того, кто заказывает меню:")
+    lines.append(_format_user_block(user.first_name or "Вы", profile))
+
+    leftovers = get_active_items(db, family.id)
+    lines.extend(_format_leftovers_block(leftovers))
+
+    return MenuGenerationContext(
+        family_name=family.name,
+        members_count=len(family.members),
+        prompt_text="\n".join(lines),
+        has_family=True,
+        leftovers=leftovers,
+    )
+
+
+def _format_leftovers_block(items: list[FamilyPantryItem]) -> list[str]:
+    if not items:
+        return [
+            "Остатки в холодильнике: не указаны.",
+        ]
+    lines = [
+        "Остатки в холодильнике (ОБЯЗАТЕЛЬНО использовать в меню, "
+        "минимизировать закупки этих продуктов; сначала трать то, что скоро истекает):",
+    ]
+    lines.extend(format_leftovers_for_prompt(items))
+    return lines
+
+
+def _format_user_block(name: str, profile) -> str:
+    parts = [f"- {name}:"]
+    parts.append(f"  цели: {_join_labels(profile.goals, GOAL_LABELS)}")
+    parts.append(f"  диеты: {_join_labels(profile.diets, DIET_LABELS)}")
+    parts.append(f"  аллергии: {_join_labels(profile.allergies, ALLERGY_LABELS)}")
+    parts.append(f"  ограничения: {_join_labels(profile.restrictions, RESTRICTION_LABELS)}")
+    if profile.budget:
+        parts.append(f"  бюджет: {BUDGET_LABELS.get(profile.budget, profile.budget)}")
+    if profile.cooking_time:
+        parts.append(
+            f"  время готовки: {COOKING_TIME_LABELS.get(profile.cooking_time, profile.cooking_time)}"
+        )
+    if profile.favorite_foods:
+        parts.append(f"  любимое: {profile.favorite_foods}")
+    if profile.disliked_foods:
+        parts.append(f"  не любит: {profile.disliked_foods}")
+    return "\n".join(parts)
+
+
+def _format_member_block(
+    name: str, role: str, goals: list[str], restrictions: list[str]
+) -> str:
+    return (
+        f"- {name} ({role}): цели — {_join_labels(goals, GOAL_LABELS)}; "
+        f"ограничения/аллергии — {_join_labels(restrictions, RESTRICTION_LABELS + ALLERGY_LABELS)}"
+    )
+
+
+def _join_labels(values: list[str], mapping: dict[str, str]) -> str:
+    labels = label_map(values, mapping)
+    return ", ".join(labels) if labels else "не указано"

@@ -27,3 +27,13 @@ class User(Base):
     family_membership = relationship(
         "FamilyMember", back_populates="user", uselist=False
     )
+    notification_settings = relationship(
+        "UserNotificationSettings",
+        back_populates="user",
+        uselist=False,
+    )
+    recipe_favorites = relationship(
+        "RecipeFavorite",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

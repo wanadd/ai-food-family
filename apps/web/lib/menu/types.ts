@@ -1,0 +1,42 @@
+export type MenuVariantType = "quick" | "economy" | "balanced";
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+
+export type MenuMeal = {
+  meal_type: MealType;
+  name: string;
+  description: string;
+  prep_time_minutes: number;
+  calories_estimate?: number | null;
+};
+
+export type MenuIngredient = {
+  name: string;
+  amount: string;
+  category?: string | null;
+};
+
+export type MenuVariant = {
+  variant: MenuVariantType;
+  title: string;
+  tagline: string;
+  explanation: string;
+  estimated_daily_cost: string | null;
+  total_prep_minutes: number;
+  meals: MenuMeal[];
+  ingredients: MenuIngredient[];
+};
+
+export type MenuGenerateResponse = {
+  menus: MenuVariant[];
+  family_name: string | null;
+  members_count: number;
+  generated_with_ai: boolean;
+};
+
+export type SelectedMenu = {
+  id: number;
+  family_id: number;
+  variant: MenuVariantType;
+  menu: MenuVariant;
+  selected_at: string;
+};

@@ -33,6 +33,36 @@ export default function Home() {
           >
             Моя семья
           </Link>
+          <Link
+            href="/menu"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-violet-300 bg-violet-50 px-5 py-3 text-sm font-semibold text-violet-800 transition hover:bg-violet-100"
+          >
+            AI Меню
+          </Link>
+          <Link
+            href="/shopping"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-100"
+          >
+            Список покупок
+          </Link>
+          <Link
+            href="/notifications"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-sky-300 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-900 transition hover:bg-sky-100"
+          >
+            Уведомления
+          </Link>
+          <Link
+            href="/pantry"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-teal-300 bg-teal-50 px-5 py-3 text-sm font-semibold text-teal-900 transition hover:bg-teal-100"
+          >
+            Остатки
+          </Link>
+          <Link
+            href="/recipes"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-900 transition hover:bg-rose-100"
+          >
+            Рецепты
+          </Link>
           <OpenMiniAppButton />
           <TelegramAuthPanel />
         </div>

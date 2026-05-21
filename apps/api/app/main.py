@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
 from app.health import run_health_checks
-from app.routers import auth, families, onboarding
+from app.routers import auth, families, menus, notifications, onboarding, pantry, recipes, shopping_lists
+from app.services.notification_scheduler import run_notification_scheduler
 from app.telegram.bot import setup_menu_button
 
 
@@ -14,7 +16,15 @@ from app.telegram.bot import setup_menu_button
 async def lifespan(_: FastAPI):
     init_db()
     await setup_menu_button()
-    yield
+    scheduler_task = asyncio.create_task(run_notification_scheduler())
+    try:
+        yield
+    finally:
+        scheduler_task.cancel()
+        try:
+            await scheduler_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
@@ -36,6 +46,11 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(onboarding.router)
 app.include_router(families.router)
+app.include_router(menus.router)
+app.include_router(shopping_lists.router)
+app.include_router(notifications.router)
+app.include_router(pantry.router)
+app.include_router(recipes.router)
 
 
 @app.get("/")

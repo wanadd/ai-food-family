@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     telegram_menu_button_text: str = "Открыть приложение"
     database_url: str = "postgresql://aifood:aifood@postgres:5432/aifood"
     redis_url: str = "redis://redis:6379/0"
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

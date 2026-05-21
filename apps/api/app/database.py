@@ -14,9 +14,26 @@ class Base(DeclarativeBase):
 
 
 def init_db() -> None:
-    from app.models import family, user, user_profile  # noqa: F401
+    from app.models import (  # noqa: F401
+        family,
+        menu_selection,
+        notification_settings,
+        pantry,
+        recipe,
+        shopping_list,
+        user,
+        user_profile,
+    )
 
     Base.metadata.create_all(bind=engine)
+
+    from app.services.recipes import seed_recipes_if_empty
+
+    db = SessionLocal()
+    try:
+        seed_recipes_if_empty(db)
+    finally:
+        db.close()
 
 
 def get_db() -> Generator[Session, None, None]:
