@@ -5,15 +5,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
+import { ShoppingCategorySheet } from "@/components/shopping/ShoppingCategorySheet";
+import { ShoppingItemSheet } from "@/components/shopping/ShoppingItemSheet";
 import {
+  createShoppingCategory,
+  createShoppingItem,
+  deleteShoppingItem,
   fetchShoppingList,
   syncShoppingList,
   toggleShoppingItem,
+  updateShoppingItem,
 } from "@/lib/shopping/api";
-import { CATEGORY_ORDER } from "@/lib/shopping/labels";
-import type { ShoppingList } from "@/lib/shopping/types";
+import { categoryMeta } from "@/lib/shopping/labels";
+import {
+  EMPTY_SHOPPING_DRAFT,
+  type ShoppingItemDraft,
+  type ShoppingList,
+  type ShoppingListItem,
+} from "@/lib/shopping/types";
 import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 const POLL_INTERVAL_MS = 4000;
@@ -24,8 +34,18 @@ export function ShoppingListView() {
   const [list, setList] = useState<ShoppingList | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [hideChecked, setHideChecked] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [itemSheetOpen, setItemSheetOpen] = useState(false);
+  const [categorySheetOpen, setCategorySheetOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<ShoppingListItem | null>(null);
+  const [itemDraft, setItemDraft] = useState<ShoppingItemDraft>(EMPTY_SHOPPING_DRAFT);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryIsFood, setNewCategoryIsFood] = useState(false);
   const updatedAtRef = useRef<string | null>(null);
 
   const loadList = useCallback(
@@ -74,37 +94,75 @@ export function ShoppingListView() {
     if (!initData) {
       return;
     }
-
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") {
         loadList(initData, mode, true);
       }
     }, POLL_INTERVAL_MS);
-
     return () => window.clearInterval(interval);
   }, [initData, mode, loadList]);
 
-  const grouped = useMemo(() => {
+  const filteredItems = useMemo(() => {
     if (!list) {
       return [];
     }
-    const buckets = new Map<string, typeof list.items>();
-    for (const item of list.items) {
+    const query = search.trim().toLowerCase();
+    return list.items.filter((item) => {
+      if (hideChecked && item.checked) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+      return item.name.toLowerCase().includes(query);
+    });
+  }, [list, search, hideChecked]);
+
+  const grouped = useMemo(() => {
+    const buckets = new Map<string, ShoppingListItem[]>();
+    for (const item of filteredItems) {
       const existing = buckets.get(item.category) ?? [];
       existing.push(item);
       buckets.set(item.category, existing);
     }
+    const categories = list?.categories ?? [];
+    return Array.from(buckets.entries()).sort(([a], [b]) => {
+      const labelA = categoryMeta(a, categories).label;
+      const labelB = categoryMeta(b, categories).label;
+      return labelA.localeCompare(labelB, "ru");
+    });
+  }, [filteredItems, list?.categories]);
 
-    const orderIndex = Object.fromEntries(
-      CATEGORY_ORDER.map((category, index) => [category, index]),
-    );
-
-    return Array.from(buckets.entries()).sort(
-      ([a], [b]) =>
-        (orderIndex[a] ?? CATEGORY_ORDER.length) -
-        (orderIndex[b] ?? CATEGORY_ORDER.length),
-    );
+  const categorySlugsFromItems = useMemo(() => {
+    if (!list) {
+      return [];
+    }
+    return Array.from(new Set(list.items.map((item) => item.category)));
   }, [list]);
+
+  const progress =
+    list && list.total_count > 0
+      ? Math.round((list.checked_count / list.total_count) * 100)
+      : 0;
+
+  function openAddItem() {
+    setEditingItem(null);
+    setItemDraft({ ...EMPTY_SHOPPING_DRAFT });
+    setItemSheetOpen(true);
+  }
+
+  function openEditItem(item: ShoppingListItem) {
+    setEditingItem(item);
+    setItemDraft({
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity || "1",
+      unit: item.unit || "шт",
+      note: item.note ?? "",
+      is_food: true,
+    });
+    setItemSheetOpen(true);
+  }
 
   async function handleSync() {
     if (!initData) {
@@ -118,7 +176,7 @@ export function ShoppingListView() {
       setList(data);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Не удалось обновить список",
+        err instanceof Error ? err.message : "Не удалось обновить из меню",
       );
     } finally {
       setSyncing(false);
@@ -129,16 +187,13 @@ export function ShoppingListView() {
     if (!initData) {
       return;
     }
-
     const current = list?.items.find((item) => item.id === itemId);
     if (
       !checked &&
       current?.checked &&
-      current.linked_pantry_item_id
+      (current.added_to_pantry || current.linked_pantry_item_id)
     ) {
-      const remove = window.confirm(
-        `Убрать «${current.name}» из запасов?`,
-      );
+      const remove = window.confirm("Убрать товар из запасов?");
       setTogglingId(itemId);
       setError(null);
       try {
@@ -172,11 +227,104 @@ export function ShoppingListView() {
     }
   }
 
+  async function handleSaveItem() {
+    if (!initData) {
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      let data: ShoppingList;
+      if (editingItem) {
+        data = await updateShoppingItem(initData, mode, editingItem.id, {
+          name: itemDraft.name,
+          category: itemDraft.category,
+          quantity: itemDraft.quantity,
+          unit: itemDraft.unit,
+          note: itemDraft.note || null,
+        });
+      } else {
+        data = await createShoppingItem(initData, mode, itemDraft);
+      }
+      updatedAtRef.current = data.updated_at;
+      setList(data);
+      setItemSheetOpen(false);
+      setEditingItem(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось сохранить");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteItem(item: ShoppingListItem) {
+    if (!initData) {
+      return;
+    }
+    if (!window.confirm(`Удалить «${item.name}» из списка?`)) {
+      return;
+    }
+    setError(null);
+    try {
+      const data = await deleteShoppingItem(initData, mode, item.id);
+      updatedAtRef.current = data.updated_at;
+      setList(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось удалить");
+    }
+  }
+
+  async function handleCreateCategory() {
+    if (!initData) {
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await createShoppingCategory(
+        initData,
+        mode,
+        newCategoryName.trim(),
+        newCategoryIsFood,
+      );
+      await loadList(initData, mode, true);
+      setCategorySheetOpen(false);
+      setNewCategoryName("");
+      setNewCategoryIsFood(false);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Не удалось создать категорию",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function toggleCategoryExpanded(slug: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
+      return next;
+    });
+  }
+
+  function expandAll() {
+    setExpanded(new Set(grouped.map(([slug]) => slug)));
+  }
+
+  function collapseAll() {
+    setExpanded(new Set());
+  }
+
   if (!initData) {
     return (
       <div className="mx-auto max-w-lg px-5 py-16 text-center">
         <p className="text-sm text-stone-600">
-          Список покупок доступен в Telegram Mini App после авторизации.
+          Покупки доступны в Telegram Mini App после авторизации.
         </p>
         <Link
           href="/"
@@ -190,99 +338,170 @@ export function ShoppingListView() {
 
   if (loading) {
     return (
-      <p className="py-20 text-center text-sm text-stone-500">
-        Загрузка списка…
-      </p>
+      <p className="py-20 text-center text-sm text-stone-500">Загрузка…</p>
     );
   }
 
-  const progress =
-    list && list.total_count > 0
-      ? Math.round((list.checked_count / list.total_count) * 100)
-      : 0;
-
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-stone-100 bg-white px-5 py-6">
-        <h1 className="text-2xl font-bold text-stone-900">Список покупок</h1>
-        <p className="mt-1 text-sm text-stone-500">
-          Из выбранного меню · синхронизация каждые 4 сек
-        </p>
+    <div className="min-h-screen bg-stone-50">
+      <header className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 px-4 py-4 backdrop-blur-sm">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-stone-900">Покупки</h1>
+            <p className="mt-0.5 text-xs text-stone-500">
+              Всё, что нужно купить для дома и меню
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={openAddItem}
+            className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
+          >
+            + Добавить
+          </button>
+        </div>
+
+        {list ? (
+          <div className="mt-3">
+            <div className="mb-1 flex justify-between text-[11px] font-medium text-stone-500">
+              <span>
+                Куплено {list.checked_count} из {list.total_count}
+              </span>
+              <span>{progress}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-stone-100">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
       </header>
 
-      <main className="mx-auto max-w-lg space-y-6 px-5 py-8">
+      <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
         <ModeBanner />
+
         {error ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </p>
         ) : null}
 
-        {list ? (
-          <section className="rounded-2xl border border-stone-200 bg-white p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
-                  Из меню
-                </p>
-                <p className="mt-1 font-semibold text-stone-900">
-                  {list.menu_title ?? "Меню не выбрано"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleSync}
-                disabled={syncing}
-                className="shrink-0 rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
-              >
-                {syncing ? "…" : "Обновить"}
-              </button>
-            </div>
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Найти товар"
+          className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"
+        />
 
-            <div className="mt-4">
-              <div className="mb-1 flex justify-between text-xs font-medium text-stone-500">
-                <span>
-                  Куплено {list.checked_count} из {list.total_count}
-                </span>
-                <span>{progress}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-stone-100">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          </section>
-        ) : null}
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={expandAll}
+            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-semibold text-stone-600"
+          >
+            Развернуть всё
+          </button>
+          <button
+            type="button"
+            onClick={collapseAll}
+            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-semibold text-stone-600"
+          >
+            Свернуть всё
+          </button>
+          <button
+            type="button"
+            onClick={() => setHideChecked((value) => !value)}
+            className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${
+              hideChecked
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-stone-200 bg-white text-stone-600"
+            }`}
+          >
+            Скрыть купленные
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategorySheetOpen(true)}
+            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-semibold text-stone-600"
+          >
+            + Категория
+          </button>
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={syncing}
+            className="rounded-md border border-emerald-200 bg-white px-2 py-1 text-[11px] font-semibold text-emerald-700 disabled:opacity-50"
+          >
+            {syncing ? "…" : "Из меню"}
+          </button>
+        </div>
 
         {list && list.items.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-stone-200 bg-white p-8 text-center">
+          <div className="rounded-xl border border-dashed border-stone-200 bg-white px-4 py-8 text-center">
             <p className="text-sm text-stone-600">
-              Список пуст. Выберите меню на странице AI Меню — ингредиенты
-              появятся автоматически.
+              Список пуст. Выберите меню — ингредиенты появятся после синхронизации.
             </p>
             <Link
               href="/menu"
-              className="mt-4 inline-block text-sm font-semibold text-emerald-700"
+              className="mt-3 inline-block text-sm font-semibold text-emerald-700"
             >
               Перейти к меню →
             </Link>
           </div>
         ) : null}
 
-        {grouped.map(([category, items]) => (
-          <ShoppingCategorySection
-            key={category}
-            category={category}
-            items={items}
-            togglingId={togglingId}
-            onToggle={handleToggle}
-          />
-        ))}
+        {grouped.length === 0 && list && list.items.length > 0 ? (
+          <p className="py-6 text-center text-sm text-stone-400">
+            Ничего не найдено
+          </p>
+        ) : null}
+
+        <div className="space-y-2">
+          {grouped.map(([category, items]) => (
+            <ShoppingCategorySection
+              key={category}
+              category={category}
+              items={items}
+              categories={list?.categories ?? []}
+              expanded={expanded.has(category)}
+              togglingId={togglingId}
+              onToggleExpand={() => toggleCategoryExpanded(category)}
+              onToggleItem={handleToggle}
+              onEditItem={openEditItem}
+              onDeleteItem={handleDeleteItem}
+            />
+          ))}
+        </div>
       </main>
 
-      <BottomBackButton className="pb-4 pt-2" />
+      <ShoppingItemSheet
+        open={itemSheetOpen}
+        title={editingItem ? "Редактировать" : "Добавить товар"}
+        draft={itemDraft}
+        categories={list?.categories ?? []}
+        categorySlugsFromItems={categorySlugsFromItems}
+        onChange={setItemDraft}
+        onClose={() => {
+          setItemSheetOpen(false);
+          setEditingItem(null);
+        }}
+        onSubmit={handleSaveItem}
+        loading={saving}
+      />
+
+      <ShoppingCategorySheet
+        open={categorySheetOpen}
+        name={newCategoryName}
+        isFood={newCategoryIsFood}
+        onNameChange={setNewCategoryName}
+        onIsFoodChange={setNewCategoryIsFood}
+        onClose={() => setCategorySheetOpen(false)}
+        onSubmit={handleCreateCategory}
+        loading={saving}
+      />
     </div>
   );
 }

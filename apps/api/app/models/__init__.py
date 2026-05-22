@@ -5,6 +5,7 @@ from app.models.menu_selection import FamilyMenuSelection
 from app.models.notification_settings import UserNotificationSettings
 from app.models.pantry import FamilyPantryItem
 from app.models.recipe import Recipe, RecipeFavorite
+from app.models.shopping_category import ShoppingCategory
 from app.models.shopping_list import FamilyShoppingList
 from app.models.user import User
 from app.models.user_preferences import UserPreferences
@@ -22,6 +23,7 @@ __all__ = [
     "TelegramBotSession",
     "FamilyMenuSelection",
     "FamilyShoppingList",
+    "ShoppingCategory",
     "UserNotificationSettings",
     "FamilyPantryItem",
     "Recipe",

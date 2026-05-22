@@ -15,6 +15,7 @@ from app.routers import (
     onboarding,
     pantry,
     recipes,
+    shopping_categories,
     shopping_lists,
     telegram_bot,
     users,
@@ -61,6 +62,7 @@ app.include_router(onboarding.router)
 app.include_router(families.router)
 app.include_router(menus.router)
 app.include_router(shopping_lists.router)
+app.include_router(shopping_categories.router)
 app.include_router(notifications.router)
 app.include_router(pantry.router)
 app.include_router(recipes.router)

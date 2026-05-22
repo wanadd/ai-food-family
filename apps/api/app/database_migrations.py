@@ -96,6 +96,24 @@ def run_schema_migrations(engine: Engine) -> None:
         """,
         "CREATE INDEX IF NOT EXISTS ix_family_invites_token ON family_invites (invite_token);",
         """
+        CREATE TABLE IF NOT EXISTS shopping_categories (
+            id SERIAL PRIMARY KEY,
+            slug VARCHAR(64) NOT NULL,
+            name VARCHAR(120) NOT NULL,
+            icon VARCHAR(16),
+            is_food BOOLEAN NOT NULL DEFAULT TRUE,
+            is_system BOOLEAN NOT NULL DEFAULT FALSE,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_shopping_categories_user ON shopping_categories (user_id);",
+        "CREATE INDEX IF NOT EXISTS ix_shopping_categories_family ON shopping_categories (family_id);",
+        "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS category VARCHAR(64) NOT NULL DEFAULT 'продукты';",
+        "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS note VARCHAR(200);",
+        "ALTER TABLE family_pantry_items ALTER COLUMN expires_at DROP NOT NULL;",
+        """
         CREATE TABLE IF NOT EXISTS telegram_bot_sessions (
             telegram_id BIGINT PRIMARY KEY,
             state VARCHAR(64) NOT NULL DEFAULT '',

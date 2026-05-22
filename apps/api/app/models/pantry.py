@@ -17,12 +17,14 @@ class FamilyPantryItem(Base):
         ForeignKey("families.id", ondelete="CASCADE"), index=True, nullable=True
     )
     name: Mapped[str] = mapped_column(String(120))
+    category: Mapped[str] = mapped_column(String(64), default="продукты", server_default="продукты")
     quantity: Mapped[str] = mapped_column(String(80))
     unit: Mapped[str] = mapped_column(String(32), default="", server_default="")
     source: Mapped[str] = mapped_column(
         String(32), default="manual", server_default="manual"
     )
-    expires_at: Mapped[date] = mapped_column(Date)
+    note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    expires_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     added_by_user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

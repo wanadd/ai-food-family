@@ -1,24 +1,32 @@
 "use client";
 
+import { itemAmountLabel } from "@/lib/shopping/display";
+import { sourceLabel } from "@/lib/shopping/labels";
 import type { ShoppingListItem } from "@/lib/shopping/types";
 
 type ShoppingItemRowProps = {
   item: ShoppingListItem;
   toggling: boolean;
   onToggle: (checked: boolean) => void;
+  onEdit: () => void;
+  onDelete: () => void;
 };
 
 export function ShoppingItemRow({
   item,
   toggling,
   onToggle,
+  onEdit,
+  onDelete,
 }: ShoppingItemRowProps) {
+  const amount = itemAmountLabel(item);
+
   return (
-    <label
-      className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition ${
+    <div
+      className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 ${
         item.checked
-          ? "border-stone-200 bg-stone-50/80"
-          : "border-stone-100 bg-white hover:border-emerald-200"
+          ? "border-stone-100 bg-stone-50/60"
+          : "border-stone-100 bg-white"
       } ${toggling ? "opacity-60" : ""}`}
     >
       <input
@@ -26,35 +34,52 @@ export function ShoppingItemRow({
         checked={item.checked}
         disabled={toggling}
         onChange={(event) => onToggle(event.target.checked)}
-        className="mt-1 h-5 w-5 shrink-0 rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
+        className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 text-emerald-600"
+        aria-label={`Отметить ${item.name}`}
       />
-      <span className="min-w-0 flex-1">
-        <span
-          className={`block font-medium ${
+      <div className="min-w-0 flex-1">
+        <p
+          className={`text-sm font-medium leading-snug ${
             item.checked ? "text-stone-400 line-through" : "text-stone-900"
           }`}
         >
           {item.name}
-        </span>
-        <span
-          className={`mt-0.5 block text-sm ${
-            item.checked ? "text-stone-300" : "text-stone-500"
-          }`}
-        >
-          {item.amount}
-        </span>
-        {item.checked && item.checked_by_name ? (
-          <span className="mt-1 block text-xs text-emerald-700">
-            Купил(а): {item.checked_by_name}
-          </span>
-        ) : null}
-        {item.checked &&
-        (item.added_to_pantry || item.linked_pantry_item_id) ? (
-          <span className="mt-1 block text-xs font-medium text-teal-700">
+          {amount ? (
+            <span
+              className={
+                item.checked ? "text-stone-300" : "text-stone-500"
+              }
+            >
+              {" "}
+              — {amount}
+            </span>
+          ) : null}
+        </p>
+        <p className="mt-0.5 text-[11px] text-stone-400">
+          {sourceLabel(item.source)}
+        </p>
+        {item.added_to_pantry || item.linked_pantry_item_id ? (
+          <p className="mt-0.5 text-[11px] font-medium text-teal-700">
             Добавлено в запасы
-          </span>
+          </p>
         ) : null}
-      </span>
-    </label>
+      </div>
+      <div className="flex shrink-0 gap-1">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="rounded px-1.5 py-1 text-[11px] font-semibold text-stone-500 hover:bg-stone-100"
+        >
+          ✎
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          className="rounded px-1.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
   );
 }

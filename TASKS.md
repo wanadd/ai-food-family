@@ -24,6 +24,10 @@
 - [x] Telegram bot /start + request_contact + phone_number
 - [x] Webhook `POST /telegram/webhook`
 - [x] Family invites (phone, bot contact, deep-link, accept/decline callbacks)
+- [x] Покупки `/shopping`: свёрнутые категории, поиск, пользовательские категории (`is_food`), CRUD товаров, автозапасы
+- [x] Запасы `/pantry`: компактный список по категориям, фильтры, ручное добавление, источники
+- [x] API: `shopping-categories`, расширенные shopping/pantry items (`linked_pantry_item_id`, `added_to_pantry`, `unit`)
+- [x] Нижнее меню: Покупки / Запасы (без «Склад»)
 
 ## Next
 

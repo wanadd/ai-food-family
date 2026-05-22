@@ -16,6 +16,7 @@ class Base(DeclarativeBase):
 def init_db() -> None:
     from app.models.bot_session import TelegramBotSession  # noqa: F401
     from app.models.family_invite import FamilyInvite  # noqa: F401
+    from app.models.shopping_category import ShoppingCategory  # noqa: F401
     from app.models import (  # noqa: F401
         family,
         menu_selection,

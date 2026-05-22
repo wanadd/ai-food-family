@@ -17,7 +17,15 @@ export async function addPantryItem(
 ): Promise<PantryItem> {
   return apiFetch<PantryItem>(initData, mode, "/pantry/items", {
     method: "POST",
-    body: JSON.stringify(draft),
+    body: JSON.stringify({
+      name: draft.name.trim(),
+      category: draft.category.trim() || "продукты",
+      quantity: draft.quantity.trim(),
+      unit: draft.unit.trim() || "шт",
+      expires_at: draft.expires_at || null,
+      note: draft.note.trim() || null,
+      source: "manual",
+    }),
   });
 }
 
@@ -29,7 +37,14 @@ export async function updatePantryItem(
 ): Promise<PantryItem> {
   return apiFetch<PantryItem>(initData, mode, `/pantry/items/${itemId}`, {
     method: "PATCH",
-    body: JSON.stringify(draft),
+    body: JSON.stringify({
+      name: draft.name?.trim(),
+      category: draft.category?.trim(),
+      quantity: draft.quantity?.trim(),
+      unit: draft.unit?.trim(),
+      expires_at: draft.expires_at || null,
+      note: draft.note?.trim() || null,
+    }),
   });
 }
 

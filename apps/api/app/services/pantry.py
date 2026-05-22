@@ -1,6 +1,7 @@
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import HTTPException, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models.family import FamilyMember
@@ -14,8 +15,10 @@ from app.schemas.pantry import (
     PantryListResponse,
 )
 from app.services.app_scope import AppScope
-from app.services.amount_parser import parse_amount
-from app.services.shopping_categories import infer_category
+from app.services.amount_parser import format_amount, normalize_unit, parse_amount
+from app.services.pantry_shopping import find_matching_pantry_item
+from app.services.shopping_categories import infer_category, normalize_category
+from app.services.shopping_item_utils import display_amount
 
 
 def _member_names(db: Session, family_id: int) -> dict[int, str]:
@@ -35,18 +38,25 @@ def _item_response(
     member_names: dict[int, str],
     today: date,
 ) -> PantryItemResponse:
-    days = (item.expires_at - today).days
+    if item.expires_at is None:
+        days = 999
+        is_expired = False
+    else:
+        days = (item.expires_at - today).days
+        is_expired = days < 0
     return PantryItemResponse(
         id=item.id,
         scope_mode=scope.mode,
         user_id=item.user_id,
         family_id=item.family_id,
         name=item.name,
+        category=item.category or "продукты",
         quantity=item.quantity,
         unit=item.unit or "",
         source=item.source or "manual",
+        note=item.note,
         expires_at=item.expires_at,
-        is_expired=days < 0,
+        is_expired=is_expired,
         days_until_expiry=days,
         added_by_name=member_names.get(item.added_by_user_id)
         if item.added_by_user_id
@@ -70,8 +80,13 @@ def get_active_items_for_scope(db: Session, scope: AppScope) -> list[FamilyPantr
     today = date.today()
     return (
         _pantry_query(db, scope)
-        .filter(FamilyPantryItem.expires_at >= today)
-        .order_by(FamilyPantryItem.expires_at.asc())
+        .filter(
+            or_(
+                FamilyPantryItem.expires_at.is_(None),
+                FamilyPantryItem.expires_at >= today,
+            )
+        )
+        .order_by(FamilyPantryItem.expires_at.asc().nulls_last(), FamilyPantryItem.name.asc())
         .all()
     )
 
@@ -79,9 +94,12 @@ def get_active_items_for_scope(db: Session, scope: AppScope) -> list[FamilyPantr
 def format_leftovers_for_prompt(items: list[FamilyPantryItem]) -> list[str]:
     lines: list[str] = []
     for item in items:
-        lines.append(
-            f"- {item.name}: {item.quantity}, годен до {item.expires_at.isoformat()}"
+        expiry = (
+            item.expires_at.isoformat()
+            if item.expires_at
+            else "без срока"
         )
+        lines.append(f"- {item.name}: {item.quantity}, годен до {expiry}")
     return lines
 
 
@@ -110,15 +128,41 @@ def list_pantry(db: Session, user: User, scope: AppScope) -> PantryListResponse:
 def add_item(
     db: Session, user: User, scope: AppScope, payload: PantryItemCreate
 ) -> PantryItemResponse:
-    _, unit = parse_amount(payload.quantity)
+    unit = normalize_unit(payload.unit) or "шт"
+    qty_str = payload.quantity.strip() or "1"
+    try:
+        qty_display = format_amount(float(qty_str.replace(",", ".")), unit)
+    except ValueError:
+        qty_display = display_amount(qty_str, unit)
+    category = normalize_category(payload.category)
+    existing = find_matching_pantry_item(db, scope, payload.name, unit)
+    if existing is not None:
+        from app.services.amount_parser import merge_amount_strings
+
+        existing.quantity = merge_amount_strings(existing.quantity, qty_display, unit)
+        existing.category = category
+        if payload.note:
+            existing.note = payload.note
+        db.commit()
+        db.refresh(existing)
+        member_names = (
+            _member_names(db, scope.family_id)
+            if scope.is_family and scope.family_id
+            else {}
+        )
+        return _item_response(existing, scope, member_names, date.today())
+
+    expires = payload.expires_at or (date.today() + timedelta(days=7))
     item = FamilyPantryItem(
         user_id=scope.user_id if scope.is_personal else None,
         family_id=scope.family_id if scope.is_family else None,
         name=payload.name.strip(),
-        quantity=payload.quantity.strip(),
-        unit=unit or payload.unit.strip() or "шт",
+        category=category,
+        quantity=qty_display,
+        unit=unit,
         source=(payload.source or "manual").strip() or "manual",
-        expires_at=payload.expires_at,
+        note=payload.note,
+        expires_at=expires,
         added_by_user_id=user.id,
     )
     db.add(item)
@@ -149,8 +193,14 @@ def update_item(
 
     if payload.name is not None:
         item.name = payload.name.strip()
+    if payload.category is not None:
+        item.category = normalize_category(payload.category)
     if payload.quantity is not None:
         item.quantity = payload.quantity.strip()
+    if payload.unit is not None:
+        item.unit = normalize_unit(payload.unit) or item.unit
+    if payload.note is not None:
+        item.note = payload.note
     if payload.expires_at is not None:
         item.expires_at = payload.expires_at
 

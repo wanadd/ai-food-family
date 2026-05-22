@@ -1,5 +1,3 @@
-import hashlib
-import re
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
@@ -9,103 +7,35 @@ from app.models.family import FamilyMember
 from app.models.menu_selection import FamilyMenuSelection
 from app.models.shopping_list import FamilyShoppingList
 from app.models.user import User
-from app.schemas.menu import MenuIngredient, MenuVariant
-from app.schemas.shopping_list import ShoppingListItem, ShoppingListResponse
+from app.schemas.menu import MenuVariant
+from app.schemas.shopping_category import ShoppingCategoryResponse
+from app.schemas.shopping_list import (
+    ShoppingItemCreateRequest,
+    ShoppingItemUpdateRequest,
+    ShoppingListItem,
+    ShoppingListResponse,
+)
 from app.services.app_scope import AppScope
 from app.services.pantry import delete_item as delete_pantry_item
 from app.services.pantry_shopping import add_or_merge_from_shopping
-from app.services.shopping_categories import (
-    CATEGORY_ORDER,
-    infer_category,
-    is_food_category,
-    normalize_category,
+from app.services.shopping_category_service import (
+    category_is_food,
+    list_categories,
+    resolve_category_for_item,
 )
-
-
-def _normalize_name(name: str) -> str:
-    cleaned = re.sub(r"\s+", " ", name.strip().lower())
-    return cleaned
-
-
-def _item_id(name: str, category: str) -> str:
-    key = f"{category}:{_normalize_name(name)}"
-    return hashlib.sha256(key.encode()).hexdigest()[:16]
-
-
-def _merge_amounts(amounts: list[str]) -> str:
-    unique: list[str] = []
-    for amount in amounts:
-        cleaned = amount.strip()
-        if cleaned and cleaned not in unique:
-            unique.append(cleaned)
-    if len(unique) == 1:
-        return unique[0]
-    return " + ".join(unique)
-
-
-def build_items_from_ingredients(
-    ingredients: list[MenuIngredient],
-    previous: list[ShoppingListItem] | None = None,
-) -> list[ShoppingListItem]:
-    previous_map: dict[str, ShoppingListItem] = {}
-    for raw in previous or []:
-        if isinstance(raw, dict):
-            item = ShoppingListItem.model_validate(raw)
-        elif isinstance(raw, ShoppingListItem):
-            item = raw
-        else:
-            continue
-        previous_map[item.id] = item
-
-    merged: dict[str, dict] = {}
-
-    for ingredient in ingredients:
-        name = ingredient.name.strip()
-        if not name:
-            continue
-        category = infer_category(name, ingredient.category)
-        item_id = _item_id(name, category)
-        amount = ingredient.amount.strip()
-
-        if item_id not in merged:
-            merged[item_id] = {
-                "id": item_id,
-                "name": name,
-                "category": category,
-                "amounts": [],
-            }
-
-        entry = merged[item_id]
-        if len(name) > len(entry["name"]):
-            entry["name"] = name
-        if amount and amount not in entry["amounts"]:
-            entry["amounts"].append(amount)
-
-    items: list[ShoppingListItem] = []
-    for entry in merged.values():
-        prev = previous_map.get(entry["id"])
-        amounts = entry["amounts"]
-        items.append(
-            ShoppingListItem(
-                id=entry["id"],
-                name=entry["name"],
-                amount=_merge_amounts(amounts),
-                amounts=amounts,
-                category=entry["category"],
-                checked=prev.checked if prev else False,
-                checked_by_user_id=prev.checked_by_user_id if prev else None,
-                checked_by_name=prev.checked_by_name if prev else None,
-                checked_at=prev.checked_at if prev else None,
-                linked_pantry_item_id=prev.linked_pantry_item_id if prev else None,
-                added_to_pantry=bool(prev.linked_pantry_item_id) if prev else False,
-            )
-        )
-
-    return _sort_items(items)
+from app.services.shopping_item_utils import (
+    display_amount,
+    item_from_menu_ingredient,
+    make_item_id,
+    normalize_item,
+)
+from app.services.amount_parser import parse_amount
+from app.services.shopping_categories import CATEGORY_ORDER, infer_category
 
 
 def _sort_items(items: list[ShoppingListItem]) -> list[ShoppingListItem]:
     order_index = {cat: index for index, cat in enumerate(CATEGORY_ORDER)}
+    category_names: dict[str, str] = {}
 
     def sort_key(item: ShoppingListItem) -> tuple:
         return (
@@ -173,7 +103,22 @@ def _get_or_create_list(db: Session, scope: AppScope) -> FamilyShoppingList:
 
 
 def _items_from_storage(raw_items: list) -> list[ShoppingListItem]:
-    return [ShoppingListItem.model_validate(item) for item in (raw_items or [])]
+    return [normalize_item(item) for item in (raw_items or [])]
+
+
+def _category_responses(db: Session, scope: AppScope) -> list[ShoppingCategoryResponse]:
+    return [
+        ShoppingCategoryResponse(
+            id=c.id,
+            slug=c.slug,
+            name=c.name,
+            icon=c.icon,
+            is_food=c.is_food,
+            is_system=c.is_system,
+            created_at=c.created_at,
+        )
+        for c in list_categories(db, scope)
+    ]
 
 
 def _to_response(
@@ -181,6 +126,7 @@ def _to_response(
     scope: AppScope,
     items: list[ShoppingListItem],
     menu_title: str | None,
+    db: Session,
 ) -> ShoppingListResponse:
     checked_count = sum(1 for item in items if item.checked)
     return ShoppingListResponse(
@@ -189,10 +135,48 @@ def _to_response(
         family_id=shopping_list.family_id,
         menu_title=menu_title,
         items=items,
+        categories=_category_responses(db, scope),
         total_count=len(items),
         checked_count=checked_count,
         updated_at=shopping_list.updated_at,
     )
+
+
+def _save_items(
+    db: Session,
+    shopping_list: FamilyShoppingList,
+    items: list[ShoppingListItem],
+) -> None:
+    shopping_list.items = [item.model_dump(mode="json") for item in items]
+    shopping_list.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(shopping_list)
+
+
+def build_items_from_ingredients(
+    ingredients: list,
+    previous: list[ShoppingListItem] | None = None,
+) -> list[ShoppingListItem]:
+    previous_map: dict[str, ShoppingListItem] = {}
+    for raw in previous or []:
+        item = normalize_item(raw)
+        previous_map[item.id] = item
+
+    by_id: dict[str, ShoppingListItem] = {}
+
+    for ingredient in ingredients:
+        name = ingredient.name.strip()
+        if not name:
+            continue
+        amount_str = ingredient.amount.strip()
+        _, unit = parse_amount(amount_str)
+        category = infer_category(name, ingredient.category)
+        pid = make_item_id(name, category, unit or "шт")
+        prev = previous_map.get(pid)
+        item = item_from_menu_ingredient(name, amount_str, ingredient.category, prev)
+        by_id[item.id] = item
+
+    return _sort_items(list(by_id.values()))
 
 
 def _get_latest_selection(db: Session, scope: AppScope) -> FamilyMenuSelection | None:
@@ -226,11 +210,14 @@ def sync_from_menu(
 ) -> ShoppingListResponse:
     shopping_list = _get_or_create_list(db, scope)
     previous = _items_from_storage(shopping_list.items)
-    items = build_items_from_ingredients(menu.ingredients, previous)
+    manual_items = [i for i in previous if i.source == "manual"]
+    menu_items = build_items_from_ingredients(menu.ingredients, previous)
+    menu_ids = {i.id for i in menu_items}
+    merged = menu_items + [i for i in manual_items if i.id not in menu_ids]
+    items = _sort_items(merged)
 
-    shopping_list.items = [item.model_dump(mode="json") for item in items]
+    _save_items(db, shopping_list, items)
     shopping_list.menu_selection_id = menu_selection_id
-    shopping_list.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(shopping_list)
 
@@ -240,7 +227,7 @@ def sync_from_menu(
         else {}
     )
     enriched = _enrich_items(items, member_names)
-    return _to_response(shopping_list, scope, enriched, menu.title)
+    return _to_response(shopping_list, scope, enriched, menu.title, db)
 
 
 def get_shopping_list(db: Session, user: User, scope: AppScope) -> ShoppingListResponse:
@@ -260,7 +247,153 @@ def get_shopping_list(db: Session, user: User, scope: AppScope) -> ShoppingListR
         if selection:
             menu_title = MenuVariant.model_validate(selection.menu_data).title
 
-    return _to_response(shopping_list, scope, items, menu_title)
+    return _to_response(shopping_list, scope, items, menu_title, db)
+
+
+def create_item(
+    db: Session,
+    user: User,
+    scope: AppScope,
+    payload: ShoppingItemCreateRequest,
+) -> ShoppingListResponse:
+    slug, _ = resolve_category_for_item(
+        db,
+        scope,
+        payload.category,
+        is_food=payload.is_food,
+    )
+    unit = payload.unit.strip() or "шт"
+    quantity = payload.quantity.strip() or "1"
+    item = ShoppingListItem(
+        id=new_manual_item_id(),
+        name=payload.name.strip(),
+        category=slug,
+        quantity=quantity,
+        unit=unit,
+        amount=display_amount(quantity, unit),
+        note=payload.note,
+        source="manual",
+        created_by_user_id=user.id,
+    )
+    item = normalize_item(
+        item.model_copy(update={"id": make_item_id(item.name, slug, unit)})
+    )
+
+    shopping_list = _get_or_create_list(db, scope)
+    items = _items_from_storage(shopping_list.items)
+    if any(
+        i.id == item.id or (i.name.lower() == item.name.lower() and i.category == slug)
+        for i in items
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Такой товар уже есть в списке",
+        )
+    items.append(item)
+    _save_items(db, shopping_list, _sort_items(items))
+    return get_shopping_list(db, user, scope)
+
+
+def update_item(
+    db: Session,
+    user: User,
+    scope: AppScope,
+    item_id: str,
+    payload: ShoppingItemUpdateRequest,
+) -> ShoppingListResponse:
+    shopping_list = _get_or_create_list(db, scope)
+    items = _items_from_storage(shopping_list.items)
+    found = False
+    updated: list[ShoppingListItem] = []
+    now = datetime.now(timezone.utc)
+    display_name = user.first_name or user.username or "Вы"
+
+    for item in items:
+        if item.id != item_id:
+            updated.append(item)
+            continue
+        found = True
+        name = payload.name.strip() if payload.name else item.name
+        category = item.category
+        if payload.category:
+            category, _ = resolve_category_for_item(db, scope, payload.category)
+        quantity = payload.quantity if payload.quantity is not None else item.quantity
+        unit = payload.unit if payload.unit is not None else item.unit
+        note = payload.note if payload.note is not None else item.note
+        checked = item.checked if payload.checked is None else payload.checked
+
+        new_item = normalize_item(
+            item.model_copy(
+                update={
+                    "name": name,
+                    "category": category,
+                    "quantity": quantity,
+                    "unit": unit,
+                    "amount": display_amount(quantity, unit),
+                    "note": note,
+                    "checked": checked,
+                }
+            )
+        )
+
+        if payload.checked is True and not item.checked:
+            linked_id = new_item.linked_pantry_item_id
+            added = False
+            if category_is_food(db, scope, new_item.category):
+                pantry_item = add_or_merge_from_shopping(db, user, scope, new_item)
+                linked_id = pantry_item.id
+                added = True
+            new_item = new_item.model_copy(
+                update={
+                    "checked": True,
+                    "checked_by_user_id": user.id,
+                    "checked_by_name": display_name,
+                    "checked_at": now,
+                    "linked_pantry_item_id": linked_id,
+                    "added_to_pantry": added,
+                }
+            )
+        elif payload.checked is False and item.checked:
+            linked_id = new_item.linked_pantry_item_id
+            if payload.remove_from_pantry and linked_id:
+                try:
+                    delete_pantry_item(db, scope, linked_id)
+                except HTTPException:
+                    pass
+                linked_id = None
+            new_item = new_item.model_copy(
+                update={
+                    "checked": False,
+                    "checked_by_user_id": None,
+                    "checked_by_name": None,
+                    "checked_at": None,
+                    "linked_pantry_item_id": linked_id,
+                    "added_to_pantry": bool(linked_id),
+                }
+            )
+
+        updated.append(new_item)
+
+    if not found:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Позиция не найдена")
+
+    _save_items(db, shopping_list, updated)
+    return get_shopping_list(db, user, scope)
+
+
+def delete_item(
+    db: Session,
+    user: User,
+    scope: AppScope,
+    item_id: str,
+) -> ShoppingListResponse:
+    shopping_list = _get_or_create_list(db, scope)
+    items = _items_from_storage(shopping_list.items)
+    if not any(i.id == item_id for i in items):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Позиция не найдена")
+    items = [i for i in items if i.id != item_id]
+    _save_items(db, shopping_list, items)
+    return get_shopping_list(db, user, scope)
 
 
 def toggle_item(
@@ -272,81 +405,10 @@ def toggle_item(
     *,
     remove_from_pantry: bool = False,
 ) -> ShoppingListResponse:
-    shopping_list = _get_or_create_list(db, scope)
-    items = _items_from_storage(shopping_list.items)
-
-    found = False
-    updated: list[ShoppingListItem] = []
-    now = datetime.now(timezone.utc)
-    display_name = user.first_name or user.username or "Вы"
-
-    for item in items:
-        if item.id != item_id:
-            updated.append(item)
-            continue
-        found = True
-        if checked:
-            linked_id = item.linked_pantry_item_id
-            added_to_pantry = False
-            if is_food_category(item.category):
-                pantry_item = add_or_merge_from_shopping(db, user, scope, item)
-                linked_id = pantry_item.id
-                added_to_pantry = True
-            updated.append(
-                item.model_copy(
-                    update={
-                        "checked": True,
-                        "checked_by_user_id": user.id,
-                        "checked_by_name": display_name,
-                        "checked_at": now,
-                        "linked_pantry_item_id": linked_id,
-                        "added_to_pantry": added_to_pantry,
-                    }
-                )
-            )
-        else:
-            linked_id = item.linked_pantry_item_id
-            if remove_from_pantry and linked_id:
-                try:
-                    delete_pantry_item(db, scope, linked_id)
-                except HTTPException:
-                    pass
-                linked_id = None
-            updated.append(
-                item.model_copy(
-                    update={
-                        "checked": False,
-                        "checked_by_user_id": None,
-                        "checked_by_name": None,
-                        "checked_at": None,
-                        "linked_pantry_item_id": linked_id,
-                        "added_to_pantry": bool(linked_id),
-                    }
-                )
-            )
-
-    if not found:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Позиция не найдена в списке",
-        )
-
-    shopping_list.items = [item.model_dump(mode="json") for item in updated]
-    shopping_list.updated_at = now
-    db.commit()
-    db.refresh(shopping_list)
-
-    member_names = (
-        _member_names(db, scope.family_id)
-        if scope.is_family and scope.family_id
-        else {}
+    return update_item(
+        db,
+        user,
+        scope,
+        item_id,
+        ShoppingItemUpdateRequest(checked=checked, remove_from_pantry=remove_from_pantry),
     )
-    enriched = _enrich_items(updated, member_names, checker_name=display_name)
-
-    menu_title: str | None = None
-    if shopping_list.menu_selection_id:
-        selection = db.get(FamilyMenuSelection, shopping_list.menu_selection_id)
-        if selection:
-            menu_title = MenuVariant.model_validate(selection.menu_data).title
-
-    return _to_response(shopping_list, scope, enriched, menu_title)

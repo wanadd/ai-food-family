@@ -22,6 +22,8 @@ The project uses a monorepo layout:
 - Telegram bot: /start, /help, /invite +номер, «Пригласить в семью» (контакт), deep-link `invite_<token>`
 - Семейные приглашения: pending invite по номеру, accept/decline в боте, share-ссылка для новых пользователей
 - AI menu (3 variants), shopping list, pantry, recipes, notifications
+- **Покупки** (`/shopping`): категории из товаров + пользовательские (`POST /shopping-categories`), отметка «куплено» → автозапасы для продуктовых категорий
+- **Запасы** (`/pantry`): merge по name+unit+scope, источники `shopping_list` / `manual` / `receipt` / `voice`
 - Family: members, roles, shared data when family mode is active
 - Production deploy: `docker-compose.prod.yml`, nginx, HTTPS — see `DEPLOY.md`
 

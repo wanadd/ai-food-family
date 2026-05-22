@@ -29,3 +29,25 @@ export function defaultExpiryDate(): string {
   date.setDate(date.getDate() + 7);
   return date.toISOString().slice(0, 10);
 }
+
+export function sourceLabel(source: string): string {
+  switch (source) {
+    case "shopping_list":
+      return "покупки";
+    case "receipt":
+      return "чек";
+    case "voice":
+      return "голос";
+    case "manual":
+    default:
+      return "вручную";
+  }
+}
+
+export function formatAddedDate(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "short",
+  });
+}
