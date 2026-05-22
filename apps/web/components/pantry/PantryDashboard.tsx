@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { PageLoading } from "@/components/ui/PageLoading";
 import { PantryCategorySection } from "@/components/pantry/PantryCategorySection";
 import { PantryItemForm } from "@/components/pantry/PantryItemForm";
 import {
@@ -196,9 +197,7 @@ export function PantryDashboard() {
   }
 
   if (loading) {
-    return (
-      <p className="py-20 text-center text-sm text-stone-500">Загрузка…</p>
-    );
+    return <PageLoading message="Загружаем запасы..." />;
   }
 
   return (

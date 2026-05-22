@@ -28,6 +28,8 @@
 - [x] Запасы `/pantry`: компактный список по категориям, фильтры, ручное добавление, источники
 - [x] API: `shopping-categories`, расширенные shopping/pantry items (`linked_pantry_item_id`, `added_to_pantry`, `unit`)
 - [x] Нижнее меню: Покупки / Запасы (без «Склад»)
+- [x] Prod startup: healthcheck web/api, nginx depends_on healthy, retry API 502/503, loading states
+- [x] Fix circular import pantry ↔ pantry_shopping (`pantry_queries.py`)
 
 ## Next
 

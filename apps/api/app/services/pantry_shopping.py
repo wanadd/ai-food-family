@@ -12,7 +12,7 @@ from app.models.user import User
 from app.schemas.shopping_list import ShoppingListItem
 from app.services.amount_parser import format_amount, merge_amount_strings, normalize_unit
 from app.services.app_scope import AppScope
-from app.services.pantry import _pantry_query
+from app.services.pantry_queries import pantry_query
 from app.services.shopping_categories import normalize_category
 from app.services.shopping_item_utils import display_amount
 
@@ -33,7 +33,7 @@ def find_matching_pantry_item(
 ) -> FamilyPantryItem | None:
     normalized = _normalize_name(name)
     unit_norm = normalize_unit(unit).strip().lower()
-    for item in _pantry_query(db, scope).all():
+    for item in pantry_query(db, scope).all():
         if _normalize_name(item.name) != normalized:
             continue
         item_unit = normalize_unit(item.unit or "").strip().lower()

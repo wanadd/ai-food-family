@@ -1,10 +1,12 @@
 # HTTP-only bootstrap (before Let's Encrypt certificates exist)
 upstream web_upstream {
     server web:3000;
+    keepalive 8;
 }
 
 upstream api_upstream {
     server api:8000;
+    keepalive 8;
 }
 
 server {
@@ -22,7 +24,10 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 120s;
+        proxy_set_header Connection "";
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 180s;
     }
 
     location / {
@@ -34,5 +39,8 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 180s;
     }
 }

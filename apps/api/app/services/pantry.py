@@ -16,6 +16,7 @@ from app.schemas.pantry import (
 )
 from app.services.app_scope import AppScope
 from app.services.amount_parser import format_amount, normalize_unit, parse_amount
+from app.services.pantry_queries import pantry_query
 from app.services.pantry_shopping import find_matching_pantry_item
 from app.services.shopping_categories import infer_category, normalize_category
 from app.services.shopping_item_utils import display_amount
@@ -66,20 +67,10 @@ def _item_response(
     )
 
 
-def _pantry_query(db: Session, scope: AppScope):
-    query = db.query(FamilyPantryItem)
-    if scope.is_family:
-        return query.filter(FamilyPantryItem.family_id == scope.family_id)
-    return query.filter(
-        FamilyPantryItem.user_id == scope.user_id,
-        FamilyPantryItem.family_id.is_(None),
-    )
-
-
 def get_active_items_for_scope(db: Session, scope: AppScope) -> list[FamilyPantryItem]:
     today = date.today()
     return (
-        _pantry_query(db, scope)
+        pantry_query(db, scope)
         .filter(
             or_(
                 FamilyPantryItem.expires_at.is_(None),
@@ -106,7 +97,7 @@ def format_leftovers_for_prompt(items: list[FamilyPantryItem]) -> list[str]:
 def list_pantry(db: Session, user: User, scope: AppScope) -> PantryListResponse:
     today = date.today()
     items = (
-        _pantry_query(db, scope)
+        pantry_query(db, scope)
         .order_by(FamilyPantryItem.expires_at.asc(), FamilyPantryItem.name.asc())
         .all()
     )
@@ -176,7 +167,7 @@ def add_item(
 
 def _get_item(db: Session, scope: AppScope, item_id: int) -> FamilyPantryItem | None:
     return (
-        _pantry_query(db, scope).filter(FamilyPantryItem.id == item_id).one_or_none()
+        pantry_query(db, scope).filter(FamilyPantryItem.id == item_id).one_or_none()
     )
 
 

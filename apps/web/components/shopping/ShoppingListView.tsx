@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { PageLoading } from "@/components/ui/PageLoading";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
 import { ShoppingCategorySheet } from "@/components/shopping/ShoppingCategorySheet";
 import { ShoppingItemSheet } from "@/components/shopping/ShoppingItemSheet";
@@ -337,9 +338,7 @@ export function ShoppingListView() {
   }
 
   if (loading) {
-    return (
-      <p className="py-20 text-center text-sm text-stone-500">Загрузка…</p>
-    );
+    return <PageLoading message="Загружаем покупки..." />;
   }
 
   return (

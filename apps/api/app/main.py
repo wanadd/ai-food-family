@@ -24,20 +24,26 @@ from app.services.notification_scheduler import run_notification_scheduler
 from app.telegram.bot import setup_menu_button, setup_webhook
 
 
+async def _startup_telegram() -> None:
+    await setup_menu_button()
+    await setup_webhook()
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
-    await setup_menu_button()
-    await setup_webhook()
     scheduler_task = asyncio.create_task(run_notification_scheduler())
+    telegram_task = asyncio.create_task(_startup_telegram())
     try:
         yield
     finally:
+        telegram_task.cancel()
         scheduler_task.cancel()
-        try:
-            await scheduler_task
-        except asyncio.CancelledError:
-            pass
+        for task in (telegram_task, scheduler_task):
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
@@ -73,6 +79,11 @@ app.include_router(telegram_bot.bot_router)
 @app.get("/")
 def read_root() -> dict[str, str]:
     return {"message": "ПланАм API is running"}
+
+
+@app.get("/health/live")
+def liveness() -> dict[str, str]:
+    return {"status": "ok"}
 
 
 @app.get("/health")

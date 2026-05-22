@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { PageLoading } from "@/components/ui/PageLoading";
 import { BottomBackButton } from "@/components/layout/BottomBackButton";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
@@ -17,25 +18,6 @@ import {
 } from "@/lib/menu/api";
 import { VARIANT_LABELS } from "@/lib/menu/labels";
 import type { MenuVariant, MenuVariantType } from "@/lib/menu/types";
-
-function SelectedMenuSkeleton() {
-  return (
-    <section
-      className="animate-pulse rounded-2xl border border-stone-200 bg-white p-5"
-      aria-busy="true"
-      aria-label="Проверяем выбранное меню"
-    >
-      <p className="text-center text-sm font-medium text-stone-600">
-        Проверяем выбранное меню…
-      </p>
-      <div className="mt-4 space-y-3">
-        <div className="h-24 rounded-xl bg-stone-100" />
-        <div className="h-4 w-3/4 rounded bg-stone-100" />
-        <div className="h-4 w-1/2 rounded bg-stone-100" />
-      </div>
-    </section>
-  );
-}
 
 export function MenuGenerator() {
   const { initData, isTelegram } = useTelegram();
@@ -202,6 +184,14 @@ export function MenuGenerator() {
     );
   }
 
+  if (isCheckingSelectedMenu) {
+    return (
+      <div className="min-h-screen bg-white">
+        <PageLoading message="Готовим меню..." />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-stone-100 bg-white px-5 py-6">
@@ -227,9 +217,7 @@ export function MenuGenerator() {
           </p>
         ) : null}
 
-        {isCheckingSelectedMenu ? <SelectedMenuSkeleton /> : null}
-
-        {!isCheckingSelectedMenu && hasSavedMenu ? (
+        {hasSavedMenu ? (
           <>
             {selectedVariant && !hasMultipleVariants ? (
               <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -307,8 +295,7 @@ export function MenuGenerator() {
           </>
         ) : null}
 
-        {!isCheckingSelectedMenu ? (
-          <section className="rounded-2xl border border-stone-200 bg-white p-5">
+        <section className="rounded-2xl border border-stone-200 bg-white p-5">
             <p className="text-sm text-stone-600">
               Учитываются ваш onboarding, остатки, цели, диеты, аллергии, бюджет и
               время готовки. В семейном режиме — данные всех участников.
@@ -327,8 +314,7 @@ export function MenuGenerator() {
                 собрать список покупок
               </p>
             ) : null}
-          </section>
-        ) : null}
+        </section>
       </main>
 
       <BottomBackButton className="pb-4 pt-2" />
