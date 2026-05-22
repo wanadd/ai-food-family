@@ -20,13 +20,14 @@ from app.routers import (
     users,
 )
 from app.services.notification_scheduler import run_notification_scheduler
-from app.telegram.bot import setup_menu_button
+from app.telegram.bot import setup_menu_button, setup_webhook
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
     await setup_menu_button()
+    await setup_webhook()
     scheduler_task = asyncio.create_task(run_notification_scheduler())
     try:
         yield
@@ -64,6 +65,7 @@ app.include_router(notifications.router)
 app.include_router(pantry.router)
 app.include_router(recipes.router)
 app.include_router(telegram_bot.router)
+app.include_router(telegram_bot.bot_router)
 
 
 @app.get("/")

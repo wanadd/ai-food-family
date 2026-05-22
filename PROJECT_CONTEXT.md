@@ -19,7 +19,8 @@ The project uses a monorepo layout:
 ## Current Scope
 
 - Telegram auth via initData + **обязательный** phone через бот (/start → request_contact)
-- Telegram bot: /start, /help, /invite +номер (после подтверждения телефона)
+- Telegram bot: /start, /help, /invite +номер, «Пригласить в семью» (контакт), deep-link `invite_<token>`
+- Семейные приглашения: pending invite по номеру, accept/decline в боте, share-ссылка для новых пользователей
 - AI menu (3 variants), shopping list, pantry, recipes, notifications
 - Family: members, roles, shared data when family mode is active
 - Production deploy: `docker-compose.prod.yml`, nginx, HTTPS — see `DEPLOY.md`

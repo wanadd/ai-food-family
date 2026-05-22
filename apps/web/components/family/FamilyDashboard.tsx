@@ -5,16 +5,17 @@ import { useCallback, useEffect, useState } from "react";
 import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { InviteSheet } from "@/components/family/InviteSheet";
 import { MemberCard } from "@/components/family/MemberCard";
 import { MemberForm } from "@/components/family/MemberForm";
 import {
   addFamilyMember,
   createFamily,
   fetchMyFamily,
-  inviteFamilyMemberByPhone,
   removeFamilyMember,
   updateFamilyMember,
 } from "@/lib/family/api";
+import type { FamilyInvite } from "@/lib/family/invite-types";
 import type { Family, FamilyMember } from "@/lib/family/types";
 import { EMPTY_MEMBER_DRAFT, type MemberDraft } from "@/lib/family/types";
 
@@ -27,11 +28,11 @@ export function FamilyDashboard() {
   const [familyName, setFamilyName] = useState("");
   const [creating, setCreating] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showInviteSheet, setShowInviteSheet] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [draft, setDraft] = useState<MemberDraft>(EMPTY_MEMBER_DRAFT);
   const [saving, setSaving] = useState(false);
-  const [invitePhone, setInvitePhone] = useState("");
-  const [inviting, setInviting] = useState(false);
+  const [lastInvite, setLastInvite] = useState<FamilyInvite | null>(null);
 
   const loadFamily = useCallback(async (telegramInitData: string) => {
     setLoading(true);
@@ -73,30 +74,6 @@ export function FamilyDashboard() {
       setError(err instanceof Error ? err.message : "Failed to create family");
     } finally {
       setCreating(false);
-    }
-  }
-
-  async function handleInviteByPhone() {
-    if (!initData || !family || !invitePhone.trim()) {
-      return;
-    }
-    setInviting(true);
-    setError(null);
-    try {
-      await inviteFamilyMemberByPhone(
-        initData,
-        family.id,
-        invitePhone.trim(),
-      );
-      setInvitePhone("");
-      await loadFamily(initData);
-      await refreshContext();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Не удалось пригласить",
-      );
-    } finally {
-      setInviting(false);
     }
   }
 
@@ -199,12 +176,12 @@ export function FamilyDashboard() {
   return (
     <div className="min-h-screen bg-[#fafaf9]">
       <header className="border-b border-stone-200/80 px-5 py-6">
-        <Link href="/" className="text-xs font-semibold text-emerald-700">
-          ← Назад
+        <Link href="/profile" className="text-xs font-semibold text-emerald-700">
+          ← Профиль
         </Link>
-        <h1 className="mt-3 text-2xl font-bold text-stone-900">Семейный режим</h1>
+        <h1 className="mt-3 text-2xl font-bold text-stone-900">Семья</h1>
         <p className="mt-1 text-sm text-stone-500">
-          Опционально: общие меню, покупки и остатки для всей семьи
+          Общие меню и покупки для близких
         </p>
       </header>
 
@@ -216,12 +193,12 @@ export function FamilyDashboard() {
         ) : null}
 
         {!family ? (
-          <section className="rounded-2xl border border-stone-200 bg-white p-6">
+          <section className="rounded-[24px] border border-stone-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-stone-900">
-              Подключить семейный режим
+              Создать семью
             </h2>
             <p className="mt-2 text-sm text-stone-500">
-              После создания на главной появится переключатель «Личный / Семейный»
+              После создания можно приглашать близких по номеру или контакту
             </p>
             <input
               value={familyName}
@@ -240,7 +217,7 @@ export function FamilyDashboard() {
           </section>
         ) : (
           <>
-            <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <section className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-5">
               <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
                 Ваша семья
               </p>
@@ -254,34 +231,26 @@ export function FamilyDashboard() {
                   : family.members.length < 5
                     ? "а"
                     : "ов"}
-                · ваша роль: {family.your_role}
               </p>
             </section>
 
             {isAdmin ? (
-              <section className="rounded-2xl border border-violet-200 bg-violet-50/60 p-5">
-                <h3 className="text-sm font-semibold text-violet-900">
-                  Пригласить по номеру
-                </h3>
-                <p className="mt-1 text-xs text-violet-800">
-                  Номер должен быть подтверждён в боте (/start). В боте:{" "}
-                  <code className="rounded bg-white/80 px-1">/invite +7900...</code>
-                </p>
-                <input
-                  value={invitePhone}
-                  onChange={(e) => setInvitePhone(e.target.value)}
-                  placeholder="+79001234567"
-                  className="mt-3 w-full rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm outline-none ring-violet-400 focus:border-violet-400 focus:ring-2"
-                />
-                <button
-                  type="button"
-                  onClick={handleInviteByPhone}
-                  disabled={inviting || !invitePhone.trim()}
-                  className="mt-3 w-full rounded-xl bg-violet-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {inviting ? "Приглашение…" : "Пригласить"}
-                </button>
-              </section>
+              <button
+                type="button"
+                onClick={() => setShowInviteSheet(true)}
+                className="w-full rounded-[24px] bg-gradient-to-r from-violet-500 to-emerald-600 py-4 text-base font-semibold text-white shadow-md"
+              >
+                Пригласить
+              </button>
+            ) : null}
+
+            {lastInvite ? (
+              <p className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Последнее приглашение: {lastInvite.invited_phone_masked} —{" "}
+                {lastInvite.invitee_notified
+                  ? "ожидаем ответ в боте"
+                  : "ожидает перехода по ссылке"}
+              </p>
             ) : null}
 
             <section className="space-y-3">
@@ -308,7 +277,7 @@ export function FamilyDashboard() {
                 }}
                 className="w-full rounded-xl border border-dashed border-emerald-300 bg-white py-3 text-sm font-semibold text-emerald-700"
               >
-                + Добавить члена семьи
+                + Добавить вручную (без Telegram)
               </button>
             ) : null}
 
@@ -337,15 +306,22 @@ export function FamilyDashboard() {
                 loading={saving}
               />
             ) : null}
-
-            {!isAdmin ? (
-              <p className="text-center text-xs text-stone-400">
-                Только админ может добавлять и редактировать участников
-              </p>
-            ) : null}
           </>
         )}
       </main>
+
+      {family && isAdmin ? (
+        <InviteSheet
+          open={showInviteSheet}
+          familyId={family.id}
+          initData={initData}
+          onClose={() => setShowInviteSheet(false)}
+          onSuccess={(invite) => {
+            setLastInvite(invite);
+            setShowInviteSheet(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

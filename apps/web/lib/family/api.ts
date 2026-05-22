@@ -1,5 +1,6 @@
 import { apiUrl } from "@/lib/api";
 
+import type { FamilyInvite } from "./invite-types";
 import type { Family, FamilyMember, MemberDraft } from "./types";
 
 async function familyFetch<T>(
@@ -92,8 +93,8 @@ export async function inviteFamilyMemberByPhone(
   initData: string,
   familyId: number,
   phoneNumber: string,
-): Promise<FamilyMember> {
-  return familyFetch<FamilyMember>(
+): Promise<FamilyInvite> {
+  return familyFetch<FamilyInvite>(
     `/families/${familyId}/invite-by-phone`,
     initData,
     {
@@ -101,6 +102,30 @@ export async function inviteFamilyMemberByPhone(
       body: JSON.stringify({ phone_number: phoneNumber }),
     },
   );
+}
+
+export async function fetchFamilyInvites(
+  initData: string,
+  familyId: number,
+): Promise<FamilyInvite[]> {
+  return familyFetch<FamilyInvite[]>(
+    `/families/${familyId}/invites`,
+    initData,
+  );
+}
+
+export function getBotInviteUrl(): string {
+  const username =
+    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.replace("@", "") ||
+    "am_nam_nam_bot";
+  return `https://t.me/${username}?start=invite`;
+}
+
+export function getBotDeepLink(startParam = "invite"): string {
+  const username =
+    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.replace("@", "") ||
+    "am_nam_nam_bot";
+  return `https://t.me/${username}?start=${startParam}`;
 }
 
 export async function removeFamilyMember(

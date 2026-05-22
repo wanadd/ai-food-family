@@ -56,6 +56,15 @@ def user_has_verified_phone(user: User | None) -> bool:
     return bool(user and user.phone_number and user.phone_number.strip())
 
 
+def mask_phone(phone: str | None) -> str:
+    if not phone:
+        return "—"
+    digits = re.sub(r"\D", "", phone)
+    if len(digits) >= 4:
+        return f"***{digits[-4:]}"
+    return "***"
+
+
 def upsert_user_from_bot(
     db: Session,
     *,

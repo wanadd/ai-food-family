@@ -67,6 +67,34 @@ def run_schema_migrations(engine: Engine) -> None:
         """,
         "CREATE INDEX IF NOT EXISTS ix_user_preferences_user_id ON user_preferences (user_id)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(32)",
+        """
+        CREATE TABLE IF NOT EXISTS family_invites (
+            id SERIAL PRIMARY KEY,
+            family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+            invited_phone_normalized VARCHAR(32) NOT NULL,
+            invited_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            invited_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            status VARCHAR(16) NOT NULL DEFAULT 'pending',
+            invite_token VARCHAR(64) NOT NULL UNIQUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            accepted_at TIMESTAMPTZ,
+            declined_at TIMESTAMPTZ
+        );
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_family_invite_pending_phone
+        ON family_invites (family_id, invited_phone_normalized)
+        WHERE status = 'pending';
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_family_invites_token ON family_invites (invite_token);",
+        """
+        CREATE TABLE IF NOT EXISTS telegram_bot_sessions (
+            telegram_id BIGINT PRIMARY KEY,
+            state VARCHAR(64) NOT NULL DEFAULT '',
+            invite_token VARCHAR(64),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
     ]
 
     with engine.begin() as connection:

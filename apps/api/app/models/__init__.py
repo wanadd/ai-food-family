@@ -1,4 +1,6 @@
+from app.models.bot_session import TelegramBotSession
 from app.models.family import Family, FamilyMember, FamilyRole
+from app.models.family_invite import FamilyInvite, FamilyInviteStatus
 from app.models.menu_selection import FamilyMenuSelection
 from app.models.notification_settings import UserNotificationSettings
 from app.models.pantry import FamilyPantryItem
@@ -15,6 +17,9 @@ __all__ = [
     "Family",
     "FamilyMember",
     "FamilyRole",
+    "FamilyInvite",
+    "FamilyInviteStatus",
+    "TelegramBotSession",
     "FamilyMenuSelection",
     "FamilyShoppingList",
     "UserNotificationSettings",

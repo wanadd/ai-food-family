@@ -101,19 +101,42 @@ nano .env
 
 ### Webhook бота (/start и номер телефона)
 
-После HTTPS зарегистрируйте webhook (API доступен по префиксу `/api`):
+**Важно:** nginx проксирует API с префиксом `/api`. Telegram должен слать updates на:
+
+```text
+https://ВАШ_ДОМЕН/api/telegram/webhook
+```
+
+При старте API вызывается `setWebhook` автоматически, если заданы `TELEGRAM_BOT_TOKEN` и `TELEGRAM_WEBAPP_URL` (или явный `TELEGRAM_WEBHOOK_URL`).
+
+Проверка после деплоя:
+
+```bash
+curl -s https://ВАШ_ДОМЕН/api/telegram/webhook/url
+curl -s https://ВАШ_ДОМЕН/api/telegram/webhook/info
+docker compose -f docker-compose.prod.yml logs api --tail 50 | grep -i webhook
+```
+
+В логах API должно быть: `Telegram webhook registered → https://...`
+
+Ручная регистрация (если авто не сработало):
 
 ```bash
 curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook?url=https://ВАШ_ДОМЕН/api/telegram/webhook"
-```
-
-Проверка:
-
-```bash
 curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getWebhookInfo"
 ```
 
-Пользователь пишет `/start` в боте → создаётся запись в `users` → при отсутствии телефона запрашивается contact → кнопка «Открыть ПланАм».
+**Частые ошибки:**
+
+| Симптом | Причина |
+|---------|---------|
+| Бот молчит, в логах API нет updates | Webhook не зарегистрирован или неверный URL (без `/api`) |
+| Updates идут на `localhost` | Нужен публичный HTTPS; для dev — ngrok + `TELEGRAM_WEBHOOK_URL` |
+| 404 на webhook | URL должен быть `/api/telegram/webhook`, не `/telegram/webhook` на домене |
+
+Альтернативный endpoint (тот же обработчик): `POST /api/bot/webhook`
+
+Пользователь пишет `/start` → в логах: `Telegram update received` → `handle_start` → кнопка «Поделиться номером».
 
 ## 4. Первый запуск (HTTP)
 

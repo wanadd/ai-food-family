@@ -23,14 +23,15 @@
 - [x] ПланАм: новый главный экран, нижняя навигация, профиль
 - [x] Telegram bot /start + request_contact + phone_number
 - [x] Webhook `POST /telegram/webhook`
+- [x] Family invites (phone, bot contact, deep-link, accept/decline callbacks)
 
 ## Next
 
-- [ ] Register Telegram webhook: `POST https://<domain>/telegram/webhook` (see DEPLOY.md)
+- [x] Auto-register Telegram webhook on API startup (`setup_webhook`)
 - [ ] Install dependencies and run the stack locally
 
 ## Later
 
 - [ ] Add automated tests
 - [ ] Add CI checks
-- [ ] Invite family members by link
+- [x] Family invites: phone, bot contact, deep-link `invite_<token>`, Mini App «Пригласить»

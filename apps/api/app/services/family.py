@@ -120,64 +120,28 @@ def invite_member_by_phone(
     user: User,
     family_id: int,
     payload: FamilyInviteByPhoneRequest,
-) -> FamilyMemberResponse:
-    if not user_has_verified_phone(user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Подтвердите свой номер телефона в боте (/start)",
-        )
+):
+    from app.services import family_invites as invite_service
+    from app.schemas.family_invite import FamilyInviteResponse
+    from app.services.family_invites import build_invite_deep_link
+    from app.services.users import mask_phone
 
-    membership = get_user_membership(db, user)
-    if membership is None or membership.family_id != family_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Family not found")
-    require_admin(membership)
-
-    invited_user = find_user_by_phone(db, payload.phone_number)
-    if invited_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                "Пользователь с этим номером не найден. "
-                "Попросите его написать /start боту и поделиться номером."
-            ),
-        )
-
-    if not user_has_verified_phone(invited_user):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="У этого пользователя не подтверждён номер телефона в боте",
-        )
-
-    if invited_user.id == user.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Нельзя пригласить себя",
-        )
-
-    existing = get_user_membership(db, invited_user)
-    if existing is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Пользователь уже состоит в семье",
-        )
-
-    display_name = (
-        invited_user.first_name
-        or invited_user.username
-        or f"User {invited_user.telegram_id}"
+    result = invite_service.create_invite(db, user, family_id, payload.phone_number)
+    invite = result.invite
+    return FamilyInviteResponse(
+        id=invite.id,
+        family_id=invite.family_id,
+        status=invite.status,
+        invite_token=invite.invite_token,
+        invited_phone_masked=mask_phone(invite.invited_phone_normalized),
+        invited_user_id=invite.invited_user_id,
+        share_url=result.share_url,
+        share_text=result.share_text,
+        deep_link=build_invite_deep_link(invite.invite_token),
+        invitee_notified=result.invitee_notified,
+        family_name=result.family_name,
+        created_at=invite.created_at,
     )
-    member = FamilyMember(
-        family_id=family_id,
-        user_id=invited_user.id,
-        display_name=display_name,
-        role=FamilyRole.ADULT.value,
-        goals=[],
-        restrictions=[],
-    )
-    db.add(member)
-    db.commit()
-    db.refresh(member)
-    return _member_response(member, user)
 
 
 def add_member(
