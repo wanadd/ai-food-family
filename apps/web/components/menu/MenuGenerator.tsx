@@ -17,8 +17,27 @@ import {
 import { VARIANT_LABELS } from "@/lib/menu/labels";
 import type { MenuVariant, MenuVariantType } from "@/lib/menu/types";
 
+function SelectedMenuSkeleton() {
+  return (
+    <section
+      className="animate-pulse rounded-2xl border border-stone-200 bg-white p-5"
+      aria-busy="true"
+      aria-label="Проверяем выбранное меню"
+    >
+      <p className="text-center text-sm font-medium text-stone-600">
+        Проверяем выбранное меню…
+      </p>
+      <div className="mt-4 space-y-3">
+        <div className="h-24 rounded-xl bg-stone-100" />
+        <div className="h-4 w-3/4 rounded bg-stone-100" />
+        <div className="h-4 w-1/2 rounded bg-stone-100" />
+      </div>
+    </section>
+  );
+}
+
 export function MenuGenerator() {
-  const { initData } = useTelegram();
+  const { initData, isTelegram } = useTelegram();
   const { mode, loading: modeLoading } = useAppMode();
   const [menus, setMenus] = useState<MenuVariant[]>([]);
   const [activeVariant, setActiveVariant] = useState<MenuVariantType>("quick");
@@ -28,12 +47,14 @@ export function MenuGenerator() {
   const [selectedVariant, setSelectedVariant] = useState<MenuVariantType | null>(
     null,
   );
-  const [loadingSelected, setLoadingSelected] = useState(true);
+  const [loadingSelectedMenu, setLoadingSelectedMenu] = useState(true);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MenuVariant | null>(null);
+
+  const isCheckingSelectedMenu = loadingSelectedMenu || modeLoading;
 
   const applySelectedMenu = useCallback((menu: MenuVariant) => {
     setSelectedVariant(menu.variant);
@@ -41,9 +62,9 @@ export function MenuGenerator() {
     setMenus([menu]);
   }, []);
 
-  const loadSelected = useCallback(
+  const loadSelectedMenu = useCallback(
     async (telegramInitData: string, appMode: typeof mode) => {
-      setLoadingSelected(true);
+      setLoadingSelectedMenu(true);
       setError(null);
       try {
         const selected = await fetchSelectedMenu(telegramInitData, appMode);
@@ -62,23 +83,31 @@ export function MenuGenerator() {
         setSelectedVariant(null);
         setMenus([]);
       } finally {
-        setLoadingSelected(false);
+        setLoadingSelectedMenu(false);
       }
     },
     [applySelectedMenu],
   );
 
   useEffect(() => {
-    if (modeLoading || !initData) {
-      if (!initData) {
-        setLoadingSelected(false);
+    if (modeLoading) {
+      setLoadingSelectedMenu(true);
+      return;
+    }
+
+    if (!initData) {
+      if (!isTelegram) {
+        setLoadingSelectedMenu(false);
         setMenus([]);
         setSelectedVariant(null);
+      } else {
+        setLoadingSelectedMenu(true);
       }
       return;
     }
-    void loadSelected(initData, mode);
-  }, [initData, mode, modeLoading, loadSelected]);
+
+    void loadSelectedMenu(initData, mode);
+  }, [initData, mode, modeLoading, isTelegram, loadSelectedMenu]);
 
   async function handleGenerate() {
     if (!initData) {
@@ -154,9 +183,9 @@ export function MenuGenerator() {
   const activeMenu =
     menus.find((menu) => menu.variant === activeVariant) ?? menus[0];
   const hasMultipleVariants = menus.length > 1;
-  const showSavedMenu = menus.length > 0 && !generating;
+  const hasSavedMenu = menus.length > 0 && !generating;
 
-  if (!initData) {
+  if (!initData && !isTelegram && !isCheckingSelectedMenu) {
     return (
       <div className="mx-auto max-w-lg px-5 py-16 text-center">
         <p className="text-sm text-stone-600">
@@ -200,28 +229,9 @@ export function MenuGenerator() {
           </p>
         ) : null}
 
-        {loadingSelected || modeLoading ? (
-          <p className="py-8 text-center text-sm text-stone-500">
-            Загрузка сохранённого меню…
-          </p>
-        ) : null}
+        {isCheckingSelectedMenu ? <SelectedMenuSkeleton /> : null}
 
-        <section className="rounded-2xl border border-stone-200 bg-white p-5">
-          <p className="text-sm text-stone-600">
-            Учитываются ваш onboarding, остатки, цели, диеты, аллергии, бюджет и
-            время готовки. В семейном режиме — данные всех участников.
-          </p>
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={generating || loadingSelected || modeLoading}
-            className="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 text-sm font-semibold text-white shadow-md transition hover:opacity-95 disabled:opacity-50"
-          >
-            {generating ? "Генерация меню…" : "Сгенерировать меню на день"}
-          </button>
-        </section>
-
-        {showSavedMenu && !loadingSelected && !modeLoading ? (
+        {!isCheckingSelectedMenu && hasSavedMenu ? (
           <>
             {selectedVariant && !hasMultipleVariants ? (
               <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -297,10 +307,29 @@ export function MenuGenerator() {
               />
             ) : null}
           </>
-        ) : !loadingSelected && !modeLoading ? (
-          <p className="text-center text-sm text-stone-400">
-            Нажмите кнопку выше, чтобы получить три варианта меню
-          </p>
+        ) : null}
+
+        {!isCheckingSelectedMenu ? (
+          <section className="rounded-2xl border border-stone-200 bg-white p-5">
+            <p className="text-sm text-stone-600">
+              Учитываются ваш onboarding, остатки, цели, диеты, аллергии, бюджет и
+              время готовки. В семейном режиме — данные всех участников.
+            </p>
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={generating || !initData}
+              className="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 text-sm font-semibold text-white shadow-md transition hover:opacity-95 disabled:opacity-50"
+            >
+              {generating ? "Генерация меню…" : "Сгенерировать меню на день"}
+            </button>
+            {!hasSavedMenu ? (
+              <p className="mt-3 text-center text-xs text-stone-400">
+                Выберите вариант и нажмите «Выбрать меню», чтобы сохранить его и
+                собрать список покупок
+              </p>
+            ) : null}
+          </section>
         ) : null}
       </main>
 
