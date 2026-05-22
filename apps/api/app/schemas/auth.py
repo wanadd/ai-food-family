@@ -14,6 +14,7 @@ class UserResponse(BaseModel):
     first_name: str | None
     last_name: str | None
     language_code: str | None
+    phone_number: str | None = None
     photo_url: str | None
     created_at: datetime
     updated_at: datetime

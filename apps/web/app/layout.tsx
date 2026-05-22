@@ -7,8 +7,8 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "AI Food Family",
-  description: "Telegram Mini App for AI Food Family",
+  title: "ПланАм",
+  description: "ПланАм помогает составить меню и список покупок для себя и семьи",
 };
 
 export default function RootLayout({
@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+      <body className="min-h-screen bg-[#fafaf9] text-stone-900 antialiased">
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="afterInteractive"

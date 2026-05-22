@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build a Telegram Mini App for AI Food Family — nutrition planning for **one user** or a **family**.
+Build **ПланАм** — Telegram Mini App for meal planning and shopping lists for **one user** or a **family**.
 
 The project uses a monorepo layout:
 

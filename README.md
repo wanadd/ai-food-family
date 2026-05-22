@@ -1,6 +1,8 @@
-# AI Food Family
+# ПланАм
 
 Telegram Mini App for personal or family meal planning — Next.js frontend and FastAPI backend.
+
+ПланАм помогает составить меню и список покупок для себя и семьи.
 
 **Personal mode** works out of the box after Telegram login. **Family mode** is optional (create a family, then switch modes on the home screen).
 

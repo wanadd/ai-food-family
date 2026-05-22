@@ -66,6 +66,7 @@ def run_schema_migrations(engine: Engine) -> None:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_user_preferences_user_id ON user_preferences (user_id)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(32)",
     ]
 
     with engine.begin() as connection:

@@ -97,6 +97,23 @@ nano .env
 
 1. `/newapp` → Web App URL: `https://ВАШ_ДОМЕН`
 2. Тот же домен в `TELEGRAM_WEBAPP_URL`
+3. `TELEGRAM_MENU_BUTTON_TEXT=Открыть ПланАм`
+
+### Webhook бота (/start и номер телефона)
+
+После HTTPS зарегистрируйте webhook (API доступен по префиксу `/api`):
+
+```bash
+curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook?url=https://ВАШ_ДОМЕН/api/telegram/webhook"
+```
+
+Проверка:
+
+```bash
+curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getWebhookInfo"
+```
+
+Пользователь пишет `/start` в боте → создаётся запись в `users` → при отсутствии телефона запрашивается contact → кнопка «Открыть ПланАм».
 
 ## 4. Первый запуск (HTTP)
 

@@ -207,7 +207,7 @@ export function MenuGenerator() {
         <Link href="/" className="text-xs font-semibold text-emerald-700">
           ← Назад
         </Link>
-        <h1 className="mt-3 text-2xl font-bold text-stone-900">AI Меню</h1>
+        <h1 className="mt-3 text-2xl font-bold text-stone-900">Меню</h1>
         <p className="mt-1 text-sm text-stone-500">
           Три варианта на день с учётом вашего профиля и ограничений
         </p>

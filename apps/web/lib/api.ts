@@ -7,6 +7,7 @@ export type AuthUser = {
   first_name: string | null;
   last_name: string | null;
   language_code: string | null;
+  phone_number: string | null;
   photo_url: string | null;
   created_at: string;
   updated_at: string;

@@ -20,11 +20,14 @@
 - [x] Pantry leftovers (personal or family)
 - [x] Recipe database (search, filters, favorites per user)
 - [x] Production deploy (Timeweb Cloud, nginx, HTTPS, DEPLOY.md)
+- [x] ПланАм: новый главный экран, нижняя навигация, профиль
+- [x] Telegram bot /start + request_contact + phone_number
+- [x] Webhook `POST /telegram/webhook`
 
 ## Next
 
+- [ ] Register Telegram webhook: `POST https://<domain>/telegram/webhook` (see DEPLOY.md)
 - [ ] Install dependencies and run the stack locally
-- [ ] Database migration script for existing deployments (nullable `user_id` on scoped tables)
 
 ## Later
 

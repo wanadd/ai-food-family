@@ -7,7 +7,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
 from app.health import run_health_checks
-from app.routers import auth, families, menus, notifications, onboarding, pantry, recipes, shopping_lists, users
+from app.routers import (
+    auth,
+    families,
+    menus,
+    notifications,
+    onboarding,
+    pantry,
+    recipes,
+    shopping_lists,
+    telegram_bot,
+    users,
+)
 from app.services.notification_scheduler import run_notification_scheduler
 from app.telegram.bot import setup_menu_button
 
@@ -52,11 +63,12 @@ app.include_router(shopping_lists.router)
 app.include_router(notifications.router)
 app.include_router(pantry.router)
 app.include_router(recipes.router)
+app.include_router(telegram_bot.router)
 
 
 @app.get("/")
 def read_root() -> dict[str, str]:
-    return {"message": "AI Food Family API is running"}
+    return {"message": "ПланАм API is running"}
 
 
 @app.get("/health")
