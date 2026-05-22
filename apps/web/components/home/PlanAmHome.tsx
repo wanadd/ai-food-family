@@ -5,15 +5,16 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useTelegram } from "@/components/TelegramProvider";
-import { HealthStatus } from "@/components/HealthStatus";
-import { apiUrl } from "@/lib/api";
 import { fetchSelectedMenu } from "@/lib/menu/api";
 import type { SelectedMenu } from "@/lib/menu/types";
 import { fetchRemoteOnboarding } from "@/lib/onboarding/api";
 import { fetchShoppingList } from "@/lib/shopping/api";
 import type { ShoppingList } from "@/lib/shopping/types";
 
-function formatUpdatedToday(iso: string): string {
+function formatUpdatedToday(iso: string | undefined): string {
+  if (!iso) {
+    return "Обновлён сегодня";
+  }
   const date = new Date(iso);
   const now = new Date();
   if (date.toDateString() === now.toDateString()) {
@@ -22,8 +23,40 @@ function formatUpdatedToday(iso: string): string {
   return `Обновлён ${date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`;
 }
 
+function formatGoodsCount(count: number): string {
+  const n = Math.abs(count);
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) {
+    return `${n} товар`;
+  }
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+    return `${n} товара`;
+  }
+  return `${n} товаров`;
+}
+
+function ProfileIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-6 w-6 text-stone-600"
+      aria-hidden
+    >
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.75" />
+      <path
+        d="M5 20c0-3.314 3.134-6 7-6s7 2.686 7 6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function PlanAmHome() {
-  const { initData, isTelegram, user, isAuthenticating } = useTelegram();
+  const { initData, user } = useTelegram();
   const { mode, loading: modeLoading } = useAppMode();
 
   const [loadingSelectedMenu, setLoadingSelectedMenu] = useState(true);
@@ -71,141 +104,103 @@ export function PlanAmHome() {
   }, [loadHomeData, modeLoading]);
 
   const isCheckingMenu = loadingSelectedMenu || modeLoading;
-  const mainHref = onboardingCompleted ? "/menu" : "/onboarding";
-  const mainLabel = onboardingCompleted
-    ? "Сгенерировать меню"
-    : "Настроить питание";
-  const mainHint = onboardingCompleted
-    ? "Это займёт около 30 секунд"
-    : "Несколько вопросов о целях и предпочтениях";
+  const planHref = onboardingCompleted ? "/menu" : "/onboarding";
+  const goodsCount = shopping?.total_count ?? 0;
 
   return (
-    <div className="min-h-screen bg-[#fafaf9]">
-      <main className="mx-auto max-w-lg space-y-5 px-5 pb-8 pt-8">
-        <header>
-          <p className="text-sm font-medium text-emerald-700">ПланАм</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-stone-900">
-            Привет, {displayName}!
-          </h1>
-          <p className="mt-2 text-base leading-relaxed text-stone-600">
-            Соберём меню и список покупок под ваши цели
-          </p>
-        </header>
-
-        <section className="rounded-[24px] border border-emerald-100 bg-white p-6 shadow-sm">
+    <div className="min-h-screen bg-white">
+      <div className="mx-auto max-w-lg px-5 pb-6 pt-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-[2rem] font-bold leading-tight tracking-tight text-stone-900">
+              ПланАм
+            </h1>
+            <p className="mt-1 text-lg font-medium text-emerald-600">
+              Питайся с умом
+            </p>
+          </div>
           <Link
-            href={mainHref}
-            className="flex w-full items-center justify-center rounded-[20px] bg-gradient-to-r from-emerald-500 to-teal-600 py-4 text-base font-semibold text-white shadow-md transition hover:opacity-95"
+            href="/profile"
+            aria-label="Профиль"
+            className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50"
           >
-            {mainLabel}
+            <ProfileIcon />
           </Link>
-          <p className="mt-3 text-center text-sm text-stone-500">{mainHint}</p>
-        </section>
+        </div>
 
-        <section className="rounded-[24px] border border-stone-200 bg-white p-5 shadow-sm">
-          {isCheckingMenu ? (
-            <div className="animate-pulse space-y-3" aria-busy="true">
-              <p className="text-sm font-medium text-stone-600">
-                Проверяем выбранное меню…
-              </p>
-              <div className="h-16 rounded-2xl bg-stone-100" />
-            </div>
-          ) : selectedMenu ? (
-            <Link href="/menu" className="block">
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
-                Ваше меню
-              </p>
-              <h2 className="mt-2 text-xl font-bold text-stone-900">
-                {selectedMenu.menu.title}
-              </h2>
-              <p className="mt-1 text-sm text-stone-500">Меню на день</p>
-              <span className="mt-3 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                Выбрано
-              </span>
-            </Link>
-          ) : (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-stone-400">
-                Ваше меню
-              </p>
-              <h2 className="mt-2 text-lg font-semibold text-stone-800">
-                Меню ещё не создано
-              </h2>
-              <Link
-                href="/menu"
-                className="mt-4 inline-flex text-sm font-semibold text-emerald-700"
-              >
-                Создать меню →
-              </Link>
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-[24px] border border-stone-200 bg-white p-5 shadow-sm">
-          <Link href="/shopping" className="block">
-            <p className="text-xs font-bold uppercase tracking-wide text-amber-800">
-              Список покупок
+        <main className="mt-8 space-y-4">
+          <section>
+            <h2 className="text-2xl font-bold text-stone-900">
+              Привет, {displayName}!
+            </h2>
+            <p className="mt-2 text-base leading-relaxed text-stone-600">
+              Соберём меню, список покупок и план питания под ваши цели
             </p>
-            {shopping && shopping.total_count > 0 ? (
-              <>
-                <p className="mt-2 text-2xl font-bold text-stone-900">
-                  {shopping.total_count}{" "}
-                  {shopping.total_count === 1
-                    ? "товар"
-                    : shopping.total_count < 5
-                      ? "товара"
-                      : "товаров"}
-                </p>
-                <p className="mt-1 text-sm text-stone-500">
-                  {formatUpdatedToday(shopping.updated_at)}
-                </p>
-              </>
-            ) : (
-              <p className="mt-2 text-sm text-stone-500">Пока пусто</p>
-            )}
-          </Link>
-        </section>
-
-        <section className="rounded-[24px] border border-stone-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wide text-stone-500">
-            Авторизация
-          </p>
-          {isTelegram && user ? (
-            <div className="mt-3 space-y-1 text-sm text-stone-700">
-              <p>Вход выполнен через Telegram</p>
-              <p className="font-semibold text-stone-900">
-                {[user.first_name, user.last_name].filter(Boolean).join(" ") ||
-                  "Пользователь"}
-              </p>
-              {user.username ? (
-                <p className="text-stone-500">@{user.username}</p>
-              ) : null}
-              <p className="text-stone-600">
-                {user.phone_number ?? "Номер не указан"}
-              </p>
-              {!user.phone_number ? (
-                <p className="text-xs text-stone-400">
-                  Поделитесь номером в боте командой /start
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-stone-500">
-              {isAuthenticating
-                ? "Подключаем Telegram…"
-                : "Откройте приложение через Telegram"}
-            </p>
-          )}
-        </section>
-
-        {process.env.NODE_ENV === "development" ? (
-          <section className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-4 text-xs text-stone-500">
-            <p className="font-semibold text-stone-600">Dev</p>
-            <p className="mt-1 break-all">API: {apiUrl}</p>
-            <HealthStatus apiUrl={apiUrl} />
           </section>
-        ) : null}
-      </main>
+
+          <section className="rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/80 to-white p-5 shadow-sm">
+            <Link
+              href={planHref}
+              className="flex w-full items-center justify-center rounded-2xl bg-emerald-600 py-4 text-lg font-semibold text-white shadow-md shadow-emerald-200/60 transition hover:bg-emerald-700 active:scale-[0.99]"
+            >
+              Составить план
+            </Link>
+            <p className="mt-3 text-center text-sm text-stone-500">
+              Меню и покупки за ~30 секунд
+            </p>
+          </section>
+
+          <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+            {isCheckingMenu ? (
+              <div className="animate-pulse space-y-2" aria-busy="true">
+                <div className="h-3 w-24 rounded bg-stone-100" />
+                <div className="h-5 w-40 rounded bg-stone-100" />
+              </div>
+            ) : selectedMenu ? (
+              <Link href="/menu" className="block">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  Сегодня в плане
+                </p>
+                <h3 className="mt-1.5 text-lg font-bold leading-snug text-stone-900">
+                  {selectedMenu.menu.title}
+                </h3>
+                <p className="mt-1 text-sm text-stone-500">Меню на день</p>
+                <span className="mt-2.5 inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                  Выбрано
+                </span>
+              </Link>
+            ) : (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+                  Сегодня в плане
+                </p>
+                <h3 className="mt-1.5 text-base font-semibold text-stone-800">
+                  План питания ещё не создан
+                </h3>
+                <p className="mt-1 text-sm text-stone-500">
+                  Нажмите «Составить план»
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section className="min-h-[7.5rem] rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+            <Link href="/shopping" className="flex h-full min-h-[5.5rem] flex-col justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                Список покупок
+              </p>
+              <div className="mt-2 flex flex-1 flex-col justify-center">
+                <p className="text-2xl font-bold leading-tight text-stone-900">
+                  {formatGoodsCount(goodsCount)}
+                </p>
+                <p className="mt-2 text-sm leading-normal text-stone-500">
+                  {formatUpdatedToday(shopping?.updated_at)}
+                </p>
+              </div>
+            </Link>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

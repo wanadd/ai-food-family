@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { BottomBackButton } from "@/components/layout/BottomBackButton";
 import { PantryItemCard } from "@/components/pantry/PantryItemCard";
 import { PantryItemForm } from "@/components/pantry/PantryItemForm";
 import {
@@ -165,12 +166,9 @@ export function PantryDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf9]">
-      <header className="border-b border-stone-200/80 bg-white/80 px-5 py-6 backdrop-blur">
-        <Link href="/" className="text-xs font-semibold text-emerald-700">
-          ← Назад
-        </Link>
-        <h1 className="mt-3 text-2xl font-bold text-stone-900">Остатки</h1>
+    <div className="min-h-screen bg-white">
+      <header className="border-b border-stone-100 bg-white px-5 py-6">
+        <h1 className="text-2xl font-bold text-stone-900">Склад</h1>
         <p className="mt-1 text-sm text-stone-500">
           Учитывается при генерации AI меню
         </p>
@@ -278,6 +276,8 @@ export function PantryDashboard() {
           </section>
         ) : null}
       </main>
+
+      <BottomBackButton className="pb-4 pt-2" />
     </div>
   );
 }

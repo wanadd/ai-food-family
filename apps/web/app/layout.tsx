@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className="min-h-screen bg-[#fafaf9] text-stone-900 antialiased">
+      <body className="min-h-screen bg-white text-stone-900 antialiased">
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="afterInteractive"

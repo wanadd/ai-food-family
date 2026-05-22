@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { BottomBackButton } from "@/components/layout/BottomBackButton";
+
 import {
   fetchNotificationSettings,
   updateNotificationSettings,
@@ -160,12 +162,9 @@ export function NotificationSettingsForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf9]">
-      <header className="border-b border-stone-200/80 bg-white/80 px-5 py-6 backdrop-blur">
-        <Link href="/" className="text-xs font-semibold text-emerald-700">
-          ← Назад
-        </Link>
-        <h1 className="mt-3 text-2xl font-bold text-stone-900">Уведомления</h1>
+    <div className="min-h-screen bg-white">
+      <header className="border-b border-stone-100 bg-white px-5 py-6">
+        <h1 className="text-2xl font-bold text-stone-900">Уведомления</h1>
         <p className="mt-1 text-sm text-stone-500">
           Напоминания приходят в Telegram в выбранное время
         </p>
@@ -236,6 +235,8 @@ export function NotificationSettingsForm() {
             : "Убедитесь, что бот может писать вам в личные сообщения"}
         </p>
       </main>
+
+      <BottomBackButton className="pb-4 pt-2" />
     </div>
   );
 }

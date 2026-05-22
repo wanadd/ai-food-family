@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { BottomBackButton } from "@/components/layout/BottomBackButton";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
 import { useTelegram } from "@/components/TelegramProvider";
@@ -202,12 +203,9 @@ export function MenuGenerator() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf9]">
-      <header className="border-b border-stone-200/80 bg-white/80 px-5 py-6 backdrop-blur">
-        <Link href="/" className="text-xs font-semibold text-emerald-700">
-          ← Назад
-        </Link>
-        <h1 className="mt-3 text-2xl font-bold text-stone-900">Меню</h1>
+    <div className="min-h-screen bg-white">
+      <header className="border-b border-stone-100 bg-white px-5 py-6">
+        <h1 className="text-2xl font-bold text-stone-900">Меню</h1>
         <p className="mt-1 text-sm text-stone-500">
           Три варианта на день с учётом вашего профиля и ограничений
         </p>
@@ -332,6 +330,8 @@ export function MenuGenerator() {
           </section>
         ) : null}
       </main>
+
+      <BottomBackButton className="pb-4 pt-2" />
 
       {replaceTarget ? (
         <ReplaceDishModal
