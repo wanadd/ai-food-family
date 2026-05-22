@@ -48,6 +48,12 @@ export function ShoppingItemRow({
             Купил(а): {item.checked_by_name}
           </span>
         ) : null}
+        {item.checked &&
+        (item.added_to_pantry || item.linked_pantry_item_id) ? (
+          <span className="mt-1 block text-xs font-medium text-teal-700">
+            Добавлено в запасы
+          </span>
+        ) : null}
       </span>
     </label>
   );

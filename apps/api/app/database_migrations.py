@@ -56,6 +56,8 @@ def run_schema_migrations(engine: Engine) -> None:
         """,
         "ALTER TABLE family_pantry_items ALTER COLUMN family_id DROP NOT NULL",
         "CREATE INDEX IF NOT EXISTS ix_family_pantry_items_user_id ON family_pantry_items (user_id)",
+        "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS source VARCHAR(32) NOT NULL DEFAULT 'manual'",
+        "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS unit VARCHAR(32) NOT NULL DEFAULT ''",
         # User preferences (active app mode)
         """
         CREATE TABLE IF NOT EXISTS user_preferences (

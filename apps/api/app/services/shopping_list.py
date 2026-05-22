@@ -12,79 +12,19 @@ from app.models.user import User
 from app.schemas.menu import MenuIngredient, MenuVariant
 from app.schemas.shopping_list import ShoppingListItem, ShoppingListResponse
 from app.services.app_scope import AppScope
-
-CATEGORY_ORDER = [
-    "овощи",
-    "фрукты",
-    "мясо",
-    "рыба",
-    "молочное",
-    "яйца",
-    "крупы",
-    "бобовые",
-    "соусы",
-    "прочее",
-]
-
-CATEGORY_ALIASES = {
-    "vegetables": "овощи",
-    "овощи": "овощи",
-    "fruit": "фрукты",
-    "fruits": "фрукты",
-    "фрукты": "фрукты",
-    "meat": "мясо",
-    "мясо": "мясо",
-    "fish": "рыба",
-    "seafood": "рыба",
-    "рыба": "рыба",
-    "dairy": "молочное",
-    "молочное": "молочное",
-    "eggs": "яйца",
-    "яйца": "яйца",
-    "grains": "крупы",
-    "крупы": "крупы",
-    "legumes": "бобовые",
-    "бобовые": "бобовые",
-    "sauces": "соусы",
-    "соусы": "соусы",
-    "other": "прочее",
-    "прочее": "прочее",
-}
-
-CATEGORY_KEYWORDS: list[tuple[str, list[str]]] = [
-    ("овощи", ["морков", "лук", "картоф", "помидор", "огурц", "капуст", "перец", "чеснок", "свекл", "кабач", "брокколи", "цукини", "овощ"]),
-    ("фрукты", ["яблок", "банан", "ягод", "груш", "апельсин", "лимон", "фрукт"]),
-    ("мясо", ["курин", "говядин", "свинин", "фарш", "индейк", "мяс", "котлет"]),
-    ("рыба", ["рыб", "лосос", "треск", "кревет", "морепродукт"]),
-    ("молочное", ["молок", "сыр", "творог", "йогурт", "кефир", "сливк", "сметан"]),
-    ("яйца", ["яйц"]),
-    ("крупы", ["рис", "греч", "овсян", "макарон", "паста", "киноа", "гранол", "мук"]),
-    ("бобовые", ["чечевиц", "фасол", "горох", "нут", "тофу"]),
-    ("соусы", ["соус", "паста томат", "майонез", "кетчуп", "масло раст"]),
-]
+from app.services.pantry import delete_item as delete_pantry_item
+from app.services.pantry_shopping import add_or_merge_from_shopping
+from app.services.shopping_categories import (
+    CATEGORY_ORDER,
+    infer_category,
+    is_food_category,
+    normalize_category,
+)
 
 
 def _normalize_name(name: str) -> str:
     cleaned = re.sub(r"\s+", " ", name.strip().lower())
     return cleaned
-
-
-def _normalize_category(raw: str | None) -> str:
-    if not raw:
-        return "прочее"
-    key = raw.strip().lower()
-    return CATEGORY_ALIASES.get(key, key if key in CATEGORY_ORDER else "прочее")
-
-
-def _infer_category(name: str, hint: str | None) -> str:
-    category = _normalize_category(hint)
-    if category != "прочее":
-        return category
-    lowered = name.lower()
-    for cat, keywords in CATEGORY_KEYWORDS:
-        if any(word in lowered for word in keywords):
-            return cat
-    return "прочее"
 
 
 def _item_id(name: str, category: str) -> str:
@@ -123,7 +63,7 @@ def build_items_from_ingredients(
         name = ingredient.name.strip()
         if not name:
             continue
-        category = _infer_category(name, ingredient.category)
+        category = infer_category(name, ingredient.category)
         item_id = _item_id(name, category)
         amount = ingredient.amount.strip()
 
@@ -156,6 +96,8 @@ def build_items_from_ingredients(
                 checked_by_user_id=prev.checked_by_user_id if prev else None,
                 checked_by_name=prev.checked_by_name if prev else None,
                 checked_at=prev.checked_at if prev else None,
+                linked_pantry_item_id=prev.linked_pantry_item_id if prev else None,
+                added_to_pantry=bool(prev.linked_pantry_item_id) if prev else False,
             )
         )
 
@@ -322,7 +264,13 @@ def get_shopping_list(db: Session, user: User, scope: AppScope) -> ShoppingListR
 
 
 def toggle_item(
-    db: Session, user: User, scope: AppScope, item_id: str, checked: bool
+    db: Session,
+    user: User,
+    scope: AppScope,
+    item_id: str,
+    checked: bool,
+    *,
+    remove_from_pantry: bool = False,
 ) -> ShoppingListResponse:
     shopping_list = _get_or_create_list(db, scope)
     items = _items_from_storage(shopping_list.items)
@@ -338,6 +286,12 @@ def toggle_item(
             continue
         found = True
         if checked:
+            linked_id = item.linked_pantry_item_id
+            added_to_pantry = False
+            if is_food_category(item.category):
+                pantry_item = add_or_merge_from_shopping(db, user, scope, item)
+                linked_id = pantry_item.id
+                added_to_pantry = True
             updated.append(
                 item.model_copy(
                     update={
@@ -345,10 +299,19 @@ def toggle_item(
                         "checked_by_user_id": user.id,
                         "checked_by_name": display_name,
                         "checked_at": now,
+                        "linked_pantry_item_id": linked_id,
+                        "added_to_pantry": added_to_pantry,
                     }
                 )
             )
         else:
+            linked_id = item.linked_pantry_item_id
+            if remove_from_pantry and linked_id:
+                try:
+                    delete_pantry_item(db, scope, linked_id)
+                except HTTPException:
+                    pass
+                linked_id = None
             updated.append(
                 item.model_copy(
                     update={
@@ -356,6 +319,8 @@ def toggle_item(
                         "checked_by_user_id": None,
                         "checked_by_name": None,
                         "checked_at": None,
+                        "linked_pantry_item_id": linked_id,
+                        "added_to_pantry": bool(linked_id),
                     }
                 )
             )

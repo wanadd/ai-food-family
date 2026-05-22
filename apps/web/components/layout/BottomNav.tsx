@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { href: "/menu", label: "Меню", icon: "🍽", isHome: false },
   { href: "/", label: "Главная", icon: "🏠", isHome: true },
   { href: "/shopping", label: "Покупки", icon: "🛒", isHome: false },
-  { href: "/pantry", label: "Склад", icon: "📦", isHome: false },
+  { href: "/pantry", label: "Запасы", icon: "📦", isHome: false },
 ] as const;
 
 const HIDDEN_PREFIXES = ["/onboarding"];

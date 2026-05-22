@@ -14,7 +14,8 @@ from app.schemas.pantry import (
     PantryListResponse,
 )
 from app.services.app_scope import AppScope
-from app.services.shopping_list import _infer_category
+from app.services.amount_parser import parse_amount
+from app.services.shopping_categories import infer_category
 
 
 def _member_names(db: Session, family_id: int) -> dict[int, str]:
@@ -42,6 +43,8 @@ def _item_response(
         family_id=item.family_id,
         name=item.name,
         quantity=item.quantity,
+        unit=item.unit or "",
+        source=item.source or "manual",
         expires_at=item.expires_at,
         is_expired=days < 0,
         days_until_expiry=days,
@@ -107,11 +110,14 @@ def list_pantry(db: Session, user: User, scope: AppScope) -> PantryListResponse:
 def add_item(
     db: Session, user: User, scope: AppScope, payload: PantryItemCreate
 ) -> PantryItemResponse:
+    _, unit = parse_amount(payload.quantity)
     item = FamilyPantryItem(
         user_id=scope.user_id if scope.is_personal else None,
         family_id=scope.family_id if scope.is_family else None,
         name=payload.name.strip(),
         quantity=payload.quantity.strip(),
+        unit=unit or payload.unit.strip() or "шт",
+        source=(payload.source or "manual").strip() or "manual",
         expires_at=payload.expires_at,
         added_by_user_id=user.id,
     )
@@ -167,7 +173,7 @@ def delete_item(db: Session, scope: AppScope, item_id: int) -> None:
 def leftovers_to_ingredients(items: list[FamilyPantryItem]) -> list[MenuIngredient]:
     result: list[MenuIngredient] = []
     for item in items:
-        category = _infer_category(item.name, None)
+        category = infer_category(item.name, None)
         result.append(
             MenuIngredient(
                 name=item.name,

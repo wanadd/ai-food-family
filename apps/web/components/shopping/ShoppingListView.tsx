@@ -129,6 +129,34 @@ export function ShoppingListView() {
     if (!initData) {
       return;
     }
+
+    const current = list?.items.find((item) => item.id === itemId);
+    if (
+      !checked &&
+      current?.checked &&
+      current.linked_pantry_item_id
+    ) {
+      const remove = window.confirm(
+        `Убрать «${current.name}» из запасов?`,
+      );
+      setTogglingId(itemId);
+      setError(null);
+      try {
+        const data = await toggleShoppingItem(initData, mode, itemId, false, {
+          removeFromPantry: remove,
+        });
+        updatedAtRef.current = data.updated_at;
+        setList(data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Не удалось обновить позицию",
+        );
+      } finally {
+        setTogglingId(null);
+      }
+      return;
+    }
+
     setTogglingId(itemId);
     setError(null);
     try {

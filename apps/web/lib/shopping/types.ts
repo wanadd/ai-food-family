@@ -8,6 +8,8 @@ export type ShoppingListItem = {
   checked_by_user_id: number | null;
   checked_by_name: string | null;
   checked_at: string | null;
+  linked_pantry_item_id: number | null;
+  added_to_pantry: boolean;
 };
 
 export type ShoppingList = {

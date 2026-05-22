@@ -111,7 +111,7 @@ export default function ProfilePage() {
             href="/pantry"
             className="block rounded-2xl border border-stone-100 bg-white p-4 shadow-sm transition hover:border-emerald-200"
           >
-            <p className="font-semibold text-stone-900">Склад</p>
+            <p className="font-semibold text-stone-900">Запасы</p>
             <p className="mt-0.5 text-sm text-stone-500">Продукты дома для AI-меню</p>
           </Link>
         </section>

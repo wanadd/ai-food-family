@@ -13,6 +13,8 @@ class ShoppingListItem(BaseModel):
     checked_by_user_id: int | None = None
     checked_by_name: str | None = None
     checked_at: datetime | None = None
+    linked_pantry_item_id: int | None = None
+    added_to_pantry: bool = False
 
 
 class ShoppingListResponse(BaseModel):
@@ -28,3 +30,4 @@ class ShoppingListResponse(BaseModel):
 
 class ToggleItemRequest(BaseModel):
     checked: bool
+    remove_from_pantry: bool = False

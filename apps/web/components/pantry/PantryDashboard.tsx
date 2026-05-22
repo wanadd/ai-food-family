@@ -168,9 +168,9 @@ export function PantryDashboard() {
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-stone-100 bg-white px-5 py-6">
-        <h1 className="text-2xl font-bold text-stone-900">Склад</h1>
+        <h1 className="text-2xl font-bold text-stone-900">Запасы дома</h1>
         <p className="mt-1 text-sm text-stone-500">
-          Учитывается при генерации AI меню
+          ПланАм учитывает их при составлении меню
         </p>
         <Link
           href="/menu"

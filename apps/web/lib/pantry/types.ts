@@ -5,6 +5,8 @@ export type PantryItem = {
   family_id: number | null;
   name: string;
   quantity: string;
+  unit?: string;
+  source?: string;
   expires_at: string;
   is_expired: boolean;
   days_until_expiry: number;

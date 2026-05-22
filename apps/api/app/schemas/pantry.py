@@ -7,6 +7,8 @@ class PantryItemCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     quantity: str = Field(min_length=1, max_length=80)
     expires_at: date
+    source: str = "manual"
+    unit: str = ""
 
 
 class PantryItemUpdate(BaseModel):
@@ -22,6 +24,8 @@ class PantryItemResponse(BaseModel):
     family_id: int | None = None
     name: str
     quantity: str
+    unit: str = ""
+    source: str = "manual"
     expires_at: date
     is_expired: bool
     days_until_expiry: int

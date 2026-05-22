@@ -24,6 +24,7 @@ export async function toggleShoppingItem(
   mode: AppMode,
   itemId: string,
   checked: boolean,
+  options?: { removeFromPantry?: boolean },
 ): Promise<ShoppingList> {
   return apiFetch<ShoppingList>(
     initData,
@@ -31,7 +32,10 @@ export async function toggleShoppingItem(
     `/shopping-lists/items/${itemId}`,
     {
       method: "PATCH",
-      body: JSON.stringify({ checked }),
+      body: JSON.stringify({
+        checked,
+        remove_from_pantry: options?.removeFromPantry ?? false,
+      }),
     },
   );
 }

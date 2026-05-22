@@ -36,4 +36,11 @@ def toggle_shopping_item(
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> ShoppingListResponse:
-    return shopping_list_service.toggle_item(db, user, scope, item_id, payload.checked)
+    return shopping_list_service.toggle_item(
+        db,
+        user,
+        scope,
+        item_id,
+        payload.checked,
+        remove_from_pantry=payload.remove_from_pantry,
+    )
