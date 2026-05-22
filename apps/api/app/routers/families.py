@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
+from app.deps import get_verified_user
 from app.models.user import User
 from app.schemas.family import (
     FamilyCreateRequest,
+    FamilyInviteByPhoneRequest,
     FamilyMemberCreateRequest,
     FamilyMemberResponse,
     FamilyMemberUpdateRequest,
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/families", tags=["families"])
 @router.post("", response_model=FamilyResponse, status_code=status.HTTP_201_CREATED)
 def create_family(
     payload: FamilyCreateRequest,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> FamilyResponse:
     return family_service.create_family(db, user, payload)
@@ -27,10 +28,24 @@ def create_family(
 
 @router.get("/me", response_model=FamilyResponse | None)
 def get_my_family(
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> FamilyResponse | None:
     return family_service.get_my_family(db, user)
+
+
+@router.post(
+    "/{family_id}/invite-by-phone",
+    response_model=FamilyMemberResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def invite_family_member_by_phone(
+    family_id: int,
+    payload: FamilyInviteByPhoneRequest,
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> FamilyMemberResponse:
+    return family_service.invite_member_by_phone(db, user, family_id, payload)
 
 
 @router.post(
@@ -41,7 +56,7 @@ def get_my_family(
 def add_family_member(
     family_id: int,
     payload: FamilyMemberCreateRequest,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> FamilyMemberResponse:
     return family_service.add_member(db, user, family_id, payload)
@@ -52,7 +67,7 @@ def update_family_member(
     family_id: int,
     member_id: int,
     payload: FamilyMemberUpdateRequest,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> FamilyMemberResponse:
     return family_service.update_member(db, user, family_id, member_id, payload)
@@ -62,7 +77,7 @@ def update_family_member(
 def remove_family_member(
     family_id: int,
     member_id: int,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> None:
     family_service.delete_member(db, user, family_id, member_id)

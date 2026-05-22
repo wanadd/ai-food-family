@@ -25,3 +25,4 @@ class UserResponse(BaseModel):
 class TelegramAuthResponse(BaseModel):
     user: UserResponse
     is_new: bool
+    phone_verified: bool = False

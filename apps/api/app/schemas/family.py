@@ -10,6 +10,10 @@ class FamilyCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120)
 
 
+class FamilyInviteByPhoneRequest(BaseModel):
+    phone_number: str = Field(min_length=5, max_length=32)
+
+
 class FamilyMemberCreateRequest(BaseModel):
     display_name: str = Field(min_length=1, max_length=120)
     role: FamilyRoleType = "adult"

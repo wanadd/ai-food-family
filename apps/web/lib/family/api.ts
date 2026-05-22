@@ -88,6 +88,21 @@ export async function updateFamilyMember(
   );
 }
 
+export async function inviteFamilyMemberByPhone(
+  initData: string,
+  familyId: number,
+  phoneNumber: string,
+): Promise<FamilyMember> {
+  return familyFetch<FamilyMember>(
+    `/families/${familyId}/invite-by-phone`,
+    initData,
+    {
+      method: "POST",
+      body: JSON.stringify({ phone_number: phoneNumber }),
+    },
+  );
+}
+
 export async function removeFamilyMember(
   initData: string,
   familyId: number,

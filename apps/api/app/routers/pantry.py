@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_app_scope, get_current_user
+from app.deps import get_app_scope, get_verified_user
 from app.services.app_scope import AppScope
 from app.models.user import User
 from app.schemas.pantry import (
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/pantry", tags=["pantry"])
 @router.get("/me", response_model=PantryListResponse)
 def get_my_pantry(
     scope: AppScope = Depends(get_app_scope),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> PantryListResponse:
     return pantry_service.list_pantry(db, user, scope)
@@ -33,7 +33,7 @@ def get_my_pantry(
 def add_pantry_item(
     payload: PantryItemCreate,
     scope: AppScope = Depends(get_app_scope),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> PantryItemResponse:
     return pantry_service.add_item(db, user, scope, payload)
@@ -44,7 +44,7 @@ def update_pantry_item(
     item_id: int,
     payload: PantryItemUpdate,
     scope: AppScope = Depends(get_app_scope),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> PantryItemResponse:
     return pantry_service.update_item(db, user, scope, item_id, payload)

@@ -16,6 +16,7 @@ export type AuthUser = {
 export type TelegramAuthResponse = {
   user: AuthUser;
   is_new: boolean;
+  phone_verified: boolean;
 };
 
 export async function authenticateWithTelegram(

@@ -5,11 +5,13 @@ from app.models.family import Family, FamilyMember, FamilyRole
 from app.models.user import User
 from app.schemas.family import (
     FamilyCreateRequest,
+    FamilyInviteByPhoneRequest,
     FamilyMemberCreateRequest,
     FamilyMemberUpdateRequest,
     FamilyResponse,
     FamilyMemberResponse,
 )
+from app.services.users import find_user_by_phone, user_has_verified_phone
 
 
 def _member_response(member: FamilyMember, current_user: User) -> FamilyMemberResponse:
@@ -111,6 +113,71 @@ def get_my_family(db: Session, user: User) -> FamilyResponse | None:
     if family is None:
         return None
     return _family_response(family, user)
+
+
+def invite_member_by_phone(
+    db: Session,
+    user: User,
+    family_id: int,
+    payload: FamilyInviteByPhoneRequest,
+) -> FamilyMemberResponse:
+    if not user_has_verified_phone(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Подтвердите свой номер телефона в боте (/start)",
+        )
+
+    membership = get_user_membership(db, user)
+    if membership is None or membership.family_id != family_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Family not found")
+    require_admin(membership)
+
+    invited_user = find_user_by_phone(db, payload.phone_number)
+    if invited_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Пользователь с этим номером не найден. "
+                "Попросите его написать /start боту и поделиться номером."
+            ),
+        )
+
+    if not user_has_verified_phone(invited_user):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="У этого пользователя не подтверждён номер телефона в боте",
+        )
+
+    if invited_user.id == user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Нельзя пригласить себя",
+        )
+
+    existing = get_user_membership(db, invited_user)
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Пользователь уже состоит в семье",
+        )
+
+    display_name = (
+        invited_user.first_name
+        or invited_user.username
+        or f"User {invited_user.telegram_id}"
+    )
+    member = FamilyMember(
+        family_id=family_id,
+        user_id=invited_user.id,
+        display_name=display_name,
+        role=FamilyRole.ADULT.value,
+        goals=[],
+        restrictions=[],
+    )
+    db.add(member)
+    db.commit()
+    db.refresh(member)
+    return _member_response(member, user)
 
 
 def add_member(

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
+from app.deps import get_verified_user
 from app.models.user import User
 from app.schemas.app_context import AppContextResponse, AppContextUpdate
 from app.services import app_scope as app_scope_service
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/me/app-context", response_model=AppContextResponse)
 def get_app_context(
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> AppContextResponse:
     prefs = app_scope_service.get_or_create_preferences(db, user)
@@ -35,7 +35,7 @@ def get_app_context(
 @router.patch("/me/app-context", response_model=AppContextResponse)
 def update_app_context(
     payload: AppContextUpdate,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> AppContextResponse:
     app_scope_service.set_active_mode(db, user, payload.active_mode)

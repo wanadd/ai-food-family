@@ -1,7 +1,59 @@
+import re
+
 from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.telegram.validate import TelegramWebAppUser
+
+PHONE_REQUIRED_MESSAGE = (
+    "Подтвердите номер телефона в боте: отправьте /start "
+    "и нажмите «Поделиться номером»."
+)
+
+
+def normalize_phone(phone: str) -> str:
+    cleaned = phone.strip()
+    digits = re.sub(r"\D", "", cleaned)
+    if len(digits) == 11 and digits.startswith("8"):
+        digits = "7" + digits[1:]
+    if len(digits) == 10:
+        digits = "7" + digits
+    if digits:
+        return f"+{digits}"
+    return cleaned
+
+
+def phone_lookup_variants(phone: str) -> list[str]:
+    normalized = normalize_phone(phone)
+    digits = re.sub(r"\D", "", normalized)
+    variants = {phone.strip(), normalized}
+    if digits:
+        variants.add(f"+{digits}")
+        if len(digits) == 11:
+            variants.add(f"+{digits}")
+            variants.add(digits)
+            variants.add(f"8{digits[1:]}")
+    return [value for value in variants if value]
+
+
+def find_user_by_phone(db: Session, phone: str) -> User | None:
+    for variant in phone_lookup_variants(phone):
+        user = (
+            db.query(User).filter(User.phone_number == variant).one_or_none()
+        )
+        if user is not None:
+            return user
+    return None
+
+
+def get_user_by_telegram_id(db: Session, telegram_id: int) -> User | None:
+    return (
+        db.query(User).filter(User.telegram_id == telegram_id).one_or_none()
+    )
+
+
+def user_has_verified_phone(user: User | None) -> bool:
+    return bool(user and user.phone_number and user.phone_number.strip())
 
 
 def upsert_user_from_bot(
@@ -34,7 +86,7 @@ def upsert_user_from_bot(
     user.last_name = last_name
     user.language_code = language_code
     if phone_number:
-        user.phone_number = phone_number
+        user.phone_number = normalize_phone(phone_number)
     db.commit()
     db.refresh(user)
     return user, False

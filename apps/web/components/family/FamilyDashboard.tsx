@@ -11,6 +11,7 @@ import {
   addFamilyMember,
   createFamily,
   fetchMyFamily,
+  inviteFamilyMemberByPhone,
   removeFamilyMember,
   updateFamilyMember,
 } from "@/lib/family/api";
@@ -29,6 +30,8 @@ export function FamilyDashboard() {
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [draft, setDraft] = useState<MemberDraft>(EMPTY_MEMBER_DRAFT);
   const [saving, setSaving] = useState(false);
+  const [invitePhone, setInvitePhone] = useState("");
+  const [inviting, setInviting] = useState(false);
 
   const loadFamily = useCallback(async (telegramInitData: string) => {
     setLoading(true);
@@ -70,6 +73,30 @@ export function FamilyDashboard() {
       setError(err instanceof Error ? err.message : "Failed to create family");
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleInviteByPhone() {
+    if (!initData || !family || !invitePhone.trim()) {
+      return;
+    }
+    setInviting(true);
+    setError(null);
+    try {
+      await inviteFamilyMemberByPhone(
+        initData,
+        family.id,
+        invitePhone.trim(),
+      );
+      setInvitePhone("");
+      await loadFamily(initData);
+      await refreshContext();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Не удалось пригласить",
+      );
+    } finally {
+      setInviting(false);
     }
   }
 
@@ -230,6 +257,32 @@ export function FamilyDashboard() {
                 · ваша роль: {family.your_role}
               </p>
             </section>
+
+            {isAdmin ? (
+              <section className="rounded-2xl border border-violet-200 bg-violet-50/60 p-5">
+                <h3 className="text-sm font-semibold text-violet-900">
+                  Пригласить по номеру
+                </h3>
+                <p className="mt-1 text-xs text-violet-800">
+                  Номер должен быть подтверждён в боте (/start). В боте:{" "}
+                  <code className="rounded bg-white/80 px-1">/invite +7900...</code>
+                </p>
+                <input
+                  value={invitePhone}
+                  onChange={(e) => setInvitePhone(e.target.value)}
+                  placeholder="+79001234567"
+                  className="mt-3 w-full rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm outline-none ring-violet-400 focus:border-violet-400 focus:ring-2"
+                />
+                <button
+                  type="button"
+                  onClick={handleInviteByPhone}
+                  disabled={inviting || !invitePhone.trim()}
+                  className="mt-3 w-full rounded-xl bg-violet-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {inviting ? "Приглашение…" : "Пригласить"}
+                </button>
+              </section>
+            ) : null}
 
             <section className="space-y-3">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">

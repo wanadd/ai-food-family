@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
+from app.deps import get_verified_user
 from app.models.user import User
 from app.schemas.recipe import (
     FavoriteToggleResponse,
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/recipes", tags=["recipes"])
 
 @router.get("/filters", response_model=RecipeFiltersResponse)
 def get_recipe_filters(
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> RecipeFiltersResponse:
     _ = user
@@ -33,7 +33,7 @@ def list_recipes(
     difficulty: str | None = Query(default=None),
     max_prep_time: int | None = Query(default=None, ge=5, le=300),
     favorites_only: bool = Query(default=False),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> RecipeListResponse:
     return recipes_service.list_recipes(
@@ -52,7 +52,7 @@ def list_recipes(
 @router.get("/{recipe_id}", response_model=RecipeDetail)
 def get_recipe(
     recipe_id: int,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> RecipeDetail:
     recipe = recipes_service.get_recipe(db, user, recipe_id)
@@ -64,7 +64,7 @@ def get_recipe(
 @router.post("/{recipe_id}/favorite", response_model=FavoriteToggleResponse)
 def toggle_recipe_favorite(
     recipe_id: int,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> FavoriteToggleResponse:
     result = recipes_service.toggle_favorite(db, user, recipe_id)

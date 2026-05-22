@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.schemas.auth import TelegramAuthRequest, TelegramAuthResponse, UserResponse
-from app.services.users import get_or_create_user
+from app.services.users import get_or_create_user, user_has_verified_phone
 from app.telegram.validate import TelegramAuthError, validate_init_data
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -27,4 +27,5 @@ def authenticate_telegram(
     return TelegramAuthResponse(
         user=UserResponse.model_validate(user),
         is_new=is_new,
+        phone_verified=user_has_verified_phone(user),
     )
