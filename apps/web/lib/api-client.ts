@@ -49,7 +49,7 @@ export async function apiGet<T>(
   }
 
   const text = await response.text();
-  if (!text) {
+  if (!text || text === "null") {
     return null;
   }
 

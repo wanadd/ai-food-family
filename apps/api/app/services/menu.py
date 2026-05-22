@@ -66,6 +66,8 @@ def select_menu(
         existing.variant = payload.menu.variant
         existing.menu_data = menu_dict
         existing.user_id = user.id
+        existing.family_id = scope.family_id if scope.is_family else None
+        existing.selected_at = datetime.now(timezone.utc)
         selection = existing
     else:
         selection = FamilyMenuSelection(

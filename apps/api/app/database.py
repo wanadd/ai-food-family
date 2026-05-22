@@ -28,6 +28,10 @@ def init_db() -> None:
 
     Base.metadata.create_all(bind=engine)
 
+    from app.database_migrations import run_schema_migrations
+
+    run_schema_migrations(engine)
+
     from app.services.recipes import seed_recipes_if_empty
 
     db = SessionLocal()

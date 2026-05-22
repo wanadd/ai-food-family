@@ -7,6 +7,7 @@ import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
+import { useTelegram } from "@/components/TelegramProvider";
 import {
   fetchSelectedMenu,
   generateMenus,
@@ -15,11 +16,10 @@ import {
 } from "@/lib/menu/api";
 import { VARIANT_LABELS } from "@/lib/menu/labels";
 import type { MenuVariant, MenuVariantType } from "@/lib/menu/types";
-import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 export function MenuGenerator() {
-  const { mode } = useAppMode();
-  const [initData, setInitData] = useState("");
+  const { initData } = useTelegram();
+  const { mode, loading: modeLoading } = useAppMode();
   const [menus, setMenus] = useState<MenuVariant[]>([]);
   const [activeVariant, setActiveVariant] = useState<MenuVariantType>("quick");
   const [contextLabel, setContextLabel] = useState("");
@@ -28,28 +28,57 @@ export function MenuGenerator() {
   const [selectedVariant, setSelectedVariant] = useState<MenuVariantType | null>(
     null,
   );
+  const [loadingSelected, setLoadingSelected] = useState(true);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MenuVariant | null>(null);
 
+  const applySelectedMenu = useCallback((menu: MenuVariant) => {
+    setSelectedVariant(menu.variant);
+    setActiveVariant(menu.variant);
+    setMenus([menu]);
+  }, []);
+
   const loadSelected = useCallback(
     async (telegramInitData: string, appMode: typeof mode) => {
-      const selected = await fetchSelectedMenu(telegramInitData, appMode);
-      setSelectedVariant(selected?.variant ?? null);
+      setLoadingSelected(true);
+      setError(null);
+      try {
+        const selected = await fetchSelectedMenu(telegramInitData, appMode);
+        if (selected?.menu) {
+          applySelectedMenu(selected.menu);
+        } else {
+          setSelectedVariant(null);
+          setMenus([]);
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Не удалось загрузить сохранённое меню",
+        );
+        setSelectedVariant(null);
+        setMenus([]);
+      } finally {
+        setLoadingSelected(false);
+      }
     },
-    [],
+    [applySelectedMenu],
   );
 
   useEffect(() => {
-    const data = getTelegramInitData();
-    setInitData(data);
-    setMenus([]);
-    if (data) {
-      loadSelected(data, mode);
+    if (modeLoading || !initData) {
+      if (!initData) {
+        setLoadingSelected(false);
+        setMenus([]);
+        setSelectedVariant(null);
+      }
+      return;
     }
-  }, [loadSelected, mode]);
+    void loadSelected(initData, mode);
+  }, [initData, mode, modeLoading, loadSelected]);
 
   async function handleGenerate() {
     if (!initData) {
@@ -80,8 +109,8 @@ export function MenuGenerator() {
     setSelecting(true);
     setError(null);
     try {
-      await selectMenu(initData, mode, menu);
-      setSelectedVariant(menu.variant);
+      const saved = await selectMenu(initData, mode, menu);
+      applySelectedMenu(saved.menu);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Не удалось сохранить выбор",
@@ -109,6 +138,9 @@ export function MenuGenerator() {
           item.variant === updated.variant ? updated : item,
         ),
       );
+      if (selectedVariant === updated.variant) {
+        applySelectedMenu(updated);
+      }
       setReplaceTarget(null);
     } catch (err) {
       setError(
@@ -119,7 +151,10 @@ export function MenuGenerator() {
     }
   }
 
-  const activeMenu = menus.find((menu) => menu.variant === activeVariant);
+  const activeMenu =
+    menus.find((menu) => menu.variant === activeVariant) ?? menus[0];
+  const hasMultipleVariants = menus.length > 1;
+  const showSavedMenu = menus.length > 0 && !generating;
 
   if (!initData) {
     return (
@@ -165,6 +200,12 @@ export function MenuGenerator() {
           </p>
         ) : null}
 
+        {loadingSelected || modeLoading ? (
+          <p className="py-8 text-center text-sm text-stone-500">
+            Загрузка сохранённого меню…
+          </p>
+        ) : null}
+
         <section className="rounded-2xl border border-stone-200 bg-white p-5">
           <p className="text-sm text-stone-600">
             Учитываются ваш onboarding, остатки, цели, диеты, аллергии, бюджет и
@@ -173,62 +214,78 @@ export function MenuGenerator() {
           <button
             type="button"
             onClick={handleGenerate}
-            disabled={generating}
+            disabled={generating || loadingSelected || modeLoading}
             className="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 text-sm font-semibold text-white shadow-md transition hover:opacity-95 disabled:opacity-50"
           >
             {generating ? "Генерация меню…" : "Сгенерировать меню на день"}
           </button>
         </section>
 
-        {menus.length > 0 ? (
+        {showSavedMenu && !loadingSelected && !modeLoading ? (
           <>
-            <div className="flex items-center justify-between text-sm">
-              <p className="text-stone-600">
-                {contextLabel}
-                {membersCount > 1 ? ` · ${membersCount} чел.` : ""}
+            {selectedVariant && !hasMultipleVariants ? (
+              <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                Сохранённое меню — останется после перезагрузки приложения.
               </p>
-              <span
-                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  generatedWithAi
-                    ? "bg-violet-100 text-violet-800"
-                    : "bg-stone-100 text-stone-600"
-                }`}
-              >
-                {generatedWithAi ? "OpenAI" : "Демо-режим"}
-              </span>
-            </div>
+            ) : null}
 
-            <div
-              className="flex gap-2 rounded-2xl bg-stone-100 p-1"
-              role="tablist"
-              aria-label="Варианты меню"
-            >
-              {(Object.keys(VARIANT_LABELS) as MenuVariantType[]).map(
-                (variant) => {
-                  const meta = VARIANT_LABELS[variant];
-                  const isActive = activeVariant === variant;
-                  return (
-                    <button
-                      key={variant}
-                      type="button"
-                      role="tab"
-                      aria-selected={isActive}
-                      onClick={() => setActiveVariant(variant)}
-                      className={`flex-1 rounded-xl py-2.5 text-center text-xs font-semibold transition ${
-                        isActive
-                          ? "bg-white text-stone-900 shadow-sm"
-                          : "text-stone-500"
-                      }`}
-                    >
-                      <span className="mr-1" aria-hidden>
-                        {meta.emoji}
-                      </span>
-                      {meta.label}
-                    </button>
-                  );
-                },
-              )}
-            </div>
+            {hasMultipleVariants ? (
+              <>
+                <div className="flex items-center justify-between text-sm">
+                  <p className="text-stone-600">
+                    {contextLabel}
+                    {membersCount > 1 ? ` · ${membersCount} чел.` : ""}
+                  </p>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      generatedWithAi
+                        ? "bg-violet-100 text-violet-800"
+                        : "bg-stone-100 text-stone-600"
+                    }`}
+                  >
+                    {generatedWithAi ? "OpenAI" : "Демо-режим"}
+                  </span>
+                </div>
+
+                <div
+                  className="flex gap-2 rounded-2xl bg-stone-100 p-1"
+                  role="tablist"
+                  aria-label="Варианты меню"
+                >
+                  {(Object.keys(VARIANT_LABELS) as MenuVariantType[]).map(
+                    (variant) => {
+                      const meta = VARIANT_LABELS[variant];
+                      const isActive = activeVariant === variant;
+                      const hasVariant = menus.some(
+                        (menu) => menu.variant === variant,
+                      );
+                      if (!hasVariant) {
+                        return null;
+                      }
+                      return (
+                        <button
+                          key={variant}
+                          type="button"
+                          role="tab"
+                          aria-selected={isActive}
+                          onClick={() => setActiveVariant(variant)}
+                          className={`flex-1 rounded-xl py-2.5 text-center text-xs font-semibold transition ${
+                            isActive
+                              ? "bg-white text-stone-900 shadow-sm"
+                              : "text-stone-500"
+                          }`}
+                        >
+                          <span className="mr-1" aria-hidden>
+                            {meta.emoji}
+                          </span>
+                          {meta.label}
+                        </button>
+                      );
+                    },
+                  )}
+                </div>
+              </>
+            ) : null}
 
             {activeMenu ? (
               <MenuVariantCard
@@ -240,11 +297,11 @@ export function MenuGenerator() {
               />
             ) : null}
           </>
-        ) : (
+        ) : !loadingSelected && !modeLoading ? (
           <p className="text-center text-sm text-stone-400">
             Нажмите кнопку выше, чтобы получить три варианта меню
           </p>
-        )}
+        ) : null}
       </main>
 
       {replaceTarget ? (
