@@ -40,7 +40,7 @@ RESTRICTION_LABELS = {
 }
 
 # Member restrictions may include allergy codes; merge for label lookup.
-MEMBER_RESTRICTION_LABELS = RESTRICTION_LABELS | ALLERGY_LABELS
+MEMBER_RESTRICTION_LABELS = {**RESTRICTION_LABELS, **ALLERGY_LABELS}
 
 BUDGET_LABELS = {
     "economy": "эконом (до 500 ₽/день)",
