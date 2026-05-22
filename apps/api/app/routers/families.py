@@ -14,7 +14,11 @@ from app.schemas.family import (
 )
 from app.schemas.family_invite import FamilyInviteCreateRequest, FamilyInviteResponse
 from app.services import family_invites as family_invites_service
-from app.services.family_invites import InviteCreateResult, build_invite_deep_link
+from app.services.family_invites import (
+    InviteCreateResult,
+    build_invite_deep_link,
+    is_link_invite,
+)
 from app.services.users import mask_phone
 from app.services import family as family_service
 from app.services.telegram_bot import notify_invitee_about_invite
@@ -45,6 +49,7 @@ def _invite_response_from_result(result: InviteCreateResult) -> FamilyInviteResp
         share_text=result.share_text,
         deep_link=build_invite_deep_link(invite.invite_token),
         invitee_notified=result.invitee_notified,
+        is_link_invite=is_link_invite(invite),
         family_name=result.family_name,
         created_at=invite.created_at,
     )
@@ -86,6 +91,20 @@ def invite_family_member_by_phone(
         response.invitee_notified,
     )
     return response
+
+
+@router.post(
+    "/{family_id}/invites/link",
+    response_model=FamilyInviteResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_family_invite_link(
+    family_id: int,
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> FamilyInviteResponse:
+    result = family_invites_service.create_link_invite(db, user, family_id)
+    return _invite_response_from_result(result)
 
 
 @router.post(
@@ -131,6 +150,7 @@ def list_family_invites(
             share_text=f"Приглашение в семью «{inv.family.name if inv.family else ''}»",
             deep_link=build_invite_deep_link(inv.invite_token),
             invitee_notified=inv.invited_user_id is not None,
+            is_link_invite=is_link_invite(inv),
             family_name=inv.family.name if inv.family else "",
             created_at=inv.created_at,
         )

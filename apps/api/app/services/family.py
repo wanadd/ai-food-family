@@ -123,7 +123,7 @@ def invite_member_by_phone(
 ):
     from app.services import family_invites as invite_service
     from app.schemas.family_invite import FamilyInviteResponse
-    from app.services.family_invites import build_invite_deep_link
+    from app.services.family_invites import build_invite_deep_link, is_link_invite
     from app.services.users import mask_phone
 
     result = invite_service.create_invite(db, user, family_id, payload.phone_number)
@@ -139,6 +139,7 @@ def invite_member_by_phone(
         share_text=result.share_text,
         deep_link=build_invite_deep_link(invite.invite_token),
         invitee_notified=result.invitee_notified,
+        is_link_invite=is_link_invite(invite),
         family_name=result.family_name,
         created_at=invite.created_at,
     )

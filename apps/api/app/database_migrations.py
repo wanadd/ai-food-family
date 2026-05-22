@@ -86,6 +86,12 @@ def run_schema_migrations(engine: Engine) -> None:
         ON family_invites (family_id, invited_phone_normalized)
         WHERE status = 'pending';
         """,
+        "DROP INDEX IF EXISTS uq_family_invite_pending_phone;",
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_family_invite_pending_phone
+        ON family_invites (family_id, invited_phone_normalized)
+        WHERE status = 'pending' AND invited_phone_normalized != '__link__';
+        """,
         "CREATE INDEX IF NOT EXISTS ix_family_invites_token ON family_invites (invite_token);",
         """
         CREATE TABLE IF NOT EXISTS telegram_bot_sessions (

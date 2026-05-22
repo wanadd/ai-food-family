@@ -9,6 +9,7 @@ export type FamilyInvite = {
   share_text: string;
   deep_link: string;
   invitee_notified: boolean;
+  is_link_invite: boolean;
   family_name: string;
   created_at: string;
 };

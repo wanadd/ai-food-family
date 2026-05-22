@@ -18,6 +18,7 @@ class FamilyInviteResponse(BaseModel):
     share_text: str
     deep_link: str
     invitee_notified: bool
+    is_link_invite: bool = False
     family_name: str
     created_at: datetime
 

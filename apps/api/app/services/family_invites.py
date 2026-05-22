@@ -21,6 +21,13 @@ from app.services.users import (
 
 logger = logging.getLogger(__name__)
 
+# Open invite link (no phone yet); one pending link per family is reused.
+LINK_INVITE_PHONE = "__link__"
+
+
+def is_link_invite(invite: FamilyInvite) -> bool:
+    return invite.invited_phone_normalized == LINK_INVITE_PHONE
+
 
 @dataclass
 class InviteCreateResult:
@@ -161,6 +168,109 @@ def create_invite(
     )
 
 
+def _get_pending_link_invite(db: Session, family_id: int) -> FamilyInvite | None:
+    return (
+        db.query(FamilyInvite)
+        .filter(
+            FamilyInvite.family_id == family_id,
+            FamilyInvite.invited_phone_normalized == LINK_INVITE_PHONE,
+            FamilyInvite.status == FamilyInviteStatus.PENDING.value,
+        )
+        .order_by(FamilyInvite.created_at.desc())
+        .first()
+    )
+
+
+def create_link_invite(db: Session, inviter: User, family_id: int) -> InviteCreateResult:
+    if not user_has_verified_phone(inviter):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Подтвердите свой номер телефона в боте (/start)",
+        )
+
+    membership = _require_admin_membership(db, inviter, family_id)
+    family = membership.family
+    family_name = family.name if family else "семья"
+
+    existing = _get_pending_link_invite(db, family_id)
+    if existing is not None:
+        share_url = build_share_url(existing.invite_token)
+        share_text = (
+            f"Вас пригласили в семью «{family_name}» в ПланАм. "
+            f"Перейдите по ссылке: {build_invite_deep_link(existing.invite_token)}"
+        )
+        return InviteCreateResult(
+            invite=existing,
+            family_name=family_name,
+            invitee_notified=False,
+            share_url=share_url,
+            share_text=share_text,
+        )
+
+    invite = FamilyInvite(
+        family_id=family_id,
+        invited_phone_normalized=LINK_INVITE_PHONE,
+        invited_user_id=None,
+        invited_by_user_id=inviter.id,
+        status=FamilyInviteStatus.PENDING.value,
+        invite_token=_generate_invite_token(),
+    )
+    db.add(invite)
+    db.commit()
+    db.refresh(invite)
+
+    logger.info("Family link invite created id=%s family_id=%s", invite.id, family_id)
+
+    share_url = build_share_url(invite.invite_token)
+    share_text = (
+        f"Вас пригласили в семью «{family_name}» в ПланАм. "
+        f"Перейдите по ссылке: {build_invite_deep_link(invite.invite_token)}"
+    )
+    return InviteCreateResult(
+        invite=invite,
+        family_name=family_name,
+        invitee_notified=False,
+        share_url=share_url,
+        share_text=share_text,
+    )
+
+
+def bind_link_invite_to_user(db: Session, invite: FamilyInvite, user: User) -> FamilyInvite:
+    if not is_link_invite(invite):
+        return invite
+    if not user.phone_number:
+        return invite
+
+    phone_normalized = normalize_phone(user.phone_number)
+    inviter = db.get(User, invite.invited_by_user_id)
+    inviter_phone = normalize_phone(inviter.phone_number or "") if inviter else ""
+    if phone_normalized == inviter_phone:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Нельзя принять приглашение в свою семью как администратор",
+        )
+
+    existing_membership = family_service.get_user_membership(db, user)
+    if existing_membership is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Вы уже состоите в семье",
+        )
+
+    other_pending = _get_pending_invite(db, invite.family_id, phone_normalized)
+    if other_pending is not None and other_pending.id != invite.id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="У вас уже есть другое приглашение в эту семью",
+        )
+
+    invite.invited_phone_normalized = phone_normalized
+    invite.invited_user_id = user.id
+    db.commit()
+    db.refresh(invite)
+    return invite
+
+
 def get_invite_by_token(db: Session, token: str) -> FamilyInvite | None:
     return (
         db.query(FamilyInvite)
@@ -235,6 +345,8 @@ def link_pending_invites_to_user(db: Session, user: User) -> list[FamilyInvite]:
 def user_matches_invite(user: User, invite: FamilyInvite) -> bool:
     if invite.invited_user_id and invite.invited_user_id == user.id:
         return True
+    if is_link_invite(invite):
+        return False
     if not user.phone_number:
         return False
     return normalize_phone(user.phone_number) == invite.invited_phone_normalized

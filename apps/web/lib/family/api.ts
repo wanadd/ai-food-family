@@ -114,18 +114,15 @@ export async function fetchFamilyInvites(
   );
 }
 
-export function getBotInviteUrl(): string {
-  const username =
-    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.replace("@", "") ||
-    "am_nam_nam_bot";
-  return `https://t.me/${username}?start=invite`;
-}
-
-export function getBotDeepLink(startParam = "invite"): string {
-  const username =
-    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.replace("@", "") ||
-    "am_nam_nam_bot";
-  return `https://t.me/${username}?start=${startParam}`;
+export async function createFamilyInviteLink(
+  initData: string,
+  familyId: number,
+): Promise<FamilyInvite> {
+  return familyFetch<FamilyInvite>(
+    `/families/${familyId}/invites/link`,
+    initData,
+    { method: "POST", body: "{}" },
+  );
 }
 
 export async function removeFamilyMember(

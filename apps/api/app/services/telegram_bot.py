@@ -6,15 +6,18 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.models.family import FamilyRole
+from app.models.family_invite import FamilyInvite
 from app.models.user import User
 from app.services import bot_session as bot_session_service
 from app.services import family as family_service
 from app.services import family_invites as invite_service
-from app.services.bot_session import STATE_AWAITING_INVITE_CONTACT
 from app.services.family_invites import (
+    bind_link_invite_to_user,
     build_invite_deep_link,
     build_share_url,
     inviter_display_name,
+    is_link_invite,
 )
 from app.services.users import (
     get_user_by_telegram_id,
@@ -23,7 +26,6 @@ from app.services.users import (
     upsert_user_from_bot,
     user_has_verified_phone,
 )
-from app.models.family import FamilyRole
 
 logger = logging.getLogger(__name__)
 
@@ -31,20 +33,28 @@ BOT_COMMANDS_HELP = """ПланАм — команды:
 
 /help — справка
 /invite +79001234567 — пригласить по номеру (админ семьи)
-Пригласить в семью — выбрать контакт из Telegram
+Пригласить в семью — ссылка-приглашение
 
 Откройте приложение кнопкой ниже."""
 
 PHONE_REQUIRED_TEXT = (
     "Для работы ПланАм нужен номер телефона.\n\n"
-    "Нажмите «Поделиться номером» — после этого откроется Mini App "
+    "Нажмите «Поделиться моим номером» — после этого откроется Mini App "
     "и станут доступны команды бота."
 )
 
-INVITE_CONTACT_TEXT = (
-    "Выберите контакт, которого хотите пригласить в семью.\n"
-    "Нажмите кнопку ниже и выберите человека из списка."
+INVITE_FAMILY_TEXT = (
+    "Telegram не позволяет боту открыть список ваших контактов. "
+    "Отправьте ссылку приглашения человеку, которого хотите добавить.\n\n"
+    "Или введите номер: /invite +79001234567"
 )
+
+OTHER_PERSON_CONTACT_TEXT = (
+    "Для приглашения другого человека используйте ссылку-приглашение "
+    "или введите номер вручную: /invite +79001234567"
+)
+
+CREATE_INVITE_LINK_CALLBACK = "create_family_invite_link"
 
 
 def _api_url(method: str) -> str:
@@ -84,15 +94,7 @@ async def answer_callback_query(callback_query_id: str, text: str = "") -> None:
 
 def _own_phone_keyboard() -> dict[str, Any]:
     return {
-        "keyboard": [[{"text": "Поделиться номером", "request_contact": True}]],
-        "resize_keyboard": True,
-        "one_time_keyboard": True,
-    }
-
-
-def _invite_contact_keyboard() -> dict[str, Any]:
-    return {
-        "keyboard": [[{"text": "Выбрать контакт", "request_contact": True}]],
+        "keyboard": [[{"text": "Поделиться моим номером", "request_contact": True}]],
         "resize_keyboard": True,
         "one_time_keyboard": True,
     }
@@ -103,6 +105,20 @@ def _webapp_inline_keyboard() -> dict[str, Any]:
     return {
         "inline_keyboard": [
             [{"text": "Открыть ПланАм", "web_app": {"url": url}}],
+        ],
+    }
+
+
+def _invite_family_inline_keyboard() -> dict[str, Any]:
+    return {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "Создать ссылку-приглашение",
+                    "callback_data": CREATE_INVITE_LINK_CALLBACK,
+                },
+            ],
+            [{"text": "Открыть ПланАм", "web_app": {"url": settings.telegram_webapp_url or "https://planam.ru"}}],
         ],
     }
 
@@ -124,13 +140,13 @@ def _invite_action_keyboard(invite_id: int) -> dict[str, Any]:
     }
 
 
-def _invite_share_keyboard(invite_token: str) -> dict[str, Any]:
+def _telegram_share_keyboard(invite_token: str) -> dict[str, Any]:
     return {
         "inline_keyboard": [
             [
                 {
-                    "text": "Отправить приглашение",
-                    "url": build_invite_deep_link(invite_token),
+                    "text": "Отправить приглашение в Telegram",
+                    "url": build_share_url(invite_token),
                 },
             ],
         ],
@@ -156,6 +172,13 @@ def _is_invite_flow_start(text: str) -> bool:
     if len(parts) < 2:
         return False
     return parts[1].strip() == "invite"
+
+
+def _is_own_contact(from_user: dict[str, Any], contact: dict[str, Any]) -> bool:
+    contact_user_id = contact.get("user_id")
+    if contact_user_id is None:
+        return False
+    return contact_user_id == from_user.get("id")
 
 
 async def send_phone_required(chat_id: int, *, invite_token: str | None = None) -> None:
@@ -189,6 +212,8 @@ async def notify_invitee_about_invite(
 async def send_pending_invites_to_user(db: Session, user: User, chat_id: int) -> None:
     invites = invite_service.link_pending_invites_to_user(db, user)
     for invite in invites:
+        if is_link_invite(invite):
+            continue
         family_name = invite.family.name if invite.family else "семья"
         inviter_name = inviter_display_name(invite.invited_by)
         await send_telegram_message(
@@ -203,6 +228,18 @@ async def show_invite_mismatch(chat_id: int) -> None:
         chat_id,
         "Этот номер не совпадает с номером приглашения. "
         "Попросите отправить приглашение на ваш номер.",
+    )
+
+
+async def _show_invite_prompt(
+    db: Session, user: User, chat_id: int, invite: FamilyInvite
+) -> None:
+    family_name = invite.family.name if invite.family else "семья"
+    inviter_name = inviter_display_name(invite.invited_by)
+    await send_telegram_message(
+        chat_id,
+        f"Вас пригласили в семью «{family_name}» ({inviter_name}).",
+        reply_markup=_invite_action_keyboard(invite.id),
     )
 
 
@@ -221,17 +258,21 @@ async def process_deep_link_invite(
         await send_phone_required(chat_id)
         return
 
+    if is_link_invite(invite):
+        try:
+            invite = bind_link_invite_to_user(db, invite, user)
+        except HTTPException as exc:
+            detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+            await send_telegram_message(chat_id, detail)
+            return
+        await _show_invite_prompt(db, user, chat_id, invite)
+        return
+
     if not invite_service.user_matches_invite(user, invite):
         await show_invite_mismatch(chat_id)
         return
 
-    family_name = invite.family.name if invite.family else "семья"
-    inviter_name = inviter_display_name(invite.invited_by)
-    await send_telegram_message(
-        chat_id,
-        f"Вас пригласили в семью «{family_name}» ({inviter_name}).",
-        reply_markup=_invite_action_keyboard(invite.id),
-    )
+    await _show_invite_prompt(db, user, chat_id, invite)
 
 
 async def send_verified_welcome(
@@ -285,7 +326,7 @@ async def handle_start(
             await process_deep_link_invite(db, user, chat_id, invite_token)
             bot_session_service.clear_invite_token(db, user.telegram_id)
             return
-        await send_phone_required(chat_id, invite_token=invite_token)
+        await send_phone_required(chat_id)
         return
 
     if user_has_verified_phone(user):
@@ -295,94 +336,9 @@ async def handle_start(
     await send_phone_required(chat_id)
 
 
-async def handle_invite_contact(
-    db: Session,
-    chat_id: int,
-    from_user: dict[str, Any],
-    contact: dict[str, Any],
-) -> None:
-    user = get_user_by_telegram_id(db, from_user["id"])
-    if not user_has_verified_phone(user):
-        await send_phone_required(chat_id)
-        return
-
-    membership = family_service.get_user_membership(db, user)  # type: ignore[arg-type]
-    if membership is None or membership.role != FamilyRole.ADMIN.value:
-        bot_session_service.clear_session_state(db, from_user["id"])
-        await send_telegram_message(chat_id, "Приглашать может только администратор семьи.")
-        return
-
-    phone = contact.get("phone_number")
-    if not phone:
-        await send_telegram_message(
-            chat_id,
-            "Не удалось прочитать номер. Попробуйте ещё раз.",
-            reply_markup=_invite_contact_keyboard(),
-        )
-        return
-
-    logger.info(
-        "Invite contact from admin telegram_id=%s phone=%s",
-        from_user.get("id"),
-        mask_phone(phone),
-    )
-
-    try:
-        result = invite_service.create_invite(
-            db,
-            user,  # type: ignore[arg-type]
-            membership.family_id,
-            phone,
-            contact_first_name=contact.get("first_name"),
-        )
-    except HTTPException as exc:
-        detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
-        await send_telegram_message(chat_id, detail)
-        bot_session_service.clear_session_state(db, from_user["id"])
-        return
-
-    bot_session_service.clear_session_state(db, from_user["id"])
-    invite = result.invite
-
-    if result.invitee_notified:
-        await notify_invitee_about_invite(db, invite.id)
-        await send_telegram_message(
-            chat_id,
-            f"Приглашение отправлено участнику ({mask_phone(phone)}). "
-            "Он может принять или отклонить в боте.",
-            reply_markup=_remove_keyboard(),
-        )
-        return
-
-    await send_telegram_message(
-        chat_id,
-        "Приглашение создано. Человек ещё не запускал ПланАм — "
-        "отправьте ему ссылку-приглашение.",
-        reply_markup=_remove_keyboard(),
-    )
-    await send_telegram_message(
-        chat_id,
-        result.share_text,
-        reply_markup=_invite_share_keyboard(invite.invite_token),
-    )
-
-
 async def handle_own_contact(
     db: Session, chat_id: int, from_user: dict[str, Any], contact: dict[str, Any]
 ) -> None:
-    contact_user_id = contact.get("user_id")
-    if contact_user_id and contact_user_id != from_user.get("id"):
-        session = bot_session_service.get_session(db, from_user["id"])
-        if session and session.state == STATE_AWAITING_INVITE_CONTACT:
-            await handle_invite_contact(db, chat_id, from_user, contact)
-            return
-        await send_telegram_message(
-            chat_id,
-            "Для подтверждения своего номера нажмите «Поделиться номером».",
-            reply_markup=_own_phone_keyboard(),
-        )
-        return
-
     phone = contact.get("phone_number")
     if not phone:
         await send_telegram_message(
@@ -409,7 +365,15 @@ async def handle_own_contact(
     if pending_token:
         invite = invite_service.get_invite_by_token(db, pending_token)
         if invite and invite.status == "pending":
-            if normalize_phone(phone) != invite.invited_phone_normalized:
+            if is_link_invite(invite):
+                try:
+                    bind_link_invite_to_user(db, invite, user)
+                except HTTPException as exc:
+                    detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+                    bot_session_service.clear_session_state(db, user.telegram_id)
+                    await send_telegram_message(chat_id, detail)
+                    return
+            elif normalize_phone(phone) != invite.invited_phone_normalized:
                 bot_session_service.clear_session_state(db, user.telegram_id)
                 await show_invite_mismatch(chat_id)
                 return
@@ -421,11 +385,54 @@ async def handle_own_contact(
 async def handle_contact(
     db: Session, chat_id: int, from_user: dict[str, Any], contact: dict[str, Any]
 ) -> None:
-    session = bot_session_service.get_session(db, from_user["id"])
-    if session and session.state == STATE_AWAITING_INVITE_CONTACT:
-        await handle_invite_contact(db, chat_id, from_user, contact)
+    if not _is_own_contact(from_user, contact):
+        await send_telegram_message(
+            chat_id,
+            OTHER_PERSON_CONTACT_TEXT,
+            reply_markup=_invite_family_inline_keyboard(),
+        )
         return
     await handle_own_contact(db, chat_id, from_user, contact)
+
+
+async def handle_create_invite_link(
+    db: Session, chat_id: int, from_user: dict[str, Any]
+) -> None:
+    user = get_user_by_telegram_id(db, from_user["id"])
+    if not user_has_verified_phone(user):
+        await send_phone_required(chat_id)
+        return
+
+    membership = family_service.get_user_membership(db, user)  # type: ignore[arg-type]
+    if membership is None:
+        await send_telegram_message(
+            chat_id,
+            "Сначала создайте семью в приложении (раздел «Семья»).",
+        )
+        return
+
+    if membership.role != FamilyRole.ADMIN.value:
+        await send_telegram_message(chat_id, "Приглашать может только администратор семьи.")
+        return
+
+    try:
+        result = invite_service.create_link_invite(
+            db,
+            user,  # type: ignore[arg-type]
+            membership.family_id,
+        )
+    except HTTPException as exc:
+        detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+        await send_telegram_message(chat_id, detail)
+        return
+
+    invite = result.invite
+    await send_telegram_message(
+        chat_id,
+        f"Ссылка-приглашение в семью «{result.family_name}» готова.\n\n"
+        f"{build_invite_deep_link(invite.invite_token)}",
+        reply_markup=_telegram_share_keyboard(invite.invite_token),
+    )
 
 
 async def handle_invite_family_button(db: Session, chat_id: int, from_user: dict[str, Any]) -> None:
@@ -446,13 +453,10 @@ async def handle_invite_family_button(db: Session, chat_id: int, from_user: dict
         await send_telegram_message(chat_id, "Приглашать может только администратор семьи.")
         return
 
-    bot_session_service.set_session_state(
-        db, from_user["id"], STATE_AWAITING_INVITE_CONTACT
-    )
     await send_telegram_message(
         chat_id,
-        INVITE_CONTACT_TEXT,
-        reply_markup=_invite_contact_keyboard(),
+        INVITE_FAMILY_TEXT,
+        reply_markup=_invite_family_inline_keyboard(),
     )
 
 
@@ -504,7 +508,7 @@ async def handle_invite_command(
         await send_telegram_message(
             chat_id,
             "Приглашение создано. Отправьте ссылку человеку, который ещё не запускал бота:",
-            reply_markup=_invite_share_keyboard(invite.invite_token),
+            reply_markup=_telegram_share_keyboard(invite.invite_token),
         )
 
 
@@ -519,6 +523,12 @@ async def handle_callback(db: Session, callback: dict[str, Any]) -> None:
     if not telegram_id or not chat_id:
         return
 
+    if data == CREATE_INVITE_LINK_CALLBACK:
+        await handle_create_invite_link(db, chat_id, from_user)
+        if callback_id:
+            await answer_callback_query(callback_id, "Ссылка создана")
+        return
+
     user = get_user_by_telegram_id(db, telegram_id)
     if not user_has_verified_phone(user):
         if callback_id:
@@ -529,6 +539,9 @@ async def handle_callback(db: Session, callback: dict[str, Any]) -> None:
         invite_id = int(data.split(":", 1)[1])
         logger.info("Accept invite id=%s user_id=%s", invite_id, user.id)
         try:
+            invite = invite_service.get_invite_by_id(db, invite_id)
+            if invite and is_link_invite(invite) and user_has_verified_phone(user):
+                invite = bind_link_invite_to_user(db, invite, user)  # type: ignore[arg-type]
             member = invite_service.accept_invite(db, user, invite_id)  # type: ignore[arg-type]
             invite = invite_service.get_invite_by_id(db, invite_id)
             if invite and invite.invited_by and invite.invited_by.telegram_id:
@@ -627,6 +640,6 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
 
     await send_telegram_message(
         chat_id,
-        "Команды: /help, /invite +номер, кнопка «Пригласить в семью»",
+        "Команды: /help, /invite +номер, «Пригласить в семью»",
         reply_markup=_webapp_inline_keyboard(),
     )

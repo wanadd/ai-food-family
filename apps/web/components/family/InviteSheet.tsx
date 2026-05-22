@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
-  fetchFamilyInvites,
-  getBotDeepLink,
+  createFamilyInviteLink,
   inviteFamilyMemberByPhone,
 } from "@/lib/family/api";
 import type { FamilyInvite } from "@/lib/family/invite-types";
@@ -17,7 +16,7 @@ type InviteSheetProps = {
   onSuccess: (invite: FamilyInvite) => void;
 };
 
-type Step = "menu" | "phone" | "contact";
+type Step = "menu" | "phone";
 
 export function InviteSheet({
   open,
@@ -31,18 +30,6 @@ export function InviteSheet({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastInvite, setLastInvite] = useState<FamilyInvite | null>(null);
-  const [pendingInvites, setPendingInvites] = useState<FamilyInvite[]>([]);
-
-  useEffect(() => {
-    if (!open) {
-      setStep("menu");
-      setError(null);
-      return;
-    }
-    fetchFamilyInvites(initData, familyId)
-      .then(setPendingInvites)
-      .catch(() => setPendingInvites([]));
-  }, [open, initData, familyId]);
 
   if (!open) {
     return null;
@@ -69,24 +56,28 @@ export function InviteSheet({
     }
   }
 
-  function openBotForContact() {
-    window.open(getBotDeepLink("invite"), "_blank", "noopener,noreferrer");
+  async function handleLinkInvite() {
+    setLoading(true);
+    setError(null);
+    try {
+      const invite = await createFamilyInviteLink(initData, familyId);
+      setLastInvite(invite);
+      onSuccess(invite);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Не удалось создать ссылку",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   function shareInvite(invite: FamilyInvite) {
     window.open(invite.share_url, "_blank", "noopener,noreferrer");
   }
 
-  async function copyInviteLink(invite: FamilyInvite) {
-    try {
-      await navigator.clipboard.writeText(invite.deep_link);
-    } catch {
-      window.prompt("Скопируйте ссылку:", invite.deep_link);
-    }
-  }
-
-  const showPendingShare = lastInvite && !lastInvite.invitee_notified;
-  const latestPending = pendingInvites[0] ?? null;
+  const showShare =
+    lastInvite && (lastInvite.is_link_invite || !lastInvite.invitee_notified);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
@@ -119,29 +110,19 @@ export function InviteSheet({
             <button
               type="button"
               onClick={() => setStep("phone")}
-              className="w-full rounded-2xl border border-stone-200 px-4 py-4 text-left text-sm font-semibold text-stone-900 hover:border-emerald-300"
+              disabled={loading}
+              className="w-full rounded-2xl border border-stone-200 px-4 py-4 text-left text-sm font-semibold text-stone-900 hover:border-emerald-300 disabled:opacity-50"
             >
-              По номеру телефона
+              Ввести номер телефона
             </button>
             <button
               type="button"
-              onClick={() => setStep("contact")}
-              className="w-full rounded-2xl border border-violet-200 bg-violet-50/60 px-4 py-4 text-left text-sm font-semibold text-violet-900"
+              onClick={handleLinkInvite}
+              disabled={loading}
+              className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-left text-sm font-semibold text-emerald-900 disabled:opacity-50"
             >
-              Через Telegram-контакт
+              {loading ? "Создание ссылки…" : "Отправить ссылку-приглашение"}
             </button>
-            {latestPending ? (
-              <button
-                type="button"
-                onClick={() => copyInviteLink(latestPending)}
-                className="w-full rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-left text-sm font-semibold text-amber-900"
-              >
-                Скопировать ссылку-приглашение
-                <span className="mt-1 block text-xs font-normal text-amber-800">
-                  {latestPending.invited_phone_masked} — ожидает подтверждения
-                </span>
-              </button>
-            ) : null}
           </div>
         ) : null}
 
@@ -171,51 +152,30 @@ export function InviteSheet({
           </div>
         ) : null}
 
-        {step === "contact" ? (
-          <div className="space-y-4">
-            <button
-              type="button"
-              onClick={() => setStep("menu")}
-              className="text-sm font-semibold text-emerald-700"
-            >
-              ← Назад
-            </button>
-            <p className="text-sm leading-relaxed text-stone-600">
-              Telegram не даёт Mini App прямой доступ к списку контактов.
-              Выбор контакта доступен в чат-боте: «Пригласить в семью» → «Выбрать
-              контакт».
-            </p>
-            <button
-              type="button"
-              onClick={openBotForContact}
-              className="w-full rounded-xl bg-violet-600 py-3 text-sm font-semibold text-white"
-            >
-              Открыть бота для приглашения
-            </button>
-          </div>
-        ) : null}
-
-        {showPendingShare ? (
+        {showShare && lastInvite ? (
           <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
             <p className="text-xs font-bold uppercase text-amber-800">
-              Ожидает подтверждения
+              {lastInvite.invitee_notified
+                ? "Приглашение в боте"
+                : "Ожидает подтверждения"}
             </p>
-            <p className="mt-2 text-sm text-amber-900">
-              Человек ещё не запускал ПланАм. Отправьте ссылку в Telegram.
+            <p className="mt-2 break-all text-xs text-amber-900">
+              {lastInvite.deep_link}
             </p>
             <button
               type="button"
               onClick={() => shareInvite(lastInvite)}
               className="mt-3 w-full rounded-xl border border-amber-300 bg-white py-3 text-sm font-semibold text-amber-900"
             >
-              Отправить ссылку в Telegram
+              Отправить приглашение в Telegram
             </button>
           </section>
         ) : null}
 
-        {lastInvite?.invitee_notified ? (
+        {lastInvite?.invitee_notified && lastInvite.invited_phone_masked ? (
           <p className="mt-4 text-center text-sm text-emerald-700">
-            Приглашение отправлено в бот. Ожидаем ответ.
+            Приглашение отправлено в бот ({lastInvite.invited_phone_masked}).
+            Ожидаем ответ.
           </p>
         ) : null}
       </div>
