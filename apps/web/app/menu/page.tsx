@@ -1,5 +1,5 @@
-import { MenuGenerator } from "@/components/menu/MenuGenerator";
+import { MenuPlanner } from "@/components/menu/MenuPlanner";
 
 export default function MenuPage() {
-  return <MenuGenerator />;
+  return <MenuPlanner />;
 }

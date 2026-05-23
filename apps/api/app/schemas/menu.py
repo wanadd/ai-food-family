@@ -47,6 +47,11 @@ class ReplaceDishRequest(BaseModel):
     hint: str | None = Field(default=None, max_length=300)
 
 
+class MenuGenerateRequest(BaseModel):
+    persons_count: int | None = Field(default=None, ge=1, le=20)
+    plan_mode: str | None = Field(default=None, max_length=64)
+
+
 class SelectMenuRequest(BaseModel):
     menu: MenuVariant
 

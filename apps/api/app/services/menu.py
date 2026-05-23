@@ -6,12 +6,14 @@ from sqlalchemy.orm import Session
 from app.models.menu_selection import FamilyMenuSelection
 from app.models.user import User
 from app.schemas.menu import (
+    MenuGenerateRequest,
     MenuGenerateResponse,
     MenuVariant,
     ReplaceDishRequest,
     SelectMenuRequest,
     SelectedMenuResponse,
 )
+from app.services.menu_labels import PLAN_MODE_PROMPT_HINTS
 from app.services.app_scope import AppScope
 from app.services import shopping_list as shopping_list_service
 from app.services.menu_ai import generate_menus, replace_meal
@@ -19,9 +21,27 @@ from app.services.menu_context import build_menu_context
 
 
 async def generate_menus_for_scope(
-    db: Session, user: User, scope: AppScope
+    db: Session,
+    user: User,
+    scope: AppScope,
+    options: MenuGenerateRequest | None = None,
 ) -> MenuGenerateResponse:
     context = build_menu_context(db, user, scope)
+    if options:
+        extras: list[str] = []
+        if options.persons_count:
+            extras.append(
+                f"Количество персон (порций): {options.persons_count}. "
+                "Умножай объёмы ингредиентов с учётом этого числа."
+            )
+        if options.plan_mode:
+            hint = PLAN_MODE_PROMPT_HINTS.get(options.plan_mode)
+            if hint:
+                extras.append(hint)
+        if extras:
+            context.prompt_text = context.prompt_text + "\n" + "\n".join(extras)
+        if options.persons_count:
+            context.members_count = options.persons_count
     menus, used_ai = await generate_menus(context)
     return MenuGenerateResponse(
         menus=menus,

@@ -7,12 +7,19 @@ import type {
   SelectedMenu,
 } from "./types";
 
+export type MenuGenerateOptions = {
+  persons_count?: number;
+  plan_mode?: string;
+};
+
 export async function generateMenus(
   initData: string,
   mode: AppMode,
+  options?: MenuGenerateOptions,
 ): Promise<MenuGenerateResponse> {
   return apiFetch<MenuGenerateResponse>(initData, mode, "/menus/generate", {
     method: "POST",
+    body: JSON.stringify(options ?? {}),
   });
 }
 

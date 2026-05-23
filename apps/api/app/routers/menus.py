@@ -6,6 +6,7 @@ from app.deps import get_app_scope, get_verified_user
 from app.services.app_scope import AppScope
 from app.models.user import User
 from app.schemas.menu import (
+    MenuGenerateRequest,
     MenuGenerateResponse,
     MenuVariant,
     ReplaceDishRequest,
@@ -19,11 +20,14 @@ router = APIRouter(prefix="/menus", tags=["menus"])
 
 @router.post("/generate", response_model=MenuGenerateResponse)
 async def generate_menus(
+    payload: MenuGenerateRequest | None = None,
     scope: AppScope = Depends(get_app_scope),
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> MenuGenerateResponse:
-    return await menu_service.generate_menus_for_scope(db, user, scope)
+    return await menu_service.generate_menus_for_scope(
+        db, user, scope, payload or MenuGenerateRequest()
+    )
 
 
 @router.post("/replace-dish", response_model=MenuVariant)
