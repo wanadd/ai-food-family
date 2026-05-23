@@ -204,7 +204,7 @@ def update_care_settings(
     for key, value in data.items():
         setattr(row, key, value)
 
-    if row.care_level == "minimal":
+    if data.get("care_level") == "minimal":
         row.water_enabled = False
         row.protein_enabled = False
         row.progress_enabled = False

@@ -4,7 +4,9 @@ from pydantic import BaseModel, Field
 
 
 class VirtualNutritionProfile(BaseModel):
-    age: int | None = Field(default=None, ge=1, le=120)
+    age: int | None = Field(default=None, ge=0, le=120)
+    age_years: int | None = Field(default=None, ge=0, le=17)
+    age_months: int | None = Field(default=None, ge=0, le=11)
     nutrition_goal: str | None = None
     allergies: list[str] = Field(default_factory=list)
     restrictions: list[str] = Field(default_factory=list)

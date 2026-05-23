@@ -83,12 +83,15 @@ export function CareTelegramBlock({
 
   async function patch(partial: Parameters<typeof updateCareSettings>[2]) {
     if (!initData || !settings) return;
+    const previous = settings;
+    setSettings((current) => (current ? { ...current, ...partial } : current));
     setSaving(true);
     setFeedback(null);
     try {
       const updated = await updateCareSettings(initData, mode, partial);
       setSettings(updated);
     } catch (err) {
+      setSettings(previous);
       setFeedback(err instanceof Error ? err.message : "Не удалось сохранить");
     } finally {
       setSaving(false);

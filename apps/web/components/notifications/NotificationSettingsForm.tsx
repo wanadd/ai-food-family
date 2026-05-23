@@ -10,7 +10,7 @@ import {
   fetchNotificationSettings,
   updateNotificationSettings,
 } from "@/lib/notifications/api";
-import { TIMEZONE_OPTIONS } from "@/lib/notifications/options";
+import { getDeviceTimezone } from "@/lib/notifications/timezone";
 import type { NotificationSettings } from "@/lib/notifications/types";
 
 type ReminderCardProps = {
@@ -96,7 +96,19 @@ export function NotificationSettingsForm() {
     setError(null);
     try {
       const data = await fetchNotificationSettings(telegramInitData);
-      setSettings(data);
+      if (!data) {
+        setSettings(null);
+        return;
+      }
+      const deviceTz = getDeviceTimezone();
+      if (data.timezone !== deviceTz) {
+        const synced = await updateNotificationSettings(telegramInitData, {
+          timezone: deviceTz,
+        });
+        setSettings(synced);
+      } else {
+        setSettings(data);
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Не удалось загрузить настройки",
@@ -108,21 +120,24 @@ export function NotificationSettingsForm() {
 
   useEffect(() => {
     if (initData) {
-      loadSettings(initData);
+      void loadSettings(initData);
     } else {
       setLoading(false);
     }
   }, [initData, loadSettings]);
 
   async function persist(patch: Parameters<typeof updateNotificationSettings>[1]) {
-    if (!initData) {
+    if (!initData || !settings) {
       return;
     }
     setSaving(true);
     setError(null);
     setSaved(false);
     try {
-      const data = await updateNotificationSettings(initData, patch);
+      const data = await updateNotificationSettings(initData, {
+        ...patch,
+        timezone: getDeviceTimezone(),
+      });
       setSettings(data);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
@@ -159,12 +174,14 @@ export function NotificationSettingsForm() {
     );
   }
 
+  const deviceTz = getDeviceTimezone();
+
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-stone-100 bg-white px-5 py-6">
         <h1 className="text-2xl font-bold text-stone-900">Уведомления</h1>
         <p className="mt-1 text-sm text-stone-500">
-          Напоминания приходят в Telegram в выбранное время
+          Время берётся с вашего устройства ({deviceTz})
         </p>
       </header>
 
@@ -181,30 +198,10 @@ export function NotificationSettingsForm() {
           </p>
         ) : null}
 
-        <section className="rounded-2xl border border-stone-200 bg-white p-5">
-          <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-              Часовой пояс
-            </span>
-            <select
-              value={settings.timezone}
-              disabled={saving}
-              onChange={(event) => persist({ timezone: event.target.value })}
-              className="mt-2 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm font-medium text-stone-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-            >
-              {TIMEZONE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </section>
-
         <ReminderCard
           emoji="🛒"
           title="Напомнить купить"
-          description="Список покупок из выбранного меню — что ещё не отмечено"
+          description="Список покупок — что ещё не отмечено купленным"
           enabled={settings.buy_reminder_enabled}
           time={settings.buy_reminder_time}
           disabled={saving}
@@ -215,16 +212,38 @@ export function NotificationSettingsForm() {
         />
 
         <ReminderCard
-          emoji="👨‍🍳"
-          title="Напомнить приготовить"
-          description="Блюда на сегодня из выбранного семейного меню"
-          enabled={settings.cook_reminder_enabled}
-          time={settings.cook_reminder_time}
+          emoji="🌅"
+          title="Завтрак"
+          description="Напоминание приготовить завтрак из выбранного меню"
+          enabled={settings.cook_breakfast_enabled}
+          time={settings.cook_breakfast_time}
           disabled={saving}
           onEnabledChange={(value) =>
-            persist({ cook_reminder_enabled: value })
+            persist({ cook_breakfast_enabled: value })
           }
-          onTimeChange={(value) => persist({ cook_reminder_time: value })}
+          onTimeChange={(value) => persist({ cook_breakfast_time: value })}
+        />
+
+        <ReminderCard
+          emoji="🍲"
+          title="Обед"
+          description="Напоминание приготовить обед"
+          enabled={settings.cook_lunch_enabled}
+          time={settings.cook_lunch_time}
+          disabled={saving}
+          onEnabledChange={(value) => persist({ cook_lunch_enabled: value })}
+          onTimeChange={(value) => persist({ cook_lunch_time: value })}
+        />
+
+        <ReminderCard
+          emoji="🌙"
+          title="Ужин"
+          description="Напоминание приготовить ужин"
+          enabled={settings.cook_dinner_enabled}
+          time={settings.cook_dinner_time}
+          disabled={saving}
+          onEnabledChange={(value) => persist({ cook_dinner_enabled: value })}
+          onTimeChange={(value) => persist({ cook_dinner_time: value })}
         />
 
         <p className="text-center text-xs text-stone-400">

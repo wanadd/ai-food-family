@@ -3,6 +3,8 @@ export type MemberType = "telegram" | "virtual";
 
 export type VirtualNutrition = {
   age: number | null;
+  age_years?: number | null;
+  age_months?: number | null;
   nutrition_goal: string | null;
   allergies: string[];
   restrictions: string[];

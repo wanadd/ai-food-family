@@ -1,13 +1,13 @@
 "use client";
 
-import { ChipSelect } from "@/components/onboarding/ChipSelect";
+import { ChipSelectWithCustom } from "@/components/onboarding/ChipSelectWithCustom";
 import { OptionCards } from "@/components/onboarding/OptionCards";
 import { TextAreaField } from "@/components/onboarding/TextAreaField";
 import { NumberInput } from "@/components/nutrition-profile/NumberInput";
 import {
   ALLERGY_OPTIONS,
-  DIET_OPTIONS,
   NUTRITION_GOAL_OPTIONS,
+  RESTRICTION_OPTIONS,
 } from "@/lib/nutrition-profile/options";
 import type { VirtualMemberDraft } from "@/lib/family/types";
 
@@ -40,6 +40,27 @@ export function VirtualMemberNutritionForm({
   linkedName,
 }: VirtualMemberNutritionFormProps) {
   const nutrition = draft.nutrition;
+  const isChild = draft.virtual_kind === "child" || draft.role === "child";
+  const ageYears =
+    nutrition.age_years ??
+    (nutrition.age != null && nutrition.age <= 17 ? nutrition.age : null);
+  const ageMonths = nutrition.age_months ?? 0;
+
+  function setChildAge(years: number | null, months: number) {
+    const y = years ?? 0;
+    const m = Math.min(11, Math.max(0, months));
+    const totalYears = y + (m >= 12 ? 1 : 0);
+    const normalizedMonths = m >= 12 ? m - 12 : m;
+    onChange({
+      ...draft,
+      nutrition: {
+        ...nutrition,
+        age_years: y,
+        age_months: normalizedMonths,
+        age: totalYears > 0 || normalizedMonths > 0 ? totalYears : null,
+      },
+    });
+  }
 
   return (
     <section className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
@@ -97,18 +118,45 @@ export function VirtualMemberNutritionForm({
           </>
         ) : null}
 
-        <NumberInput
-          label="Возраст"
-          value={nutrition.age}
-          onChange={(age) =>
-            onChange({
-              ...draft,
-              nutrition: { ...nutrition, age },
-            })
-          }
-          min={1}
-          max={120}
-        />
+        {isChild ? (
+          <div>
+            <p className="mb-2 text-sm font-medium text-stone-700">Возраст</p>
+            <div className="grid grid-cols-2 gap-3">
+              <NumberInput
+                label="Лет"
+                value={ageYears}
+                onChange={(years) => setChildAge(years, ageMonths)}
+                min={0}
+                max={17}
+              />
+              <NumberInput
+                label="Месяцев"
+                value={ageMonths}
+                onChange={(months) =>
+                  setChildAge(ageYears ?? 0, months ?? 0)
+                }
+                min={0}
+                max={11}
+              />
+            </div>
+            <p className="mt-1 text-xs text-stone-500">
+              Для малышей укажите годы и месяцы — так точнее для меню
+            </p>
+          </div>
+        ) : (
+          <NumberInput
+            label="Возраст (лет)"
+            value={nutrition.age}
+            onChange={(age) =>
+              onChange({
+                ...draft,
+                nutrition: { ...nutrition, age, age_years: null, age_months: null },
+              })
+            }
+            min={1}
+            max={120}
+          />
+        )}
 
         <div>
           <p className="mb-2 text-sm font-medium text-stone-700">Цель питания</p>
@@ -126,25 +174,29 @@ export function VirtualMemberNutritionForm({
 
         <div>
           <p className="mb-2 text-sm font-medium text-stone-700">Аллергии</p>
-          <ChipSelect
+          <p className="mb-2 text-xs text-stone-500">Можно выбрать несколько</p>
+          <ChipSelectWithCustom
             options={ALLERGY_OPTIONS}
             value={nutrition.allergies}
             onChange={(allergies) =>
               onChange({ ...draft, nutrition: { ...nutrition, allergies } })
             }
             exclusiveNone="none"
+            customPlaceholder="Своя аллергия"
           />
         </div>
 
         <div>
           <p className="mb-2 text-sm font-medium text-stone-700">Ограничения</p>
-          <ChipSelect
-            options={DIET_OPTIONS}
-            value={nutrition.diets}
-            onChange={(diets) =>
-              onChange({ ...draft, nutrition: { ...nutrition, diets } })
+          <p className="mb-2 text-xs text-stone-500">Можно выбрать несколько</p>
+          <ChipSelectWithCustom
+            options={RESTRICTION_OPTIONS}
+            value={nutrition.restrictions}
+            onChange={(restrictions) =>
+              onChange({ ...draft, nutrition: { ...nutrition, restrictions } })
             }
             exclusiveNone="none"
+            customPlaceholder="Своё ограничение"
           />
         </div>
 

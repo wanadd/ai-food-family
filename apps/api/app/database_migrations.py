@@ -312,6 +312,16 @@ def run_schema_migrations(engine: Engine) -> None:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_nutrition_targets_user_id ON nutrition_targets (user_id);",
+        # Per-meal cook reminders
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_breakfast_enabled BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_lunch_enabled BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_dinner_enabled BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_breakfast_time VARCHAR(5) NOT NULL DEFAULT '08:00'",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_lunch_time VARCHAR(5) NOT NULL DEFAULT '13:00'",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_dinner_time VARCHAR(5) NOT NULL DEFAULT '18:00'",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS last_breakfast_sent_date DATE",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS last_lunch_sent_date DATE",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS last_dinner_sent_date DATE",
     ]
 
     with engine.begin() as connection:

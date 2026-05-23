@@ -39,6 +39,7 @@ export {
   BUDGET_OPTIONS,
   COOKING_TIME_OPTIONS,
   DIET_OPTIONS,
+  RESTRICTION_OPTIONS,
 } from "@/lib/onboarding/options";
 
 export const NUTRITION_GOAL_LABELS: Record<string, string> = Object.fromEntries(

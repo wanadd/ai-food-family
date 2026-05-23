@@ -85,3 +85,36 @@ def build_cook_reminder_text(db: Session, user: User) -> str:
         f"{meal_lines}\n\n"
         f"⏱ Суммарно у плиты: ~{menu.total_prep_minutes} мин"
     )
+
+
+def build_meal_cook_reminder_text(
+    db: Session, user: User, meal_type: str
+) -> str | None:
+    """Reminder for a single meal (breakfast / lunch / dinner). None if no menu or meal."""
+    prefs = get_or_create_preferences(db, user)
+    try:
+        scope = resolve_scope(db, user, prefs.active_mode)
+    except Exception:
+        scope = resolve_scope(db, user, "personal")
+
+    selection = _get_latest_selection(db, scope)
+    if selection is None:
+        return None
+
+    menu = MenuVariant.model_validate(selection.menu_data)
+    meal = next((m for m in menu.meals if m.meal_type == meal_type), None)
+    if meal is None:
+        return None
+
+    meal_labels = {
+        "breakfast": "завтрак",
+        "lunch": "обед",
+        "dinner": "ужин",
+    }
+    label = meal_labels.get(meal_type, meal_type)
+
+    return (
+        f"👨‍🍳 <b>Пора готовить {label}!</b>\n\n"
+        f"<b>{meal.name}</b> — около {meal.prep_time_minutes} мин\n"
+        f"Меню: <i>{menu.title}</i>"
+    )

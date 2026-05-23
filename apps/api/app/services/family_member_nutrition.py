@@ -20,6 +20,8 @@ def virtual_nutrition_from_member(member: FamilyMember) -> VirtualNutritionProfi
     raw = member.nutrition_profile or {}
     return VirtualNutritionProfile(
         age=raw.get("age"),
+        age_years=raw.get("age_years"),
+        age_months=raw.get("age_months"),
         nutrition_goal=raw.get("nutrition_goal"),
         allergies=raw.get("allergies") or [],
         restrictions=raw.get("restrictions") or [],

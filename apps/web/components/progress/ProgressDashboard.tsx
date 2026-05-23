@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ProgressProLocked } from "@/components/progress/ProgressProLocked";
+import { BottomBackButton } from "@/components/layout/BottomBackButton";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
@@ -497,6 +498,8 @@ export function ProgressDashboard() {
           </form>
         </div>
       ) : null}
+
+      <BottomBackButton className="pb-4 pt-2" />
     </div>
   );
 }

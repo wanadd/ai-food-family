@@ -15,10 +15,8 @@ const HIDDEN_PREFIXES = [
   "/onboarding",
   "/settings",
   "/subscription",
-  "/profile",
   "/family",
   "/menu/current",
-  "/progress",
   "/admin",
 ];
 

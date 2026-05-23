@@ -9,13 +9,19 @@ from app.models.notification_settings import UserNotificationSettings
 from app.models.user import User
 from app.services.notification_messages import (
     build_buy_reminder_text,
-    build_cook_reminder_text,
+    build_meal_cook_reminder_text,
 )
 from app.telegram.messages import send_telegram_message
 
 logger = logging.getLogger(__name__)
 
 POLL_INTERVAL_SECONDS = 30
+
+MEAL_REMINDERS = (
+    ("breakfast", "cook_breakfast_enabled", "cook_breakfast_time", "last_breakfast_sent_date"),
+    ("lunch", "cook_lunch_enabled", "cook_lunch_time", "last_lunch_sent_date"),
+    ("dinner", "cook_dinner_enabled", "cook_dinner_time", "last_dinner_sent_date"),
+)
 
 
 async def run_notification_scheduler() -> None:
@@ -42,7 +48,16 @@ async def _process_due_reminders() -> None:
 
         for notification_settings, user in rows:
             await _maybe_send_buy(db, notification_settings, user)
-            await _maybe_send_cook(db, notification_settings, user)
+            for meal_type, enabled_key, time_key, sent_key in MEAL_REMINDERS:
+                await _maybe_send_meal_cook(
+                    db,
+                    notification_settings,
+                    user,
+                    meal_type,
+                    enabled_key,
+                    time_key,
+                    sent_key,
+                )
 
         from app.services.care import process_all_care_reminders
 
@@ -79,21 +94,30 @@ async def _maybe_send_buy(
         logger.info("Buy reminder sent to user %s", user.id)
 
 
-async def _maybe_send_cook(
+async def _maybe_send_meal_cook(
     db,
     notification_settings: UserNotificationSettings,
     user: User,
+    meal_type: str,
+    enabled_attr: str,
+    time_attr: str,
+    sent_attr: str,
 ) -> None:
+    if not getattr(notification_settings, enabled_attr, False):
+        return
     if not notification_settings.cook_reminder_enabled:
         return
 
     today, current_time = _now_in_timezone(notification_settings.timezone)
-    if notification_settings.cook_reminder_time != current_time:
+    if getattr(notification_settings, time_attr) != current_time:
         return
-    if notification_settings.last_cook_sent_date == today:
+    if getattr(notification_settings, sent_attr) == today:
         return
 
-    text = build_cook_reminder_text(db, user)
+    text = build_meal_cook_reminder_text(db, user, meal_type)
+    if not text:
+        return
+
     sent = await send_telegram_message(
         user.telegram_id,
         text,
@@ -101,8 +125,9 @@ async def _maybe_send_cook(
         button_text="Открыть меню",
     )
     if sent:
+        setattr(notification_settings, sent_attr, today)
         notification_settings.last_cook_sent_date = today
-        logger.info("Cook reminder sent to user %s", user.id)
+        logger.info("%s cook reminder sent to user %s", meal_type, user.id)
 
 
 def _now_in_timezone(timezone_name: str) -> tuple[date, str]:

@@ -34,14 +34,36 @@ def update_settings(
 
     if payload.buy_reminder_enabled is not None:
         row.buy_reminder_enabled = payload.buy_reminder_enabled
+    if payload.cook_breakfast_enabled is not None:
+        row.cook_breakfast_enabled = payload.cook_breakfast_enabled
+    if payload.cook_lunch_enabled is not None:
+        row.cook_lunch_enabled = payload.cook_lunch_enabled
+    if payload.cook_dinner_enabled is not None:
+        row.cook_dinner_enabled = payload.cook_dinner_enabled
     if payload.cook_reminder_enabled is not None:
         row.cook_reminder_enabled = payload.cook_reminder_enabled
+        if not payload.cook_reminder_enabled:
+            row.cook_breakfast_enabled = False
+            row.cook_lunch_enabled = False
+            row.cook_dinner_enabled = False
     if payload.buy_reminder_time is not None:
         row.buy_reminder_time = payload.buy_reminder_time
     if payload.cook_reminder_time is not None:
         row.cook_reminder_time = payload.cook_reminder_time
+    if payload.cook_breakfast_time is not None:
+        row.cook_breakfast_time = payload.cook_breakfast_time
+    if payload.cook_lunch_time is not None:
+        row.cook_lunch_time = payload.cook_lunch_time
+    if payload.cook_dinner_time is not None:
+        row.cook_dinner_time = payload.cook_dinner_time
     if payload.timezone is not None:
         row.timezone = payload.timezone
+
+    row.cook_reminder_enabled = (
+        row.cook_breakfast_enabled
+        or row.cook_lunch_enabled
+        or row.cook_dinner_enabled
+    )
 
     db.commit()
     db.refresh(row)
@@ -52,8 +74,14 @@ def _to_response(row: UserNotificationSettings) -> NotificationSettingsResponse:
     return NotificationSettingsResponse(
         buy_reminder_enabled=row.buy_reminder_enabled,
         cook_reminder_enabled=row.cook_reminder_enabled,
+        cook_breakfast_enabled=row.cook_breakfast_enabled,
+        cook_lunch_enabled=row.cook_lunch_enabled,
+        cook_dinner_enabled=row.cook_dinner_enabled,
         buy_reminder_time=row.buy_reminder_time,
         cook_reminder_time=row.cook_reminder_time,
+        cook_breakfast_time=row.cook_breakfast_time,
+        cook_lunch_time=row.cook_lunch_time,
+        cook_dinner_time=row.cook_dinner_time,
         timezone=row.timezone,
         updated_at=row.updated_at,
     )

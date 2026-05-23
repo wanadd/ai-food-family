@@ -12,11 +12,6 @@ export default function SettingsPage() {
         description="Telegram, телефон, идентификатор"
       />
       <SettingsMenuItem
-        href="/notifications"
-        label="Уведомления"
-        description="Покупки, готовка, время"
-      />
-      <SettingsMenuItem
         href="/settings/care"
         label="Уведомления заботы"
         description="Мягкие подсказки в Telegram"
