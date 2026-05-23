@@ -1,21 +1,23 @@
 "use client";
 
-import { ChipSelectWithCustom } from "@/components/onboarding/ChipSelectWithCustom";
-import { OptionCards } from "@/components/onboarding/OptionCards";
-import { TextAreaField } from "@/components/onboarding/TextAreaField";
-import { NumberInput } from "@/components/nutrition-profile/NumberInput";
+import { useMemo, useState } from "react";
+
+import { MultiSelectField } from "@/components/ui/MultiSelectField";
+import {
+  ageInputFromMonths,
+  toAgeMonths,
+  validateAgeMonths,
+  type AgeUnit,
+} from "@/lib/family/age";
+import type { VirtualMemberDraft } from "@/lib/family/types";
 import {
   ALLERGY_OPTIONS,
+  ALLERGY_PRESET_VALUES,
   NUTRITION_GOAL_OPTIONS,
   RESTRICTION_OPTIONS,
-} from "@/lib/nutrition-profile/options";
-import type { VirtualMemberDraft } from "@/lib/family/types";
-
-const KIND_OPTIONS = [
-  { value: "child", label: "Ребёнок" },
-  { value: "elder", label: "Пожилой родственник" },
-  { value: "other", label: "Другой" },
-];
+  RESTRICTION_PRESET_VALUES,
+  VIRTUAL_KIND_OPTIONS,
+} from "@/lib/family/virtual-member-options";
 
 type VirtualMemberNutritionFormProps = {
   draft: VirtualMemberDraft;
@@ -24,10 +26,23 @@ type VirtualMemberNutritionFormProps = {
   onSubmit: () => void;
   onCancel: () => void;
   loading?: boolean;
-  /** Редактирование участника с Telegram (только питание). */
   linkedAccount?: boolean;
   linkedName?: string;
+  hideFooter?: boolean;
 };
+
+function mergeSelected(preset: string[], custom: string[]): string[] {
+  return [...preset, ...custom.filter((c) => !preset.includes(c))];
+}
+
+function splitSelected(
+  selected: string[],
+  presetValues: Set<string>,
+): { preset: string[]; custom: string[] } {
+  const preset = selected.filter((v) => presetValues.has(v));
+  const custom = selected.filter((v) => !presetValues.has(v));
+  return { preset, custom };
+}
 
 export function VirtualMemberNutritionForm({
   draft,
@@ -38,44 +53,66 @@ export function VirtualMemberNutritionForm({
   loading,
   linkedAccount,
   linkedName,
+  hideFooter = false,
 }: VirtualMemberNutritionFormProps) {
   const nutrition = draft.nutrition;
   const isChild = draft.virtual_kind === "child" || draft.role === "child";
-  const ageYears =
-    nutrition.age_years ??
-    (nutrition.age != null && nutrition.age <= 17 ? nutrition.age : null);
-  const ageMonths = nutrition.age_months ?? 0;
 
-  function setChildAge(years: number | null, months: number) {
-    const y = years ?? 0;
-    const m = Math.min(11, Math.max(0, months));
-    const totalYears = y + (m >= 12 ? 1 : 0);
-    const normalizedMonths = m >= 12 ? m - 12 : m;
+  const initialAge = ageInputFromMonths(nutrition.age_months, isChild);
+  const [ageAmount, setAgeAmount] = useState<number | "">(
+    initialAge.amount ?? "",
+  );
+  const [ageUnit, setAgeUnit] = useState<AgeUnit>(initialAge.unit);
+  const [ageError, setAgeError] = useState<string | null>(null);
+
+  const allergySelected = useMemo(
+    () => mergeSelected(nutrition.allergies, nutrition.custom_allergies),
+    [nutrition.allergies, nutrition.custom_allergies],
+  );
+  const restrictionSelected = useMemo(
+    () => mergeSelected(nutrition.restrictions, nutrition.custom_restrictions),
+    [nutrition.restrictions, nutrition.custom_restrictions],
+  );
+
+  function syncAgeMonths(amount: number | "", unit: AgeUnit) {
+    setAgeAmount(amount);
+    setAgeUnit(unit);
+    if (amount === "" || Number.isNaN(Number(amount))) {
+      onChange({
+        ...draft,
+        nutrition: { ...nutrition, age_months: null },
+      });
+      setAgeError("Укажите возраст");
+      return;
+    }
+    const months = toAgeMonths(Number(amount), unit);
+    const err = validateAgeMonths(months, isChild);
+    setAgeError(err);
     onChange({
       ...draft,
-      nutrition: {
-        ...nutrition,
-        age_years: y,
-        age_months: normalizedMonths,
-        age: totalYears > 0 || normalizedMonths > 0 ? totalYears : null,
-      },
+      nutrition: { ...nutrition, age_months: err ? null : months },
     });
   }
 
-  return (
-    <section className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
-      <h3 className="text-base font-bold text-stone-900">
-        {linkedAccount ? linkedName ?? "Участник" : "Без аккаунта"}
-      </h3>
-      <p className="mt-1 text-sm text-stone-500">
-        {linkedAccount
-          ? "Профиль участника с его разрешения"
-          : "Профиль учтётся в семейном меню"}
-      </p>
+  const goalOk =
+    nutrition.nutrition_goal &&
+    (nutrition.nutrition_goal !== "other" ||
+      (nutrition.custom_nutrition_goal || "").trim());
 
-      <div className="mt-4 space-y-4">
+  return (
+    <section className="space-y-3">
+      <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+        <h3 className="text-base font-bold text-stone-900">
+          {linkedAccount ? linkedName ?? "Участник" : "Участник без аккаунта"}
+        </h3>
+        <p className="mt-1 text-xs text-stone-500">
+          {linkedAccount
+            ? "Профиль с разрешения участника"
+            : "Учтётся в семейном меню"}
+        </p>
+
         {!linkedAccount ? (
-          <>
+          <div className="mt-4 space-y-3">
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-stone-700">
                 Имя
@@ -93,7 +130,7 @@ export function VirtualMemberNutritionForm({
             <div>
               <p className="mb-2 text-sm font-medium text-stone-700">Кто это</p>
               <div className="flex flex-wrap gap-2">
-                {KIND_OPTIONS.map((o) => (
+                {VIRTUAL_KIND_OPTIONS.map((o) => (
                   <button
                     key={o.value}
                     type="button"
@@ -115,154 +152,288 @@ export function VirtualMemberNutritionForm({
                 ))}
               </div>
             </div>
-          </>
-        ) : null}
-
-        {isChild ? (
-          <div>
-            <p className="mb-2 text-sm font-medium text-stone-700">Возраст</p>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberInput
-                label="Лет"
-                value={ageYears}
-                onChange={(years) => setChildAge(years, ageMonths)}
-                min={0}
-                max={17}
-              />
-              <NumberInput
-                label="Месяцев"
-                value={ageMonths}
-                onChange={(months) =>
-                  setChildAge(ageYears ?? 0, months ?? 0)
-                }
-                min={0}
-                max={11}
-              />
-            </div>
-            <p className="mt-1 text-xs text-stone-500">
-              Для малышей укажите годы и месяцы — так точнее для меню
-            </p>
           </div>
+        ) : null}
+      </div>
+
+      <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+        <p className="text-sm font-semibold text-stone-800">Возраст и цель</p>
+
+        <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-stone-600">
+              Возраст
+            </span>
+            <input
+              type="number"
+              min={0}
+              value={ageAmount}
+              onChange={(e) => {
+                const raw = e.target.value;
+                syncAgeMonths(raw === "" ? "" : Number(raw), ageUnit);
+              }}
+              className="w-full rounded-xl border border-stone-200 px-4 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+            />
+          </label>
+          <label className="block min-w-[7.5rem]">
+            <span className="mb-1 block text-xs font-medium text-stone-600">
+              Единица
+            </span>
+            <select
+              value={ageUnit}
+              onChange={(e) => {
+                const unit = e.target.value as AgeUnit;
+                syncAgeMonths(ageAmount, unit);
+              }}
+              className="w-full rounded-xl border border-stone-200 px-3 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="months">месяцев</option>
+              <option value="years">лет</option>
+            </select>
+          </label>
+        </div>
+        {ageError ? (
+          <p className="mt-1 text-xs text-red-600">{ageError}</p>
         ) : (
-          <NumberInput
-            label="Возраст (лет)"
-            value={nutrition.age}
-            onChange={(age) =>
-              onChange({
-                ...draft,
-                nutrition: { ...nutrition, age, age_years: null, age_months: null },
-              })
-            }
-            min={1}
-            max={120}
-          />
+          <p className="mt-1 text-xs text-stone-500">
+            {isChild
+              ? "До 2 лет удобнее указывать в месяцах"
+              : "Возраст сохраняется точно для меню"}
+          </p>
         )}
 
-        <div>
-          <p className="mb-2 text-sm font-medium text-stone-700">Цель питания</p>
-          <OptionCards
-            options={NUTRITION_GOAL_OPTIONS}
-            value={nutrition.nutrition_goal}
-            onChange={(nutrition_goal) =>
+        <label className="mt-4 block">
+          <span className="mb-1.5 block text-sm font-medium text-stone-700">
+            Цель питания
+          </span>
+          <select
+            value={nutrition.nutrition_goal ?? ""}
+            onChange={(e) =>
               onChange({
                 ...draft,
-                nutrition: { ...nutrition, nutrition_goal },
+                nutrition: {
+                  ...nutrition,
+                  nutrition_goal: e.target.value || null,
+                },
               })
             }
-          />
-        </div>
+            className="w-full rounded-xl border border-stone-200 px-4 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="">Выберите цель</option>
+            {NUTRITION_GOAL_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
 
-        <div>
-          <p className="mb-2 text-sm font-medium text-stone-700">Аллергии</p>
-          <p className="mb-2 text-xs text-stone-500">Можно выбрать несколько</p>
-          <ChipSelectWithCustom
-            options={ALLERGY_OPTIONS}
-            value={nutrition.allergies}
-            onChange={(allergies) =>
-              onChange({ ...draft, nutrition: { ...nutrition, allergies } })
-            }
-            exclusiveNone="none"
-            customPlaceholder="Своя аллергия"
-          />
-        </div>
+        {nutrition.nutrition_goal === "other" ? (
+          <label className="mt-3 block">
+            <span className="mb-1.5 block text-sm font-medium text-stone-700">
+              Своя цель
+            </span>
+            <input
+              value={nutrition.custom_nutrition_goal ?? ""}
+              onChange={(e) =>
+                onChange({
+                  ...draft,
+                  nutrition: {
+                    ...nutrition,
+                    custom_nutrition_goal: e.target.value,
+                  },
+                })
+              }
+              placeholder="Опишите цель"
+              className="w-full rounded-xl border border-stone-200 px-4 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+            />
+          </label>
+        ) : null}
+      </div>
 
-        <div>
-          <p className="mb-2 text-sm font-medium text-stone-700">Ограничения</p>
-          <p className="mb-2 text-xs text-stone-500">Можно выбрать несколько</p>
-          <ChipSelectWithCustom
+      <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+        <p className="mb-3 text-sm font-semibold text-stone-800">
+          Аллергии и ограничения
+        </p>
+
+        <MultiSelectField
+          label="Аллергии"
+          options={ALLERGY_OPTIONS}
+          value={allergySelected}
+          customValues={nutrition.custom_allergies}
+          exclusiveNone="none"
+          customPlaceholder="Добавить свою аллергию"
+          hint="Можно выбрать несколько"
+          onChange={(selected, custom) => {
+            const { preset, custom: mergedCustom } = splitSelected(
+              selected,
+              ALLERGY_PRESET_VALUES,
+            );
+            onChange({
+              ...draft,
+              nutrition: {
+                ...nutrition,
+                allergies: preset,
+                custom_allergies: Array.from(
+                  new Set([...mergedCustom, ...custom]),
+                ),
+              },
+            });
+          }}
+        />
+
+        <div className="mt-4">
+          <MultiSelectField
+            label="Ограничения"
             options={RESTRICTION_OPTIONS}
-            value={nutrition.restrictions}
-            onChange={(restrictions) =>
-              onChange({ ...draft, nutrition: { ...nutrition, restrictions } })
-            }
+            value={restrictionSelected}
+            customValues={nutrition.custom_restrictions}
             exclusiveNone="none"
-            customPlaceholder="Своё ограничение"
+            customPlaceholder="Добавить своё ограничение"
+            hint="Можно выбрать несколько"
+            onChange={(selected, custom) => {
+              const { preset, custom: mergedCustom } = splitSelected(
+                selected,
+                RESTRICTION_PRESET_VALUES,
+              );
+              onChange({
+                ...draft,
+                nutrition: {
+                  ...nutrition,
+                  restrictions: preset,
+                  custom_restrictions: Array.from(
+                    new Set([...mergedCustom, ...custom]),
+                  ),
+                },
+              });
+            }}
           />
         </div>
+      </div>
 
-        <div>
-          <p className="mb-2 text-sm font-medium text-stone-700">Любит</p>
-          <TextAreaField
+      <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+        <p className="mb-3 text-sm font-semibold text-stone-800">
+          Вкусы и особенности
+        </p>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-stone-700">
+            Любит
+          </span>
+          <textarea
             value={nutrition.favorite_foods}
-            onChange={(favorite_foods) =>
+            onChange={(e) =>
               onChange({
                 ...draft,
-                nutrition: { ...nutrition, favorite_foods },
+                nutrition: { ...nutrition, favorite_foods: e.target.value },
               })
             }
-            placeholder="Что включать в меню чаще"
+            rows={2}
+            placeholder="Например: каши, ягоды, супы"
+            className="w-full resize-y rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
           />
-        </div>
+        </label>
 
-        <div>
-          <p className="mb-2 text-sm font-medium text-stone-700">Не любит</p>
-          <TextAreaField
+        <label className="mt-3 block">
+          <span className="mb-1.5 block text-sm font-medium text-stone-700">
+            Не любит
+          </span>
+          <textarea
             value={nutrition.disliked_foods}
-            onChange={(disliked_foods) =>
+            onChange={(e) =>
               onChange({
                 ...draft,
-                nutrition: { ...nutrition, disliked_foods },
+                nutrition: { ...nutrition, disliked_foods: e.target.value },
               })
             }
-            placeholder="Чего избегать"
+            rows={2}
+            placeholder="Например: рыбу, острое, брокколи"
+            className="w-full resize-y rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
           />
-        </div>
+        </label>
 
-        <div>
-          <p className="mb-2 text-sm font-medium text-stone-700">
+        <label className="mt-3 block">
+          <span className="mb-1.5 block text-sm font-medium text-stone-700">
             Особенности питания
-          </p>
-          <TextAreaField
+          </span>
+          <textarea
             value={nutrition.notes}
-            onChange={(notes) =>
-              onChange({ ...draft, nutrition: { ...nutrition, notes } })
+            onChange={(e) =>
+              onChange({
+                ...draft,
+                nutrition: { ...nutrition, notes: e.target.value },
+              })
             }
-            placeholder="Например: мягкая пища, без острого…"
+            rows={2}
+            placeholder="Например: мягкая пища, без острого, маленькие порции"
+            className="w-full resize-y rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
           />
-        </div>
+        </label>
       </div>
 
-      <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 rounded-xl border border-stone-200 py-3 text-sm font-semibold text-stone-700"
-        >
-          Отмена
-        </button>
-        <button
-          type="button"
-          disabled={
-            loading ||
-            (!linkedAccount && !draft.display_name.trim()) ||
-            !nutrition.nutrition_goal
-          }
-          onClick={onSubmit}
-          className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
-        >
-          {loading ? "Сохранение…" : submitLabel}
-        </button>
-      </div>
+      {!linkedAccount ? (
+        <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
+          {isChild ? (
+            <label className="flex items-start gap-3 text-sm text-stone-800">
+              <input
+                type="checkbox"
+                checked={Boolean(draft.guardian_consent)}
+                onChange={(e) =>
+                  onChange({ ...draft, guardian_consent: e.target.checked })
+                }
+                className="mt-1"
+              />
+              <span>
+                Я являюсь родителем либо законным представителем ребёнка или имею
+                право добавлять эти данные
+              </span>
+            </label>
+          ) : (
+            <label className="flex items-start gap-3 text-sm text-stone-800">
+              <input
+                type="checkbox"
+                checked={Boolean(draft.data_consent)}
+                onChange={(e) =>
+                  onChange({ ...draft, data_consent: e.target.checked })
+                }
+                className="mt-1"
+              />
+              <span>
+                Я получил согласие на внесение данных этого человека в семейный
+                аккаунт
+              </span>
+            </label>
+          )}
+        </div>
+      ) : null}
+
+      {!hideFooter ? (
+        <div className="flex gap-2 pb-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-xl border border-stone-200 py-3 text-sm font-semibold text-stone-700"
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            disabled={
+              loading ||
+              (!linkedAccount && !draft.display_name.trim()) ||
+              !goalOk ||
+              nutrition.age_months == null ||
+              Boolean(ageError) ||
+              (!linkedAccount &&
+                (isChild ? !draft.guardian_consent : !draft.data_consent))
+            }
+            onClick={onSubmit}
+            className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {loading ? "Сохранение…" : submitLabel}
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

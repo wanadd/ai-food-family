@@ -10,6 +10,7 @@ from app.services.dev_auth import (
     get_or_create_dev_user,
     is_dev_init_data,
 )
+from app.services.legal_consent import LEGAL_REQUIRED_MESSAGE, user_can_access_app
 from app.services.users import (
     PHONE_REQUIRED_MESSAGE,
     get_or_create_user,
@@ -50,7 +51,14 @@ def get_current_user(
 
 
 def get_verified_user(user: User = Depends(get_current_user)) -> User:
-    if not user_has_verified_phone(user):
+    if not user_can_access_app(user):
+        from app.services.legal_consent import user_has_legal_consent
+
+        if not user_has_legal_consent(user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=LEGAL_REQUIRED_MESSAGE,
+            )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=PHONE_REQUIRED_MESSAGE,

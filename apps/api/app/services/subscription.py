@@ -7,6 +7,9 @@ from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from sqlalchemy import desc
+
+from app.models.family import Family, FamilyMember, FamilyRole
 from app.models.subscription import (
     AiUsageLog,
     AmaTransaction,
@@ -22,6 +25,16 @@ from app.services.subscription_catalog import (
     TRIAL_DAYS,
     TRIAL_MENU_GENERATIONS,
 )
+
+AMA_REASON_LABELS: dict[str, str] = {
+    "nutritionist_ask": "Вопрос нутрициологу",
+    "menu_generation_extra": "Доп. генерация меню",
+    "menu_generate": "Генерация меню",
+    "dish_replace": "Замена блюда",
+    "voice_input": "Голосовой ввод",
+    "trial_welcome": "Приветственные Амы",
+    "plan_change_grant": "Пополнение по тарифу",
+}
 
 
 @dataclass
@@ -137,6 +150,112 @@ def get_wallet_for_user(db: Session, user_id: int) -> AmaWallet:
     return _get_or_create_user_wallet(db, user_id)
 
 
+def get_family_admin_user(db: Session, family_id: int) -> User | None:
+    admin_member = (
+        db.query(FamilyMember)
+        .filter(
+            FamilyMember.family_id == family_id,
+            FamilyMember.role == FamilyRole.ADMIN.value,
+        )
+        .one_or_none()
+    )
+    if admin_member is None or admin_member.user_id is None:
+        return None
+    return db.query(User).filter(User.id == admin_member.user_id).one_or_none()
+
+
+def resolve_billing_user(db: Session, user: User, scope: AppScope) -> User:
+    if scope.is_family and scope.family_id:
+        admin = get_family_admin_user(db, scope.family_id)
+        if admin is not None:
+            return admin
+    return user
+
+
+def _get_or_create_family_wallet(db: Session, family_id: int) -> AmaWallet:
+    wallet = (
+        db.query(AmaWallet)
+        .filter(
+            AmaWallet.family_id == family_id,
+            AmaWallet.user_id.is_(None),
+        )
+        .one_or_none()
+    )
+    if wallet is None:
+        wallet = AmaWallet(family_id=family_id, balance=0)
+        db.add(wallet)
+        db.commit()
+        db.refresh(wallet)
+    return wallet
+
+
+def resolve_wallet(db: Session, user: User, scope: AppScope) -> AmaWallet:
+    if scope.is_family and scope.family_id:
+        return _get_or_create_family_wallet(db, scope.family_id)
+    return _get_or_create_user_wallet(db, user.id)
+
+
+def is_family_admin(db: Session, user: User, family_id: int) -> bool:
+    member = (
+        db.query(FamilyMember)
+        .filter(
+            FamilyMember.family_id == family_id,
+            FamilyMember.user_id == user.id,
+        )
+        .one_or_none()
+    )
+    return member is not None and member.role == FamilyRole.ADMIN.value
+
+
+def assert_can_spend_ama(db: Session, user: User, scope: AppScope) -> None:
+    if scope.is_family and scope.family_id:
+        admin = get_family_admin_user(db, scope.family_id)
+        if admin is None or admin.id != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Тратить Амы семьи может только администратор",
+            )
+
+
+def _user_display_name(db: Session, user_id: int | None) -> str:
+    if user_id is None:
+        return "Семья"
+    user = db.query(User).filter(User.id == user_id).one_or_none()
+    if user is None:
+        return "Участник"
+    parts = [user.first_name, user.last_name]
+    name = " ".join(p for p in parts if p).strip()
+    return name or "Участник"
+
+
+def list_ama_transactions(
+    db: Session, wallet: AmaWallet, *, limit: int = 30
+) -> list[dict[str, Any]]:
+    rows = (
+        db.query(AmaTransaction)
+        .filter(AmaTransaction.wallet_id == wallet.id)
+        .order_by(desc(AmaTransaction.created_at))
+        .limit(limit)
+        .all()
+    )
+    items: list[dict[str, Any]] = []
+    for row in rows:
+        meta = row.metadata_json or {}
+        spender_id = meta.get("user_id")
+        items.append(
+            {
+                "id": row.id,
+                "user_name": meta.get("user_name")
+                or _user_display_name(db, spender_id),
+                "amount": row.amount,
+                "reason": row.reason,
+                "reason_label": AMA_REASON_LABELS.get(row.reason, row.reason),
+                "created_at": row.created_at,
+            }
+        )
+    return items
+
+
 def _refresh_subscription_status(db: Session, sub: UserSubscription) -> None:
     if sub.status not in ("active", "trial"):
         return
@@ -152,17 +271,33 @@ def _refresh_subscription_status(db: Session, sub: UserSubscription) -> None:
 
 
 def get_current_subscription(
-    db: Session, user: User
-) -> tuple[UserSubscription, SubscriptionPlan, AmaWallet]:
-    sub = ensure_user_billing(db, user)
+    db: Session, user: User, scope: AppScope | None = None
+) -> tuple[UserSubscription, SubscriptionPlan, AmaWallet, dict[str, Any]]:
+    scope = scope or AppScope(mode="personal", user_id=user.id, family_id=None)
+    billing_user = resolve_billing_user(db, user, scope)
+    sub = ensure_user_billing(db, billing_user)
     plan = get_plan(db, sub.plan_code)
     if plan is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Тариф не найден",
         )
-    wallet = get_wallet_for_user(db, user.id)
-    return sub, plan, wallet
+    wallet = resolve_wallet(db, user, scope)
+    family_name = None
+    is_family_billing = False
+    is_admin = False
+    if scope.is_family and scope.family_id:
+        family = db.query(Family).filter(Family.id == scope.family_id).one_or_none()
+        family_name = family.name if family else None
+        is_family_billing = True
+        is_admin = is_family_admin(db, user, scope.family_id)
+    meta = {
+        "is_family_billing": is_family_billing,
+        "family_name": family_name,
+        "is_family_admin": is_admin,
+        "can_spend_ama": not is_family_billing or is_admin,
+    }
+    return sub, plan, wallet, meta
 
 
 def ai_actions_allowed(sub: UserSubscription) -> bool:
@@ -173,7 +308,7 @@ def ai_actions_allowed(sub: UserSubscription) -> bool:
 def check_feature_access(
     db: Session, user: User, feature: str
 ) -> bool:
-    sub, plan, _ = get_current_subscription(db, user)
+    sub, plan, _, _ = get_current_subscription(db, user)
     if not ai_actions_allowed(sub) and feature.startswith("ai_"):
         return False
     features = plan.features or {}
@@ -198,7 +333,7 @@ def _menu_generation_limit(plan: SubscriptionPlan, sub: UserSubscription) -> int
 def evaluate_menu_generation(
     db: Session, user: User, scope: AppScope
 ) -> MenuGenerationAccess:
-    sub, plan, wallet = get_current_subscription(db, user)
+    sub, plan, wallet, _ = get_current_subscription(db, user, scope)
     _refresh_subscription_status(db, sub)
     db.refresh(sub)
 
@@ -263,17 +398,22 @@ def commit_menu_generation(
     used_ai: bool,
     model: str | None = None,
 ) -> None:
-    sub, _, wallet = get_current_subscription(db, user)
+    sub, _, wallet, _ = get_current_subscription(db, user, scope)
     ams_spent = 0
 
     if access.uses_ams:
+        assert_can_spend_ama(db, user, scope)
         ams_spent = AMA_COSTS["menu_generation_extra"]
         spend_ams(
             db,
             wallet,
             ams_spent,
             reason="menu_generation_extra",
-            metadata={"scope": scope.mode},
+            metadata={
+                "scope": scope.mode,
+                "user_id": user.id,
+                "user_name": _user_display_name(db, user.id),
+            },
         )
     elif access.uses_quota:
         sub.menu_generations_used += 1
@@ -298,7 +438,8 @@ def require_ai_action(
     *,
     ama_cost: int | None = None,
 ) -> int:
-    sub, plan, wallet = get_current_subscription(db, user)
+    assert_can_spend_ama(db, user, scope)
+    sub, plan, wallet, _ = get_current_subscription(db, user, scope)
     _refresh_subscription_status(db, sub)
     db.refresh(sub)
 
@@ -337,7 +478,12 @@ def require_ai_action(
         wallet,
         cost,
         reason=action_type,
-        metadata={"scope": scope.mode},
+        metadata={
+            "scope": scope.mode,
+            "user_id": user.id,
+            "user_name": _user_display_name(db, user.id),
+            "family_id": scope.family_id,
+        },
     )
     return cost
 
@@ -441,7 +587,7 @@ def reset_monthly_limits(db: Session) -> None:
 
 
 def select_plan_stub(
-    db: Session, user: User, plan_code: str
+    db: Session, user: User, plan_code: str, *, family_id: int | None = None
 ) -> UserSubscription:
     """UI stub: switch plan without payment (for testing / preview)."""
     plan = get_plan(db, plan_code)
@@ -459,6 +605,7 @@ def select_plan_stub(
     now = _now()
     sub = UserSubscription(
         user_id=user.id,
+        family_id=family_id,
         plan_code=plan_code,
         status="active",
         started_at=now,
@@ -469,13 +616,17 @@ def select_plan_stub(
     db.commit()
     db.refresh(sub)
 
-    wallet = get_wallet_for_user(db, user.id)
+    wallet = (
+        _get_or_create_family_wallet(db, family_id)
+        if family_id
+        else get_wallet_for_user(db, user.id)
+    )
     if wallet.balance < plan.monthly_ams:
         add_ams(
             db,
             wallet,
             plan.monthly_ams - wallet.balance,
             reason="plan_change_grant",
-            metadata={"plan_code": plan_code},
+            metadata={"plan_code": plan_code, "user_id": user.id},
         )
     return sub

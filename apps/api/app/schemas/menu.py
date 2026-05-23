@@ -13,6 +13,7 @@ class MenuMeal(BaseModel):
     description: str = ""
     prep_time_minutes: int = Field(ge=0, le=300)
     calories_estimate: int | None = Field(default=None, ge=0)
+    recipe_id: int | None = None
 
 
 class MenuIngredient(BaseModel):
@@ -47,9 +48,21 @@ class ReplaceDishRequest(BaseModel):
     hint: str | None = Field(default=None, max_length=300)
 
 
+DrinkMenuMode = Literal[
+    "none",
+    "non_alcoholic",
+    "sport",
+    "tea_coffee",
+    "cocktail",
+    "custom",
+]
+
+
 class MenuGenerateRequest(BaseModel):
     persons_count: int | None = Field(default=None, ge=1, le=20)
     plan_mode: str | None = Field(default=None, max_length=64)
+    drink_mode: DrinkMenuMode | None = None
+    allow_alcohol: bool = False
 
 
 class SelectMenuRequest(BaseModel):

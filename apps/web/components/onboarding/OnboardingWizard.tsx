@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTelegram } from "@/components/TelegramProvider";
 
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
 import { OnboardingComplete } from "@/components/onboarding/OnboardingComplete";
 import { ProgressBar } from "@/components/onboarding/ProgressBar";
 import { StepContent } from "@/components/onboarding/StepContent";
@@ -201,10 +200,6 @@ export function OnboardingWizard() {
           <p className="mt-3 text-center text-xs text-stone-400">{saveHint}</p>
         ) : null}
       </main>
-
-      <div className="px-5 pb-2">
-        <BottomBackButton className="px-0" />
-      </div>
 
       <footer className="sticky bottom-0 border-t border-stone-200/80 bg-white/95 px-5 py-4 backdrop-blur">
         <StepNavigation

@@ -54,6 +54,26 @@ function buildQuery(params: RecipeQuery): string {
   if (params.favorites_only) {
     search.set("favorites_only", "true");
   }
+  const boolKeys = [
+    "from_pantry",
+    "for_children",
+    "for_sport",
+    "for_event",
+    "drinks_only",
+    "non_alcoholic",
+    "alcoholic_only",
+    "protein_only",
+    "smoothie_only",
+    "tea_coffee_only",
+  ] as const;
+  for (const key of boolKeys) {
+    if (params[key]) {
+      search.set(key, "true");
+    }
+  }
+  if (params.goal) {
+    search.set("goal", params.goal);
+  }
   const query = search.toString();
   return query ? `?${query}` : "";
 }
@@ -84,5 +104,16 @@ export async function toggleRecipeFavorite(
 ): Promise<{ recipe_id: number; is_favorited: boolean }> {
   return recipeFetch(`/recipes/${recipeId}/favorite`, initData, {
     method: "POST",
+  });
+}
+
+export async function addRecipeToShopping(
+  initData: string,
+  recipeId: number,
+  servings?: number,
+): Promise<void> {
+  await recipeFetch(`/recipes/${recipeId}/add-to-shopping`, initData, {
+    method: "POST",
+    body: JSON.stringify({ servings: servings ?? null }),
   });
 }

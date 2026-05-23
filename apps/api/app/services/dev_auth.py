@@ -26,7 +26,7 @@ def is_dev_init_data(init_data: str | None) -> bool:
 
 
 def get_or_create_dev_user(db: Session) -> tuple[User, bool]:
-    return upsert_user_from_bot(
+    user, is_new = upsert_user_from_bot(
         db,
         telegram_id=DEV_TELEGRAM_ID,
         username=DEV_USERNAME,
@@ -35,3 +35,15 @@ def get_or_create_dev_user(db: Session) -> tuple[User, bool]:
         language_code="ru",
         phone_number=DEV_PHONE,
     )
+    if not user.accepted_terms:
+        from app.legal.documents import LEGAL_DOCUMENTS_VERSION
+        from datetime import datetime, timezone
+
+        user.accepted_terms = True
+        user.accepted_privacy = True
+        user.accepted_personal_data = True
+        user.legal_documents_version = LEGAL_DOCUMENTS_VERSION
+        user.legal_accepted_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(user)
+    return user, is_new

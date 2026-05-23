@@ -9,6 +9,12 @@ export type AuthUser = {
   language_code: string | null;
   phone_number: string | null;
   photo_url: string | null;
+  accepted_terms?: boolean;
+  accepted_privacy?: boolean;
+  accepted_personal_data?: boolean;
+  legal_accepted_at?: string | null;
+  legal_documents_version?: string | null;
+  phone_skipped?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -17,6 +23,8 @@ export type TelegramAuthResponse = {
   user: AuthUser;
   is_new: boolean;
   phone_verified: boolean;
+  legal_accepted?: boolean;
+  can_use_app?: boolean;
 };
 
 export type DevLoginResponse = TelegramAuthResponse & {

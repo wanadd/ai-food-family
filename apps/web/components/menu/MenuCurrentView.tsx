@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
 import { PageLoading } from "@/components/ui/PageLoading";
@@ -17,6 +18,7 @@ import {
 import type { MenuVariant } from "@/lib/menu/types";
 
 export function MenuCurrentView() {
+  const searchParams = useSearchParams();
   const { initData } = useTelegram();
   const { mode, loading: modeLoading } = useAppMode();
   const [menu, setMenu] = useState<MenuVariant | null>(null);
@@ -47,6 +49,12 @@ export function MenuCurrentView() {
     if (modeLoading) return;
     void load();
   }, [load, modeLoading]);
+
+  useEffect(() => {
+    if (searchParams.get("replace") === "1" && menu) {
+      setReplaceTarget(menu);
+    }
+  }, [searchParams, menu]);
 
   async function handleReplace(mealIndex: number) {
     if (!initData || !replaceTarget || !menu) return;
@@ -87,7 +95,6 @@ export function MenuCurrentView() {
         >
           Настроить план
         </Link>
-        <BottomBackButton className="mt-6" />
       </div>
     );
   }
@@ -100,25 +107,12 @@ export function MenuCurrentView() {
     : "Сегодня";
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-24">
-      <header className="border-b border-stone-100 bg-white px-4 py-4">
-        <div className="mx-auto max-w-lg">
-          <Link
-            href="/menu"
-            className="text-sm font-semibold text-emerald-700"
-          >
-            ← Настройки плана
-          </Link>
-          <h1 className="mt-2 text-xl font-bold text-stone-900">
-            {menu.title}
-          </h1>
-          <p className="mt-1 text-sm text-stone-500">
-            {dateLabel} · активен
-          </p>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-4 px-4 py-4">
+    <ScreenLayout
+      title={menu.title}
+      subtitle={`${dateLabel} · активен`}
+      back={{ label: "Меню", href: "/menu" }}
+      contentClassName="space-y-4"
+    >
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
@@ -132,9 +126,6 @@ export function MenuCurrentView() {
           onReplace={() => setReplaceTarget(menu)}
           selecting={false}
         />
-      </main>
-
-      <BottomBackButton className="pb-2 pt-2" />
 
       {replaceTarget ? (
         <ReplaceDishModal
@@ -144,6 +135,6 @@ export function MenuCurrentView() {
           loading={replacing}
         />
       ) : null}
-    </div>
+    </ScreenLayout>
   );
 }

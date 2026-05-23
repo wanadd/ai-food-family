@@ -1,9 +1,11 @@
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.family import FamilyMember
 from app.models.user import User
 from app.models.user_profile import UserProfile
 from app.schemas.family_member_nutrition import VirtualNutritionProfile
+from app.services.member_age import format_age_short_ru, normalize_age_months
 from app.services.nutrition_profile import is_profile_complete
 from app.services.nutrition_profile_labels import (
     NUTRITION_GOAL_LABELS,
@@ -18,39 +20,93 @@ def member_is_virtual(member: FamilyMember) -> bool:
 
 def virtual_nutrition_from_member(member: FamilyMember) -> VirtualNutritionProfile:
     raw = member.nutrition_profile or {}
-    return VirtualNutritionProfile(
-        age=raw.get("age"),
-        age_years=raw.get("age_years"),
+    allergies = list(raw.get("allergies") or [])
+    custom_allergies = list(raw.get("custom_allergies") or [])
+    restrictions = list(raw.get("restrictions") or [])
+    custom_restrictions = list(raw.get("custom_restrictions") or [])
+
+    age_months = normalize_age_months(
         age_months=raw.get("age_months"),
+        age_years=raw.get("age_years"),
+        age=raw.get("age"),
+    )
+
+    return VirtualNutritionProfile(
+        age_months=age_months,
         nutrition_goal=raw.get("nutrition_goal"),
-        allergies=raw.get("allergies") or [],
-        restrictions=raw.get("restrictions") or [],
-        diets=raw.get("diets") or [],
+        custom_nutrition_goal=raw.get("custom_nutrition_goal"),
+        allergies=allergies,
+        custom_allergies=custom_allergies,
+        restrictions=restrictions,
+        custom_restrictions=custom_restrictions,
         favorite_foods=raw.get("favorite_foods") or "",
         disliked_foods=raw.get("disliked_foods") or "",
         notes=raw.get("notes") or "",
+        age=raw.get("age"),
+        age_years=raw.get("age_years"),
+        diets=raw.get("diets") or [],
     )
 
 
 def virtual_nutrition_complete(nutrition: VirtualNutritionProfile) -> bool:
+    if nutrition.age_months is None:
+        return False
+    if nutrition.nutrition_goal == "other":
+        return bool((nutrition.custom_nutrition_goal or "").strip())
     return bool(nutrition.nutrition_goal)
 
 
 def apply_virtual_nutrition_to_member(
     member: FamilyMember, nutrition: VirtualNutritionProfile
 ) -> None:
-    member.nutrition_profile = nutrition.model_dump()
-    if nutrition.nutrition_goal:
-        member.goals = NUTRITION_GOAL_TO_LEGACY_GOALS.get(
-            nutrition.nutrition_goal, ["health"]
+    if nutrition.age_months is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Укажите возраст участника",
         )
-    member.restrictions = list(
+
+    goal = nutrition.nutrition_goal
+    if goal == "other" and not (nutrition.custom_nutrition_goal or "").strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Укажите свою цель питания",
+        )
+    if not goal:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Выберите цель питания",
+        )
+
+    stored = nutrition.model_dump(exclude={"age", "age_years", "diets"})
+    stored["age_months"] = nutrition.age_months
+    stored["age"] = nutrition.age_months // 12 if nutrition.age_months else None
+
+    member.nutrition_profile = stored
+    if goal and goal != "other":
+        member.goals = NUTRITION_GOAL_TO_LEGACY_GOALS.get(goal, ["health"])
+    else:
+        member.goals = ["health"]
+
+    all_restrictions = list(
         dict.fromkeys(
             [
                 *(nutrition.restrictions or []),
+                *(nutrition.custom_restrictions or []),
                 *(nutrition.allergies or []),
+                *(nutrition.custom_allergies or []),
             ]
         )
+    )
+    member.restrictions = all_restrictions
+
+
+def nutrition_goal_display(nutrition: VirtualNutritionProfile) -> str | None:
+    if not nutrition.nutrition_goal:
+        return None
+    if nutrition.nutrition_goal == "other":
+        return (nutrition.custom_nutrition_goal or "Другое").strip()
+    return NUTRITION_GOAL_LABELS.get(
+        nutrition.nutrition_goal, nutrition.nutrition_goal
     )
 
 
@@ -72,11 +128,7 @@ def nutrition_goal_label_for_member(
 ) -> str | None:
     if member_is_virtual(member):
         nutrition = virtual_nutrition_from_member(member)
-        if nutrition.nutrition_goal:
-            return NUTRITION_GOAL_LABELS.get(
-                nutrition.nutrition_goal, nutrition.nutrition_goal
-            )
-        return None
+        return nutrition_goal_display(nutrition)
 
     if member.user_id is None:
         return None
@@ -88,6 +140,13 @@ def nutrition_goal_label_for_member(
             profile.nutrition_goal, profile.nutrition_goal
         )
     return None
+
+
+def member_age_label(member: FamilyMember) -> str | None:
+    if not member_is_virtual(member):
+        return None
+    nutrition = virtual_nutrition_from_member(member)
+    return format_age_short_ru(nutrition.age_months)
 
 
 def nutrition_summary_for_telegram_member(

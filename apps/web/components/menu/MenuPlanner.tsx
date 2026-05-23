@@ -24,7 +24,6 @@ import {
 import {
   loadPersonsOverride,
   loadPlanMode,
-  savePersonsOverride,
   savePlanMode,
 } from "@/lib/menu/planner-storage";
 import {
@@ -122,14 +121,6 @@ export function MenuPlanner() {
   const checklist = buildChecklistState(profile, personsCount, checklistPantry);
   const hasPlan = Boolean(selectedMenu?.menu);
 
-  function changePersons(delta: number) {
-    setPersonsCount((prev) => {
-      const next = Math.min(20, Math.max(1, prev + delta));
-      savePersonsOverride(next);
-      return next;
-    });
-  }
-
   function changePlanMode(id: PlanModeId) {
     setPlanMode(id);
     savePlanMode(id);
@@ -215,6 +206,9 @@ export function MenuPlanner() {
     <div className="min-h-screen bg-stone-50 pb-28">
       <header className="border-b border-stone-100 bg-white px-4 py-4">
         <div className="mx-auto max-w-lg">
+          <Link href="/menu" className="text-sm font-semibold text-emerald-700">
+            ← Меню
+          </Link>
           {phase === "choose" ? (
             <button
               type="button"
@@ -222,14 +216,18 @@ export function MenuPlanner() {
                 setPhase("setup");
                 setGeneratedMenus([]);
               }}
-              className="text-sm font-semibold text-emerald-700"
+              className="mt-2 block text-sm font-semibold text-emerald-700"
             >
               ← Назад к настройкам
             </button>
           ) : null}
-          <h1 className="text-xl font-bold text-stone-900">План питания</h1>
+          <h1 className="mt-1 text-xl font-bold text-stone-900">Составить меню</h1>
           <p className="mt-0.5 text-sm text-stone-500">
-            Настройте, каким должен быть ваш рацион
+            {personsCount === 1
+              ? "На 1 человека"
+              : `На ${personsCount} человек`}
+            {" · "}
+            вы выбираете финальный план
           </p>
         </div>
       </header>
@@ -265,47 +263,19 @@ export function MenuPlanner() {
                     {context.family.name}
                   </p>
                   <p className="mt-0.5 text-sm text-stone-500">
-                    {context.family.members_count}{" "}
-                    {context.family.members_count === 1
-                      ? "участник"
-                      : context.family.members_count < 5
-                        ? "участника"
-                        : "участников"}
+                    {personsCount}{" "}
+                    {personsCount === 1 ? "участник" : personsCount < 5 ? "участника" : "участников"}
                   </p>
                 </>
               ) : (
-                <p className="text-sm font-medium text-stone-800">
-                  {personsCount === 1
-                    ? "1 человек"
-                    : `${personsCount} человек`}
-                </p>
+                <p className="text-sm font-medium text-stone-800">1 человек</p>
               )}
-              <div className="mt-3 flex items-center justify-between rounded-xl bg-stone-50 px-3 py-2">
-                <span className="text-sm font-medium text-stone-700">
-                  В плане
-                </span>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => changePersons(-1)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-white text-lg font-bold text-stone-700"
-                    aria-label="Меньше"
-                  >
-                    −
-                  </button>
-                  <span className="min-w-[2ch] text-center text-lg font-bold text-stone-900">
-                    {personsCount}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => changePersons(1)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-white text-lg font-bold text-stone-700"
-                    aria-label="Больше"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              <Link
+                href="/menu/settings"
+                className="mt-2 inline-block text-xs font-semibold text-emerald-700"
+              >
+                Изменить число порций →
+              </Link>
             </MenuPlannerSection>
 
             <MenuPlannerSection

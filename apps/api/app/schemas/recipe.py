@@ -3,7 +3,20 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-MealTypeFilter = Literal["breakfast", "lunch", "dinner", "snack", ""]
+MealTypeFilter = Literal[
+    "breakfast",
+    "lunch",
+    "dinner",
+    "snack",
+    "dessert",
+    "drink",
+    "cocktail",
+    "smoothie",
+    "protein_shake",
+    "tea",
+    "coffee",
+    "",
+]
 CategoryFilter = Literal[
     "soup",
     "main",
@@ -11,6 +24,9 @@ CategoryFilter = Literal[
     "dessert",
     "quick",
     "kids",
+    "drink",
+    "event",
+    "bbq",
     "",
 ]
 DifficultyFilter = Literal["easy", "medium", "hard", ""]
@@ -19,6 +35,10 @@ DifficultyFilter = Literal["easy", "medium", "hard", ""]
 class RecipeIngredient(BaseModel):
     name: str
     amount: str
+    quantity: str | None = None
+    unit: str | None = None
+    category: str | None = None
+    is_optional: bool = False
 
 
 class RecipeSummary(BaseModel):
@@ -28,17 +48,33 @@ class RecipeSummary(BaseModel):
     meal_type: str
     category: str
     prep_time_minutes: int
+    cooking_time_minutes: int = 30
     servings: int
     difficulty: str
     diets: list[str]
     tags: list[str]
     is_favorited: bool = False
+    is_drink: bool = False
+    is_alcoholic: bool = False
+    calories_per_serving: float | None = None
+    protein_g: float | None = None
+    suitable_for_children: bool = True
+    suitable_for_sport: bool = False
+    suitable_for_event: bool = False
 
 
 class RecipeDetail(RecipeSummary):
     ingredients: list[RecipeIngredient]
     steps: list[str]
+    allergens: list[str] = []
+    restrictions: list[str] = []
+    sugar_g: float | None = None
+    caffeine_mg: float | None = None
+    alcohol_percent: float | None = None
+    cuisine: str | None = None
+    source_type: str = "manual"
     created_at: datetime
+    updated_at: datetime | None = None
 
 
 class RecipeListResponse(BaseModel):
@@ -52,8 +88,49 @@ class RecipeFiltersResponse(BaseModel):
     diets: list[dict[str, str]]
     difficulties: list[dict[str, str]]
     max_prep_time: int
+    drink_modes: list[dict[str, str]] = []
 
 
 class FavoriteToggleResponse(BaseModel):
     recipe_id: int
     is_favorited: bool
+
+
+class RecipeCreateRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    description: str = ""
+    meal_type: str
+    category: str = "main"
+    cooking_time_minutes: int = 30
+    servings: int = Field(default=4, ge=1, le=50)
+    difficulty: str = "easy"
+    ingredients: list[RecipeIngredient] = Field(min_length=1)
+    steps: list[str] = Field(min_length=1)
+    tags: list[str] = []
+    allergens: list[str] = []
+    restrictions: list[str] = []
+    is_drink: bool = False
+    is_alcoholic: bool = False
+    source_type: str = "manual"
+
+
+class RecipeUpdateRequest(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    is_active: bool | None = None
+
+
+class AddRecipeToShoppingRequest(BaseModel):
+    servings: int | None = Field(default=None, ge=1, le=50)
+
+
+class RecipeRecommendationItem(BaseModel):
+    id: int
+    title: str
+    meal_type: str
+    score: float
+    reason: str
+
+
+class RecipeRecommendationsResponse(BaseModel):
+    items: list[RecipeRecommendationItem]

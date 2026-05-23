@@ -1,10 +1,11 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ProgressProLocked } from "@/components/progress/ProgressProLocked";
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
@@ -38,6 +39,7 @@ function statusColor(status: string): string {
 }
 
 export function ProgressDashboard() {
+  const searchParams = useSearchParams();
   const { initData, isTelegram } = useTelegram();
   const { mode } = useAppMode();
   const [data, setData] = useState<ProgressOverview | null>(null);
@@ -76,6 +78,17 @@ export function ProgressDashboard() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const focus = searchParams.get("focus");
+    if (focus === "weight") {
+      setShowWeightForm(true);
+      setShowTrainingForm(false);
+    } else if (focus === "training") {
+      setShowTrainingForm(true);
+      setShowWeightForm(false);
+    }
+  }, [searchParams]);
 
   async function handleAddWeight(e: React.FormEvent) {
     e.preventDefault();
@@ -163,17 +176,12 @@ export function ProgressDashboard() {
   const t = data.targets;
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-24">
-      <header className="border-b border-stone-100 bg-white px-4 py-4">
-        <div className="mx-auto max-w-lg">
-          <h1 className="text-xl font-bold text-stone-900">Прогресс и цели</h1>
-          <p className="mt-0.5 text-sm text-stone-500">
-            ПланАм PRO — сопровождение ваших целей
-          </p>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
+    <ScreenLayout
+      title="Прогресс"
+      subtitle="ПланАм PRO — сопровождение ваших целей"
+      back={{ label: "Профиль", href: "/profile" }}
+      contentClassName="space-y-3"
+    >
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
@@ -342,7 +350,6 @@ export function ProgressDashboard() {
             ) : null}
           </>
         )}
-      </main>
 
       {showWeightForm ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
@@ -498,8 +505,6 @@ export function ProgressDashboard() {
           </form>
         </div>
       ) : null}
-
-      <BottomBackButton className="pb-4 pt-2" />
-    </div>
+    </ScreenLayout>
   );
 }

@@ -1,9 +1,13 @@
 NUTRITION_GOAL_LABELS = {
-    "maintain": "поддержание веса",
-    "lose": "похудение",
-    "gain": "набор массы",
-    "healthy": "здоровое питание",
-    "sport": "спортивный режим",
+    "maintain": "Поддержание веса",
+    "lose": "Похудение",
+    "gain": "Набор массы",
+    "healthy": "Здоровое питание",
+    "sport": "Спортивный режим",
+    "child": "Детское питание",
+    "gentle": "Щадящее питание",
+    "therapeutic": "Лечебное питание",
+    "other": "Другое",
 }
 
 ACTIVITY_LABELS = {
@@ -33,4 +37,8 @@ NUTRITION_GOAL_TO_LEGACY_GOALS: dict[str, list[str]] = {
     "gain": ["health"],
     "healthy": ["health"],
     "sport": ["health"],
+    "child": ["family"],
+    "gentle": ["health"],
+    "therapeutic": ["health"],
+    "other": ["health"],
 }

@@ -7,7 +7,7 @@ from app.telegram.validate import TelegramWebAppUser
 
 PHONE_REQUIRED_MESSAGE = (
     "Подтвердите номер телефона в боте: отправьте /start "
-    "и нажмите «Поделиться номером»."
+    "и нажмите «Поделиться номером», или пропустите шаг в боте."
 )
 
 

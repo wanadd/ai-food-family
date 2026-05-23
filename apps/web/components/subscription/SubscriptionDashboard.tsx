@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { useToast } from "@/components/ui/ToastProvider";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import { formatAmasBalance } from "@/lib/profile/billing";
@@ -46,6 +48,8 @@ function planHighlights(plan: SubscriptionOverview["plans"][0]): string[] {
 }
 
 export function SubscriptionDashboard() {
+  const router = useRouter();
+  const { showToast } = useToast();
   const { initData, isTelegram } = useTelegram();
   const { mode } = useAppMode();
   const [data, setData] = useState<SubscriptionOverview | null>(null);
@@ -78,7 +82,8 @@ export function SubscriptionDashboard() {
     try {
       const updated = await selectPlanStub(initData, mode, planCode);
       setData(updated);
-      setMessage("Тариф обновлён (без оплаты — тестовый режим).");
+      await showToast("✓ Сохранено");
+      router.push("/profile");
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Не удалось сменить тариф");
     } finally {
@@ -108,19 +113,14 @@ export function SubscriptionDashboard() {
       : `${data.menu_generations_remaining ?? 0} из ${data.menu_generations_limit}`;
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-24">
-      <header className="border-b border-stone-100 bg-white px-4 py-4">
-        <div className="mx-auto max-w-lg">
-          <h1 className="text-xl font-bold text-stone-900">Тариф и Амы</h1>
-          <p className="mt-0.5 text-sm text-stone-500">
-            Подписка и ресурс для AI-действий
-          </p>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
+    <ScreenLayout
+      title="Подписка"
+      subtitle="Тариф и баланс Амов"
+      back={{ label: "Профиль", href: "/profile" }}
+      contentClassName="space-y-3"
+    >
         {message ? (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {message}
           </p>
         ) : null}
@@ -149,12 +149,48 @@ export function SubscriptionDashboard() {
             <p className="mt-0.5 text-[11px] text-stone-500">использовано {data.menu_generations_used}</p>
           </article>
           <article className="rounded-2xl border border-amber-100 bg-amber-50/50 p-3 shadow-sm">
-            <p className="text-xs text-amber-800">Баланс Амов</p>
+            <p className="text-xs text-amber-800">
+              {data.is_family_billing ? "Баланс семьи" : "Баланс Амов"}
+            </p>
             <p className="mt-1 text-lg font-bold text-amber-950">
               {formatAmasBalance(data.ama_balance)}
             </p>
+            {data.is_family_billing && data.family_name ? (
+              <p className="mt-0.5 text-[11px] text-amber-900/80">
+                {data.family_name}
+              </p>
+            ) : null}
           </article>
         </section>
+
+        {data.is_family_billing && !data.can_spend_ama ? (
+          <p className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
+            Семейные Амы тратит администратор семьи. Участники без аккаунта
+            учитываются в меню и советах.
+          </p>
+        ) : null}
+
+        {(data.ama_transactions?.length ?? 0) > 0 ? (
+          <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+            <p className="text-sm font-bold text-stone-900">История Амов</p>
+            <ul className="mt-3 space-y-2">
+              {data.ama_transactions?.map((tx) => (
+                <li
+                  key={tx.id}
+                  className="flex items-start justify-between gap-2 border-b border-stone-50 pb-2 text-sm last:border-0 last:pb-0"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-stone-900">{tx.user_name}</p>
+                    <p className="text-xs text-stone-500">{tx.reason_label}</p>
+                  </div>
+                  <span className="shrink-0 font-semibold text-red-700">
+                    {tx.amount} Ам
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
           <p className="text-sm font-bold text-stone-900">Что такое Амы</p>
@@ -209,7 +245,8 @@ export function SubscriptionDashboard() {
                       <li key={line}>· {line}</li>
                     ))}
                   </ul>
-                  {!isCurrent ? (
+                  {!isCurrent &&
+                  (!data.is_family_billing || data.is_family_admin) ? (
                     <button
                       type="button"
                       disabled={Boolean(selecting)}
@@ -241,9 +278,6 @@ export function SubscriptionDashboard() {
             Скоро
           </button>
         </section>
-      </main>
-
-      <BottomBackButton className="pb-2 pt-2" />
-    </div>
+    </ScreenLayout>
   );
 }

@@ -1,18 +1,17 @@
-"""Voice transcription for Telegram bot (OpenAI Whisper, optional)."""
+"""Voice transcription for Telegram bot (OpenAI Whisper via ai service)."""
 
 from __future__ import annotations
 
 import logging
-import tempfile
-from pathlib import Path
 
-import httpx
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.models.user import User
 from app.services import subscription as subscription_service
+from app.services.ai import transcribe_voice
+from app.services.ai_errors import AiError, AiUnavailableError, MSG_AI_UNAVAILABLE
+from app.services.ai_client import is_ai_configured, current_model_name
 from app.services.app_scope import resolve_scope
 from app.services.subscription_catalog import AMA_COSTS
 
@@ -23,52 +22,26 @@ VOICE_STUB = (
 )
 
 
-async def transcribe_voice(audio_bytes: bytes, *, mime: str = "audio/ogg") -> tuple[str | None, bool]:
-    if not settings.openai_api_key or not audio_bytes:
-        return None, False
-
-    suffix = ".ogg" if "ogg" in mime else ".mp3"
-    path = Path(tempfile.gettempdir()) / f"planam_voice{suffix}"
-    path.write_bytes(audio_bytes)
-
-    headers = {"Authorization": f"Bearer {settings.openai_api_key}"}
-
-    try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            with path.open("rb") as audio_file:
-                response = await client.post(
-                    "https://api.openai.com/v1/audio/transcriptions",
-                    headers=headers,
-                    files={"file": (path.name, audio_file, mime)},
-                    data={"model": "whisper-1", "language": "ru"},
-                )
-            response.raise_for_status()
-            data = response.json()
-        text = (data.get("text") or "").strip()
-        return (text if text else None), True
-    except Exception:
-        logger.exception("Voice transcription failed")
-        return None, False
-    finally:
-        try:
-            path.unlink(missing_ok=True)
-        except OSError:
-            pass
-
-
 async def transcribe_for_user(
     db: Session, user: User, audio_bytes: bytes
 ) -> tuple[str | None, str | None]:
     """
     Returns (text, error_message).
-    error_message set when ams insufficient or AI unavailable stub.
+    error_message set when ams insufficient or AI unavailable.
     """
     scope = resolve_scope(db, user, None)
-    if not settings.openai_api_key:
-        return None, VOICE_STUB
+    if not is_ai_configured():
+        return None, MSG_AI_UNAVAILABLE
 
-    text, used_ai = await transcribe_voice(audio_bytes)
-    if not used_ai or not text:
+    try:
+        text = await transcribe_voice(audio_bytes)
+    except AiUnavailableError:
+        return None, MSG_AI_UNAVAILABLE
+    except AiError:
+        logger.exception("Voice transcription failed")
+        return None, "ПланАм временно не смог обработать запрос. Попробуйте ещё раз."
+
+    if not text:
         return None, VOICE_STUB
 
     try:

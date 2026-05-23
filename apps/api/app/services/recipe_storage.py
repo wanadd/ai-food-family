@@ -1,0 +1,238 @@
+"""Load/save recipes with normalized ingredient/step rows and JSONB fallback."""
+
+from __future__ import annotations
+
+import re
+from typing import Any
+
+from sqlalchemy.orm import Session
+
+from app.models.recipe import (
+    Recipe,
+    RecipeAllergenRow,
+    RecipeIngredientRow,
+    RecipeRestrictionRow,
+    RecipeStepRow,
+    RecipeTagRow,
+)
+from app.services.amount_parser import parse_amount
+from app.services.shopping_categories import infer_category
+
+
+def _parse_legacy_amount(amount_str: str) -> tuple[str, str]:
+    val, unit = parse_amount(amount_str)
+    if val is None:
+        return amount_str.strip() or "1", "шт"
+    qty = str(int(val)) if val == int(val) else str(val)
+    return qty, unit or "шт"
+
+
+def get_structured_ingredients(recipe: Recipe) -> list[dict[str, Any]]:
+    if recipe.ingredient_rows:
+        return [
+            {
+                "name": row.name,
+                "quantity": row.quantity,
+                "unit": row.unit,
+                "category": row.category,
+                "is_optional": row.is_optional,
+                "notes": row.notes,
+                "amount": f"{row.quantity} {row.unit}".strip(),
+            }
+            for row in recipe.ingredient_rows
+        ]
+    result: list[dict[str, Any]] = []
+    for raw in recipe.ingredients or []:
+        if isinstance(raw, dict):
+            name = str(raw.get("name", "")).strip()
+            amount = str(raw.get("amount", "1 шт"))
+            qty, unit = _parse_legacy_amount(amount)
+            category = infer_category(name, raw.get("category"))
+            result.append(
+                {
+                    "name": name,
+                    "quantity": qty,
+                    "unit": unit,
+                    "category": category,
+                    "is_optional": bool(raw.get("is_optional", False)),
+                    "notes": raw.get("notes"),
+                    "amount": amount,
+                }
+            )
+    return result
+
+
+def get_structured_steps(recipe: Recipe) -> list[str]:
+    if recipe.step_rows:
+        return [row.text for row in sorted(recipe.step_rows, key=lambda r: r.step_number)]
+    steps = recipe.steps or []
+    return [str(s) for s in steps]
+
+
+def get_tags(recipe: Recipe) -> list[str]:
+    if recipe.tag_rows:
+        return [row.tag for row in recipe.tag_rows]
+    return list(recipe.tags or [])
+
+
+def get_allergens(recipe: Recipe) -> list[str]:
+    if recipe.allergen_rows:
+        return [row.allergen for row in recipe.allergen_rows]
+    return []
+
+
+def get_restrictions(recipe: Recipe) -> list[str]:
+    if recipe.restriction_rows:
+        return [row.restriction for row in recipe.restriction_rows]
+    return list(recipe.diets or [])
+
+
+def servings_base(recipe: Recipe) -> int:
+    return max(1, recipe.servings or 4)
+
+
+def scale_ingredients(
+    recipe: Recipe, target_servings: int
+) -> list[dict[str, Any]]:
+    base = servings_base(recipe)
+    factor = target_servings / base
+    scaled: list[dict[str, Any]] = []
+    for ing in get_structured_ingredients(recipe):
+        try:
+            qty_val = float(str(ing["quantity"]).replace(",", "."))
+            new_qty = qty_val * factor
+            qty_str = (
+                str(int(new_qty))
+                if new_qty == int(new_qty)
+                else f"{new_qty:.1f}".rstrip("0").rstrip(".")
+            )
+        except ValueError:
+            qty_str = str(ing["quantity"])
+        unit = ing["unit"]
+        scaled.append(
+            {
+                **ing,
+                "quantity": qty_str,
+                "amount": f"{qty_str} {unit}".strip(),
+            }
+        )
+    return scaled
+
+
+def sync_jsonb_from_rows(recipe: Recipe) -> None:
+    """Keep legacy JSONB in sync for older clients."""
+    recipe.ingredients = [
+        {"name": i["name"], "amount": i["amount"]} for i in get_structured_ingredients(recipe)
+    ]
+    recipe.steps = get_structured_steps(recipe)
+    recipe.tags = get_tags(recipe)
+
+
+def persist_recipe_structure(
+    db: Session,
+    recipe: Recipe,
+    *,
+    ingredients: list[dict[str, Any]] | None = None,
+    steps: list[str] | None = None,
+    tags: list[str] | None = None,
+    allergens: list[str] | None = None,
+    restrictions: list[str] | None = None,
+) -> None:
+    if ingredients is not None:
+        recipe.ingredient_rows.clear()
+        for ing in ingredients:
+            name = str(ing.get("name", "")).strip()
+            if not name:
+                continue
+            qty = str(ing.get("quantity", "1"))
+            unit = str(ing.get("unit", "шт"))
+            if "amount" in ing and not ing.get("quantity"):
+                qty, unit = _parse_legacy_amount(str(ing["amount"]))
+            category = ing.get("category") or infer_category(name, None)
+            recipe.ingredient_rows.append(
+                RecipeIngredientRow(
+                    name=name,
+                    quantity=qty,
+                    unit=unit,
+                    category=category,
+                    is_optional=bool(ing.get("is_optional", False)),
+                    notes=ing.get("notes"),
+                )
+            )
+        recipe.ingredients = [
+            {"name": i.name, "amount": f"{i.quantity} {i.unit}".strip()}
+            for i in recipe.ingredient_rows
+        ]
+
+    if steps is not None:
+        recipe.step_rows.clear()
+        for num, text in enumerate(steps, start=1):
+            recipe.step_rows.append(RecipeStepRow(step_number=num, text=text.strip()))
+        recipe.steps = steps
+
+    if tags is not None:
+        recipe.tag_rows.clear()
+        for tag in tags:
+            t = str(tag).strip()
+            if t:
+                recipe.tag_rows.append(RecipeTagRow(tag=t))
+        recipe.tags = tags
+
+    if allergens is not None:
+        recipe.allergen_rows.clear()
+        for allergen in allergens:
+            a = str(allergen).strip()
+            if a:
+                recipe.allergen_rows.append(RecipeAllergenRow(allergen=a))
+
+    if restrictions is not None:
+        recipe.restriction_rows.clear()
+        for restriction in restrictions:
+            r = str(restriction).strip()
+            if r:
+                recipe.restriction_rows.append(RecipeRestrictionRow(restriction=r))
+        recipe.diets = restrictions
+
+
+def normalize_name_key(name: str) -> str:
+    return re.sub(r"\s+", " ", name.strip().lower())
+
+
+def aggregate_ingredients_for_shopping(
+    items: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    """Merge only identical name + unit + category."""
+    merged: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for ing in items:
+        name = str(ing.get("name", "")).strip()
+        if not name:
+            continue
+        unit = str(ing.get("unit", "шт"))
+        category = str(ing.get("category") or infer_category(name, None))
+        key = (normalize_name_key(name), unit, category)
+        try:
+            qty = float(str(ing.get("quantity", "1")).replace(",", "."))
+        except ValueError:
+            qty = 1.0
+        if key in merged:
+            try:
+                merged[key]["quantity"] = str(
+                    float(merged[key]["quantity"].replace(",", ".")) + qty
+                )
+            except ValueError:
+                pass
+        else:
+            merged[key] = {
+                "name": name,
+                "quantity": str(int(qty)) if qty == int(qty) else str(qty),
+                "unit": unit,
+                "category": category,
+            }
+    return [
+        {
+            "name": v["name"],
+            "amount": f"{v['quantity']} {v['unit']}".strip(),
+            "category": v["category"],
+        }
+        for v in merged.values()
+    ]

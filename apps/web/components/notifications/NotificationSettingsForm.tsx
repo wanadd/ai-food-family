@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { useTelegram } from "@/components/TelegramProvider";
 
 import {
@@ -38,47 +38,44 @@ function ReminderCard({
     <section
       className={`rounded-2xl border p-5 transition ${
         enabled
-          ? "border-emerald-200 bg-white shadow-sm"
-          : "border-stone-200 bg-stone-50/80"
+          ? "border-emerald-200 bg-emerald-50/30"
+          : "border-stone-100 bg-white"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex gap-3">
-          <span className="text-2xl" aria-hidden>
-            {emoji}
-          </span>
-          <div>
-            <h3 className="font-semibold text-stone-900">{title}</h3>
-            <p className="mt-1 text-sm text-stone-500">{description}</p>
-          </div>
-        </div>
-        <label className="relative inline-flex cursor-pointer items-center">
-          <input
-            type="checkbox"
-            checked={enabled}
-            disabled={disabled}
-            onChange={(event) => onEnabledChange(event.target.checked)}
-            className="peer sr-only"
-          />
-          <span className="h-7 w-12 rounded-full bg-stone-200 transition peer-checked:bg-emerald-500 peer-disabled:opacity-50" />
-          <span className="absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
-        </label>
-      </div>
-
-      <label
-        className={`mt-4 block ${enabled ? "" : "pointer-events-none opacity-40"}`}
-      >
-        <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-          Время напоминания
+      <div className="flex items-start gap-3">
+        <span className="text-2xl" aria-hidden>
+          {emoji}
         </span>
-        <input
-          type="time"
-          value={time}
-          disabled={disabled || !enabled}
-          onChange={(event) => onTimeChange(event.target.value)}
-          className="mt-2 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm font-medium text-stone-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-        />
-      </label>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-semibold text-stone-900">{title}</h3>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={enabled}
+                disabled={disabled}
+                onChange={(e) => onEnabledChange(e.target.checked)}
+              />
+              <span className="h-7 w-12 rounded-full bg-stone-200 transition peer-checked:bg-emerald-600 peer-disabled:opacity-50" />
+              <span className="absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
+            </label>
+          </div>
+          <p className="mt-1 text-sm text-stone-500">{description}</p>
+          {enabled ? (
+            <label className="mt-4 block">
+              <span className="text-xs font-medium text-stone-600">Время</span>
+              <input
+                type="time"
+                value={time}
+                disabled={disabled}
+                onChange={(e) => onTimeChange(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2.5 text-base"
+              />
+            </label>
+          ) : null}
+        </div>
+      </div>
     </section>
   );
 }
@@ -140,11 +137,8 @@ export function NotificationSettingsForm() {
       });
       setSettings(data);
       setSaved(true);
-      window.setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Не удалось сохранить настройки",
-      );
+      setError(err instanceof Error ? err.message : "Не удалось сохранить");
     } finally {
       setSaving(false);
     }
@@ -177,83 +171,73 @@ export function NotificationSettingsForm() {
   const deviceTz = getDeviceTimezone();
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-stone-100 bg-white px-5 py-6">
-        <h1 className="text-2xl font-bold text-stone-900">Уведомления</h1>
-        <p className="mt-1 text-sm text-stone-500">
-          Время берётся с вашего устройства ({deviceTz})
+    <ScreenLayout
+      title="Уведомления"
+      subtitle={`Время с устройства (${deviceTz})`}
+      back={{ label: "Профиль", href: "/profile" }}
+      contentClassName="space-y-5"
+    >
+      {error ? (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </p>
-      </header>
+      ) : null}
 
-      <main className="mx-auto max-w-lg space-y-5 px-5 py-8">
-        {error ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </p>
-        ) : null}
-
-        {saved ? (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            Настройки сохранены
-          </p>
-        ) : null}
-
-        <ReminderCard
-          emoji="🛒"
-          title="Напомнить купить"
-          description="Список покупок — что ещё не отмечено купленным"
-          enabled={settings.buy_reminder_enabled}
-          time={settings.buy_reminder_time}
-          disabled={saving}
-          onEnabledChange={(value) =>
-            persist({ buy_reminder_enabled: value })
-          }
-          onTimeChange={(value) => persist({ buy_reminder_time: value })}
-        />
-
-        <ReminderCard
-          emoji="🌅"
-          title="Завтрак"
-          description="Напоминание приготовить завтрак из выбранного меню"
-          enabled={settings.cook_breakfast_enabled}
-          time={settings.cook_breakfast_time}
-          disabled={saving}
-          onEnabledChange={(value) =>
-            persist({ cook_breakfast_enabled: value })
-          }
-          onTimeChange={(value) => persist({ cook_breakfast_time: value })}
-        />
-
-        <ReminderCard
-          emoji="🍲"
-          title="Обед"
-          description="Напоминание приготовить обед"
-          enabled={settings.cook_lunch_enabled}
-          time={settings.cook_lunch_time}
-          disabled={saving}
-          onEnabledChange={(value) => persist({ cook_lunch_enabled: value })}
-          onTimeChange={(value) => persist({ cook_lunch_time: value })}
-        />
-
-        <ReminderCard
-          emoji="🌙"
-          title="Ужин"
-          description="Напоминание приготовить ужин"
-          enabled={settings.cook_dinner_enabled}
-          time={settings.cook_dinner_time}
-          disabled={saving}
-          onEnabledChange={(value) => persist({ cook_dinner_enabled: value })}
-          onTimeChange={(value) => persist({ cook_dinner_time: value })}
-        />
-
-        <p className="text-center text-xs text-stone-400">
-          {saving
-            ? "Сохранение…"
-            : "Убедитесь, что бот может писать вам в личные сообщения"}
+      {saved ? (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          ✓ Сохранено
         </p>
-      </main>
+      ) : null}
 
-      <BottomBackButton className="pb-4 pt-2" />
-    </div>
+      <ReminderCard
+        emoji="🛒"
+        title="Напомнить купить"
+        description="Список покупок — что ещё не отмечено купленным"
+        enabled={settings.buy_reminder_enabled}
+        time={settings.buy_reminder_time}
+        disabled={saving}
+        onEnabledChange={(value) => persist({ buy_reminder_enabled: value })}
+        onTimeChange={(value) => persist({ buy_reminder_time: value })}
+      />
+
+      <ReminderCard
+        emoji="🌅"
+        title="Завтрак"
+        description="Напоминание приготовить завтрак из выбранного меню"
+        enabled={settings.cook_breakfast_enabled}
+        time={settings.cook_breakfast_time}
+        disabled={saving}
+        onEnabledChange={(value) => persist({ cook_breakfast_enabled: value })}
+        onTimeChange={(value) => persist({ cook_breakfast_time: value })}
+      />
+
+      <ReminderCard
+        emoji="🍲"
+        title="Обед"
+        description="Напоминание приготовить обед"
+        enabled={settings.cook_lunch_enabled}
+        time={settings.cook_lunch_time}
+        disabled={saving}
+        onEnabledChange={(value) => persist({ cook_lunch_enabled: value })}
+        onTimeChange={(value) => persist({ cook_lunch_time: value })}
+      />
+
+      <ReminderCard
+        emoji="🌙"
+        title="Ужин"
+        description="Напоминание приготовить ужин"
+        enabled={settings.cook_dinner_enabled}
+        time={settings.cook_dinner_time}
+        disabled={saving}
+        onEnabledChange={(value) => persist({ cook_dinner_enabled: value })}
+        onTimeChange={(value) => persist({ cook_dinner_time: value })}
+      />
+
+      <p className="text-center text-xs text-stone-400">
+        {saving
+          ? "Сохранение…"
+          : "Убедитесь, что бот может писать вам в личные сообщения"}
+      </p>
+    </ScreenLayout>
   );
 }

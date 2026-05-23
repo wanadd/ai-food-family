@@ -22,6 +22,16 @@ export default function SettingsPage() {
         description="Граммы, литры, порции"
       />
       <SettingsMenuItem
+        href="/settings/documents"
+        label="Документы"
+        description="Соглашение, конфиденциальность, персональные данные"
+      />
+      <SettingsMenuItem
+        href="/settings/delete-data"
+        label="Удалить мои данные"
+        description="Запрос на удаление"
+      />
+      <SettingsMenuItem
         href="/settings/privacy"
         label="Конфиденциальность"
         description="Данные и доступ"

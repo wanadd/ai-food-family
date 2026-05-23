@@ -29,6 +29,15 @@ class SubscriptionPlanResponse(BaseModel):
     is_current: bool = False
 
 
+class AmaTransactionItem(BaseModel):
+    id: int
+    user_name: str
+    amount: int
+    reason: str
+    reason_label: str
+    created_at: datetime
+
+
 class SubscriptionOverviewResponse(BaseModel):
     plan_code: str
     plan_name: str
@@ -44,6 +53,11 @@ class SubscriptionOverviewResponse(BaseModel):
     trial_days_left: int | None = None
     plans: list[SubscriptionPlanResponse]
     ama_costs: dict[str, int]
+    is_family_billing: bool = False
+    family_name: str | None = None
+    is_family_admin: bool = False
+    can_spend_ama: bool = True
+    ama_transactions: list[AmaTransactionItem] = Field(default_factory=list)
 
 
 class SelectPlanRequest(BaseModel):

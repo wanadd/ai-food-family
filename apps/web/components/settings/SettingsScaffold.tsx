@@ -3,13 +3,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
 
 type SettingsScaffoldProps = {
   title: string;
   subtitle?: string;
   children: ReactNode;
-  showBack?: boolean;
 };
 
 function ChevronLeftIcon() {
@@ -30,32 +29,15 @@ export function SettingsScaffold({
   title,
   subtitle,
   children,
-  showBack = true,
 }: SettingsScaffoldProps) {
   return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="border-b border-stone-100 bg-white px-4 pb-4 pt-7 sm:px-5">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
-          <Link
-            href="/settings"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100"
-            aria-label="К настройкам"
-          >
-            <ChevronLeftIcon />
-          </Link>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-xl font-bold text-stone-900">{title}</h1>
-            {subtitle ? (
-              <p className="mt-0.5 truncate text-sm text-stone-500">{subtitle}</p>
-            ) : null}
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-4 px-4 py-5 sm:px-5">{children}</main>
-
-      {showBack ? <BottomBackButton className="pb-4 pt-2" /> : null}
-    </div>
+    <ScreenLayout
+      title={title}
+      subtitle={subtitle}
+      back={{ label: "Настройки", href: "/settings" }}
+    >
+      {children}
+    </ScreenLayout>
   );
 }
 
@@ -65,18 +47,14 @@ type SettingsHubProps = {
 
 export function SettingsHub({ children }: SettingsHubProps) {
   return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="border-b border-stone-100 bg-white px-4 pb-4 pt-7 sm:px-5">
-        <div className="mx-auto max-w-lg">
-          <h1 className="text-2xl font-bold text-stone-900">Настройки</h1>
-          <p className="mt-1 text-sm text-stone-500">Аккаунт и приложение</p>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-3 px-4 py-5 sm:px-5">{children}</main>
-
-      <BottomBackButton className="pb-4 pt-2" />
-    </div>
+    <ScreenLayout
+      title="Настройки"
+      subtitle="Аккаунт и приложение"
+      back={{ label: "Профиль", href: "/profile" }}
+      contentClassName="space-y-3"
+    >
+      {children}
+    </ScreenLayout>
   );
 }
 

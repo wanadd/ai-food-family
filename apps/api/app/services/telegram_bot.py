@@ -26,6 +26,7 @@ from app.services import voice_input as voice_input_service
 from app.services.receipt_ocr import RECEIPT_STUB_MESSAGE
 from app.services.voice_input import VOICE_STUB as VOICE_STUB_MESSAGE
 from app.services.subscription_catalog import AMA_COSTS
+from app.services.legal_consent import user_can_access_app
 from app.services.users import (
     get_user_by_telegram_id,
     mask_phone,
@@ -278,7 +279,7 @@ async def process_deep_link_invite(
         await send_telegram_message(chat_id, "Приглашение не найдено или уже обработано.")
         return
 
-    if not user_has_verified_phone(user):
+    if not user_can_access_app(user):
         bot_session_service.set_session_state(
             db, user.telegram_id, "", invite_token=invite_token
         )
@@ -329,6 +330,9 @@ async def send_verified_welcome(
 async def handle_start(
     db: Session, chat_id: int, from_user: dict[str, Any], text: str
 ) -> None:
+    from app.services import bot_registration
+    from app.services.legal_consent import user_has_legal_consent, user_can_access_app
+
     logger.info("/start user_id=%s", from_user.get("id"))
     user, _ = upsert_user_from_bot(
         db,
@@ -349,18 +353,17 @@ async def handle_start(
         bot_session_service.set_session_state(
             db, user.telegram_id, "", invite_token=invite_token
         )
-        if user_has_verified_phone(user):
+        if user_can_access_app(user):
             await process_deep_link_invite(db, user, chat_id, invite_token)
             bot_session_service.clear_invite_token(db, user.telegram_id)
             return
-        await send_phone_required(chat_id)
+        if user_has_legal_consent(user):
+            await send_phone_required(chat_id)
+        else:
+            await bot_registration.send_welcome_legal(db, user, chat_id)
         return
 
-    if user_has_verified_phone(user):
-        await send_verified_welcome(db, user, chat_id, returning=True)
-        return
-
-    await send_phone_required(chat_id)
+    await bot_registration.route_after_start(db, user, chat_id)
 
 
 async def handle_own_contact(
@@ -413,12 +416,9 @@ async def handle_own_contact(
         bot_session_service.clear_session_state(db, user.telegram_id)
         return
 
-    await send_telegram_message(
-        chat_id,
-        "Готово! Теперь можно открыть ПланАм.",
-        reply_markup=_webapp_inline_keyboard(),
-    )
-    bot_session_service.clear_session_state(db, user.telegram_id)
+    from app.services import bot_registration
+
+    await bot_registration.send_registration_complete(db, user, chat_id)
 
 
 async def handle_contact(
@@ -438,7 +438,7 @@ async def handle_create_invite_link(
     db: Session, chat_id: int, from_user: dict[str, Any]
 ) -> None:
     user = get_user_by_telegram_id(db, from_user["id"])
-    if not user_has_verified_phone(user):
+    if not user_can_access_app(user):
         await send_phone_required(chat_id)
         return
 
@@ -476,7 +476,7 @@ async def handle_create_invite_link(
 
 async def handle_invite_family_button(db: Session, chat_id: int, from_user: dict[str, Any]) -> None:
     user = get_user_by_telegram_id(db, from_user["id"])
-    if not user_has_verified_phone(user):
+    if not user_can_access_app(user):
         await send_phone_required(chat_id)
         return
 
@@ -511,7 +511,7 @@ async def handle_invite_command(
         return
 
     user = get_user_by_telegram_id(db, from_user["id"])
-    if not user_has_verified_phone(user):
+    if not user_can_access_app(user):
         await send_phone_required(chat_id)
         return
 
@@ -554,7 +554,7 @@ async def handle_invite_command(
 async def handle_text_quick_input(
     db: Session, chat_id: int, user: User, text: str
 ) -> None:
-    reply, _ = bot_input_service.process_text_message(db, user, text)
+    reply, _ = await bot_input_service.process_text_message(db, user, text)
     await send_telegram_message(
         chat_id,
         reply,
@@ -584,8 +584,38 @@ async def handle_voice_message(
         await send_telegram_message(chat_id, VOICE_STUB_MESSAGE)
         return
 
-    await send_telegram_message(chat_id, f"Услышал: «{transcript}»")
-    await handle_text_quick_input(db, chat_id, user, transcript)
+    from app.services import bot_pending
+    from app.services.message_parser import parse_message
+
+    parsed = parse_message(transcript)
+    if parsed.action == "unknown":
+        from app.services.app_scope import resolve_scope
+        from app.services.bot_input import _parse_with_ai
+
+        scope = resolve_scope(db, user, None)
+        ai_parsed = await _parse_with_ai(db, user, scope, transcript)
+        if ai_parsed:
+            parsed = ai_parsed
+
+    if parsed.action == "unknown" or (
+        not parsed.items and parsed.action != "leftover_note"
+    ):
+        await send_telegram_message(
+            chat_id,
+            f"Услышал: «{transcript}»\n\nНе нашёл товары. Уточните список текстом.",
+            reply_markup=_quick_links_keyboard(),
+        )
+        return
+
+    items = [
+        {"name": name, "amount": ""}
+        for name, _cat, _food in parsed.item_categories()
+    ]
+    if parsed.action == "leftover_note" and parsed.leftover_note:
+        await handle_text_quick_input(db, chat_id, user, transcript)
+        return
+
+    await bot_pending.store_voice_pending(db, user, chat_id, transcript, items)
 
 
 async def handle_photo_message(
@@ -638,15 +668,16 @@ async def handle_photo_message(
         metadata={"items_count": len(lines)},
     )
 
-    reply, _ = bot_input_service.process_receipt_lines(db, user, lines)
-    await send_telegram_message(
-        chat_id,
-        reply,
-        reply_markup=_quick_links_keyboard(),
-    )
+    from app.services import bot_pending
+
+    await bot_pending.store_receipt_pending(db, user, chat_id, lines)
 
 
 async def handle_callback(db: Session, callback: dict[str, Any]) -> None:
+    from app.services import bot_menu, bot_pending, bot_registration
+    from app.services.bot_registration import PHONE_SKIP_CALLBACK
+    from app.services.legal_consent import user_can_access_app
+
     callback_id = callback.get("id")
     data = callback.get("data") or ""
     from_user = callback.get("from") or {}
@@ -657,16 +688,47 @@ async def handle_callback(db: Session, callback: dict[str, Any]) -> None:
     if not telegram_id or not chat_id:
         return
 
+    user = get_user_by_telegram_id(db, telegram_id)
+    if user is None:
+        user, _ = upsert_user_from_bot(
+            db,
+            telegram_id=telegram_id,
+            username=from_user.get("username"),
+            first_name=from_user.get("first_name"),
+            last_name=from_user.get("last_name"),
+            language_code=from_user.get("language_code"),
+        )
+
+    if await bot_registration.handle_legal_callback(db, user, chat_id, data):
+        if callback_id:
+            await answer_callback_query(callback_id)
+        return
+
+    if data == PHONE_SKIP_CALLBACK:
+        await bot_registration.handle_phone_skip(db, user, chat_id)
+        if callback_id:
+            await answer_callback_query(callback_id, "Пропущено")
+        return
+
+    if await bot_pending.handle_pending_callback(db, user, chat_id, data):
+        if callback_id:
+            await answer_callback_query(callback_id)
+        return
+
+    if await bot_menu.handle_quick_callback(db, user, chat_id, data):
+        if callback_id:
+            await answer_callback_query(callback_id)
+        return
+
     if data == CREATE_INVITE_LINK_CALLBACK:
         await handle_create_invite_link(db, chat_id, from_user)
         if callback_id:
             await answer_callback_query(callback_id, "Ссылка создана")
         return
 
-    user = get_user_by_telegram_id(db, telegram_id)
-    if not user_has_verified_phone(user):
+    if not user_can_access_app(user):
         if callback_id:
-            await answer_callback_query(callback_id, "Сначала подтвердите номер: /start")
+            await answer_callback_query(callback_id, "Сначала завершите регистрацию: /start")
         return
 
     if data.startswith("accept_family_invite:"):
@@ -710,6 +772,9 @@ async def handle_callback(db: Session, callback: dict[str, Any]) -> None:
 
 
 async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
+    from app.services import bot_menu, bot_pending, bot_registration
+    from app.services.legal_consent import user_can_access_app, user_has_legal_consent
+
     logger.info("Telegram update keys=%s", list(update.keys()))
 
     callback = update.get("callback_query")
@@ -742,53 +807,54 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
             language_code=from_user.get("language_code"),
         )
 
-    if message.get("voice"):
-        if not user_has_verified_phone(user):
-            await send_phone_required(chat_id)
-            return
-        await handle_voice_message(db, chat_id, user, message)
-        return
-
-    if message.get("photo"):
-        if not user_has_verified_phone(user):
-            await send_phone_required(chat_id)
-            return
-        await handle_photo_message(db, chat_id, user, message)
-        return
-
     text = (message.get("text") or "").strip()
-
-    if text == "Пригласить в семью":
-        await handle_invite_family_button(db, chat_id, from_user)
-        return
 
     if text.startswith("/start"):
         await handle_start(db, chat_id, from_user, text)
         return
 
-    if user is None:
-        user, _ = upsert_user_from_bot(
-            db,
-            telegram_id=from_user["id"],
-            username=from_user.get("username"),
-            first_name=from_user.get("first_name"),
-            last_name=from_user.get("last_name"),
-            language_code=from_user.get("language_code"),
-        )
+    if not user_has_legal_consent(user):
+        await bot_registration.send_welcome_legal(db, user, chat_id)
+        return
 
-    if not user_has_verified_phone(user):
+    if not user_can_access_app(user):
+        if message.get("voice") or message.get("photo"):
+            await send_phone_required(chat_id)
+            return
+        if text == "Пропустить":
+            await bot_registration.handle_phone_skip(db, user, chat_id)
+            return
         await send_phone_required(chat_id)
+        return
+
+    if await bot_pending.handle_pending_text_edit(db, user, chat_id, text):
+        return
+
+    if await bot_menu.handle_leftover_flow(db, user, chat_id, text):
+        return
+
+    if message.get("voice"):
+        await handle_voice_message(db, chat_id, user, message)
+        return
+
+    if message.get("photo"):
+        await handle_photo_message(db, chat_id, user, message)
+        return
+
+    if text == "Пригласить в семью":
+        await handle_invite_family_button(db, chat_id, from_user)
+        return
+
+    if await bot_menu.handle_menu_text(db, user, chat_id, text):
         return
 
     command = text.split()[0].split("@")[0].lower() if text else ""
 
     if command in ("/help",):
         await send_telegram_message(chat_id, BOT_COMMANDS_HELP)
-        await send_telegram_message(
-            chat_id,
-            "Быстрый ввод: «Купил молоко», «Добавь порошок», «Закончилась гречка».",
-            reply_markup=_webapp_inline_keyboard(),
-        )
+        from app.services.bot_menu import send_main_menu
+
+        await send_main_menu(chat_id)
         return
 
     if command in ("/invite",):
@@ -796,11 +862,13 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
         return
 
     if text and not text.startswith("/"):
+        session = bot_session_service.get_session(db, user.telegram_id)
+        if session and session.state == bot_session_service.STATE_PENDING_CONFIRM:
+            await bot_pending.handle_pending_text_edit(db, user, chat_id, text)
+            return
         await handle_text_quick_input(db, chat_id, user, text)
         return
 
-    await send_telegram_message(
-        chat_id,
-        "Команды: /help, /invite +номер. Или напишите: «Купил молоко и яйца».",
-        reply_markup=_webapp_inline_keyboard(),
-    )
+    from app.services.bot_menu import send_main_menu
+
+    await send_main_menu(chat_id)

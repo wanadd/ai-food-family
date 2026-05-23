@@ -6,7 +6,6 @@ import { useCallback, useEffect, useState } from "react";
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { PageLoading } from "@/components/ui/PageLoading";
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
 import { useTelegram } from "@/components/TelegramProvider";
@@ -316,8 +315,6 @@ export function MenuGenerator() {
             ) : null}
         </section>
       </main>
-
-      <BottomBackButton className="pb-4 pt-2" />
 
       {replaceTarget ? (
         <ReplaceDishModal

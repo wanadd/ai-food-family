@@ -13,6 +13,11 @@ export function savePersonsOverride(count: number): void {
   localStorage.setItem(PERSONS_KEY, String(count));
 }
 
+export function clearPersonsOverride(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(PERSONS_KEY);
+}
+
 export function loadPlanMode(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(PLAN_MODE_KEY);

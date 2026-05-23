@@ -3,16 +3,16 @@
 import type { ReactNode } from "react";
 
 import { DevModeBanner } from "@/components/dev/DevModeBanner";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { ToastProvider } from "@/components/ui/ToastProvider";
+import { BOTTOM_NAV_OFFSET } from "@/lib/layout/constants";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <>
+    <ToastProvider>
       <DevModeBanner />
-      <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))]">
-        {children}
-      </div>
-      <BottomNav />
-    </>
+      <div style={{ paddingBottom: BOTTOM_NAV_OFFSET }}>{children}</div>
+      <BottomNavigation />
+    </ToastProvider>
   );
 }

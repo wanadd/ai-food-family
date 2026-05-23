@@ -16,6 +16,8 @@ from app.routers import (
     auth,
     care,
     families,
+    meal_leftovers,
+    legal,
     menus,
     notifications,
     nutrition_profile,
@@ -23,6 +25,7 @@ from app.routers import (
     onboarding,
     pantry,
     progress,
+    event_plans,
     recipes,
     shopping_categories,
     shopping_lists,
@@ -96,6 +99,7 @@ app.add_middleware(
 
 app.include_router(admin.router)
 app.include_router(auth.router)
+app.include_router(legal.router)
 app.include_router(care.router)
 app.include_router(users.router)
 app.include_router(onboarding.router)
@@ -103,6 +107,7 @@ app.include_router(nutrition_profile.router)
 app.include_router(nutritionist_router.router)
 app.include_router(families.router)
 app.include_router(menus.router)
+app.include_router(meal_leftovers.router)
 app.include_router(shopping_lists.router)
 app.include_router(subscriptions.router)
 app.include_router(shopping_categories.router)
@@ -110,6 +115,7 @@ app.include_router(notifications.router)
 app.include_router(pantry.router)
 app.include_router(progress.router)
 app.include_router(recipes.router)
+app.include_router(event_plans.router)
 app.include_router(telegram_bot.router)
 app.include_router(telegram_bot.bot_router)
 

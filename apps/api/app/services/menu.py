@@ -14,12 +14,19 @@ from app.schemas.menu import (
     SelectedMenuResponse,
 )
 from app.config import settings
+from app.services.ai_client import current_model_name
 from app.services.menu_labels import PLAN_MODE_PROMPT_HINTS
 from app.services.app_scope import AppScope
 from app.services import shopping_list as shopping_list_service
 from app.services import subscription as subscription_service
 from app.services.menu_ai import generate_menus, replace_meal
 from app.services.menu_context import build_menu_context
+from app.services.menu_context_fingerprint import (
+    compute_context_fingerprint,
+    resolve_persons_count,
+)
+from app.services.meal_leftovers import list_active_leftovers
+from app.services.pantry import get_active_items_for_scope
 
 
 async def generate_menus_for_scope(
@@ -29,31 +36,49 @@ async def generate_menus_for_scope(
     options: MenuGenerateRequest | None = None,
 ) -> MenuGenerateResponse:
     context = build_menu_context(db, user, scope)
+    persons = resolve_persons_count(db, user, scope)
+    plan_mode = "healthy"
     if options:
         extras: list[str] = []
         if options.persons_count:
-            extras.append(
-                f"Количество персон (порций): {options.persons_count}. "
-                "Умножай объёмы ингредиентов с учётом этого числа."
-            )
+            persons = options.persons_count
         if options.plan_mode:
-            hint = PLAN_MODE_PROMPT_HINTS.get(options.plan_mode)
-            if hint:
-                extras.append(hint)
+            plan_mode = options.plan_mode
+        extras.append(
+            f"Количество персон (порций): {persons}. "
+            "Умножай объёмы ингредиентов с учётом этого числа."
+        )
+        hint = PLAN_MODE_PROMPT_HINTS.get(options.plan_mode or "")
+        if hint:
+            extras.append(hint)
         if extras:
             context.prompt_text = context.prompt_text + "\n" + "\n".join(extras)
-        if options.persons_count:
-            context.members_count = options.persons_count
+        context.members_count = persons
 
     access = subscription_service.assert_menu_generation_allowed(db, user, scope)
-    menus, used_ai = await generate_menus(context)
+    drink_mode = "none"
+    allow_alcohol = False
+    if options:
+        if options.drink_mode:
+            drink_mode = options.drink_mode
+        allow_alcohol = bool(options.allow_alcohol)
+
+    menus, used_ai = await generate_menus(
+        context,
+        db=db,
+        user=user,
+        scope=scope,
+        persons_count=persons,
+        drink_mode=drink_mode,  # type: ignore[arg-type]
+        allow_alcohol=allow_alcohol,
+    )
     subscription_service.commit_menu_generation(
         db,
         user,
         scope,
         access,
         used_ai=used_ai,
-        model=settings.openai_model if used_ai else None,
+        model=current_model_name() if used_ai else None,
     )
     return MenuGenerateResponse(
         menus=menus,
@@ -84,7 +109,13 @@ async def replace_dish(
     context = build_menu_context(db, user, scope)
     try:
         updated = await replace_meal(
-            context, payload.menu, payload.meal_index, payload.hint
+            context,
+            payload.menu,
+            payload.meal_index,
+            payload.hint,
+            db=db,
+            user=user,
+            scope=scope,
         )
     except ValueError as exc:
         raise HTTPException(
@@ -94,7 +125,10 @@ async def replace_dish(
 
     selection = _get_latest_selection(db, scope)
     if selection is not None and selection.variant == updated.variant:
-        selection.menu_data = updated.model_dump(mode="json")
+        menu_dict = updated.model_dump(mode="json")
+        if isinstance(selection.menu_data, dict) and "_meta" in selection.menu_data:
+            menu_dict["_meta"] = selection.menu_data["_meta"]
+        selection.menu_data = menu_dict
         db.commit()
         shopping_list_service.sync_from_menu(db, scope, updated, selection.id)
 
@@ -112,10 +146,31 @@ async def replace_dish(
 
 
 def select_menu(
-    db: Session, user: User, scope: AppScope, payload: SelectMenuRequest
+    db: Session,
+    user: User,
+    scope: AppScope,
+    payload: SelectMenuRequest,
+    *,
+    plan_mode: str | None = None,
+    persons_count: int | None = None,
 ) -> SelectedMenuResponse:
     existing = _get_latest_selection(db, scope)
     menu_dict = payload.menu.model_dump(mode="json")
+    persons = persons_count or resolve_persons_count(db, user, scope)
+    mode_key = plan_mode or "healthy"
+    pantry_items = get_active_items_for_scope(db, scope)
+    leftovers = list_active_leftovers(db, scope)
+    pantry_used = min(800, max(120, len(pantry_items) * 35)) if pantry_items else 0
+    menu_dict["_meta"] = {
+        "context_fingerprint": compute_context_fingerprint(
+            db, user, scope, persons_count=persons, plan_mode=mode_key
+        ),
+        "plan_mode": mode_key,
+        "persons_count": persons,
+        "pantry_used_rub": pantry_used,
+        "savings_rub": pantry_used,
+        "leftovers_count": len(leftovers),
+    }
 
     if existing is not None:
         existing.variant = payload.menu.variant
@@ -162,6 +217,12 @@ def _get_latest_selection(
     return query.order_by(FamilyMenuSelection.selected_at.desc()).first()
 
 
+def _menu_from_storage(menu_data: dict) -> MenuVariant:
+    data = dict(menu_data)
+    data.pop("_meta", None)
+    return MenuVariant.model_validate(data)
+
+
 def _selection_response(
     selection: FamilyMenuSelection, scope: AppScope
 ) -> SelectedMenuResponse:
@@ -171,6 +232,44 @@ def _selection_response(
         user_id=selection.user_id,
         family_id=selection.family_id,
         variant=selection.variant,  # type: ignore[arg-type]
-        menu=MenuVariant.model_validate(selection.menu_data),
+        menu=_menu_from_storage(selection.menu_data),
         selected_at=selection.selected_at,
     )
+
+
+async def run_quick_action(
+    db: Session,
+    user: User,
+    scope: AppScope,
+    action: str,
+) -> tuple[str | None, SelectedMenuResponse | None, str | None]:
+    if action == "replace_dish":
+        return "/menu/current?replace=1", None, "Выберите блюдо для замены"
+
+    mode_map = {
+        "cheaper": ("economy", "economy"),
+        "more_pantry": ("use_pantry", "balanced"),
+        "more_protein": ("sport", "balanced"),
+        "less_cooking_time": ("quick_simple", "quick"),
+    }
+    if action not in mode_map:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown action")
+
+    plan_mode, pick_variant = mode_map[action]
+    persons = resolve_persons_count(db, user, scope)
+    result = await generate_menus_for_scope(
+        db,
+        user,
+        scope,
+        MenuGenerateRequest(persons_count=persons, plan_mode=plan_mode),
+    )
+    chosen = next((m for m in result.menus if m.variant == pick_variant), result.menus[0])
+    saved = select_menu(
+        db,
+        user,
+        scope,
+        SelectMenuRequest(menu=chosen),
+        plan_mode=plan_mode,
+        persons_count=persons,
+    )
+    return None, saved, "Меню обновлено"

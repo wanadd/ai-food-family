@@ -73,6 +73,14 @@ export function MemberCard({
             </dd>
           </div>
         ) : null}
+        {member.is_virtual && member.age_label ? (
+          <div className="flex justify-between gap-2">
+            <dt className="text-stone-500">Возраст</dt>
+            <dd className="text-right font-medium text-stone-800">
+              {member.age_label}
+            </dd>
+          </div>
+        ) : null}
         {!member.is_virtual &&
         member.nutrition_summary &&
         !member.is_you ? (

@@ -1,27 +1,17 @@
-import Link from "next/link";
-
-import { CareTelegramBlock } from "@/components/care/CareTelegramBlock";
-import { SettingsScaffold } from "@/components/settings/SettingsScaffold";
+import { CareSettingsPanel } from "@/components/care/CareSettingsPanel";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
 
 export default function CareSettingsPage() {
   return (
-    <SettingsScaffold
-      title="Уведомления заботы"
-      subtitle="ПланАм будет мягко напоминать о важном"
+    <ScreenLayout
+      title="Забота ПланАм"
+      subtitle="Мягкие напоминания в Telegram"
+      back={{ label: "Настройки", href: "/settings" }}
     >
-      <p className="text-sm leading-relaxed text-stone-600">
-        Сообщения приходят в ваш чат с ботом ПланАм в Telegram. Мы не отправляем
-        одинаковые напоминания слишком часто и учитываем тихие часы, если вы их
-        зададите позже.
+      <p className="mb-4 text-sm leading-relaxed text-stone-600">
+        Сообщения приходят в чат с ботом ПланАм. Настройки сохраняются автоматически.
       </p>
-
-      <CareTelegramBlock compact showSettingsLink={false} />
-
-      <p className="text-center text-sm text-stone-500">
-        <Link href="/notifications" className="font-semibold text-emerald-700">
-          Напоминания о покупках и готовке
-        </Link>
-      </p>
-    </SettingsScaffold>
+      <CareSettingsPanel />
+    </ScreenLayout>
   );
 }

@@ -68,6 +68,7 @@ def _member_response(
         if linked:
             profile = get_or_create_profile(db, linked)
             virtual_nutrition = VirtualNutritionProfile(
+                age_months=profile.age * 12 if profile.age is not None else None,
                 age=profile.age,
                 nutrition_goal=profile.nutrition_goal,
                 allergies=profile.allergies or [],
@@ -91,6 +92,9 @@ def _member_response(
         member_type="virtual" if is_virtual else "telegram",
         role_label=_role_label(member.role),
         nutrition_goal_label=goal_label,
+        age_label=member_nutrition.member_age_label(member)
+        if is_virtual
+        else None,
         nutrition_profile_complete=complete,
         allow_admin_profile_edit=member.allow_admin_profile_edit,
         virtual_kind=member.virtual_kind,
@@ -156,6 +160,12 @@ def require_admin(member: FamilyMember) -> None:
 def create_family(
     db: Session, user: User, payload: FamilyCreateRequest
 ) -> FamilyResponse:
+    if not payload.admin_manage_consent:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Подтвердите право управлять семейным аккаунтом",
+        )
+
     existing = get_user_membership(db, user)
     if existing is not None:
         raise HTTPException(
@@ -265,6 +275,22 @@ def add_virtual_member(
     if membership is None or membership.family_id != family_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Family not found")
     require_admin(membership)
+
+    kind = payload.virtual_kind or ("child" if payload.role == "child" else "adult")
+    if kind == "child" or payload.role == "child":
+        if not payload.guardian_consent:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Подтвердите, что вы родитель или законный представитель ребёнка "
+                    "либо имеете право добавлять эти данные"
+                ),
+            )
+    elif not payload.data_consent:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Подтвердите согласие на внесение данных этого человека",
+        )
 
     member = FamilyMember(
         family_id=family_id,

@@ -15,7 +15,13 @@ from app.schemas.menu import (
     SelectMenuRequest,
     SelectedMenuResponse,
 )
+from app.schemas.menu_overview import (
+    MenuOverviewResponse,
+    MenuQuickActionRequest,
+    MenuQuickActionResponse,
+)
 from app.services import menu as menu_service
+from app.services import menu_overview as menu_overview_service
 from app.services import care as care_service
 
 logger = logging.getLogger(__name__)
@@ -76,3 +82,30 @@ def get_selected_menu(
     db: Session = Depends(get_db),
 ) -> SelectedMenuResponse | None:
     return menu_service.get_selected_menu(db, scope)
+
+
+@router.get("/overview", response_model=MenuOverviewResponse)
+def get_menu_overview(
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> MenuOverviewResponse:
+    return menu_overview_service.get_menu_overview(db, user, scope)
+
+
+@router.post("/quick-action", response_model=MenuQuickActionResponse)
+async def menu_quick_action(
+    payload: MenuQuickActionRequest,
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> MenuQuickActionResponse:
+    redirect, selected, message = await menu_service.run_quick_action(
+        db, user, scope, payload.action
+    )
+    return MenuQuickActionResponse(
+        action=payload.action,
+        redirect_path=redirect,
+        selected_menu=selected,
+        message=message,
+    )

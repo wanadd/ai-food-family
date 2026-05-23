@@ -15,6 +15,10 @@ AMA_COSTS: dict[str, int] = {
     "deep_nutrition_analysis": 8,
     "menu_rebuild": 5,
     "ai_report": 10,
+    "recipe_analyze": 2,
+    "recipe_improve": 3,
+    "bot_parse_text": 1,
+    "event_plan_ai": 8,
 }
 
 PLAN_SEEDS: list[dict[str, Any]] = [

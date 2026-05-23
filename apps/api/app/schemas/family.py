@@ -10,6 +10,7 @@ FamilyRoleType = Literal["admin", "adult", "child"]
 
 class FamilyCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120)
+    admin_manage_consent: bool = False
 
 
 class FamilyInviteByPhoneRequest(BaseModel):
@@ -43,6 +44,7 @@ class FamilyMemberResponse(BaseModel):
     member_type: Literal["telegram", "virtual"] = "telegram"
     role_label: str = "Участник"
     nutrition_goal_label: str | None = None
+    age_label: str | None = None
     nutrition_profile_complete: bool = False
     allow_admin_profile_edit: bool = False
     virtual_kind: str | None = None

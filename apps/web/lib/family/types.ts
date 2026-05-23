@@ -2,16 +2,20 @@ export type FamilyRole = "admin" | "adult" | "child";
 export type MemberType = "telegram" | "virtual";
 
 export type VirtualNutrition = {
-  age: number | null;
-  age_years?: number | null;
-  age_months?: number | null;
+  age_months: number | null;
   nutrition_goal: string | null;
+  custom_nutrition_goal?: string | null;
   allergies: string[];
+  custom_allergies: string[];
   restrictions: string[];
-  diets: string[];
+  custom_restrictions: string[];
   favorite_foods: string;
   disliked_foods: string;
   notes: string;
+  /** @deprecated legacy */
+  age?: number | null;
+  age_years?: number | null;
+  diets?: string[];
 };
 
 export type FamilyMember = {
@@ -27,6 +31,7 @@ export type FamilyMember = {
   member_type: MemberType;
   role_label: string;
   nutrition_goal_label: string | null;
+  age_label: string | null;
   nutrition_profile_complete: boolean;
   allow_admin_profile_edit: boolean;
   virtual_kind: string | null;
@@ -63,11 +68,13 @@ export const EMPTY_MEMBER_DRAFT: MemberDraft = {
 };
 
 export const EMPTY_VIRTUAL_NUTRITION: VirtualNutrition = {
-  age: null,
+  age_months: null,
   nutrition_goal: null,
+  custom_nutrition_goal: null,
   allergies: [],
+  custom_allergies: [],
   restrictions: [],
-  diets: [],
+  custom_restrictions: [],
   favorite_foods: "",
   disliked_foods: "",
   notes: "",
@@ -78,6 +85,8 @@ export type VirtualMemberDraft = {
   virtual_kind: string | null;
   role: "adult" | "child";
   nutrition: VirtualNutrition;
+  guardian_consent?: boolean;
+  data_consent?: boolean;
 };
 
 export const EMPTY_VIRTUAL_DRAFT: VirtualMemberDraft = {

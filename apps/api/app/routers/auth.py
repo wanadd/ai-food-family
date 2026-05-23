@@ -10,6 +10,7 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services.dev_auth import DEV_INIT_DATA, dev_auth_enabled, get_or_create_dev_user
+from app.services.legal_consent import user_can_access_app, user_has_legal_consent
 from app.services.users import get_or_create_user, user_has_verified_phone
 from app.telegram.validate import TelegramAuthError, validate_init_data
 
@@ -34,6 +35,8 @@ def authenticate_telegram(
         user=UserResponse.model_validate(user),
         is_new=is_new,
         phone_verified=user_has_verified_phone(user),
+        legal_accepted=user_has_legal_consent(user),
+        can_use_app=user_can_access_app(user),
     )
 
 
@@ -52,5 +55,7 @@ def authenticate_dev(
         user=UserResponse.model_validate(user),
         is_new=is_new,
         phone_verified=user_has_verified_phone(user),
+        legal_accepted=user_has_legal_consent(user),
+        can_use_app=user_can_access_app(user),
         dev_init_data=DEV_INIT_DATA,
     )

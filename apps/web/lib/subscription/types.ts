@@ -9,6 +9,15 @@ export type SubscriptionPlanInfo = {
   is_current: boolean;
 };
 
+export type AmaTransactionItem = {
+  id: number;
+  user_name: string;
+  amount: number;
+  reason: string;
+  reason_label: string;
+  created_at: string;
+};
+
 export type SubscriptionOverview = {
   plan_code: string;
   plan_name: string;
@@ -24,4 +33,9 @@ export type SubscriptionOverview = {
   trial_days_left: number | null;
   plans: SubscriptionPlanInfo[];
   ama_costs: Record<string, number>;
+  is_family_billing?: boolean;
+  family_name?: string | null;
+  is_family_admin?: boolean;
+  can_spend_ama?: boolean;
+  ama_transactions?: AmaTransactionItem[];
 };

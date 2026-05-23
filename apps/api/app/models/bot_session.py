@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import BigInteger, DateTime, String, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -12,6 +13,7 @@ class TelegramBotSession(Base):
     telegram_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     state: Mapped[str] = mapped_column(String(64), default="")
     invite_token: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    payload_json: Mapped[dict] = mapped_column(JSONB, default=dict, server_default="{}")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

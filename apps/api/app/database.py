@@ -19,9 +19,11 @@ def init_db() -> None:
     from app.models.shopping_category import ShoppingCategory  # noqa: F401
     from app.models import (  # noqa: F401
         family,
+        meal_leftover,
         menu_selection,
         notification_settings,
         pantry,
+        event_plan,
         recipe,
         shopping_list,
         user,

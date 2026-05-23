@@ -42,7 +42,7 @@ def _now() -> datetime:
 
 def user_has_pro(db: Session, user: User) -> bool:
     try:
-        sub, plan, _ = subscription_service.get_current_subscription(db, user)
+        sub, plan, _, _ = subscription_service.get_current_subscription(db, user)
         if sub.plan_code == "pro":
             return True
         return bool((plan.features or {}).get("macros"))
@@ -427,6 +427,34 @@ def _family_progress_cards(
                     )
                 )
                 continue
+
+        if member_nutrition.member_is_virtual(member):
+            from app.services.member_age import format_age_months_ru
+
+            nutrition = member_nutrition.virtual_nutrition_from_member(member)
+            goal_label = member_nutrition.nutrition_goal_display(nutrition)
+            age_text = format_age_months_ru(
+                nutrition.age_months, kind=member.virtual_kind
+            )
+            if member.virtual_kind == "child" and nutrition.age_months is not None:
+                summary = "норма питания выполняется"
+            elif goal_label:
+                summary = f"{goal_label} · соблюдает ограничения"
+            else:
+                summary = "заполните профиль питания"
+            if age_text and age_text != "—":
+                summary = f"{summary} · {age_text}"
+            cards.append(
+                FamilyMemberProgressCard(
+                    member_id=member.id,
+                    name=member.display_name,
+                    goal_label=goal_label,
+                    progress_summary=summary,
+                    status="stable",
+                    is_you=is_you,
+                )
+            )
+            continue
 
         goal_label = member_nutrition.nutrition_goal_label_for_member(db, member)
         cards.append(

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { useTelegram } from "@/components/TelegramProvider";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { RecipeDetailModal } from "@/components/recipes/RecipeDetailModal";
@@ -19,7 +20,12 @@ import type {
   RecipeQuery,
   RecipeSummary,
 } from "@/lib/recipes/types";
-export function RecipeCatalog() {
+type RecipeCatalogProps = {
+  menuMode?: boolean;
+};
+
+export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
+  const router = useRouter();
   const { initData } = useTelegram();
   const [filters, setFilters] = useState<RecipeFilters | null>(null);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
@@ -121,6 +127,10 @@ export function RecipeCatalog() {
     if (!initData) {
       return;
     }
+    if (!menuMode) {
+      router.push(`/recipes/${recipeId}`);
+      return;
+    }
     setSelectedId(recipeId);
     setLoadingDetail(true);
     try {
@@ -182,15 +192,12 @@ export function RecipeCatalog() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-stone-100 bg-white px-5 py-6">
-        <h1 className="text-2xl font-bold text-stone-900">Рецепты</h1>
-        <p className="mt-1 text-sm text-stone-500">
-          База блюд · поиск · фильтры · избранное
-        </p>
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-5 px-5 py-6">
+    <ScreenLayout
+      title="Рецепты"
+      subtitle="База блюд · поиск · фильтры · избранное"
+      back={{ label: menuMode ? "Меню" : "ПланАм", href: menuMode ? "/menu" : "/" }}
+      contentClassName="space-y-5"
+    >
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -226,22 +233,55 @@ export function RecipeCatalog() {
           >
             ★ Избранное
           </button>
-          <button
-            type="button"
-            onClick={() => updateFilter({})}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-              !query.meal_type &&
-              !query.category &&
-              !query.diet &&
-              !query.difficulty &&
-              !query.max_prep_time &&
-              !query.favorites_only
-                ? "bg-emerald-600 text-white"
-                : "bg-white text-stone-600 ring-1 ring-stone-200"
-            }`}
-          >
-            Все
-          </button>
+          <FilterChip
+            active={Boolean(query.drinks_only)}
+            label="Напитки"
+            onClick={() =>
+              updateFilter({
+                drinks_only: !query.drinks_only,
+                alcoholic_only: false,
+              })
+            }
+          />
+          <FilterChip
+            active={Boolean(query.for_children)}
+            label="Для детей"
+            onClick={() =>
+              updateFilter({ for_children: !query.for_children })
+            }
+          />
+          <FilterChip
+            active={Boolean(query.for_sport)}
+            label="Спорт"
+            onClick={() => updateFilter({ for_sport: !query.for_sport })}
+          />
+          <FilterChip
+            active={Boolean(query.from_pantry)}
+            label="Из запасов"
+            onClick={() =>
+              updateFilter({ from_pantry: !query.from_pantry })
+            }
+          />
+          <FilterChip
+            active={Boolean(query.non_alcoholic)}
+            label="Безалк."
+            onClick={() =>
+              updateFilter({
+                non_alcoholic: !query.non_alcoholic,
+                alcoholic_only: false,
+              })
+            }
+          />
+          <FilterChip
+            active={Boolean(query.alcoholic_only)}
+            label="Алкоголь"
+            onClick={() =>
+              updateFilter({
+                alcoholic_only: !query.alcoholic_only,
+                drinks_only: true,
+              })
+            }
+          />
         </div>
 
         {filters ? (
@@ -311,13 +351,11 @@ export function RecipeCatalog() {
             </p>
           ) : null}
         </div>
-      </main>
-
-      <BottomBackButton className="pb-4 pt-2" />
 
       {detail && selectedId !== null && !loadingDetail ? (
         <RecipeDetailModal
           recipe={detail}
+          menuMode={menuMode}
           onClose={() => {
             setDetail(null);
             setSelectedId(null);
@@ -326,7 +364,7 @@ export function RecipeCatalog() {
           togglingFavorite={togglingId === detail.id}
         />
       ) : null}
-    </div>
+    </ScreenLayout>
   );
 }
 
@@ -336,6 +374,30 @@ type FilterSelectProps = {
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
 };
+
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+        active
+          ? "bg-emerald-600 text-white"
+          : "bg-white text-stone-600 ring-1 ring-stone-200"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
 
 function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
   return (

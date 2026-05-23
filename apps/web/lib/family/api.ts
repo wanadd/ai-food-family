@@ -61,10 +61,11 @@ export async function fetchMyFamily(initData: string): Promise<Family | null> {
 export async function createFamily(
   initData: string,
   name: string,
+  adminManageConsent: boolean,
 ): Promise<Family> {
   return familyFetch<Family>("/families", initData, {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, admin_manage_consent: adminManageConsent }),
   });
 }
 

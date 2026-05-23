@@ -1,15 +1,17 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ChipSelect } from "@/components/onboarding/ChipSelect";
 import { OptionCards } from "@/components/onboarding/OptionCards";
 import { TextAreaField } from "@/components/onboarding/TextAreaField";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { StickyBottomBar } from "@/components/layout/StickyBottomBar";
 import { NutritionSection } from "@/components/nutrition-profile/NutritionSection";
 import { NumberInput } from "@/components/nutrition-profile/NumberInput";
 import { ToggleRow } from "@/components/nutrition-profile/ToggleRow";
-import Link from "next/link";
-
+import { useToast } from "@/components/ui/ToastProvider";
 import { useTelegram } from "@/components/TelegramProvider";
 import { fetchMyFamily, setAllowAdminProfileEdit } from "@/lib/family/api";
 import {
@@ -29,67 +31,47 @@ import {
   WORKOUT_FREQUENCY_OPTIONS,
 } from "@/lib/nutrition-profile/options";
 import {
+  getNutritionSectionChecks,
+  isNutritionCardComplete,
+  NUTRITION_SECTION_LABELS,
+  type NutritionSectionId,
+} from "@/lib/nutrition-profile/sections";
+import {
   INITIAL_NUTRITION_PROFILE,
   type NutritionProfileData,
 } from "@/lib/nutrition-profile/types";
 
-type SectionId =
-  | "basics"
-  | "goal"
-  | "activity"
-  | "limits"
-  | "tastes"
-  | "cooking"
-  | "pro";
-
 function basicsSummary(data: NutritionProfileData): string {
   const parts: string[] = [];
   if (data.age) parts.push(`${data.age} лет`);
-  if (data.gender) {
-    const g = GENDER_OPTIONS.find((o) => o.value === data.gender)?.label;
-    if (g) parts.push(g);
-  }
+  const g = GENDER_OPTIONS.find((o) => o.value === data.gender)?.label;
+  if (g) parts.push(g);
   if (data.height_cm && data.weight_kg) {
     parts.push(`${data.height_cm} см, ${data.weight_kg} кг`);
   }
   return parts.length ? parts.join(" · ") : "Не заполнено";
 }
 
-function goalSummary(data: NutritionProfileData): string {
-  if (!data.nutrition_goal) return "Выберите цель";
-  return NUTRITION_GOAL_LABELS[data.nutrition_goal] ?? data.nutrition_goal;
+function goalActivitySummary(data: NutritionProfileData): string {
+  const goal = data.nutrition_goal
+    ? (NUTRITION_GOAL_LABELS[data.nutrition_goal] ?? data.nutrition_goal)
+    : null;
+  const act = ACTIVITY_OPTIONS.find((o) => o.value === data.activity_level)?.label;
+  return [goal, act].filter(Boolean).join(" · ") || "Не заполнено";
 }
 
-function activitySummary(data: NutritionProfileData): string {
-  const o = ACTIVITY_OPTIONS.find((x) => x.value === data.activity_level);
-  return o?.label ?? "Не выбрана";
-}
-
-function limitsSummary(data: NutritionProfileData): string {
+function allergiesSummary(data: NutritionProfileData): string {
   const n =
-    data.allergies.filter((a) => a !== "none").length + data.diets.filter((d) => d !== "none").length;
-  const extra = [data.medical_restrictions, data.banned_foods].filter(Boolean).length;
+    data.allergies.filter((a) => a !== "none").length +
+    data.diets.filter((d) => d !== "none").length;
+  const extra = [data.medical_restrictions, data.banned_foods].filter(Boolean)
+    .length;
   if (!n && !extra) return "Без ограничений";
   return `${n + extra} настроек`;
 }
 
-function tastesSummary(data: NutritionProfileData): string {
-  if (data.favorite_foods.trim()) return "Любимое указано";
-  if (data.disliked_foods.trim()) return "Нелюбимое указано";
-  return "Не заполнено";
-}
-
-function cookingSummary(data: NutritionProfileData): string {
-  const b = BUDGET_OPTIONS.find((o) => o.value === data.budget)?.label;
-  const t = COOKING_TIME_OPTIONS.find((o) => o.value === data.cooking_time)?.label;
-  const parts = [b, t].filter(Boolean);
-  return parts.length ? parts.join(" · ") : "Не заполнено";
-}
-
 function proSummary(data: NutritionProfileData): string {
-  if (!data.pro.workouts_enabled && !data.pro.track_macros) {
-    return "Выключено";
-  }
+  if (!data.pro.workouts_enabled && !data.pro.track_macros) return "Выключено";
   const parts: string[] = [];
   if (data.pro.workouts_enabled) parts.push("тренировки");
   if (data.pro.track_macros) parts.push("КБЖУ");
@@ -97,15 +79,18 @@ function proSummary(data: NutritionProfileData): string {
 }
 
 export function NutritionProfileForm() {
+  const router = useRouter();
+  const { showToast } = useToast();
   const { initData } = useTelegram();
   const [data, setData] = useState<NutritionProfileData>(INITIAL_NUTRITION_PROFILE);
-  const [openSection, setOpenSection] = useState<SectionId | null>("goal");
+  const [openSection, setOpenSection] = useState<NutritionSectionId | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedAt, setSavedAt] = useState<string | null>(null);
   const [allowAdminEdit, setAllowAdminEdit] = useState(false);
   const [inFamily, setInFamily] = useState(false);
+
+  const progress = useMemo(() => getNutritionSectionChecks(data), [data]);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -134,18 +119,13 @@ export function NutritionProfileForm() {
     void load();
   }, [load]);
 
-  const patch = useCallback(
-    (partial: Partial<NutritionProfileData>) => {
-      setData((prev) => ({ ...prev, ...partial }));
-      setSavedAt(null);
-    },
-    [],
-  );
+  const patch = useCallback((partial: Partial<NutritionProfileData>) => {
+    setData((prev) => ({ ...prev, ...partial }));
+  }, []);
 
   const patchPro = useCallback(
     (partial: Partial<NutritionProfileData["pro"]>) => {
       setData((prev) => ({ ...prev, pro: { ...prev.pro, ...partial } }));
-      setSavedAt(null);
     },
     [],
   );
@@ -153,11 +133,15 @@ export function NutritionProfileForm() {
   const summaries = useMemo(
     () => ({
       basics: basicsSummary(data),
-      goal: goalSummary(data),
-      activity: activitySummary(data),
-      limits: limitsSummary(data),
-      tastes: tastesSummary(data),
-      cooking: cookingSummary(data),
+      goal_activity: goalActivitySummary(data),
+      allergies_restrictions: allergiesSummary(data),
+      favorites: data.favorite_foods.trim() ? "Указано" : "Не заполнено",
+      dislikes: data.disliked_foods.trim() ? "Указано" : "Не заполнено",
+      cooking:
+        BUDGET_OPTIONS.find((o) => o.value === data.budget)?.label &&
+        COOKING_TIME_OPTIONS.find((o) => o.value === data.cooking_time)?.label
+          ? "Настроено"
+          : "Не заполнено",
       pro: proSummary(data),
     }),
     [data],
@@ -167,18 +151,15 @@ export function NutritionProfileForm() {
     if (!initData) return;
     if (!data.nutrition_goal) {
       setError("Выберите цель питания");
-      setOpenSection("goal");
+      setOpenSection("goal_activity");
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const saved = await saveNutritionProfile(initData, {
-        ...data,
-        completed: true,
-      });
-      setData(saved);
-      setSavedAt(new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
+      await saveNutritionProfile(initData, { ...data, completed: true });
+      await showToast("✓ Сохранено");
+      router.push("/profile");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось сохранить");
     } finally {
@@ -186,7 +167,7 @@ export function NutritionProfileForm() {
     }
   }
 
-  function toggleSection(id: SectionId) {
+  function toggleSection(id: NutritionSectionId) {
     setOpenSection((prev) => (prev === id ? null : id));
   }
 
@@ -199,38 +180,56 @@ export function NutritionProfileForm() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-28">
-      <header className="border-b border-stone-100 bg-white px-4 pb-3 pt-7 sm:px-5">
-        <div className="mx-auto max-w-lg">
-          <Link
-            href="/profile"
-            className="mb-2 inline-block text-sm font-semibold text-emerald-700"
+    <ScreenLayout
+      title="Профиль питания"
+      subtitle="Откройте раздел и сохраните изменения"
+      back={{ label: "Профиль", href: "/profile" }}
+      footer={
+        <StickyBottomBar>
+          <button
+            type="button"
+            disabled={saving || !initData}
+            onClick={() => void handleSave()}
+            className="w-full rounded-2xl bg-emerald-600 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/50 transition hover:bg-emerald-700 disabled:opacity-50 active:scale-[0.99]"
           >
-            ← Профиль
-          </Link>
-          <h1 className="text-2xl font-bold text-stone-900">Мой профиль питания</h1>
-          <p className="mt-1 text-sm text-stone-500">
-            Откройте нужный раздел и сохраните изменения
-          </p>
+            {saving ? "Сохранение…" : "Сохранить"}
+          </button>
+        </StickyBottomBar>
+      }
+    >
+      <section className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/90 to-white p-4 shadow-sm">
+        <div className="mb-2 flex items-center justify-between text-sm text-stone-700">
+          <span className="font-medium">
+            Заполнено {progress.filled} из {progress.total} разделов
+          </span>
+          <span className="font-bold text-emerald-800">{progress.percent}%</span>
         </div>
-      </header>
+        <div
+          className="h-2 overflow-hidden rounded-full bg-emerald-100"
+          role="progressbar"
+          aria-valuenow={progress.percent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div
+            className="h-full rounded-full bg-emerald-600 transition-all"
+            style={{ width: `${progress.percent}%` }}
+          />
+        </div>
+      </section>
 
-      <div className="mx-auto max-w-lg space-y-3 px-4 py-4 sm:px-5">
-        {error ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
-        ) : null}
-        {savedAt ? (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            Сохранено в {savedAt}
-          </p>
-        ) : null}
+      {error ? (
+        <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </p>
+      ) : null}
 
+      <div className="mt-3 space-y-3">
         <NutritionSection
           id="basics"
-          title="Основное"
+          title={NUTRITION_SECTION_LABELS.basics}
           summary={summaries.basics}
+          complete={isNutritionCardComplete("basics", data)}
           open={openSection === "basics"}
           onToggle={() => toggleSection("basics")}
         >
@@ -289,39 +288,40 @@ export function NutritionProfileForm() {
         </NutritionSection>
 
         <NutritionSection
-          id="goal"
-          title="Цель"
-          summary={summaries.goal}
-          open={openSection === "goal"}
-          onToggle={() => toggleSection("goal")}
+          id="goal_activity"
+          title={NUTRITION_SECTION_LABELS.goal_activity}
+          summary={summaries.goal_activity}
+          complete={isNutritionCardComplete("goal_activity", data)}
+          open={openSection === "goal_activity"}
+          onToggle={() => toggleSection("goal_activity")}
         >
-          <OptionCards
-            options={NUTRITION_GOAL_OPTIONS}
-            value={data.nutrition_goal}
-            onChange={(nutrition_goal) => patch({ nutrition_goal })}
-          />
+          <div className="space-y-5">
+            <div>
+              <p className="mb-2 text-sm font-medium text-stone-700">Цель</p>
+              <OptionCards
+                options={NUTRITION_GOAL_OPTIONS}
+                value={data.nutrition_goal}
+                onChange={(nutrition_goal) => patch({ nutrition_goal })}
+              />
+            </div>
+            <div>
+              <p className="mb-2 text-sm font-medium text-stone-700">Активность</p>
+              <OptionCards
+                options={ACTIVITY_OPTIONS}
+                value={data.activity_level}
+                onChange={(activity_level) => patch({ activity_level })}
+              />
+            </div>
+          </div>
         </NutritionSection>
 
         <NutritionSection
-          id="activity"
-          title="Активность"
-          summary={summaries.activity}
-          open={openSection === "activity"}
-          onToggle={() => toggleSection("activity")}
-        >
-          <OptionCards
-            options={ACTIVITY_OPTIONS}
-            value={data.activity_level}
-            onChange={(activity_level) => patch({ activity_level })}
-          />
-        </NutritionSection>
-
-        <NutritionSection
-          id="limits"
-          title="Ограничения"
-          summary={summaries.limits}
-          open={openSection === "limits"}
-          onToggle={() => toggleSection("limits")}
+          id="allergies_restrictions"
+          title={NUTRITION_SECTION_LABELS.allergies_restrictions}
+          summary={summaries.allergies_restrictions}
+          complete={isNutritionCardComplete("allergies_restrictions", data)}
+          open={openSection === "allergies_restrictions"}
+          onToggle={() => toggleSection("allergies_restrictions")}
         >
           <div className="space-y-5">
             <div>
@@ -334,7 +334,7 @@ export function NutritionProfileForm() {
               />
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Диеты</p>
+              <p className="mb-2 text-sm font-medium text-stone-700">Диеты и ограничения</p>
               <ChipSelect
                 options={DIET_OPTIONS}
                 value={data.diets}
@@ -348,8 +348,10 @@ export function NutritionProfileForm() {
               </p>
               <TextAreaField
                 value={data.medical_restrictions}
-                onChange={(medical_restrictions) => patch({ medical_restrictions })}
-                placeholder="Например: диабет, гастрит, беременность…"
+                onChange={(medical_restrictions) =>
+                  patch({ medical_restrictions })
+                }
+                placeholder="Например: диабет, гастрит…"
               />
             </div>
             <div>
@@ -366,36 +368,40 @@ export function NutritionProfileForm() {
         </NutritionSection>
 
         <NutritionSection
-          id="tastes"
-          title="Вкусы"
-          summary={summaries.tastes}
-          open={openSection === "tastes"}
-          onToggle={() => toggleSection("tastes")}
+          id="favorites"
+          title={NUTRITION_SECTION_LABELS.favorites}
+          summary={summaries.favorites}
+          complete={isNutritionCardComplete("favorites", data)}
+          open={openSection === "favorites"}
+          onToggle={() => toggleSection("favorites")}
         >
-          <div className="space-y-4">
-            <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Люблю</p>
-              <TextAreaField
-                value={data.favorite_foods}
-                onChange={(favorite_foods) => patch({ favorite_foods })}
-                placeholder="Продукты и блюда, которые хотите чаще"
-              />
-            </div>
-            <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Не люблю</p>
-              <TextAreaField
-                value={data.disliked_foods}
-                onChange={(disliked_foods) => patch({ disliked_foods })}
-                placeholder="Чего лучше избегать в меню"
-              />
-            </div>
-          </div>
+          <TextAreaField
+            value={data.favorite_foods}
+            onChange={(favorite_foods) => patch({ favorite_foods })}
+            placeholder="Например: каши, ягоды, супы"
+          />
+        </NutritionSection>
+
+        <NutritionSection
+          id="dislikes"
+          title={NUTRITION_SECTION_LABELS.dislikes}
+          summary={summaries.dislikes}
+          complete={isNutritionCardComplete("dislikes", data)}
+          open={openSection === "dislikes"}
+          onToggle={() => toggleSection("dislikes")}
+        >
+          <TextAreaField
+            value={data.disliked_foods}
+            onChange={(disliked_foods) => patch({ disliked_foods })}
+            placeholder="Например: рыбу, острое, брокколи"
+          />
         </NutritionSection>
 
         <NutritionSection
           id="cooking"
-          title="Готовка"
+          title={NUTRITION_SECTION_LABELS.cooking}
           summary={summaries.cooking}
+          complete={isNutritionCardComplete("cooking", data)}
           open={openSection === "cooking"}
           onToggle={() => toggleSection("cooking")}
         >
@@ -413,9 +419,7 @@ export function NutritionProfileForm() {
               <ChipSelect
                 options={COOKING_TIME_OPTIONS}
                 value={data.cooking_time ? [data.cooking_time] : []}
-                onChange={(values) =>
-                  patch({ cooking_time: values[0] ?? null })
-                }
+                onChange={(values) => patch({ cooking_time: values[0] ?? null })}
                 multiple={false}
               />
             </div>
@@ -432,14 +436,15 @@ export function NutritionProfileForm() {
 
         <NutritionSection
           id="pro"
-          title="PRO"
+          title={NUTRITION_SECTION_LABELS.pro}
           summary={summaries.pro}
+          complete={isNutritionCardComplete("pro", data)}
           open={openSection === "pro"}
           onToggle={() => toggleSection("pro")}
         >
           <div className="space-y-4">
             <p className="text-xs text-stone-500">
-              Расширенные настройки для спорта и контроля. Можно заполнить позже.
+              Расширенные настройки для спорта и контроля.
             </p>
             <ToggleRow
               label="Учитывать тренировки"
@@ -448,38 +453,27 @@ export function NutritionProfileForm() {
             />
             {data.pro.workouts_enabled ? (
               <>
-                <div>
-                  <p className="mb-2 text-sm font-medium text-stone-700">
-                    Цель тренировок
-                  </p>
-                  <TextAreaField
-                    value={data.pro.workout_goal}
-                    onChange={(workout_goal) => patchPro({ workout_goal })}
-                    placeholder="Сила, выносливость, похудение…"
-                  />
-                </div>
-                <div>
-                  <p className="mb-2 text-sm font-medium text-stone-700">Частота</p>
-                  <OptionCards
-                    options={WORKOUT_FREQUENCY_OPTIONS}
-                    value={data.pro.workout_frequency}
-                    onChange={(workout_frequency) =>
-                      patchPro({ workout_frequency })
-                    }
-                  />
-                </div>
+                <TextAreaField
+                  value={data.pro.workout_goal}
+                  onChange={(workout_goal) => patchPro({ workout_goal })}
+                  placeholder="Сила, выносливость, похудение…"
+                />
+                <OptionCards
+                  options={WORKOUT_FREQUENCY_OPTIONS}
+                  value={data.pro.workout_frequency}
+                  onChange={(workout_frequency) =>
+                    patchPro({ workout_frequency })
+                  }
+                />
               </>
             ) : null}
-            <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Замеры тела</p>
-              <TextAreaField
-                value={data.pro.body_measurements}
-                onChange={(body_measurements) =>
-                  patchPro({ body_measurements })
-                }
-                placeholder="Талия, бёдра, % жира — по желанию"
-              />
-            </div>
+            <TextAreaField
+              value={data.pro.body_measurements}
+              onChange={(body_measurements) =>
+                patchPro({ body_measurements })
+              }
+              placeholder="Талия, бёдра — по желанию"
+            />
             <NumberInput
               label="Вода в день"
               value={data.pro.water_liters}
@@ -517,20 +511,6 @@ export function NutritionProfileForm() {
           </section>
         ) : null}
       </div>
-
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-stone-200/90 bg-white/95 px-4 py-3 backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto max-w-lg">
-          <button
-            type="button"
-            disabled={saving || !initData}
-            onClick={() => void handleSave()}
-            className="w-full rounded-2xl bg-emerald-600 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/50 transition hover:bg-emerald-700 disabled:opacity-50 active:scale-[0.99]"
-          >
-            {saving ? "Сохранение…" : "Сохранить профиль"}
-          </button>
-        </div>
-      </div>
-
-    </div>
+    </ScreenLayout>
   );
 }

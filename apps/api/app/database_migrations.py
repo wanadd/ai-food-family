@@ -322,6 +322,159 @@ def run_schema_migrations(engine: Engine) -> None:
         "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS last_breakfast_sent_date DATE",
         "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS last_lunch_sent_date DATE",
         "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS last_dinner_sent_date DATE",
+        """
+        CREATE TABLE IF NOT EXISTS meal_leftovers (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            dish_name VARCHAR(200) NOT NULL,
+            portions_remaining INTEGER NOT NULL DEFAULT 1,
+            valid_until DATE,
+            note VARCHAR(200),
+            added_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_meal_leftovers_user_id ON meal_leftovers (user_id);",
+        "CREATE INDEX IF NOT EXISTS ix_meal_leftovers_family_id ON meal_leftovers (family_id);",
+        # Legal consents
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS accepted_terms BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS accepted_privacy BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS accepted_personal_data BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS legal_accepted_at TIMESTAMPTZ",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS legal_documents_version VARCHAR(32)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_skipped BOOLEAN NOT NULL DEFAULT FALSE",
+        """
+        UPDATE users SET
+            accepted_terms = TRUE,
+            accepted_privacy = TRUE,
+            accepted_personal_data = TRUE,
+            legal_documents_version = '2025-05-stub-v1',
+            legal_accepted_at = COALESCE(legal_accepted_at, NOW())
+        WHERE phone_number IS NOT NULL AND phone_number <> '';
+        """,
+        "ALTER TABLE telegram_bot_sessions ADD COLUMN IF NOT EXISTS payload_json JSONB NOT NULL DEFAULT '{}'",
+        # Recipe catalog extensions
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS cuisine VARCHAR(64)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS cooking_time_minutes INTEGER NOT NULL DEFAULT 30",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS calories_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS protein_g DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS fat_g DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS carbs_g DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS fiber_g DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS sugar_g DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS source_type VARCHAR(16) NOT NULL DEFAULT 'manual'",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS source_url VARCHAR(512)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS image_url VARCHAR(512)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_drink BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_alcoholic BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS alcohol_percent DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS caffeine_mg DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS suitable_for_children BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS suitable_for_sport BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS suitable_for_event BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+        "UPDATE recipes SET cooking_time_minutes = prep_time_minutes WHERE cooking_time_minutes IS NULL OR cooking_time_minutes = 30",
+        """
+        CREATE TABLE IF NOT EXISTS recipe_ingredients (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            name VARCHAR(120) NOT NULL,
+            quantity VARCHAR(32) NOT NULL DEFAULT '1',
+            unit VARCHAR(32) NOT NULL DEFAULT 'шт',
+            category VARCHAR(32) NOT NULL DEFAULT 'other',
+            is_optional BOOLEAN NOT NULL DEFAULT FALSE,
+            notes VARCHAR(200)
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipe_ingredients_recipe_id ON recipe_ingredients (recipe_id);",
+        """
+        CREATE TABLE IF NOT EXISTS recipe_steps (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            step_number INTEGER NOT NULL DEFAULT 1,
+            text TEXT NOT NULL
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipe_steps_recipe_id ON recipe_steps (recipe_id);",
+        """
+        CREATE TABLE IF NOT EXISTS recipe_tags (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            tag VARCHAR(64) NOT NULL
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipe_tags_recipe_id ON recipe_tags (recipe_id);",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_tags_tag ON recipe_tags (tag);",
+        """
+        CREATE TABLE IF NOT EXISTS recipe_allergens (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            allergen VARCHAR(64) NOT NULL
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipe_allergens_recipe_id ON recipe_allergens (recipe_id);",
+        """
+        CREATE TABLE IF NOT EXISTS recipe_restrictions (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            restriction VARCHAR(64) NOT NULL
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipe_restrictions_recipe_id ON recipe_restrictions (recipe_id);",
+        """
+        CREATE TABLE IF NOT EXISTS recipe_ratings (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            rating INTEGER,
+            is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
+            cooked_count INTEGER NOT NULL DEFAULT 0,
+            last_cooked_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            CONSTRAINT uq_recipe_rating_user_recipe UNIQUE (user_id, recipe_id)
+        );
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS recipe_import_jobs (
+            id SERIAL PRIMARY KEY,
+            source_name VARCHAR(64) NOT NULL,
+            source_url VARCHAR(512),
+            status VARCHAR(32) NOT NULL DEFAULT 'pending',
+            imported_count INTEGER NOT NULL DEFAULT 0,
+            failed_count INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS event_plans (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            title VARCHAR(200) NOT NULL,
+            event_type VARCHAR(64) NOT NULL,
+            guests_count INTEGER NOT NULL DEFAULT 4,
+            budget VARCHAR(32),
+            theme VARCHAR(120),
+            cuisine VARCHAR(64),
+            religious_restriction VARCHAR(32) NOT NULL DEFAULT 'none',
+            fasting_mode VARCHAR(32) NOT NULL DEFAULT 'none',
+            drink_menu_mode VARCHAR(32) NOT NULL DEFAULT 'non_alcoholic',
+            alcohol_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+            kids_drinks_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            allergies_note TEXT,
+            plan_data JSONB NOT NULL DEFAULT '{}',
+            estimated_cost_rub INTEGER,
+            status VARCHAR(32) NOT NULL DEFAULT 'draft',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_event_plans_user_id ON event_plans (user_id);",
+        "CREATE INDEX IF NOT EXISTS ix_event_plans_family_id ON event_plans (family_id);",
     ]
 
     with engine.begin() as connection:

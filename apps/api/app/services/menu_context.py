@@ -24,6 +24,10 @@ from app.services.nutrition_profile_labels import (
 )
 from app.services.family_menu_context import format_family_member_for_menu
 from app.services.onboarding import get_or_create_profile
+from app.services.meal_leftovers import (
+    format_meal_leftovers_for_prompt,
+    list_active_leftovers,
+)
 from app.services.pantry import format_leftovers_for_prompt, get_active_items_for_scope
 
 
@@ -42,6 +46,7 @@ def build_menu_context(db: Session, user: User, scope: AppScope) -> MenuGenerati
     profile = get_or_create_profile(db, user)
     family = family_service.get_family_for_user(db, user)
     leftovers = get_active_items_for_scope(db, scope)
+    cooked_leftovers = list_active_leftovers(db, scope)
 
     lines: list[str] = ["Сформируй меню на один день."]
 
@@ -49,6 +54,7 @@ def build_menu_context(db: Session, user: User, scope: AppScope) -> MenuGenerati
         lines.append("Режим: личный (один пользователь).")
         lines.append(_format_user_block(user.first_name or "Вы", profile))
         lines.extend(_format_leftovers_block(leftovers))
+        lines.extend(format_meal_leftovers_for_prompt(cooked_leftovers))
         return MenuGenerationContext(
             scope_mode="personal",
             context_label="Личный режим",
@@ -77,6 +83,7 @@ def build_menu_context(db: Session, user: User, scope: AppScope) -> MenuGenerati
     ):
         lines.append(format_family_member_for_menu(db, member))
     lines.extend(_format_leftovers_block(leftovers))
+    lines.extend(format_meal_leftovers_for_prompt(cooked_leftovers))
 
     return MenuGenerationContext(
         scope_mode="family",

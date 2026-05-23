@@ -141,7 +141,7 @@ def _is_quiet_hours(settings_row: CareSettings, user: User, db: Session) -> bool
 
 def _user_has_pro(db: Session, user: User) -> bool:
     try:
-        sub, plan, _ = subscription_service.get_current_subscription(db, user)
+        sub, plan, _, _ = subscription_service.get_current_subscription(db, user)
         if sub.plan_code == "pro":
             return True
         features = plan.features or {}
@@ -201,10 +201,11 @@ def update_care_settings(
 ) -> CareSettingsResponse:
     row = get_or_create_care_settings(db, user)
     data = payload.model_dump(exclude_unset=True)
+    previous_level = row.care_level
     for key, value in data.items():
         setattr(row, key, value)
 
-    if data.get("care_level") == "minimal":
+    if data.get("care_level") == "minimal" and previous_level != "minimal":
         row.water_enabled = False
         row.protein_enabled = False
         row.progress_enabled = False

@@ -16,6 +16,12 @@ class UserResponse(BaseModel):
     language_code: str | None
     phone_number: str | None = None
     photo_url: str | None
+    accepted_terms: bool = False
+    accepted_privacy: bool = False
+    accepted_personal_data: bool = False
+    legal_accepted_at: datetime | None = None
+    legal_documents_version: str | None = None
+    phone_skipped: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -26,6 +32,8 @@ class TelegramAuthResponse(BaseModel):
     user: UserResponse
     is_new: bool
     phone_verified: bool = False
+    legal_accepted: bool = False
+    can_use_app: bool = False
 
 
 class DevLoginResponse(TelegramAuthResponse):

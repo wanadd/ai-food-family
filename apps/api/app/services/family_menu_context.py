@@ -5,8 +5,10 @@ from app.models.user import User
 from app.models.user_profile import UserProfile
 from app.services.family_member_nutrition import (
     member_is_virtual,
+    nutrition_goal_display,
     virtual_nutrition_from_member,
 )
+from app.services.member_age import format_age_months_ru
 from app.services.menu_labels import (
     ALLERGY_LABELS,
     DIET_LABELS,
@@ -14,8 +16,25 @@ from app.services.menu_labels import (
     MEMBER_RESTRICTION_LABELS,
     label_map,
 )
-from app.services.nutrition_profile_labels import NUTRITION_GOAL_LABELS
 from app.services.onboarding import get_or_create_profile
+
+VIRTUAL_ALLERGY_LABELS = {
+    **ALLERGY_LABELS,
+    "fish": "рыба",
+    "citrus": "цитрусовые",
+    "chocolate": "шоколад",
+    "strawberry": "клубника",
+    "other": "другое",
+}
+
+VIRTUAL_RESTRICTION_LABELS = {
+    **MEMBER_RESTRICTION_LABELS,
+    "gluten_free": "без глютена",
+    "lactose_free": "без лактозы",
+    "no_sugar": "без сахара",
+    "low_carb": "низкоуглеводное",
+    "other": "другое",
+}
 
 
 def format_family_member_for_menu(db: Session, member: FamilyMember) -> str:
@@ -25,17 +44,33 @@ def format_family_member_for_menu(db: Session, member: FamilyMember) -> str:
     if member_is_virtual(member):
         n = virtual_nutrition_from_member(member)
         parts = [f"- {name} ({role_note}):"]
-        if n.age:
-            parts.append(f"  возраст: {n.age}")
-        if n.nutrition_goal:
+
+        kind = member.virtual_kind
+        if n.age_months is not None:
             parts.append(
-                f"  цель: {NUTRITION_GOAL_LABELS.get(n.nutrition_goal, n.nutrition_goal)}"
+                f"  возраст: {format_age_months_ru(n.age_months, kind=kind)}"
             )
-        parts.append(f"  диеты: {_join(n.diets, DIET_LABELS)}")
-        parts.append(f"  аллергии: {_join(n.allergies, ALLERGY_LABELS)}")
-        parts.append(f"  ограничения: {_join(n.restrictions, MEMBER_RESTRICTION_LABELS)}")
+        elif kind == "child":
+            parts.append("  возраст: ребёнок, возраст не указан")
+
+        goal_label = nutrition_goal_display(n)
+        if goal_label:
+            parts.append(f"  цель: {goal_label}")
+
+        allergy_values = [
+            *(n.allergies or []),
+            *(n.custom_allergies or []),
+        ]
+        restriction_values = [
+            *(n.restrictions or []),
+            *(n.custom_restrictions or []),
+        ]
+        parts.append(f"  аллергии: {_join(allergy_values, VIRTUAL_ALLERGY_LABELS)}")
+        parts.append(
+            f"  ограничения: {_join(restriction_values, VIRTUAL_RESTRICTION_LABELS)}"
+        )
         if n.favorite_foods:
-            parts.append(f"  любимое: {n.favorite_foods}")
+            parts.append(f"  любит: {n.favorite_foods}")
         if n.disliked_foods:
             parts.append(f"  не любит: {n.disliked_foods}")
         if n.notes:
@@ -67,4 +102,6 @@ def _format_telegram_profile_block(
 
 def _join(values: list[str], mapping: dict[str, str]) -> str:
     labels = label_map(values, mapping)
+    custom = [v for v in values if v and v not in mapping]
+    labels.extend(custom)
     return ", ".join(labels) if labels else "не указано"

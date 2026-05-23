@@ -6,6 +6,7 @@ type NutritionSectionProps = {
   id: string;
   title: string;
   summary: string;
+  complete?: boolean;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
@@ -15,6 +16,7 @@ export function NutritionSection({
   id,
   title,
   summary,
+  complete = false,
   open,
   onToggle,
   children,
@@ -30,7 +32,14 @@ export function NutritionSection({
         className="flex w-full min-h-[56px] items-center gap-3 px-4 py-3.5 text-left transition active:bg-stone-50"
       >
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-stone-900">{title}</p>
+          <p className="flex items-center gap-2 font-semibold text-stone-900">
+            {title}
+            {complete ? (
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
+                ✓
+              </span>
+            ) : null}
+          </p>
           {!open ? (
             <p className="mt-0.5 truncate text-sm text-stone-500">{summary}</p>
           ) : null}

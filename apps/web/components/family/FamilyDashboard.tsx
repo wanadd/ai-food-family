@@ -9,7 +9,9 @@ import { AddPersonSheet } from "@/components/family/AddPersonSheet";
 import { InviteSheet } from "@/components/family/InviteSheet";
 import { MemberCard } from "@/components/family/MemberCard";
 import { VirtualMemberNutritionForm } from "@/components/family/VirtualMemberNutritionForm";
-import { BottomBackButton } from "@/components/layout/BottomBackButton";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { StickyBottomBar } from "@/components/layout/StickyBottomBar";
+import { useToast } from "@/components/ui/ToastProvider";
 import {
   addVirtualFamilyMember,
   createFamily,
@@ -39,8 +41,14 @@ function memberCountLabel(count: number): string {
 }
 
 function draftFromMember(member: FamilyMember): VirtualMemberDraft {
-  const nutrition: VirtualNutrition = member.virtual_nutrition
-    ? { ...member.virtual_nutrition }
+  const raw = member.virtual_nutrition;
+  const nutrition: VirtualNutrition = raw
+    ? {
+        ...EMPTY_VIRTUAL_NUTRITION,
+        ...raw,
+        custom_allergies: raw.custom_allergies ?? [],
+        custom_restrictions: raw.custom_restrictions ?? [],
+      }
     : { ...EMPTY_VIRTUAL_NUTRITION };
 
   return {
@@ -51,14 +59,39 @@ function draftFromMember(member: FamilyMember): VirtualMemberDraft {
   };
 }
 
+function isDraftValid(
+  draft: VirtualMemberDraft,
+  linkedAccount: boolean,
+): boolean {
+  const n = draft.nutrition;
+  const goalOk =
+    n.nutrition_goal &&
+    (n.nutrition_goal !== "other" || (n.custom_nutrition_goal || "").trim());
+  const isChild = draft.virtual_kind === "child" || draft.role === "child";
+  const consentOk = linkedAccount
+    ? true
+    : isChild
+      ? Boolean(draft.guardian_consent)
+      : Boolean(draft.data_consent);
+
+  return Boolean(
+    (linkedAccount || draft.display_name.trim()) &&
+      goalOk &&
+      n.age_months != null &&
+      consentOk,
+  );
+}
+
 export function FamilyDashboard() {
   const { refreshContext } = useAppMode();
   const { initData } = useTelegram();
+  const { showToast } = useToast();
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [familyName, setFamilyName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [adminConsent, setAdminConsent] = useState(false);
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [showInviteSheet, setShowInviteSheet] = useState(false);
   const [virtualDraft, setVirtualDraft] = useState<VirtualMemberDraft>(
@@ -91,13 +124,21 @@ export function FamilyDashboard() {
   }, [initData, loadFamily]);
 
   const isAdmin = family?.your_role === "admin";
+  const linkedAccount = Boolean(editingMember && !editingMember.is_virtual);
+
+  function closeMemberForm() {
+    setShowNutritionForm(false);
+    setEditingMember(null);
+    setVirtualDraft(EMPTY_VIRTUAL_DRAFT);
+    setError(null);
+  }
 
   async function handleCreateFamily() {
     if (!initData || !familyName.trim()) return;
     setCreating(true);
     setError(null);
     try {
-      const created = await createFamily(initData, familyName.trim());
+      const created = await createFamily(initData, familyName.trim(), adminConsent);
       setFamily(created);
       setFamilyName("");
       await refreshContext();
@@ -145,11 +186,10 @@ export function FamilyDashboard() {
           display_name: virtualDraft.display_name.trim(),
         });
       }
-      setShowNutritionForm(false);
-      setEditingMember(null);
-      setVirtualDraft(EMPTY_VIRTUAL_DRAFT);
       await loadFamily(initData);
       await refreshContext();
+      closeMemberForm();
+      await showToast("✓ Сохранено");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
     } finally {
@@ -192,18 +232,84 @@ export function FamilyDashboard() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="border-b border-stone-100 bg-white px-4 pb-3 pt-7 sm:px-5">
-        <div className="mx-auto max-w-lg">
-          <h1 className="text-2xl font-bold text-stone-900">Семья и участники</h1>
-          <p className="mt-1 text-sm text-stone-500">
-            Необязательно — можно пользоваться ПланАм одному
-          </p>
-        </div>
-      </header>
+  if (showNutritionForm) {
+    const formTitle = linkedAccount
+      ? (editingMember?.display_name ?? "Участник")
+      : editingMember
+        ? editingMember.display_name
+        : "Новый участник";
 
-      <main className="mx-auto max-w-lg space-y-4 px-4 py-4 pb-24 sm:px-5">
+    return (
+      <>
+        <ScreenLayout
+          title={formTitle}
+          subtitle="Профиль учтётся в семейном меню"
+          back={{ label: "Семья", onClick: closeMemberForm }}
+          footer={
+            <StickyBottomBar>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={closeMemberForm}
+                  className="flex-1 rounded-xl border border-stone-200 py-3 text-sm font-semibold text-stone-700"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    saving || !isDraftValid(virtualDraft, linkedAccount)
+                  }
+                  onClick={() => void handleSaveNutrition()}
+                  className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {saving
+                    ? "Сохранение…"
+                    : editingMember
+                      ? "Сохранить"
+                      : "Добавить в семью"}
+                </button>
+              </div>
+            </StickyBottomBar>
+          }
+        >
+          {error ? (
+            <p className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {error}
+            </p>
+          ) : null}
+          <VirtualMemberNutritionForm
+            draft={virtualDraft}
+            onChange={setVirtualDraft}
+            submitLabel={
+              editingMember ? "Сохранить профиль" : "Добавить в семью"
+            }
+            linkedAccount={linkedAccount}
+            linkedName={editingMember?.display_name}
+            onSubmit={() => void handleSaveNutrition()}
+            onCancel={closeMemberForm}
+            loading={saving}
+            hideFooter
+          />
+        </ScreenLayout>
+
+        <AddPersonSheet
+          open={showAddPerson}
+          onClose={() => setShowAddPerson(false)}
+          onInviteTelegram={() => setShowInviteSheet(true)}
+          onAddVirtual={openNewVirtual}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <ScreenLayout
+        title="Семья и участники"
+        subtitle="Необязательно — можно пользоваться ПланАм одному"
+        back={{ label: "Профиль", href: "/profile" }}
+      >
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
@@ -222,10 +328,19 @@ export function FamilyDashboard() {
               placeholder="Например: Семья Ивановых"
               className="mt-4 w-full rounded-xl border border-stone-200 px-4 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
             />
+            <label className="mt-4 flex items-start gap-3 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={adminConsent}
+                onChange={(e) => setAdminConsent(e.target.checked)}
+                className="mt-1"
+              />
+              <span>Я подтверждаю право управлять семейным аккаунтом</span>
+            </label>
             <button
               type="button"
               onClick={() => void handleCreateFamily()}
-              disabled={creating || !familyName.trim()}
+              disabled={creating || !familyName.trim() || !adminConsent}
               className="mt-4 w-full rounded-2xl bg-emerald-600 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {creating ? "Создание…" : "Создать семью"}
@@ -264,29 +379,6 @@ export function FamilyDashboard() {
               </p>
             ) : null}
 
-            {showNutritionForm ? (
-              <VirtualMemberNutritionForm
-                draft={virtualDraft}
-                onChange={setVirtualDraft}
-                submitLabel={
-                  editingMember
-                    ? "Сохранить профиль"
-                    : "Добавить в семью"
-                }
-                linkedAccount={Boolean(
-                  editingMember && !editingMember.is_virtual,
-                )}
-                linkedName={editingMember?.display_name}
-                onSubmit={() => void handleSaveNutrition()}
-                onCancel={() => {
-                  setShowNutritionForm(false);
-                  setEditingMember(null);
-                  setVirtualDraft(EMPTY_VIRTUAL_DRAFT);
-                }}
-                loading={saving}
-              />
-            ) : null}
-
             <section className="space-y-3">
               <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-stone-400">
                 Участники
@@ -298,7 +390,7 @@ export function FamilyDashboard() {
                   isAdmin={Boolean(isAdmin)}
                   onEditNutrition={
                     member.can_admin_edit_nutrition
-                      ? () => openEditNutrition(member)
+                      ? () => void openEditNutrition(member)
                       : undefined
                   }
                   onDelete={() => void handleDeleteMember(member)}
@@ -307,9 +399,7 @@ export function FamilyDashboard() {
             </section>
           </>
         )}
-      </main>
-
-      <BottomBackButton className="pb-2 pt-2" />
+      </ScreenLayout>
 
       <AddPersonSheet
         open={showAddPerson}
@@ -330,6 +420,6 @@ export function FamilyDashboard() {
           }}
         />
       ) : null}
-    </div>
+    </>
   );
 }
