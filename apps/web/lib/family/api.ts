@@ -1,7 +1,13 @@
 import { apiUrl } from "@/lib/api";
 
 import type { FamilyInvite } from "./invite-types";
-import type { Family, FamilyMember, MemberDraft } from "./types";
+import type {
+  Family,
+  FamilyMember,
+  MemberDraft,
+  VirtualMemberDraft,
+  VirtualNutrition,
+} from "./types";
 
 async function familyFetch<T>(
   path: string,
@@ -132,5 +138,46 @@ export async function removeFamilyMember(
 ): Promise<void> {
   await familyFetch<void>(`/families/${familyId}/members/${memberId}`, initData, {
     method: "DELETE",
+  });
+}
+
+export async function addVirtualFamilyMember(
+  initData: string,
+  familyId: number,
+  draft: VirtualMemberDraft,
+): Promise<FamilyMember> {
+  return familyFetch<FamilyMember>(
+    `/families/${familyId}/members/virtual`,
+    initData,
+    {
+      method: "POST",
+      body: JSON.stringify(draft),
+    },
+  );
+}
+
+export async function updateMemberNutrition(
+  initData: string,
+  familyId: number,
+  memberId: number,
+  nutrition: VirtualNutrition,
+): Promise<FamilyMember> {
+  return familyFetch<FamilyMember>(
+    `/families/${familyId}/members/${memberId}/nutrition`,
+    initData,
+    {
+      method: "PUT",
+      body: JSON.stringify({ nutrition }),
+    },
+  );
+}
+
+export async function setAllowAdminProfileEdit(
+  initData: string,
+  allow: boolean,
+): Promise<FamilyMember> {
+  return familyFetch<FamilyMember>("/families/me/allow-admin-edit", initData, {
+    method: "PATCH",
+    body: JSON.stringify({ allow_admin_profile_edit: allow }),
   });
 }

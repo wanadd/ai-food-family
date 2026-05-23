@@ -22,6 +22,7 @@ from app.services.nutrition_profile_labels import (
     GENDER_LABELS,
     NUTRITION_GOAL_LABELS,
 )
+from app.services.family_menu_context import format_family_member_for_menu
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import format_leftovers_for_prompt, get_active_items_for_scope
 
@@ -61,18 +62,20 @@ def build_menu_context(db: Session, user: User, scope: AppScope) -> MenuGenerati
     if family is None:
         raise ValueError("Family scope without family membership")
 
-    lines.append(f"Режим: семейный. Семья: {family.name}. Участников: {len(family.members)}.")
-    for member in family.members:
-        lines.append(
-            _format_member_block(
-                member.display_name,
-                member.role,
-                member.goals or [],
-                member.restrictions or [],
-            )
-        )
-    lines.append("Профиль того, кто заказывает меню:")
-    lines.append(_format_user_block(user.first_name or "Вы", profile))
+    persons = len(family.members)
+    lines.append(
+        f"Режим: семейный. Семья: {family.name}. "
+        f"Готовить на {persons} персон (все участники ниже)."
+    )
+    lines.append(
+        "Учти цели, аллергии и ограничения КАЖДОГО участника; "
+        "порции рассчитай на указанное число персон."
+    )
+    for member in sorted(
+        family.members,
+        key=lambda m: (0 if m.role == "admin" else 1, m.display_name.lower()),
+    ):
+        lines.append(format_family_member_for_menu(db, member))
     lines.extend(_format_leftovers_block(leftovers))
 
     return MenuGenerationContext(

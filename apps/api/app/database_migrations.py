@@ -132,6 +132,16 @@ def run_schema_migrations(engine: Engine) -> None:
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS banned_foods TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS dish_complexity VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS pro_data JSONB NOT NULL DEFAULT '{}'",
+        # Family members: virtual participants and nutrition
+        "ALTER TABLE family_members ADD COLUMN IF NOT EXISTS is_virtual BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE family_members ADD COLUMN IF NOT EXISTS virtual_kind VARCHAR(32)",
+        "ALTER TABLE family_members ADD COLUMN IF NOT EXISTS allow_admin_profile_edit BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE family_members ADD COLUMN IF NOT EXISTS nutrition_profile JSONB NOT NULL DEFAULT '{}'",
+        """
+        UPDATE family_members
+        SET is_virtual = TRUE
+        WHERE user_id IS NULL AND is_virtual = FALSE;
+        """,
     ]
 
     with engine.begin() as connection:

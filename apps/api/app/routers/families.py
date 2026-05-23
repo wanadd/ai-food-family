@@ -12,6 +12,11 @@ from app.schemas.family import (
     FamilyMemberUpdateRequest,
     FamilyResponse,
 )
+from app.schemas.family_member_nutrition import (
+    AllowAdminEditRequest,
+    MemberNutritionUpdateRequest,
+    VirtualMemberCreateRequest,
+)
 from app.schemas.family_invite import FamilyInviteCreateRequest, FamilyInviteResponse
 from app.services import family_invites as family_invites_service
 from app.services.family_invites import (
@@ -170,6 +175,45 @@ def add_family_member(
     db: Session = Depends(get_db),
 ) -> FamilyMemberResponse:
     return family_service.add_member(db, user, family_id, payload)
+
+
+@router.post(
+    "/{family_id}/members/virtual",
+    response_model=FamilyMemberResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_virtual_family_member(
+    family_id: int,
+    payload: VirtualMemberCreateRequest,
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> FamilyMemberResponse:
+    return family_service.add_virtual_member(db, user, family_id, payload)
+
+
+@router.put(
+    "/{family_id}/members/{member_id}/nutrition",
+    response_model=FamilyMemberResponse,
+)
+def update_member_nutrition(
+    family_id: int,
+    member_id: int,
+    payload: MemberNutritionUpdateRequest,
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> FamilyMemberResponse:
+    return family_service.update_member_nutrition(
+        db, user, family_id, member_id, payload
+    )
+
+
+@router.patch("/me/allow-admin-edit", response_model=FamilyMemberResponse)
+def set_allow_admin_edit(
+    payload: AllowAdminEditRequest,
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> FamilyMemberResponse:
+    return family_service.set_allow_admin_profile_edit(db, user, payload)
 
 
 @router.patch("/{family_id}/members/{member_id}", response_model=FamilyMemberResponse)

@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -47,6 +47,10 @@ class FamilyMember(Base):
     role: Mapped[str] = mapped_column(String(16), default=FamilyRole.ADULT.value)
     goals: Mapped[list] = mapped_column(JSONB, default=list)
     restrictions: Mapped[list] = mapped_column(JSONB, default=list)
+    is_virtual: Mapped[bool] = mapped_column(Boolean, default=False)
+    virtual_kind: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    allow_admin_profile_edit: Mapped[bool] = mapped_column(Boolean, default=False)
+    nutrition_profile: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

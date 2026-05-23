@@ -11,6 +11,7 @@ import { ToggleRow } from "@/components/nutrition-profile/ToggleRow";
 import Link from "next/link";
 
 import { useTelegram } from "@/components/TelegramProvider";
+import { fetchMyFamily, setAllowAdminProfileEdit } from "@/lib/family/api";
 import {
   fetchNutritionProfile,
   saveNutritionProfile,
@@ -103,6 +104,8 @@ export function NutritionProfileForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [allowAdminEdit, setAllowAdminEdit] = useState(false);
+  const [inFamily, setInFamily] = useState(false);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -112,8 +115,14 @@ export function NutritionProfileForm() {
     setLoading(true);
     setError(null);
     try {
-      const profile = await fetchNutritionProfile(initData);
+      const [profile, family] = await Promise.all([
+        fetchNutritionProfile(initData),
+        fetchMyFamily(initData).catch(() => null),
+      ]);
       setData(profile);
+      const you = family?.members.find((m) => m.is_you && !m.is_virtual);
+      setInFamily(Boolean(you));
+      setAllowAdminEdit(you?.allow_admin_profile_edit ?? false);
     } catch {
       setError("Не удалось загрузить профиль");
     } finally {
@@ -489,6 +498,24 @@ export function NutritionProfileForm() {
             />
           </div>
         </NutritionSection>
+
+        {inFamily ? (
+          <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+            <ToggleRow
+              label="Разрешить админу семьи помогать с профилем"
+              description="Админ сможет менять цели и ограничения за вас"
+              checked={allowAdminEdit}
+              onChange={(checked) => {
+                setAllowAdminEdit(checked);
+                if (initData) {
+                  void setAllowAdminProfileEdit(initData, checked).catch(() => {
+                    setAllowAdminEdit(!checked);
+                  });
+                }
+              }}
+            />
+          </section>
+        ) : null}
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-stone-200/90 bg-white/95 px-4 py-3 backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))]">

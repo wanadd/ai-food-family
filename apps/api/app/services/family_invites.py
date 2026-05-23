@@ -378,6 +378,7 @@ def accept_invite(db: Session, user: User, invite_id: int) -> FamilyMember:
         role=FamilyRole.ADULT.value,
         goals=[],
         restrictions=[],
+        is_virtual=False,
     )
     invite.status = FamilyInviteStatus.ACCEPTED.value
     invite.invited_user_id = user.id

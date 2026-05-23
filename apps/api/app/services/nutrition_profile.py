@@ -117,35 +117,32 @@ def should_notify_family_admin(user: User, membership) -> bool:
     return membership.role != FamilyRole.ADMIN.value
 
 
-async def notify_family_admin_profile_updated(db: Session, user: User) -> None:
+async def notify_family_admins_profile_updated(db: Session, user: User) -> None:
     from app.services.telegram_bot import send_telegram_message
 
     membership = family_service.get_user_membership(db, user)
-    if not should_notify_family_admin(user, membership):
+    if membership is None:
         return
 
     family = membership.family
-    admin_member = next(
-        (
-            m
-            for m in family.members
-            if m.role == FamilyRole.ADMIN.value and m.user_id
-        ),
-        None,
-    )
-    if admin_member is None or admin_member.user_id == user.id:
-        return
-
-    admin_user = (
-        db.query(User).filter(User.id == admin_member.user_id).one_or_none()
-    )
-    if admin_user is None or not admin_user.telegram_id:
-        logger.info("Family admin has no telegram_id, skip nutrition notify")
-        return
-
-    display = (user.first_name or "").strip() or "Участник семьи"
+    display = (user.first_name or "").strip() or membership.display_name or "Участник"
     text = (
         f"🥗 {display} обновил(а) профиль питания в семье «{family.name}».\n\n"
         "Откройте ПланАм — меню и покупки учтут новые предпочтения."
     )
-    await send_telegram_message(admin_user.telegram_id, text)
+
+    notified: set[int] = set()
+    for admin_member in family.members:
+        if admin_member.role != FamilyRole.ADMIN.value or not admin_member.user_id:
+            continue
+        if admin_member.user_id == user.id:
+            continue
+        admin_user = (
+            db.query(User).filter(User.id == admin_member.user_id).one_or_none()
+        )
+        if admin_user is None or not admin_user.telegram_id:
+            continue
+        if admin_user.telegram_id in notified:
+            continue
+        notified.add(admin_user.telegram_id)
+        await send_telegram_message(admin_user.telegram_id, text)

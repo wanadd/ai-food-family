@@ -7,10 +7,9 @@ from app.models.user import User
 from app.schemas.nutrition_profile import NutritionProfileData, NutritionProfileResponse
 from app.services.nutrition_profile import (
     migrate_legacy_profile,
-    notify_family_admin_profile_updated,
+    notify_family_admins_profile_updated,
     profile_to_nutrition_schema,
     save_nutrition_profile,
-    should_notify_family_admin,
 )
 from app.services import family as family_service
 from app.services.onboarding import get_or_create_profile
@@ -24,7 +23,7 @@ async def _notify_admin_background(user_id: int) -> None:
         user = db.query(User).filter(User.id == user_id).one_or_none()
         if user is None:
             return
-        await notify_family_admin_profile_updated(db, user)
+        await notify_family_admins_profile_updated(db, user)
     finally:
         db.close()
 
@@ -50,12 +49,12 @@ def save_nutrition_profile_endpoint(
     membership = family_service.get_user_membership(db, user)
     existing = get_or_create_profile(db, user)
     had_prior_profile = bool(existing.nutrition_goal)
-    notify_admin = should_notify_family_admin(user, membership) and had_prior_profile
+    notify_admins = membership is not None and had_prior_profile
 
     profile = save_nutrition_profile(db, user, payload)
     data = profile_to_nutrition_schema(profile)
 
-    if notify_admin:
+    if notify_admins:
         background_tasks.add_task(_notify_admin_background, user.id)
 
     return NutritionProfileResponse(**data.model_dump(), updated_at=profile.updated_at)

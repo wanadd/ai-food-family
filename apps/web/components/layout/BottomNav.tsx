@@ -16,6 +16,7 @@ const HIDDEN_PREFIXES = [
   "/settings",
   "/subscription",
   "/profile",
+  "/family",
 ];
 
 export function BottomNav() {
