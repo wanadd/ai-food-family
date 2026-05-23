@@ -19,6 +19,7 @@ import type { MenuVariant } from "@/lib/menu/types";
 import { fetchPantry } from "@/lib/pantry/api";
 import type { PantryList } from "@/lib/pantry/types";
 import { CareTelegramBlock } from "@/components/care/CareTelegramBlock";
+import { NutritionistProBlock } from "@/components/nutritionist/NutritionistProBlock";
 import { buildDailyTip } from "@/lib/nutritionist/daily-tip";
 import { buildFamilySummary } from "@/lib/nutritionist/family-summary";
 import { buildStatCards, getOverallProgress } from "@/lib/nutritionist/metrics";
@@ -45,13 +46,6 @@ const QUICK_ACTIONS: { id: string; label: string; prompt?: string }[] = [
     prompt: "Как снизить калории без голода?",
   },
   { id: "ask", label: "Спросить нутрициолога" },
-];
-
-const PRO_FEATURES = [
-  "Анализ питания за неделю",
-  "Спортивные цели",
-  "Прогресс веса",
-  "Персональные уведомления",
 ];
 
 function ModeLabel({
@@ -308,33 +302,7 @@ export function NutritionistDashboard() {
           onBalanceChange={setAmaBalance}
         />
 
-        <section className="rounded-2xl border border-stone-200 bg-stone-50/90 p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-sm font-bold text-stone-900">PRO-рекомендации</p>
-              <p className="mt-0.5 text-xs text-stone-500">Скоро в ПланАм PRO</p>
-            </div>
-            <span className="rounded-full bg-stone-200 px-2 py-0.5 text-[10px] font-bold uppercase text-stone-600">
-              PRO
-            </span>
-          </div>
-          <ul className="mt-3 space-y-1.5 text-sm text-stone-600">
-            {PRO_FEATURES.map((feature) => (
-              <li key={feature} className="flex items-center gap-2">
-                <span className="text-stone-400" aria-hidden>
-                  🔒
-                </span>
-                {feature}
-              </li>
-            ))}
-          </ul>
-          <Link
-            href="/subscription"
-            className="mt-3 flex min-h-[40px] items-center justify-center rounded-xl border border-stone-300 bg-white text-sm font-semibold text-stone-800"
-          >
-            Узнать о PRO
-          </Link>
-        </section>
+        <NutritionistProBlock goalLabel={goalLabel} />
 
         <CareTelegramBlock />
       </main>

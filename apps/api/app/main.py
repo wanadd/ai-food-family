@@ -17,6 +17,7 @@ from app.routers import (
     nutritionist as nutritionist_router,
     onboarding,
     pantry,
+    progress,
     recipes,
     shopping_categories,
     shopping_lists,
@@ -79,6 +80,7 @@ app.include_router(subscriptions.router)
 app.include_router(shopping_categories.router)
 app.include_router(notifications.router)
 app.include_router(pantry.router)
+app.include_router(progress.router)
 app.include_router(recipes.router)
 app.include_router(telegram_bot.router)
 app.include_router(telegram_bot.bot_router)

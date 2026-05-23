@@ -30,6 +30,7 @@ def init_db() -> None:
     )
     from app.models import subscription as subscription_models  # noqa: F401
     from app.models import care as care_models  # noqa: F401
+    from app.models import progress as progress_models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 

@@ -25,6 +25,12 @@ const QUICK_LINKS = [
     emoji: "🥗",
   },
   {
+    href: "/progress",
+    label: "Прогресс и цели",
+    desc: "Вес, спорт и PRO-аналитика",
+    emoji: "📈",
+  },
+  {
     href: "/family",
     label: "Семья и участники",
     desc: "Семейный режим и состав",

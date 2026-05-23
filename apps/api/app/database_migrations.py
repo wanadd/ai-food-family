@@ -260,6 +260,58 @@ def run_schema_migrations(engine: Engine) -> None:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_care_events_user_id ON care_events (user_id);",
+        # PRO progress (stage 9)
+        """
+        CREATE TABLE IF NOT EXISTS progress_entries (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            person_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            weight_kg DOUBLE PRECISION,
+            body_fat_percent DOUBLE PRECISION,
+            waist_cm DOUBLE PRECISION,
+            chest_cm DOUBLE PRECISION,
+            hips_cm DOUBLE PRECISION,
+            notes TEXT,
+            recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_progress_entries_user_id ON progress_entries (user_id);",
+        """
+        CREATE TABLE IF NOT EXISTS training_entries (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            person_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            training_type VARCHAR(64) NOT NULL,
+            duration_minutes INTEGER,
+            intensity VARCHAR(16) NOT NULL DEFAULT 'medium',
+            calories_burned INTEGER,
+            notes TEXT,
+            training_date DATE NOT NULL DEFAULT CURRENT_DATE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_training_entries_user_id ON training_entries (user_id);",
+        """
+        CREATE TABLE IF NOT EXISTS nutrition_targets (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            person_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            calories_target INTEGER,
+            protein_target_g INTEGER,
+            fat_target_g INTEGER,
+            carbs_target_g INTEGER,
+            fiber_target_g INTEGER,
+            water_target_ml INTEGER,
+            goal_type VARCHAR(32),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_nutrition_targets_user_id ON nutrition_targets (user_id);",
     ]
 
     with engine.begin() as connection:
