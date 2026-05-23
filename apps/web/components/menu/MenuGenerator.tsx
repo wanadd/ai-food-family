@@ -297,7 +297,7 @@ export function MenuGenerator() {
 
         <section className="rounded-2xl border border-stone-200 bg-white p-5">
             <p className="text-sm text-stone-600">
-              Учитываются ваш onboarding, остатки, цели, диеты, аллергии, бюджет и
+              Учитываются ваш профиль питания, остатки, цели, диеты, аллергии, бюджет и
               время готовки. В семейном режиме — данные всех участников.
             </p>
             <button

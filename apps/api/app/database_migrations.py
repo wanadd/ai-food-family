@@ -121,6 +121,17 @@ def run_schema_migrations(engine: Engine) -> None:
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
         """,
+        # Nutrition profile (stage 2)
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS age INTEGER",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS gender VARCHAR(24)",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS height_cm INTEGER",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS weight_kg DOUBLE PRECISION",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS nutrition_goal VARCHAR(32)",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS activity_level VARCHAR(32)",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS medical_restrictions TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS banned_foods TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS dish_complexity VARCHAR(32)",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS pro_data JSONB NOT NULL DEFAULT '{}'",
     ]
 
     with engine.begin() as connection:

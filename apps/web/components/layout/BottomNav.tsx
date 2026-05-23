@@ -11,7 +11,12 @@ const NAV_ITEMS = [
   { href: "/pantry", label: "Запасы", icon: "📦", isHome: false },
 ] as const;
 
-const HIDDEN_PREFIXES = ["/onboarding", "/settings", "/subscription", "/profile"];
+const HIDDEN_PREFIXES = [
+  "/onboarding",
+  "/settings",
+  "/subscription",
+  "/profile",
+];
 
 export function BottomNav() {
   const pathname = usePathname();

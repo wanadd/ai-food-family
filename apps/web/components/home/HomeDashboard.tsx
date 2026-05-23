@@ -29,7 +29,7 @@ export function HomeDashboard() {
 
         <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
           <Link
-            href="/onboarding"
+            href="/profile/nutrition"
             className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
             Настройки питания

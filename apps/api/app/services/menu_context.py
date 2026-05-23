@@ -16,6 +16,12 @@ from app.services.menu_labels import (
     RESTRICTION_LABELS,
     label_map,
 )
+from app.services.nutrition_profile_labels import (
+    ACTIVITY_LABELS,
+    DISH_COMPLEXITY_LABELS,
+    GENDER_LABELS,
+    NUTRITION_GOAL_LABELS,
+)
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import format_leftovers_for_prompt, get_active_items_for_scope
 
@@ -93,20 +99,58 @@ def _format_leftovers_block(items: list[FamilyPantryItem]) -> list[str]:
 
 def _format_user_block(name: str, profile) -> str:
     parts = [f"- {name}:"]
-    parts.append(f"  цели: {_join_labels(profile.goals, GOAL_LABELS)}")
+    if profile.nutrition_goal:
+        parts.append(
+            f"  цель питания: {NUTRITION_GOAL_LABELS.get(profile.nutrition_goal, profile.nutrition_goal)}"
+        )
+    else:
+        parts.append(f"  цели: {_join_labels(profile.goals, GOAL_LABELS)}")
+    if profile.activity_level:
+        parts.append(
+            f"  активность: {ACTIVITY_LABELS.get(profile.activity_level, profile.activity_level)}"
+        )
+    if profile.age:
+        parts.append(f"  возраст: {profile.age}")
+    if profile.gender:
+        parts.append(
+            f"  пол: {GENDER_LABELS.get(profile.gender, profile.gender)}"
+        )
+    if profile.height_cm and profile.weight_kg:
+        parts.append(
+            f"  рост/вес: {profile.height_cm} см, {profile.weight_kg} кг"
+        )
     parts.append(f"  диеты: {_join_labels(profile.diets, DIET_LABELS)}")
     parts.append(f"  аллергии: {_join_labels(profile.allergies, ALLERGY_LABELS)}")
     parts.append(f"  ограничения: {_join_labels(profile.restrictions, RESTRICTION_LABELS)}")
+    if profile.medical_restrictions:
+        parts.append(f"  мед. ограничения: {profile.medical_restrictions}")
     if profile.budget:
         parts.append(f"  бюджет: {BUDGET_LABELS.get(profile.budget, profile.budget)}")
     if profile.cooking_time:
         parts.append(
             f"  время готовки: {COOKING_TIME_LABELS.get(profile.cooking_time, profile.cooking_time)}"
         )
+    if profile.dish_complexity:
+        parts.append(
+            f"  сложность блюд: {DISH_COMPLEXITY_LABELS.get(profile.dish_complexity, profile.dish_complexity)}"
+        )
     if profile.favorite_foods:
         parts.append(f"  любимое: {profile.favorite_foods}")
-    if profile.disliked_foods:
-        parts.append(f"  не любит: {profile.disliked_foods}")
+    disliked_parts = [
+        p.strip()
+        for p in (profile.disliked_foods, profile.banned_foods)
+        if p and p.strip()
+    ]
+    if disliked_parts:
+        parts.append(f"  не любит / запрещено: {'; '.join(disliked_parts)}")
+    pro = profile.pro_data or {}
+    if pro.get("track_macros"):
+        parts.append("  PRO: учитывать КБЖУ при подборе меню")
+    if pro.get("workouts_enabled"):
+        freq = pro.get("workout_frequency") or ""
+        goal = pro.get("workout_goal") or ""
+        extra = ", ".join(x for x in (goal, freq) if x)
+        parts.append(f"  PRO: тренировки{' — ' + extra if extra else ''}")
     return "\n".join(parts)
 
 

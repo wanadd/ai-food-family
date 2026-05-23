@@ -7,7 +7,8 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useTelegram } from "@/components/TelegramProvider";
 import { fetchSelectedMenu } from "@/lib/menu/api";
 import type { SelectedMenu } from "@/lib/menu/types";
-import { fetchRemoteOnboarding } from "@/lib/onboarding/api";
+import { fetchNutritionProfile } from "@/lib/nutrition-profile/api";
+import { isNutritionProfileComplete } from "@/lib/profile/nutrition-summary";
 import { fetchShoppingList } from "@/lib/shopping/api";
 import type { ShoppingList } from "@/lib/shopping/types";
 
@@ -60,9 +61,7 @@ export function PlanAmHome() {
   const { mode, loading: modeLoading } = useAppMode();
 
   const [loadingSelectedMenu, setLoadingSelectedMenu] = useState(true);
-  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(
-    null,
-  );
+  const [nutritionReady, setNutritionReady] = useState<boolean | null>(null);
   const [selectedMenu, setSelectedMenu] = useState<SelectedMenu | null>(null);
   const [shopping, setShopping] = useState<ShoppingList | null>(null);
 
@@ -74,7 +73,7 @@ export function PlanAmHome() {
   const loadHomeData = useCallback(async () => {
     if (!initData) {
       setLoadingSelectedMenu(false);
-      setOnboardingCompleted(null);
+      setNutritionReady(null);
       setSelectedMenu(null);
       setShopping(null);
       return;
@@ -82,12 +81,12 @@ export function PlanAmHome() {
 
     setLoadingSelectedMenu(true);
     try {
-      const [onboarding, selected, list] = await Promise.all([
-        fetchRemoteOnboarding(initData),
+      const [nutrition, selected, list] = await Promise.all([
+        fetchNutritionProfile(initData).catch(() => null),
         fetchSelectedMenu(initData, mode),
         fetchShoppingList(initData, mode).catch(() => null),
       ]);
-      setOnboardingCompleted(onboarding?.completed ?? false);
+      setNutritionReady(isNutritionProfileComplete(nutrition));
       setSelectedMenu(selected);
       setShopping(list);
     } finally {
@@ -104,7 +103,7 @@ export function PlanAmHome() {
   }, [loadHomeData, modeLoading]);
 
   const isCheckingMenu = loadingSelectedMenu || modeLoading;
-  const planHref = onboardingCompleted ? "/menu" : "/onboarding";
+  const planHref = nutritionReady ? "/menu" : "/profile/nutrition";
   const goodsCount = shopping?.total_count ?? 0;
 
   return (

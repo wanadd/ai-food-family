@@ -12,16 +12,16 @@ import {
   getProfileBilling,
 } from "@/lib/profile/billing";
 import {
-  getGoalsSummary,
-  getOnboardingProgressPercent,
-  getPrimaryGoalLabel,
-} from "@/lib/profile/onboarding-summary";
-import { fetchRemoteOnboarding } from "@/lib/onboarding/api";
-import type { OnboardingData } from "@/lib/onboarding/types";
+  getNutritionGoalLabel,
+  getNutritionProfileProgress,
+  isNutritionProfileComplete,
+} from "@/lib/profile/nutrition-summary";
+import { fetchNutritionProfile } from "@/lib/nutrition-profile/api";
+import type { NutritionProfileData } from "@/lib/nutrition-profile/types";
 
 const QUICK_LINKS = [
   {
-    href: "/onboarding",
+    href: "/profile/nutrition",
     label: "Мой профиль питания",
     desc: "Цели, диеты, ограничения",
     emoji: "🥗",
@@ -94,36 +94,38 @@ export function ProfileDashboard() {
   const { context, loading: modeLoading } = useAppMode();
   const billing = getProfileBilling();
 
-  const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
-  const [loadingOnboarding, setLoadingOnboarding] = useState(true);
+  const [nutrition, setNutrition] = useState<NutritionProfileData | null>(null);
+  const [loadingNutrition, setLoadingNutrition] = useState(true);
 
-  const loadOnboarding = useCallback(async () => {
+  const loadNutrition = useCallback(async () => {
     if (!initData) {
-      setOnboarding(null);
-      setLoadingOnboarding(false);
+      setNutrition(null);
+      setLoadingNutrition(false);
       return;
     }
-    setLoadingOnboarding(true);
+    setLoadingNutrition(true);
     try {
-      const data = await fetchRemoteOnboarding(initData);
-      setOnboarding(data);
+      const data = await fetchNutritionProfile(initData);
+      setNutrition(data);
+    } catch {
+      setNutrition(null);
     } finally {
-      setLoadingOnboarding(false);
+      setLoadingNutrition(false);
     }
   }, [initData]);
 
   useEffect(() => {
-    void loadOnboarding();
-  }, [loadOnboarding]);
+    void loadNutrition();
+  }, [loadNutrition]);
 
   const fullName =
     [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
     "Пользователь";
 
-  const progress = getOnboardingProgressPercent(onboarding);
-  const primaryGoal = getPrimaryGoalLabel(onboarding);
-  const goalsSummary = getGoalsSummary(onboarding);
-  const showProgress = !onboarding?.completed && progress < 100;
+  const progress = getNutritionProfileProgress(nutrition);
+  const primaryGoal = getNutritionGoalLabel(nutrition);
+  const profileComplete = isNutritionProfileComplete(nutrition);
+  const showProgress = !profileComplete && progress < 100;
   const family = context?.family;
   const memberCount = family?.members?.length ?? 0;
 
@@ -197,7 +199,7 @@ export function ProfileDashboard() {
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     Цель питания
                   </p>
-                  {loadingOnboarding ? (
+                  {loadingNutrition ? (
                     <p className="mt-2 text-sm text-stone-500">Загрузка…</p>
                   ) : primaryGoal ? (
                     <p className="mt-1.5 text-lg font-bold text-stone-900">
@@ -205,17 +207,12 @@ export function ProfileDashboard() {
                     </p>
                   ) : (
                     <p className="mt-1.5 text-base font-medium text-stone-700">
-                      {goalsSummary}
+                      Не задана
                     </p>
                   )}
-                  {onboarding?.completed && onboarding.goals.length > 1 ? (
-                    <p className="mt-1 truncate text-sm text-stone-500">
-                      {goalsSummary}
-                    </p>
-                  ) : null}
                 </div>
                 <Link
-                  href="/onboarding"
+                  href="/profile/nutrition"
                   className="shrink-0 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-100"
                 >
                   Изменить
@@ -241,19 +238,19 @@ export function ProfileDashboard() {
                     />
                   </div>
                   <Link
-                    href="/onboarding"
+                    href="/profile/nutrition"
                     className="mt-3 inline-block text-sm font-semibold text-emerald-700"
                   >
                     Продолжить настройку →
                   </Link>
                 </div>
-              ) : onboarding?.completed ? (
+              ) : profileComplete ? (
                 <p className="mt-3 text-sm text-emerald-800">
                   Профиль питания настроен — меню учитывает ваши цели
                 </p>
               ) : (
                 <Link
-                  href="/onboarding"
+                  href="/profile/nutrition"
                   className="mt-3 inline-block text-sm font-semibold text-emerald-700"
                 >
                   Настроить профиль питания →

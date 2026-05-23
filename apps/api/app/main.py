@@ -12,6 +12,7 @@ from app.routers import (
     families,
     menus,
     notifications,
+    nutrition_profile,
     onboarding,
     pantry,
     recipes,
@@ -65,6 +66,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(onboarding.router)
+app.include_router(nutrition_profile.router)
 app.include_router(families.router)
 app.include_router(menus.router)
 app.include_router(shopping_lists.router)
