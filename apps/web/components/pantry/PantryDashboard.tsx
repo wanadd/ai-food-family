@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { BotQuickInputHint } from "@/components/bot/BotQuickInputHint";
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { PageLoading } from "@/components/ui/PageLoading";
@@ -224,6 +225,7 @@ export function PantryDashboard() {
       </header>
 
       <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
+        <BotQuickInputHint />
         <ModeBanner />
 
         {error ? (

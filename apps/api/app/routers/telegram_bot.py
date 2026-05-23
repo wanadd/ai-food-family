@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.config import settings
+
+WEBHOOK_SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
 from app.database import get_db
 from app.services.telegram_bot import process_telegram_update
 from app.telegram.bot import get_webhook_info, resolve_webhook_url
@@ -15,15 +17,25 @@ router = APIRouter(prefix="/telegram", tags=["telegram"])
 bot_router = APIRouter(prefix="/bot", tags=["telegram"])
 
 
+def _validate_webhook_secret(request: Request) -> None:
+    expected = (settings.telegram_webhook_secret or "").strip()
+    if not expected:
+        return
+    received = request.headers.get(WEBHOOK_SECRET_HEADER)
+    if received != expected:
+        logger.warning("Telegram webhook secret mismatch")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+
 async def _telegram_webhook_handler(
     request: Request,
     db: Session,
 ) -> dict[str, bool]:
     if not settings.telegram_bot_token:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Telegram bot is not configured",
-        )
+        logger.warning("Telegram webhook ignored: TELEGRAM_BOT_TOKEN is not set")
+        return {"ok": True}
+
+    _validate_webhook_secret(request)
 
     update: dict[str, Any] = await request.json()
     update_id = update.get("update_id")

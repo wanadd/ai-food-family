@@ -19,6 +19,13 @@ from app.services.family_invites import (
     inviter_display_name,
     is_link_invite,
 )
+from app.services import bot_input as bot_input_service
+from app.services import receipt_ocr as receipt_ocr_service
+from app.services import subscription as subscription_service
+from app.services import voice_input as voice_input_service
+from app.services.receipt_ocr import RECEIPT_STUB_MESSAGE
+from app.services.voice_input import VOICE_STUB as VOICE_STUB_MESSAGE
+from app.services.subscription_catalog import AMA_COSTS
 from app.services.users import (
     get_user_by_telegram_id,
     mask_phone,
@@ -26,6 +33,7 @@ from app.services.users import (
     upsert_user_from_bot,
     user_has_verified_phone,
 )
+from app.telegram.files import download_telegram_file
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +113,25 @@ def _webapp_inline_keyboard() -> dict[str, Any]:
     return {
         "inline_keyboard": [
             [{"text": "Открыть ПланАм", "web_app": {"url": url}}],
+        ],
+    }
+
+
+def _quick_links_keyboard() -> dict[str, Any]:
+    base = (settings.telegram_webapp_url or "https://planam.ru").rstrip("/")
+    return {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "Открыть покупки",
+                    "web_app": {"url": f"{base}/shopping"},
+                },
+                {
+                    "text": "Открыть запасы",
+                    "web_app": {"url": f"{base}/pantry"},
+                },
+            ],
+            [{"text": "Открыть ПланАм", "web_app": {"url": base}}],
         ],
     }
 
@@ -378,7 +405,19 @@ async def handle_own_contact(
                 await show_invite_mismatch(chat_id)
                 return
 
-    await send_verified_welcome(db, user, chat_id, returning=False)
+    await send_pending_invites_to_user(db, user, chat_id)
+
+    session = bot_session_service.get_session(db, user.telegram_id)
+    if session and session.invite_token:
+        await process_deep_link_invite(db, user, chat_id, session.invite_token)
+        bot_session_service.clear_session_state(db, user.telegram_id)
+        return
+
+    await send_telegram_message(
+        chat_id,
+        "Готово! Теперь можно открыть ПланАм.",
+        reply_markup=_webapp_inline_keyboard(),
+    )
     bot_session_service.clear_session_state(db, user.telegram_id)
 
 
@@ -512,6 +551,101 @@ async def handle_invite_command(
         )
 
 
+async def handle_text_quick_input(
+    db: Session, chat_id: int, user: User, text: str
+) -> None:
+    reply, _ = bot_input_service.process_text_message(db, user, text)
+    await send_telegram_message(
+        chat_id,
+        reply,
+        reply_markup=_quick_links_keyboard(),
+    )
+
+
+async def handle_voice_message(
+    db: Session, chat_id: int, user: User, message: dict[str, Any]
+) -> None:
+    voice = message.get("voice") or {}
+    file_id = voice.get("file_id")
+    if not file_id:
+        await send_telegram_message(chat_id, VOICE_STUB_MESSAGE)
+        return
+
+    audio = await download_telegram_file(file_id)
+    if not audio:
+        await send_telegram_message(chat_id, VOICE_STUB_MESSAGE)
+        return
+
+    transcript, error = await voice_input_service.transcribe_for_user(db, user, audio)
+    if error:
+        await send_telegram_message(chat_id, error, reply_markup=_webapp_inline_keyboard())
+        return
+    if not transcript:
+        await send_telegram_message(chat_id, VOICE_STUB_MESSAGE)
+        return
+
+    await send_telegram_message(chat_id, f"Услышал: «{transcript}»")
+    await handle_text_quick_input(db, chat_id, user, transcript)
+
+
+async def handle_photo_message(
+    db: Session, chat_id: int, user: User, message: dict[str, Any]
+) -> None:
+    photos = message.get("photo") or []
+    if not photos:
+        await send_telegram_message(chat_id, RECEIPT_STUB_MESSAGE)
+        return
+
+    file_id = photos[-1].get("file_id")
+    image = await download_telegram_file(file_id) if file_id else None
+    if not image:
+        await send_telegram_message(chat_id, RECEIPT_STUB_MESSAGE)
+        return
+
+    lines, used_ai = await receipt_ocr_service.parse_receipt_image(image)
+    if not used_ai or not lines:
+        await send_telegram_message(chat_id, RECEIPT_STUB_MESSAGE)
+        return
+
+    from app.services.app_scope import resolve_scope
+
+    scope = resolve_scope(db, user, None)
+    try:
+        subscription_service.require_ai_action(
+            db,
+            user,
+            scope,
+            "ocr_receipt",
+            ama_cost=AMA_COSTS["ocr_receipt"],
+        )
+    except HTTPException as exc:
+        detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+        if isinstance(exc.detail, dict):
+            detail = exc.detail.get(
+                "message",
+                "Для этой AI-функции нужны Амы. Пополните баланс или перейдите на тариф выше.",
+            )
+        await send_telegram_message(chat_id, detail, reply_markup=_webapp_inline_keyboard())
+        return
+
+    subscription_service.log_ai_usage(
+        db,
+        user_id=user.id,
+        family_id=scope.family_id,
+        action_type="ocr_receipt",
+        ams_spent=AMA_COSTS["ocr_receipt"],
+        model=settings.openai_model,
+        metadata={"items_count": len(lines)},
+    )
+
+    reply, _ = bot_input_service.process_receipt_lines(db, user, lines)
+    await send_telegram_message(
+        chat_id,
+        reply,
+        reply_markup=_quick_links_keyboard(),
+    )
+
+
 async def handle_callback(db: Session, callback: dict[str, Any]) -> None:
     callback_id = callback.get("id")
     data = callback.get("data") or ""
@@ -597,6 +731,31 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
         await handle_contact(db, chat_id, from_user, message["contact"])
         return
 
+    user = get_user_by_telegram_id(db, from_user["id"])
+    if user is None:
+        user, _ = upsert_user_from_bot(
+            db,
+            telegram_id=from_user["id"],
+            username=from_user.get("username"),
+            first_name=from_user.get("first_name"),
+            last_name=from_user.get("last_name"),
+            language_code=from_user.get("language_code"),
+        )
+
+    if message.get("voice"):
+        if not user_has_verified_phone(user):
+            await send_phone_required(chat_id)
+            return
+        await handle_voice_message(db, chat_id, user, message)
+        return
+
+    if message.get("photo"):
+        if not user_has_verified_phone(user):
+            await send_phone_required(chat_id)
+            return
+        await handle_photo_message(db, chat_id, user, message)
+        return
+
     text = (message.get("text") or "").strip()
 
     if text == "Пригласить в семью":
@@ -607,9 +766,8 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
         await handle_start(db, chat_id, from_user, text)
         return
 
-    user = get_user_by_telegram_id(db, from_user["id"])
     if user is None:
-        upsert_user_from_bot(
+        user, _ = upsert_user_from_bot(
             db,
             telegram_id=from_user["id"],
             username=from_user.get("username"),
@@ -617,7 +775,6 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
             last_name=from_user.get("last_name"),
             language_code=from_user.get("language_code"),
         )
-        user = get_user_by_telegram_id(db, from_user["id"])
 
     if not user_has_verified_phone(user):
         await send_phone_required(chat_id)
@@ -629,7 +786,7 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
         await send_telegram_message(chat_id, BOT_COMMANDS_HELP)
         await send_telegram_message(
             chat_id,
-            "Откройте приложение:",
+            "Быстрый ввод: «Купил молоко», «Добавь порошок», «Закончилась гречка».",
             reply_markup=_webapp_inline_keyboard(),
         )
         return
@@ -638,8 +795,12 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
         await handle_invite_command(db, chat_id, from_user, text)
         return
 
+    if text and not text.startswith("/"):
+        await handle_text_quick_input(db, chat_id, user, text)
+        return
+
     await send_telegram_message(
         chat_id,
-        "Команды: /help, /invite +номер, «Пригласить в семью»",
+        "Команды: /help, /invite +номер. Или напишите: «Купил молоко и яйца».",
         reply_markup=_webapp_inline_keyboard(),
     )
