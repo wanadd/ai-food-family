@@ -1,10 +1,12 @@
 "use client";
 
 import { useTelegram } from "@/components/TelegramProvider";
+import { isClientDevMode } from "@/lib/dev-auth";
 
 export function TelegramAuthPanel() {
   const {
     isTelegram,
+    isDevMode,
     platform,
     colorScheme,
     user,
@@ -14,11 +16,12 @@ export function TelegramAuthPanel() {
     retryAuth,
   } = useTelegram();
 
-  if (!isTelegram) {
+  if (!isTelegram && !isDevMode) {
     return (
       <p className="text-sm text-slate-600">
-        Авторизация доступна внутри Telegram Mini App. Откройте приложение через
-        кнопку бота.
+        {isClientDevMode()
+          ? "Не удалось войти в dev-режиме. Проверьте, что API запущен с ENVIRONMENT=development."
+          : "Откройте приложение через Telegram Mini App."}
       </p>
     );
   }

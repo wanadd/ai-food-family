@@ -1,3 +1,5 @@
+import { getStoredDevInitData } from "@/lib/dev-auth";
+
 type TelegramWebApp = typeof import("@twa-dev/sdk").default;
 
 let webAppPromise: Promise<TelegramWebApp> | null = null;
@@ -23,5 +25,10 @@ export function getTelegramInitData(): string {
   const telegram = (
     window as Window & { Telegram?: { WebApp?: { initData?: string } } }
   ).Telegram?.WebApp;
-  return telegram?.initData ?? "";
+  const telegramInit = telegram?.initData ?? "";
+  if (telegramInit.length > 0) {
+    return telegramInit;
+  }
+
+  return getStoredDevInitData();
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { BottomBackButton } from "@/components/layout/BottomBackButton";
+import { useTelegram } from "@/components/TelegramProvider";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { RecipeDetailModal } from "@/components/recipes/RecipeDetailModal";
 import {
@@ -18,10 +19,8 @@ import type {
   RecipeQuery,
   RecipeSummary,
 } from "@/lib/recipes/types";
-import { getTelegramInitData } from "@/lib/telegram-webapp";
-
 export function RecipeCatalog() {
-  const [initData, setInitData] = useState("");
+  const { initData } = useTelegram();
   const [filters, setFilters] = useState<RecipeFilters | null>(null);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [total, setTotal] = useState(0);
@@ -51,9 +50,7 @@ export function RecipeCatalog() {
   );
 
   useEffect(() => {
-    const data = getTelegramInitData();
-    setInitData(data);
-    if (!data) {
+    if (!initData) {
       setLoading(false);
       return;
     }
@@ -61,9 +58,9 @@ export function RecipeCatalog() {
     async function init() {
       setLoading(true);
       try {
-        const filterData = await fetchRecipeFilters(data);
+        const filterData = await fetchRecipeFilters(initData);
         setFilters(filterData);
-        await loadRecipes(data, {});
+        await loadRecipes(initData, {});
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Не удалось загрузить рецепты",
@@ -73,8 +70,8 @@ export function RecipeCatalog() {
       }
     }
 
-    init();
-  }, [loadRecipes]);
+    void init();
+  }, [initData, loadRecipes]);
 
   useEffect(() => {
     if (!initData) {

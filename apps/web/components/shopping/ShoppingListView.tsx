@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BotQuickInputHint } from "@/components/bot/BotQuickInputHint";
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { useTelegram } from "@/components/TelegramProvider";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
 import { ShoppingCategorySheet } from "@/components/shopping/ShoppingCategorySheet";
@@ -26,13 +27,12 @@ import {
   type ShoppingList,
   type ShoppingListItem,
 } from "@/lib/shopping/types";
-import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 const POLL_INTERVAL_MS = 4000;
 
 export function ShoppingListView() {
   const { mode } = useAppMode();
-  const [initData, setInitData] = useState("");
+  const { initData } = useTelegram();
   const [list, setList] = useState<ShoppingList | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -83,14 +83,12 @@ export function ShoppingListView() {
   );
 
   useEffect(() => {
-    const data = getTelegramInitData();
-    setInitData(data);
-    if (!data) {
+    if (!initData) {
       setLoading(false);
       return;
     }
-    loadList(data, mode);
-  }, [loadList, mode]);
+    loadList(initData, mode);
+  }, [initData, loadList, mode]);
 
   useEffect(() => {
     if (!initData) {

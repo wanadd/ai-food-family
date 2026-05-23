@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { BotQuickInputHint } from "@/components/bot/BotQuickInputHint";
+import { useTelegram } from "@/components/TelegramProvider";
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { PageLoading } from "@/components/ui/PageLoading";
@@ -22,7 +23,6 @@ import {
   type PantryItem,
   type PantryItemDraft,
 } from "@/lib/pantry/types";
-import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 const FILTERS: { id: PantryFilter; label: string }[] = [
   { id: "all", label: "Все" },
@@ -36,7 +36,7 @@ const RECENT_DAYS = 7;
 
 export function PantryDashboard() {
   const { mode } = useAppMode();
-  const [initData, setInitData] = useState("");
+  const { initData } = useTelegram();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [activeCount, setActiveCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -68,14 +68,12 @@ export function PantryDashboard() {
   );
 
   useEffect(() => {
-    const data = getTelegramInitData();
-    setInitData(data);
-    if (data) {
-      loadPantry(data, mode);
+    if (initData) {
+      loadPantry(initData, mode);
     } else {
       setLoading(false);
     }
-  }, [loadPantry, mode]);
+  }, [initData, loadPantry, mode]);
 
   const filteredItems = useMemo(() => {
     const now = Date.now();

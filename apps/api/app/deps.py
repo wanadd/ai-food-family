@@ -5,6 +5,11 @@ from app.config import settings
 from app.database import get_db
 from app.models.user import User
 from app.services.app_scope import AppScope, resolve_scope
+from app.services.dev_auth import (
+    dev_auth_enabled,
+    get_or_create_dev_user,
+    is_dev_init_data,
+)
 from app.services.users import (
     PHONE_REQUIRED_MESSAGE,
     get_or_create_user,
@@ -22,6 +27,15 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="X-Telegram-Init-Data header is required",
         )
+
+    if is_dev_init_data(x_telegram_init_data):
+        if not dev_auth_enabled():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Dev auth is disabled",
+            )
+        user, _ = get_or_create_dev_user(db)
+        return user
 
     try:
         telegram_user = validate_init_data(x_telegram_init_data, settings.telegram_bot_token)

@@ -25,7 +25,7 @@ import type {
   AdminSummary,
   AdminUserRow,
 } from "@/lib/admin/types";
-import { getTelegramInitData } from "@/lib/telegram-webapp";
+import { useTelegram } from "@/components/TelegramProvider";
 
 type Tab =
   | "summary"
@@ -134,7 +134,7 @@ export function AdminDashboard() {
   const [amsUserId, setAmsUserId] = useState("");
   const [amsAmount, setAmsAmount] = useState("100");
 
-  const initData = getTelegramInitData();
+  const { initData } = useTelegram();
 
   const loadTab = useCallback(async () => {
     if (!initData) {

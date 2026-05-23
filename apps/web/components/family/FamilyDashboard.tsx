@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { useTelegram } from "@/components/TelegramProvider";
 import { AddPersonSheet } from "@/components/family/AddPersonSheet";
 import { InviteSheet } from "@/components/family/InviteSheet";
 import { MemberCard } from "@/components/family/MemberCard";
 import { VirtualMemberNutritionForm } from "@/components/family/VirtualMemberNutritionForm";
 import { BottomBackButton } from "@/components/layout/BottomBackButton";
-import { useTelegram } from "@/components/TelegramProvider";
 import {
   addVirtualFamilyMember,
   createFamily,
@@ -26,7 +26,6 @@ import {
   type VirtualMemberDraft,
   type VirtualNutrition,
 } from "@/lib/family/types";
-import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 function memberCountLabel(count: number): string {
   const n = Math.abs(count);
@@ -54,7 +53,7 @@ function draftFromMember(member: FamilyMember): VirtualMemberDraft {
 
 export function FamilyDashboard() {
   const { refreshContext } = useAppMode();
-  const [initData, setInitData] = useState("");
+  const { initData } = useTelegram();
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,14 +83,12 @@ export function FamilyDashboard() {
   }, []);
 
   useEffect(() => {
-    const data = getTelegramInitData();
-    setInitData(data);
-    if (!data) {
+    if (!initData) {
       setLoading(false);
       return;
     }
-    void loadFamily(data);
-  }, [loadFamily]);
+    void loadFamily(initData);
+  }, [initData, loadFamily]);
 
   const isAdmin = family?.your_role === "admin";
 

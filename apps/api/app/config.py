@@ -17,8 +17,13 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     admin_telegram_ids: str = ""
     backup_root: str = "backups"
+    environment: str = "development"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @property
+    def is_development(self) -> bool:
+        return self.environment.strip().lower() == "development"
 
     def admin_telegram_id_set(self) -> set[int]:
         ids: set[int] = set()

@@ -26,3 +26,7 @@ class TelegramAuthResponse(BaseModel):
     user: UserResponse
     is_new: bool
     phone_verified: bool = False
+
+
+class DevLoginResponse(TelegramAuthResponse):
+    dev_init_data: str

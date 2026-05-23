@@ -3,7 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
-from app.schemas.auth import TelegramAuthRequest, TelegramAuthResponse, UserResponse
+from app.schemas.auth import (
+    DevLoginResponse,
+    TelegramAuthRequest,
+    TelegramAuthResponse,
+    UserResponse,
+)
+from app.services.dev_auth import DEV_INIT_DATA, dev_auth_enabled, get_or_create_dev_user
 from app.services.users import get_or_create_user, user_has_verified_phone
 from app.telegram.validate import TelegramAuthError, validate_init_data
 
@@ -28,4 +34,23 @@ def authenticate_telegram(
         user=UserResponse.model_validate(user),
         is_new=is_new,
         phone_verified=user_has_verified_phone(user),
+    )
+
+
+@router.post("/dev-login", response_model=DevLoginResponse)
+def authenticate_dev(
+    db: Session = Depends(get_db),
+) -> DevLoginResponse:
+    if not dev_auth_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Dev auth is only available in development",
+        )
+
+    user, is_new = get_or_create_dev_user(db)
+    return DevLoginResponse(
+        user=UserResponse.model_validate(user),
+        is_new=is_new,
+        phone_verified=user_has_verified_phone(user),
+        dev_init_data=DEV_INIT_DATA,
     )

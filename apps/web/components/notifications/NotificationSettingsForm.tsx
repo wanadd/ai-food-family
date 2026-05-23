@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { BottomBackButton } from "@/components/layout/BottomBackButton";
+import { useTelegram } from "@/components/TelegramProvider";
 
 import {
   fetchNotificationSettings,
@@ -11,7 +12,6 @@ import {
 } from "@/lib/notifications/api";
 import { TIMEZONE_OPTIONS } from "@/lib/notifications/options";
 import type { NotificationSettings } from "@/lib/notifications/types";
-import { getTelegramInitData } from "@/lib/telegram-webapp";
 
 type ReminderCardProps = {
   emoji: string;
@@ -84,7 +84,7 @@ function ReminderCard({
 }
 
 export function NotificationSettingsForm() {
-  const [initData, setInitData] = useState("");
+  const { initData } = useTelegram();
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,14 +107,12 @@ export function NotificationSettingsForm() {
   }, []);
 
   useEffect(() => {
-    const data = getTelegramInitData();
-    setInitData(data);
-    if (data) {
-      loadSettings(data);
+    if (initData) {
+      loadSettings(initData);
     } else {
       setLoading(false);
     }
-  }, [loadSettings]);
+  }, [initData, loadSettings]);
 
   async function persist(patch: Parameters<typeof updateNotificationSettings>[1]) {
     if (!initData) {

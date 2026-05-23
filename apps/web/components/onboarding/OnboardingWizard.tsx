@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getTelegramInitData } from "@/lib/telegram-webapp";
+import { useTelegram } from "@/components/TelegramProvider";
 
 import { BottomBackButton } from "@/components/layout/BottomBackButton";
 import { OnboardingComplete } from "@/components/onboarding/OnboardingComplete";
@@ -59,6 +59,7 @@ function canProceed(stepIndex: number, data: OnboardingData): boolean {
 }
 
 export function OnboardingWizard() {
+  const { initData } = useTelegram();
   const [data, setData] = useState<OnboardingData>(INITIAL_ONBOARDING);
   const [hydrated, setHydrated] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,9 +70,8 @@ export function OnboardingWizard() {
       const local = loadLocalOnboarding();
       let merged = local;
 
-      const telegramInitData = getTelegramInitData();
-      if (telegramInitData) {
-        const remote = await fetchRemoteOnboarding(telegramInitData);
+      if (initData) {
+        const remote = await fetchRemoteOnboarding(initData);
         merged = mergeOnboarding(local, remote);
       }
 
@@ -81,28 +81,27 @@ export function OnboardingWizard() {
     }
 
     hydrate();
-  }, []);
+  }, [initData]);
 
   const persist = useCallback(async (next: OnboardingData) => {
     setData(next);
     saveLocalOnboarding(next);
     setSaveHint("Сохранено локально");
 
-    const telegramInitData = getTelegramInitData();
-    if (!telegramInitData) {
+    if (!initData) {
       return;
     }
 
     setSaving(true);
     try {
-      await saveRemoteOnboarding(telegramInitData, next);
+      await saveRemoteOnboarding(initData, next);
       setSaveHint("Синхронизировано с сервером");
     } catch {
       setSaveHint("Не удалось синхронизировать — данные в браузере");
     } finally {
       setSaving(false);
     }
-  }, []);
+  }, [initData]);
 
   const patch = useCallback(
     (patchData: Partial<OnboardingData>) => {
