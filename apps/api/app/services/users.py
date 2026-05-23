@@ -88,6 +88,9 @@ def upsert_user_from_bot(
         db.add(user)
         db.commit()
         db.refresh(user)
+        from app.services.subscription import ensure_user_billing
+
+        ensure_user_billing(db, user)
         return user, True
 
     user.username = username
@@ -115,6 +118,9 @@ def get_or_create_user(db: Session, telegram_user: TelegramWebAppUser) -> tuple[
         db.add(user)
         db.commit()
         db.refresh(user)
+        from app.services.subscription import ensure_user_billing
+
+        ensure_user_billing(db, user)
         return user, True
 
     user.username = telegram_user.username

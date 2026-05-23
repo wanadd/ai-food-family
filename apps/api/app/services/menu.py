@@ -13,9 +13,11 @@ from app.schemas.menu import (
     SelectMenuRequest,
     SelectedMenuResponse,
 )
+from app.config import settings
 from app.services.menu_labels import PLAN_MODE_PROMPT_HINTS
 from app.services.app_scope import AppScope
 from app.services import shopping_list as shopping_list_service
+from app.services import subscription as subscription_service
 from app.services.menu_ai import generate_menus, replace_meal
 from app.services.menu_context import build_menu_context
 
@@ -42,7 +44,17 @@ async def generate_menus_for_scope(
             context.prompt_text = context.prompt_text + "\n" + "\n".join(extras)
         if options.persons_count:
             context.members_count = options.persons_count
+
+    access = subscription_service.assert_menu_generation_allowed(db, user, scope)
     menus, used_ai = await generate_menus(context)
+    subscription_service.commit_menu_generation(
+        db,
+        user,
+        scope,
+        access,
+        used_ai=used_ai,
+        model=settings.openai_model if used_ai else None,
+    )
     return MenuGenerateResponse(
         menus=menus,
         scope_mode=context.scope_mode,
@@ -56,6 +68,19 @@ async def generate_menus_for_scope(
 async def replace_dish(
     db: Session, user: User, scope: AppScope, payload: ReplaceDishRequest
 ) -> MenuVariant:
+    subscription_service.ensure_user_billing(db, user)
+    sub = subscription_service.get_active_subscription(db, user)
+    if sub is None or not subscription_service.ai_actions_allowed(sub):
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "code": "trial_expired",
+                "message": (
+                    "Пробный период закончился. Выберите тариф для AI-действий."
+                ),
+            },
+        )
+
     context = build_menu_context(db, user, scope)
     try:
         updated = await replace_meal(
@@ -72,6 +97,16 @@ async def replace_dish(
         selection.menu_data = updated.model_dump(mode="json")
         db.commit()
         shopping_list_service.sync_from_menu(db, scope, updated, selection.id)
+
+    subscription_service.log_ai_usage(
+        db,
+        user_id=user.id,
+        family_id=scope.family_id,
+        action_type="menu_replace_dish",
+        ams_spent=0,
+        model=settings.openai_model,
+        metadata={"variant": updated.variant},
+    )
 
     return updated
 

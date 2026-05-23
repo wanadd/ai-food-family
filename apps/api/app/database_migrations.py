@@ -142,6 +142,75 @@ def run_schema_migrations(engine: Engine) -> None:
         SET is_virtual = TRUE
         WHERE user_id IS NULL AND is_virtual = FALSE;
         """,
+        # Subscriptions & AMA (stage 7)
+        """
+        CREATE TABLE IF NOT EXISTS subscription_plans (
+            id SERIAL PRIMARY KEY,
+            code VARCHAR(32) NOT NULL UNIQUE,
+            name VARCHAR(120) NOT NULL,
+            price_rub INTEGER NOT NULL DEFAULT 0,
+            max_profiles INTEGER NOT NULL DEFAULT 1,
+            monthly_menu_generations INTEGER,
+            monthly_ams INTEGER NOT NULL DEFAULT 0,
+            features JSONB NOT NULL DEFAULT '{}',
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS user_subscriptions (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE SET NULL,
+            plan_code VARCHAR(32) NOT NULL,
+            status VARCHAR(24) NOT NULL DEFAULT 'active',
+            started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            trial_ends_at TIMESTAMPTZ,
+            current_period_ends_at TIMESTAMPTZ,
+            menu_generations_used INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_user_subscriptions_user_id ON user_subscriptions (user_id);",
+        """
+        CREATE TABLE IF NOT EXISTS ama_wallets (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            balance INTEGER NOT NULL DEFAULT 0,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_ama_wallet_user ON ama_wallets (user_id) WHERE family_id IS NULL;",
+        """
+        CREATE TABLE IF NOT EXISTS ama_transactions (
+            id SERIAL PRIMARY KEY,
+            wallet_id INTEGER NOT NULL REFERENCES ama_wallets(id) ON DELETE CASCADE,
+            amount INTEGER NOT NULL,
+            type VARCHAR(16) NOT NULL,
+            reason VARCHAR(64) NOT NULL,
+            metadata_json JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS ai_usage_logs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE SET NULL,
+            action_type VARCHAR(64) NOT NULL,
+            ams_spent INTEGER NOT NULL DEFAULT 0,
+            model VARCHAR(64),
+            input_tokens INTEGER,
+            output_tokens INTEGER,
+            estimated_cost DOUBLE PRECISION,
+            metadata_json JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_ai_usage_logs_user_id ON ai_usage_logs (user_id);",
     ]
 
     with engine.begin() as connection:

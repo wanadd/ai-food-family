@@ -28,6 +28,8 @@ import { buildDailyTip } from "@/lib/nutritionist/daily-tip";
 import { buildFamilySummary } from "@/lib/nutritionist/family-summary";
 import { buildStatCards, getOverallProgress } from "@/lib/nutritionist/metrics";
 import { fetchShoppingList } from "@/lib/shopping/api";
+import { fetchSubscriptionOverview } from "@/lib/subscription/api";
+import { getNutritionistAskCost } from "@/lib/subscription/ama";
 import type { ShoppingList } from "@/lib/shopping/types";
 
 const QUICK_ACTIONS: { id: string; label: string; prompt?: string }[] = [
@@ -100,6 +102,8 @@ export function NutritionistDashboard() {
   const [shopping, setShopping] = useState<ShoppingList | null>(null);
   const [care, setCare] = useState<CareToggles>(() => loadCareToggles());
   const [chatPrompt, setChatPrompt] = useState<string | null>(null);
+  const [amaBalance, setAmaBalance] = useState(0);
+  const [amaAskCost, setAmaAskCost] = useState(2);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -108,16 +112,22 @@ export function NutritionistDashboard() {
     }
     setLoading(true);
     try {
-      const [nutrition, selected, pantryList, shoppingList] = await Promise.all([
-        fetchNutritionProfile(initData).catch(() => null),
-        fetchSelectedMenu(initData, mode).catch(() => null),
-        fetchPantry(initData, mode).catch(() => null),
-        fetchShoppingList(initData, mode).catch(() => null),
-      ]);
+      const [nutrition, selected, pantryList, shoppingList, sub] =
+        await Promise.all([
+          fetchNutritionProfile(initData).catch(() => null),
+          fetchSelectedMenu(initData, mode).catch(() => null),
+          fetchPantry(initData, mode).catch(() => null),
+          fetchShoppingList(initData, mode).catch(() => null),
+          fetchSubscriptionOverview(initData, mode).catch(() => null),
+        ]);
       setProfile(nutrition);
       setMenu(selected?.menu ?? null);
       setPantry(pantryList);
       setShopping(shoppingList);
+      if (sub) {
+        setAmaBalance(sub.ama_balance);
+        setAmaAskCost(getNutritionistAskCost(sub.ama_costs));
+      }
     } finally {
       setLoading(false);
     }
@@ -313,8 +323,11 @@ export function NutritionistDashboard() {
           mode={mode}
           profile={profile}
           menu={menu}
+          amaAskCost={amaAskCost}
+          amaBalance={amaBalance}
           initialPrompt={chatPrompt}
           onInitialPromptConsumed={() => setChatPrompt(null)}
+          onBalanceChange={setAmaBalance}
         />
 
         <section className="rounded-2xl border border-stone-200 bg-stone-50/90 p-4">

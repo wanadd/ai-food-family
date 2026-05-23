@@ -10,6 +10,13 @@ from app.models.shopping_list import FamilyShoppingList
 from app.models.user import User
 from app.models.user_preferences import UserPreferences
 from app.models.user_profile import UserProfile
+from app.models.subscription import (
+    AiUsageLog,
+    AmaTransaction,
+    AmaWallet,
+    SubscriptionPlan,
+    UserSubscription,
+)
 
 __all__ = [
     "User",
@@ -28,4 +35,9 @@ __all__ = [
     "FamilyPantryItem",
     "Recipe",
     "RecipeFavorite",
+    "SubscriptionPlan",
+    "UserSubscription",
+    "AmaWallet",
+    "AmaTransaction",
+    "AiUsageLog",
 ]

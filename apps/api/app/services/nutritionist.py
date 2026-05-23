@@ -10,6 +10,8 @@ from app.services.menu import get_selected_menu
 from app.services.nutrition_profile import profile_to_nutrition_schema
 from app.services.onboarding import get_or_create_profile
 from app.services import pantry as pantry_service
+from app.services import subscription as subscription_service
+from app.services.subscription_catalog import AMA_COSTS
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,14 @@ async def ask_nutritionist(
     scope: AppScope,
     message: str,
 ) -> tuple[str, bool]:
+    ams_spent = subscription_service.require_ai_action(
+        db,
+        user,
+        scope,
+        "nutritionist_ask",
+        ama_cost=AMA_COSTS["nutritionist_ask"],
+    )
+
     profile = get_or_create_profile(db, user)
     nutrition = profile_to_nutrition_schema(profile)
     goal = nutrition.nutrition_goal
@@ -81,10 +91,28 @@ async def ask_nutritionist(
                     a for a in nutrition.allergies if a != "none"
                 ),
             )
+            subscription_service.log_ai_usage(
+                db,
+                user_id=user.id,
+                family_id=scope.family_id,
+                action_type="nutritionist_ask",
+                ams_spent=ams_spent,
+                model=settings.openai_model,
+                metadata={"used_ai": True},
+            )
             return answer, True
         except Exception:
             logger.exception("Nutritionist OpenAI call failed")
 
+    subscription_service.log_ai_usage(
+        db,
+        user_id=user.id,
+        family_id=scope.family_id,
+        action_type="nutritionist_ask",
+        ams_spent=ams_spent,
+        model=None,
+        metadata={"used_ai": False},
+    )
     return _fallback_answer(message, goal, menu_title), False
 
 

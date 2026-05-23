@@ -1,25 +1,28 @@
-/** Placeholder until subscription API (roadmap stage 10). */
-export type ProfilePlanId = "personal" | "shared" | "family" | "pro";
+import type { SubscriptionOverview } from "@/lib/subscription/types";
 
 export type ProfileBilling = {
-  planId: ProfilePlanId;
+  planCode: string;
   planLabel: string;
   amasBalance: number;
+  menuRemaining: number | null;
 };
 
-const PLAN_LABELS: Record<ProfilePlanId, string> = {
-  personal: "Личный",
-  shared: "Совместный",
-  family: "Семейный",
-  pro: "ПланАм PRO",
-};
-
-/** Default billing snapshot for profile UI. */
-export function getProfileBilling(): ProfileBilling {
+export function billingFromSubscription(
+  data: SubscriptionOverview | null,
+): ProfileBilling {
+  if (!data) {
+    return {
+      planCode: "trial",
+      planLabel: "Пробный",
+      amasBalance: 0,
+      menuRemaining: null,
+    };
+  }
   return {
-    planId: "personal",
-    planLabel: PLAN_LABELS.personal,
-    amasBalance: 50,
+    planCode: data.plan_code,
+    planLabel: data.plan_name,
+    amasBalance: data.ama_balance,
+    menuRemaining: data.menu_generations_remaining,
   };
 }
 

@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+
+import { ApiRequestError } from "@/lib/api-errors";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -145,9 +147,20 @@ export function MenuPlanner() {
       setGeneratedMenus(result.menus);
       setPhase("choose");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Не удалось составить план",
-      );
+      if (err instanceof ApiRequestError) {
+        let text = err.message;
+        if (err.code === "menu_generation_limit" && err.canPayWithAms) {
+          text = `${text} Дополнительная генерация спишет Амы с баланса.`;
+        }
+        if (err.code === "menu_generation_limit" || err.code === "trial_expired") {
+          text = `${text} `;
+        }
+        setError(text.trim());
+      } else {
+        setError(
+          err instanceof Error ? err.message : "Не удалось составить план",
+        );
+      }
     } finally {
       setGenerating(false);
     }
@@ -223,9 +236,17 @@ export function MenuPlanner() {
 
       <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
         {error ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <p>{error}</p>
+            {error.includes("Лимит") || error.includes("Пробный") ? (
+              <Link
+                href="/subscription"
+                className="mt-2 inline-block font-semibold text-emerald-800"
+              >
+                Тариф и Амы →
+              </Link>
+            ) : null}
+          </div>
         ) : null}
 
         {phase === "choose" ? (

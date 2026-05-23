@@ -7,10 +7,8 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ProfileModeControl } from "@/components/profile/ProfileModeControl";
 import { BottomBackButton } from "@/components/layout/BottomBackButton";
 import { useTelegram } from "@/components/TelegramProvider";
-import {
-  formatAmasBalance,
-  getProfileBilling,
-} from "@/lib/profile/billing";
+import { formatAmasBalance, billingFromSubscription } from "@/lib/profile/billing";
+import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 import {
   getNutritionGoalLabel,
   getNutritionProfileProgress,
@@ -34,8 +32,8 @@ const QUICK_LINKS = [
   },
   {
     href: "/subscription",
-    label: "Подписка и Амы",
-    desc: "Тариф и баланс AI-действий",
+    label: "Тариф и Амы",
+    desc: "Подписка и баланс AI-действий",
     emoji: "✨",
   },
   {
@@ -91,28 +89,32 @@ function UserAvatar({ name }: { name: string }) {
 
 export function ProfileDashboard() {
   const { initData, user, isTelegram, isAuthenticating } = useTelegram();
-  const { context, loading: modeLoading } = useAppMode();
-  const billing = getProfileBilling();
-
+  const { mode, context, loading: modeLoading } = useAppMode();
+  const [billing, setBilling] = useState(() => billingFromSubscription(null));
   const [nutrition, setNutrition] = useState<NutritionProfileData | null>(null);
   const [loadingNutrition, setLoadingNutrition] = useState(true);
 
   const loadNutrition = useCallback(async () => {
     if (!initData) {
       setNutrition(null);
+      setBilling(billingFromSubscription(null));
       setLoadingNutrition(false);
       return;
     }
     setLoadingNutrition(true);
     try {
-      const data = await fetchNutritionProfile(initData);
+      const [data, sub] = await Promise.all([
+        fetchNutritionProfile(initData),
+        fetchSubscriptionOverview(initData, mode),
+      ]);
       setNutrition(data);
+      setBilling(billingFromSubscription(sub));
     } catch {
       setNutrition(null);
     } finally {
       setLoadingNutrition(false);
     }
-  }, [initData]);
+  }, [initData, mode]);
 
   useEffect(() => {
     void loadNutrition();
@@ -171,27 +173,30 @@ export function ProfileDashboard() {
               </div>
             </section>
 
-            <section className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
-                  Тариф
-                </p>
-                <p className="mt-1.5 text-lg font-bold text-stone-900">
-                  {billing.planLabel}
-                </p>
+            <Link
+              href="/subscription"
+              className="block rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50/80 to-white p-4 shadow-sm transition hover:border-amber-200 active:scale-[0.99]"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                    Тариф и Амы
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-stone-900">
+                    {billing.planLabel}
+                  </p>
+                  <p className="mt-0.5 text-sm text-amber-900/80">
+                    {formatAmasBalance(billing.amasBalance)}
+                    {billing.menuRemaining != null
+                      ? ` · меню: ${billing.menuRemaining}`
+                      : null}
+                  </p>
+                </div>
+                <span className="text-stone-400" aria-hidden>
+                  →
+                </span>
               </div>
-              <Link
-                href="/subscription"
-                className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm transition hover:border-amber-200 active:scale-[0.99]"
-              >
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700/80">
-                  Баланс
-                </p>
-                <p className="mt-1.5 text-lg font-bold text-amber-900">
-                  {formatAmasBalance(billing.amasBalance)}
-                </p>
-              </Link>
-            </section>
+            </Link>
 
             <section className="rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/90 to-white p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">

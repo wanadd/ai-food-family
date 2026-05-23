@@ -9,7 +9,9 @@ import {
   loadChatMessages,
   type ChatMessage,
 } from "@/lib/nutritionist/chat-storage";
+import { ApiRequestError } from "@/lib/api-errors";
 import { buildFallbackReply } from "@/lib/nutritionist/chat-fallback";
+import { formatAmaCost } from "@/lib/subscription/ama";
 import type { NutritionProfileData } from "@/lib/nutrition-profile/types";
 import type { AppMode } from "@/lib/app-mode/types";
 import type { MenuVariant } from "@/lib/menu/types";
@@ -18,21 +20,28 @@ type NutritionistChatProps = {
   mode: AppMode;
   profile: NutritionProfileData | null;
   menu: MenuVariant | null;
+  amaAskCost: number;
+  amaBalance: number;
   initialPrompt?: string | null;
   onInitialPromptConsumed?: () => void;
+  onBalanceChange?: (balance: number) => void;
 };
 
 export function NutritionistChat({
   mode,
   profile,
   menu,
+  amaAskCost,
+  amaBalance,
   initialPrompt,
   onInitialPromptConsumed,
+  onBalanceChange,
 }: NutritionistChatProps) {
   const { initData } = useTelegram();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,6 +66,7 @@ export function NutritionistChat({
     if (!trimmed || sending) return;
 
     setSending(true);
+    setChatError(null);
     setInput("");
     const withUser = appendChatMessage(messages, "user", trimmed);
     setMessages(withUser);
@@ -66,7 +76,13 @@ export function NutritionistChat({
       try {
         const res = await askNutritionist(initData, mode, trimmed);
         answer = res.answer;
-      } catch {
+        onBalanceChange?.(amaBalance - amaAskCost);
+      } catch (err) {
+        if (err instanceof ApiRequestError) {
+          setChatError(err.message);
+          setSending(false);
+          return;
+        }
         answer = buildFallbackReply(trimmed, profile, menu);
       }
     } else {
@@ -83,6 +99,15 @@ export function NutritionistChat({
       className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm"
     >
       <h2 className="text-sm font-bold text-stone-900">Спросить нутрициолога</h2>
+      <p className="mt-1 text-xs text-stone-500">
+        {formatAmaCost(amaAskCost)} за ответ · у вас {formatAmaCost(amaBalance)}
+      </p>
+
+      {chatError ? (
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {chatError}
+        </p>
+      ) : null}
 
       <div
         ref={listRef}

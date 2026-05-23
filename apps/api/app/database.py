@@ -28,6 +28,7 @@ def init_db() -> None:
         user_preferences,
         user_profile,
     )
+    from app.models import subscription as subscription_models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 
@@ -36,10 +37,16 @@ def init_db() -> None:
     run_schema_migrations(engine)
 
     from app.services.recipes import seed_recipes_if_empty
+    from app.services.subscription import (
+        ensure_all_users_have_billing,
+        seed_subscription_plans,
+    )
 
     db = SessionLocal()
     try:
+        seed_subscription_plans(db)
         seed_recipes_if_empty(db)
+        ensure_all_users_have_billing(db)
     finally:
         db.close()
 

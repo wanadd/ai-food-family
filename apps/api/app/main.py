@@ -19,6 +19,7 @@ from app.routers import (
     recipes,
     shopping_categories,
     shopping_lists,
+    subscriptions,
     telegram_bot,
     users,
 )
@@ -72,6 +73,7 @@ app.include_router(nutritionist_router.router)
 app.include_router(families.router)
 app.include_router(menus.router)
 app.include_router(shopping_lists.router)
+app.include_router(subscriptions.router)
 app.include_router(shopping_categories.router)
 app.include_router(notifications.router)
 app.include_router(pantry.router)

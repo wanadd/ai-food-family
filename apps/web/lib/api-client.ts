@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/api";
+import { ApiRequestError, parseApiErrorDetail } from "@/lib/api-errors";
 
 import type { AppMode } from "@/lib/app-mode/types";
 
@@ -16,11 +17,18 @@ function isRetryableStatus(status: number): boolean {
   return RETRYABLE_STATUS.has(status);
 }
 
-function formatHttpError(status: number, detail?: string): Error {
+function formatHttpError(status: number, detail?: unknown): Error {
   if (isRetryableStatus(status)) {
     return new Error("Сервер временно недоступен. Попробуйте через несколько секунд.");
   }
-  return new Error(detail ?? `HTTP ${status}`);
+  const parsed = parseApiErrorDetail(detail);
+  if (parsed?.message) {
+    return new ApiRequestError(parsed.message, parsed);
+  }
+  if (typeof detail === "string") {
+    return new Error(detail);
+  }
+  return new Error(`HTTP ${status}`);
 }
 
 async function fetchWithRetry(
@@ -73,7 +81,7 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
+      | { detail?: unknown }
       | null;
     throw formatHttpError(response.status, payload?.detail);
   }
