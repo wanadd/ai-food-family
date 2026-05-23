@@ -30,6 +30,8 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      ADMIN_TELEGRAM_IDS: ${ADMIN_TELEGRAM_IDS:-}
+      BACKUP_ROOT: ${BACKUP_ROOT:-backups}
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,6 +39,7 @@ services:
         condition: service_healthy
     volumes:
       - ./apps/api:/app
+      - ./backups:/app/backups
 
   postgres:
     image: postgres:16-alpine

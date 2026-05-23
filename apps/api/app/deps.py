@@ -50,3 +50,17 @@ def get_app_scope(
     db: Session = Depends(get_db),
 ) -> AppScope:
     return resolve_scope(db, user, x_app_mode)
+
+
+def is_admin_user(user: User) -> bool:
+    admin_ids = settings.admin_telegram_id_set()
+    return bool(admin_ids) and user.telegram_id in admin_ids
+
+
+def require_admin_user(user: User = Depends(get_current_user)) -> User:
+    if not is_admin_user(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ только для администратора проекта",
+        )
+    return user

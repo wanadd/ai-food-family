@@ -3,11 +3,16 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from app.config import settings
+from app.services import admin_errors
 from app.database import init_db
 from app.health import run_health_checks
 from app.routers import (
+    admin,
     auth,
     care,
     families,
@@ -53,6 +58,28 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
+
+class AdminErrorLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        try:
+            response = await call_next(request)
+            if response.status_code >= 500:
+                admin_errors.record_error(
+                    path=str(request.url.path),
+                    status_code=response.status_code,
+                )
+            return response
+        except Exception as exc:
+            admin_errors.record_error(
+                path=str(request.url.path),
+                status_code=500,
+                detail=str(exc),
+            )
+            raise
+
+
+app.add_middleware(AdminErrorLoggingMiddleware)
+
 origins = [
     origin.strip()
     for origin in settings.backend_cors_origins.split(",")
@@ -67,6 +94,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(admin.router)
 app.include_router(auth.router)
 app.include_router(care.router)
 app.include_router(users.router)

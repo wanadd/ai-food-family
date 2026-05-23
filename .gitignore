@@ -24,6 +24,10 @@ out/
 dist/
 build/
 
+# Backups and admin error logs
+backups/
+logs/
+
 # Logs
 *.log
 npm-debug.log*

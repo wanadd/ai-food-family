@@ -15,8 +15,18 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis:6379/0"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    admin_telegram_ids: str = ""
+    backup_root: str = "backups"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    def admin_telegram_id_set(self) -> set[int]:
+        ids: set[int] = set()
+        for part in self.admin_telegram_ids.split(","):
+            part = part.strip()
+            if part.isdigit():
+                ids.add(int(part))
+        return ids
 
 
 settings = Settings()
