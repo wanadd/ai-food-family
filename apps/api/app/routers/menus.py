@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.database import SessionLocal, get_db
 from app.deps import get_app_scope, get_verified_user
 from app.services.app_scope import AppScope
 from app.models.user import User
@@ -14,8 +16,23 @@ from app.schemas.menu import (
     SelectedMenuResponse,
 )
 from app.services import menu as menu_service
+from app.services import care as care_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/menus", tags=["menus"])
+
+
+async def _send_menu_care_notification(user_id: int) -> None:
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).one_or_none()
+        if user is not None:
+            await care_service.maybe_notify_menu_ready(db, user)
+    except Exception:
+        logger.exception("Menu care notification failed for user %s", user_id)
+    finally:
+        db.close()
 
 
 @router.post("/generate", response_model=MenuGenerateResponse)
@@ -43,11 +60,14 @@ async def replace_dish(
 @router.post("/select", response_model=SelectedMenuResponse)
 def select_menu(
     payload: SelectMenuRequest,
+    background_tasks: BackgroundTasks,
     scope: AppScope = Depends(get_app_scope),
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> SelectedMenuResponse:
-    return menu_service.select_menu(db, user, scope, payload)
+    result = menu_service.select_menu(db, user, scope, payload)
+    background_tasks.add_task(_send_menu_care_notification, user.id)
+    return result
 
 
 @router.get("/selected", response_model=SelectedMenuResponse | None)

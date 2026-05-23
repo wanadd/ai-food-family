@@ -1,4 +1,5 @@
 from app.models.bot_session import TelegramBotSession
+from app.models.care import CareEvent, CareNotification, CareSettings
 from app.models.family import Family, FamilyMember, FamilyRole
 from app.models.family_invite import FamilyInvite, FamilyInviteStatus
 from app.models.menu_selection import FamilyMenuSelection
@@ -40,4 +41,7 @@ __all__ = [
     "AmaWallet",
     "AmaTransaction",
     "AiUsageLog",
+    "CareSettings",
+    "CareNotification",
+    "CareEvent",
 ]

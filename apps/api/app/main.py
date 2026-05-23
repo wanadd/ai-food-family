@@ -9,6 +9,7 @@ from app.database import init_db
 from app.health import run_health_checks
 from app.routers import (
     auth,
+    care,
     families,
     menus,
     notifications,
@@ -66,6 +67,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(care.router)
 app.include_router(users.router)
 app.include_router(onboarding.router)
 app.include_router(nutrition_profile.router)

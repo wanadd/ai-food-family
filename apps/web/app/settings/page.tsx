@@ -17,6 +17,11 @@ export default function SettingsPage() {
         description="Покупки, готовка, время"
       />
       <SettingsMenuItem
+        href="/settings/care"
+        label="Уведомления заботы"
+        description="Мягкие подсказки в Telegram"
+      />
+      <SettingsMenuItem
         href="/settings/units"
         label="Единицы измерения"
         description="Граммы, литры, порции"

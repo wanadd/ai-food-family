@@ -211,6 +211,55 @@ def run_schema_migrations(engine: Engine) -> None:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_ai_usage_logs_user_id ON ai_usage_logs (user_id);",
+        # AI Care System (stage 8)
+        """
+        CREATE TABLE IF NOT EXISTS care_settings (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+            water_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+            protein_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+            menu_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            shopping_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            pantry_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            progress_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+            family_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+            pro_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+            care_level VARCHAR(16) NOT NULL DEFAULT 'standard',
+            quiet_hours_start VARCHAR(5),
+            quiet_hours_end VARCHAR(5),
+            timezone VARCHAR(64),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS care_notifications (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE SET NULL,
+            type VARCHAR(32) NOT NULL,
+            title VARCHAR(200) NOT NULL,
+            message TEXT NOT NULL,
+            payload JSONB,
+            status VARCHAR(16) NOT NULL DEFAULT 'pending',
+            scheduled_at TIMESTAMPTZ,
+            sent_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_care_notifications_user_id ON care_notifications (user_id);",
+        """
+        CREATE TABLE IF NOT EXISTS care_events (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE SET NULL,
+            event_type VARCHAR(64) NOT NULL,
+            source VARCHAR(64) NOT NULL DEFAULT 'care',
+            payload JSONB,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_care_events_user_id ON care_events (user_id);",
     ]
 
     with engine.begin() as connection:

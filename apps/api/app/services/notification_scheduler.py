@@ -44,6 +44,10 @@ async def _process_due_reminders() -> None:
             await _maybe_send_buy(db, notification_settings, user)
             await _maybe_send_cook(db, notification_settings, user)
 
+        from app.services.care import process_all_care_reminders
+
+        await process_all_care_reminders(db)
+
         db.commit()
     finally:
         db.close()
