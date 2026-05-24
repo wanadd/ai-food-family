@@ -42,6 +42,8 @@ async def generate_menus(
             pass
         except AiError:
             logger.exception("OpenAI menu generation failed, trying recipe DB")
+        except KeyError:
+            logger.exception("OpenAI menu JSON parse KeyError, trying recipe DB")
         except Exception:
             logger.exception("OpenAI menu generation failed, trying recipe DB")
 

@@ -14,7 +14,8 @@ from app.services import family as family_service
 from app.services.app_scope import AppScope
 from app.services.family_member_nutrition import member_is_virtual, virtual_nutrition_from_member
 from app.services.meal_leftovers import list_active_leftovers
-from app.services.menu import _get_latest_selection, get_selected_menu
+from app.services.menu import _get_latest_selection
+from app.services.menu_selection import get_selected_menu
 from app.services.menu_context_fingerprint import get_stored_fingerprint
 from app.services.menu_labels import GOAL_LABELS, PLAN_MODE_PROMPT_HINTS
 from app.services.onboarding import get_or_create_profile

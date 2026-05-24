@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BotQuickInputHint } from "@/components/bot/BotQuickInputHint";
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { useTelegram } from "@/components/TelegramProvider";
+import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
+import { useProtectedScreen } from "@/lib/use-protected-screen";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
 import { ShoppingCategorySheet } from "@/components/shopping/ShoppingCategorySheet";
@@ -32,7 +33,7 @@ const POLL_INTERVAL_MS = 4000;
 
 export function ShoppingListView() {
   const { mode } = useAppMode();
-  const { initData } = useTelegram();
+  const { initData, state: authState } = useProtectedScreen();
   const [list, setList] = useState<ShoppingList | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -67,6 +68,9 @@ export function ShoppingListView() {
         }
         updatedAtRef.current = data.updated_at;
         setList(data);
+        if (!silent) {
+          console.info("[PlanAm] Shopping loaded");
+        }
       } catch (err) {
         if (!silent) {
           setError(
@@ -83,12 +87,10 @@ export function ShoppingListView() {
   );
 
   useEffect(() => {
-    if (!initData) {
-      setLoading(false);
-      return;
+    if (authState === "ready" && initData) {
+      void loadList(initData, mode);
     }
-    loadList(initData, mode);
-  }, [initData, loadList, mode]);
+  }, [initData, loadList, mode, authState]);
 
   useEffect(() => {
     if (!initData) {
@@ -320,19 +322,12 @@ export function ShoppingListView() {
     setExpanded(new Set());
   }
 
-  if (!initData) {
+  if (authState !== "ready") {
     return (
-      <div className="mx-auto max-w-lg px-5 py-16 text-center">
-        <p className="text-sm text-stone-600">
-          Покупки доступны в Telegram Mini App после авторизации.
-        </p>
-        <Link
-          href="/"
-          className="mt-6 inline-block text-sm font-semibold text-emerald-700"
-        >
-          На главную
-        </Link>
-      </div>
+      <ProtectedScreenFallback
+        loadingMessage="Загружаем покупки..."
+        telegramMessage="Покупки доступны в Telegram Mini App после авторизации."
+      />
     );
   }
 

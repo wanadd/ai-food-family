@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
@@ -14,6 +16,7 @@ from app.services.app_scope import AppScope
 from app.services import shopping_list as shopping_list_service
 
 router = APIRouter(prefix="/shopping-lists", tags=["shopping-lists"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/me", response_model=ShoppingListResponse)
@@ -22,7 +25,13 @@ def get_my_shopping_list(
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> ShoppingListResponse:
-    return shopping_list_service.get_shopping_list(db, user, scope)
+    result = shopping_list_service.get_shopping_list(db, user, scope)
+    logger.info(
+        "Shopping loaded user_id=%s items=%s",
+        user.id,
+        result.total_count,
+    )
+    return result
 
 
 @router.post("/sync", response_model=ShoppingListResponse)

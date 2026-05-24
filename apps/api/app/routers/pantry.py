@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
@@ -14,6 +16,7 @@ from app.schemas.pantry import (
 from app.services import pantry as pantry_service
 
 router = APIRouter(prefix="/pantry", tags=["pantry"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/me", response_model=PantryListResponse)
@@ -22,7 +25,13 @@ def get_my_pantry(
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> PantryListResponse:
-    return pantry_service.list_pantry(db, user, scope)
+    result = pantry_service.list_pantry(db, user, scope)
+    logger.info(
+        "Pantry loaded user_id=%s active=%s",
+        user.id,
+        result.active_count,
+    )
+    return result
 
 
 @router.post(

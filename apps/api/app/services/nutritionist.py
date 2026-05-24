@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.services.app_scope import AppScope
-from app.services.menu import get_selected_menu
+from app.services.menu_selection import get_selected_menu
 from app.services.nutrition_profile import profile_to_nutrition_schema
 from app.services.onboarding import get_or_create_profile
 from app.services import subscription as subscription_service

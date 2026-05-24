@@ -7,7 +7,8 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { CareTelegramLinkCard } from "@/components/care/CareTelegramLinkCard";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { PageLoading } from "@/components/ui/PageLoading";
-import { useTelegram } from "@/components/TelegramProvider";
+import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
+import { useProtectedScreen } from "@/lib/use-protected-screen";
 import { getPersonsCount } from "@/lib/home/plan-summary";
 import {
   getNutritionGoalLabel,
@@ -34,7 +35,7 @@ const QUICK_ACTIONS = [
 ] as const;
 
 export function NutritionistDashboard() {
-  const { initData, isTelegram } = useTelegram();
+  const { initData, state: authState } = useProtectedScreen();
   const { mode, context, loading: modeLoading } = useAppMode();
 
   const [loading, setLoading] = useState(true);
@@ -47,7 +48,6 @@ export function NutritionistDashboard() {
 
   const load = useCallback(async () => {
     if (!initData) {
-      setLoading(false);
       return;
     }
     setLoading(true);
@@ -63,15 +63,16 @@ export function NutritionistDashboard() {
       setPantry(pantryList);
       setProgress(progressData);
       void fetchSubscriptionOverview(initData, mode);
+      console.info("[PlanAm] Nutritionist dashboard loaded");
     } finally {
       setLoading(false);
     }
   }, [initData, mode]);
 
   useEffect(() => {
-    if (modeLoading) return;
+    if (modeLoading || authState !== "ready") return;
     void load();
-  }, [load, modeLoading]);
+  }, [load, modeLoading, authState]);
 
   const personsCount = getPersonsCount(mode, context);
   const goalLabel = getNutritionGoalLabel(profile);
@@ -99,16 +100,12 @@ export function NutritionistDashboard() {
 
   const familyProgress = progress?.family_progress ?? [];
 
-  if (!initData && !isTelegram && !loading) {
+  if (authState !== "ready") {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-sm text-stone-600">
-          Нутрициолог доступен в Telegram Mini App.
-        </p>
-        <Link href="/" className="mt-4 inline-block text-sm font-semibold text-emerald-700">
-          На главную
-        </Link>
-      </div>
+      <ProtectedScreenFallback
+        loadingMessage="Загрузка…"
+        telegramMessage="Нутрициолог доступен в Telegram Mini App."
+      />
     );
   }
 

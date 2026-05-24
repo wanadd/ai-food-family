@@ -7,7 +7,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { PageLoading } from "@/components/ui/PageLoading";
-import { useTelegram } from "@/components/TelegramProvider";
+import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
+import { useProtectedScreen } from "@/lib/use-protected-screen";
 import {
   fetchMenuOverview,
   runMenuQuickAction,
@@ -47,7 +48,7 @@ function ProCoverageBar({ label, percent }: { label: string; percent: number }) 
 
 export function MenuHub() {
   const router = useRouter();
-  const { initData, isTelegram } = useTelegram();
+  const { initData, state: authState } = useProtectedScreen();
   const { mode, loading: modeLoading } = useAppMode();
   const [data, setData] = useState<MenuOverview | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,22 +57,26 @@ export function MenuHub() {
 
   const load = useCallback(async () => {
     if (!initData) {
-      setLoading(false);
       return;
     }
     setLoading(true);
     try {
       const overview = await fetchMenuOverview(initData, mode);
       setData(overview);
+      console.info("[PlanAm] Menu loaded");
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Не удалось загрузить меню",
+      );
     } finally {
       setLoading(false);
     }
   }, [initData, mode]);
 
   useEffect(() => {
-    if (modeLoading) return;
+    if (modeLoading || authState !== "ready") return;
     void load();
-  }, [load, modeLoading]);
+  }, [load, modeLoading, authState]);
 
   async function handleQuickAction(action: QuickActionId) {
     if (!initData) return;
@@ -92,11 +97,12 @@ export function MenuHub() {
     }
   }
 
-  if (!initData && !isTelegram && !loading) {
+  if (authState !== "ready") {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-stone-600">
-        Меню доступно в Telegram Mini App.
-      </div>
+      <ProtectedScreenFallback
+        loadingMessage="Загрузка меню…"
+        telegramMessage="Меню доступно в Telegram Mini App."
+      />
     );
   }
 

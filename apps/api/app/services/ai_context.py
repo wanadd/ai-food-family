@@ -20,7 +20,7 @@ from app.services.menu_context import MenuGenerationContext
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import format_leftovers_for_prompt, get_active_items_for_scope
 from app.services.recipe_storage import get_structured_ingredients
-from app.services.menu import get_selected_menu
+from app.services.menu_selection import get_selected_menu
 from app.services.progress import user_has_pro
 
 

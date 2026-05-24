@@ -179,6 +179,12 @@ async def generate_menu_ai(
     )
     data = await ai_client.chat_json(system=MENU_SYSTEM, user=prompt, temperature=0.6)
     menus = _menu_variants_from_ai(data)
+    if not menus:
+        logger.warning(
+            "OpenAI menu JSON missing variants; keys=%s",
+            list(data.keys()) if isinstance(data, dict) else type(data).__name__,
+        )
+        raise AiResponseError("menu_variants missing")
     return MenuAiResult(
         menus=menus,
         summary=str(data.get("summary", "")),
@@ -187,56 +193,89 @@ async def generate_menu_ai(
 
 
 def _menu_variants_from_ai(data: dict[str, Any]) -> list[MenuVariant]:
-    raw_variants = data.get("menu_variants") or data.get("menus") or []
+    if not isinstance(data, dict):
+        logger.warning("OpenAI menu response is not a dict: %s", type(data).__name__)
+        return []
+
+    raw_variants = (
+        data.get("menu_variants")
+        or data.get("menus")
+        or data.get("variants")
+        or []
+    )
+    if not raw_variants and isinstance(data.get("menu"), dict):
+        raw_variants = [data["menu"]]
     if not raw_variants:
-        raise AiResponseError("menu_variants missing")
+        logger.warning(
+            "OpenAI menu JSON has no menu_variants/menus; sample=%s",
+            str(data)[:500],
+        )
+        return []
 
     menus: list[MenuVariant] = []
     for item in raw_variants:
-        variant_key = item.get("variant") or "balanced"
-        meta = VARIANT_META.get(variant_key, {})
-        meals_raw = item.get("meals") or []
-        meals: list[MenuMeal] = []
-        for m in meals_raw:
-            meal_type = m.get("meal_type") or "lunch"
-            title = m.get("title") or m.get("name") or "Блюдо"
-            meals.append(
-                MenuMeal(
-                    meal_type=meal_type,  # type: ignore[arg-type]
-                    name=title,
-                    description=m.get("description") or m.get("why_selected") or "",
-                    prep_time_minutes=int(m.get("prep_time_minutes") or 25),
-                    calories_estimate=_int_or_none(m.get("calories_estimate") or m.get("calories")),
-                    recipe_id=m.get("recipe_id"),
+        if not isinstance(item, dict):
+            logger.warning("Skip non-dict menu variant: %s", type(item).__name__)
+            continue
+        try:
+            variant_key = item.get("variant") or "balanced"
+            meta = VARIANT_META.get(variant_key, {})
+            meals_raw = item.get("meals") or []
+            meals: list[MenuMeal] = []
+            for m in meals_raw:
+                if not isinstance(m, dict):
+                    continue
+                meal_type = m.get("meal_type") or "lunch"
+                title = m.get("title") or m.get("name") or "Блюдо"
+                meals.append(
+                    MenuMeal(
+                        meal_type=meal_type,  # type: ignore[arg-type]
+                        name=title,
+                        description=m.get("description") or m.get("why_selected") or "",
+                        prep_time_minutes=int(m.get("prep_time_minutes") or 25),
+                        calories_estimate=_int_or_none(
+                            m.get("calories_estimate") or m.get("calories")
+                        ),
+                        recipe_id=m.get("recipe_id"),
+                    )
+                )
+
+            ingredients = _ingredients_from_ai_rows(item.get("ingredients") or [])
+            if not ingredients and item.get("shopping_items"):
+                ingredients = _ingredients_from_ai_rows(item["shopping_items"])
+
+            menus.append(
+                MenuVariant(
+                    variant=variant_key,  # type: ignore[arg-type]
+                    title=item.get("title") or meta.get("title", "Меню"),
+                    tagline=item.get("tagline") or meta.get("tagline", ""),
+                    explanation=item.get("explanation")
+                    or data.get("reasoning_for_user", ""),
+                    estimated_daily_cost=item.get("estimated_daily_cost"),
+                    total_prep_minutes=int(
+                        item.get("total_prep_minutes")
+                        or sum(m.prep_time_minutes for m in meals)
+                    ),
+                    meals=meals,
+                    ingredients=ingredients or [
+                        MenuIngredient(name="Вода", amount="1 л", category="drinks")
+                    ],
                 )
             )
-
-        ingredients = _ingredients_from_ai_rows(item.get("ingredients") or [])
-        if not ingredients and item.get("shopping_items"):
-            ingredients = _ingredients_from_ai_rows(item["shopping_items"])
-
-        menus.append(
-            MenuVariant(
-                variant=variant_key,  # type: ignore[arg-type]
-                title=item.get("title") or meta.get("title", "Меню"),
-                tagline=item.get("tagline") or meta.get("tagline", ""),
-                explanation=item.get("explanation") or data.get("reasoning_for_user", ""),
-                estimated_daily_cost=item.get("estimated_daily_cost"),
-                total_prep_minutes=int(
-                    item.get("total_prep_minutes")
-                    or sum(m.prep_time_minutes for m in meals)
-                ),
-                meals=meals,
-                ingredients=ingredients,
-            )
-        )
+        except Exception:
+            logger.warning("Skip invalid menu variant item", exc_info=True)
+            continue
 
     order = ["quick", "economy", "balanced"]
     menus.sort(
         key=lambda m: order.index(m.variant) if m.variant in order else 99
     )
     if len(menus) < 3:
-        raise AiResponseError("Expected 3 menu variants")
+        logger.warning(
+            "OpenAI returned %s menu variants, expected 3",
+            len(menus),
+        )
+        return []
     return menus[:3]
 
 

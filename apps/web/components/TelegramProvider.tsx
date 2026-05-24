@@ -102,6 +102,10 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         setInitData(telegramInitData);
         setIsTelegram(true);
         setIsDevMode(false);
+        console.info("[PlanAm] Telegram auth success", {
+          userId: result.user.id,
+          isNew: result.is_new,
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Auth failed";
         setAuthError(message);
@@ -126,6 +130,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         setIsTelegram(false);
         setIsDevMode(true);
         setPlatform("dev");
+        console.info("[PlanAm] Dev auth success", { userId: result.user.id });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Dev auth failed";

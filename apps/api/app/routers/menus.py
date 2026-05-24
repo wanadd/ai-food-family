@@ -81,7 +81,15 @@ def get_selected_menu(
     scope: AppScope = Depends(get_app_scope),
     db: Session = Depends(get_db),
 ) -> SelectedMenuResponse | None:
-    return menu_service.get_selected_menu(db, scope)
+    import logging
+
+    result = menu_service.get_selected_menu(db, scope)
+    logging.getLogger(__name__).info(
+        "Menu loaded scope=%s has_menu=%s",
+        scope.mode,
+        result is not None,
+    )
+    return result
 
 
 @router.get("/overview", response_model=MenuOverviewResponse)

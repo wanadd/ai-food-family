@@ -197,44 +197,31 @@ def select_menu(
 def get_selected_menu(
     db: Session, scope: AppScope
 ) -> SelectedMenuResponse | None:
-    selection = _get_latest_selection(db, scope)
-    if selection is None:
-        return None
-    return _selection_response(selection, scope)
+    from app.services.menu_selection import get_selected_menu as _get
+
+    return _get(db, scope)
 
 
 def _get_latest_selection(
     db: Session, scope: AppScope
 ) -> FamilyMenuSelection | None:
-    query = db.query(FamilyMenuSelection)
-    if scope.is_family:
-        query = query.filter(FamilyMenuSelection.family_id == scope.family_id)
-    else:
-        query = query.filter(
-            FamilyMenuSelection.user_id == scope.user_id,
-            FamilyMenuSelection.family_id.is_(None),
-        )
-    return query.order_by(FamilyMenuSelection.selected_at.desc()).first()
+    from app.services.menu_selection import get_latest_selection
+
+    return get_latest_selection(db, scope)
 
 
 def _menu_from_storage(menu_data: dict) -> MenuVariant:
-    data = dict(menu_data)
-    data.pop("_meta", None)
-    return MenuVariant.model_validate(data)
+    from app.services.menu_selection import menu_from_storage
+
+    return menu_from_storage(menu_data)
 
 
 def _selection_response(
     selection: FamilyMenuSelection, scope: AppScope
 ) -> SelectedMenuResponse:
-    return SelectedMenuResponse(
-        id=selection.id,
-        scope_mode=scope.mode,
-        user_id=selection.user_id,
-        family_id=selection.family_id,
-        variant=selection.variant,  # type: ignore[arg-type]
-        menu=_menu_from_storage(selection.menu_data),
-        selected_at=selection.selected_at,
-    )
+    from app.services.menu_selection import selection_response
+
+    return selection_response(selection, scope)
 
 
 async def run_quick_action(

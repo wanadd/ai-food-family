@@ -20,7 +20,7 @@ from app.schemas.care import (
 )
 from app.services import subscription as subscription_service
 from app.services.app_scope import resolve_scope
-from app.services.menu import get_selected_menu
+from app.services.menu_selection import get_selected_menu
 from app.services.notifications import get_or_create_settings as get_notif_settings_row
 from app.services.onboarding import get_or_create_profile
 from app.services import pantry as pantry_service

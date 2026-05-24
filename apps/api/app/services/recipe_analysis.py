@@ -17,7 +17,8 @@ from app.schemas.menu_overview import (
 from app.services import family as family_service
 from app.services.app_scope import AppScope
 from app.services.family_member_nutrition import member_is_virtual, virtual_nutrition_from_member
-from app.services.menu import get_selected_menu, select_menu
+from app.services.menu import select_menu
+from app.services.menu_selection import get_selected_menu
 from app.services.menu_context_fingerprint import compute_context_fingerprint
 from app.services.onboarding import get_or_create_profile
 from app.services.ai import analyze_recipe as ai_analyze_recipe

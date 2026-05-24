@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { BotQuickInputHint } from "@/components/bot/BotQuickInputHint";
-import { useTelegram } from "@/components/TelegramProvider";
+import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
+import { useProtectedScreen } from "@/lib/use-protected-screen";
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { PageLoading } from "@/components/ui/PageLoading";
@@ -36,7 +37,7 @@ const RECENT_DAYS = 7;
 
 export function PantryDashboard() {
   const { mode } = useAppMode();
-  const { initData } = useTelegram();
+  const { initData, state: authState } = useProtectedScreen();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [activeCount, setActiveCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -56,6 +57,7 @@ export function PantryDashboard() {
         const data = await fetchPantry(telegramInitData, appMode);
         setItems(data.items);
         setActiveCount(data.active_count);
+        console.info("[PlanAm] Pantry loaded");
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Не удалось загрузить запасы",
@@ -68,12 +70,10 @@ export function PantryDashboard() {
   );
 
   useEffect(() => {
-    if (initData) {
-      loadPantry(initData, mode);
-    } else {
-      setLoading(false);
+    if (authState === "ready" && initData) {
+      void loadPantry(initData, mode);
     }
-  }, [initData, loadPantry, mode]);
+  }, [initData, loadPantry, mode, authState]);
 
   const filteredItems = useMemo(() => {
     const now = Date.now();
@@ -179,19 +179,12 @@ export function PantryDashboard() {
     });
   }
 
-  if (!initData) {
+  if (authState !== "ready") {
     return (
-      <div className="mx-auto max-w-lg px-5 py-16 text-center">
-        <p className="text-sm text-stone-600">
-          Запасы доступны в Telegram Mini App после авторизации.
-        </p>
-        <Link
-          href="/"
-          className="mt-6 inline-block text-sm font-semibold text-emerald-700"
-        >
-          На главную
-        </Link>
-      </div>
+      <ProtectedScreenFallback
+        loadingMessage="Загружаем запасы..."
+        telegramMessage="Запасы доступны в Telegram Mini App после авторизации."
+      />
     );
   }
 

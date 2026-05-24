@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -15,6 +17,7 @@ from app.services.users import get_or_create_user, user_has_verified_phone
 from app.telegram.validate import TelegramAuthError, validate_init_data
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/telegram", response_model=TelegramAuthResponse)
@@ -31,6 +34,11 @@ def authenticate_telegram(
         ) from exc
 
     user, is_new = get_or_create_user(db, telegram_user)
+    logger.info(
+        "Telegram auth success user_id=%s is_new=%s",
+        user.id,
+        is_new,
+    )
     return TelegramAuthResponse(
         user=UserResponse.model_validate(user),
         is_new=is_new,
