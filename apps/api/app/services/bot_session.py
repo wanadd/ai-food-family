@@ -11,6 +11,7 @@ STATE_AWAITING_PHONE = "awaiting_phone"
 STATE_LEFTOVER_DISH = "leftover_dish"
 STATE_LEFTOVER_PORTIONS = "leftover_portions"
 STATE_PENDING_CONFIRM = "pending_confirm"
+STATE_AWAITING_ADMIN_PIN = "awaiting_admin_pin"
 
 
 def get_session(db: Session, telegram_id: int) -> TelegramBotSession | None:

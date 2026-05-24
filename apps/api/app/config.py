@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
     admin_telegram_ids: str = ""
+    admin_pin: str = ""
+    admin_panel_enabled: bool = True
     backup_root: str = "backups"
     environment: str = "development"
 
@@ -32,6 +34,10 @@ class Settings(BaseSettings):
             if part.isdigit():
                 ids.add(int(part))
         return ids
+
+    @property
+    def admin_panel_enabled_flag(self) -> bool:
+        return bool(self.admin_panel_enabled)
 
 
 settings = Settings()

@@ -66,6 +66,14 @@ OTHER_PERSON_CONTACT_TEXT = (
 CREATE_INVITE_LINK_CALLBACK = "create_family_invite_link"
 
 
+async def admin_bot_pin_if_needed(
+    db: Session, chat_id: int, from_user: dict[str, Any], text: str
+) -> bool:
+    from app.services import admin_bot
+
+    return await admin_bot.handle_admin_pin_message(db, chat_id, from_user, text)
+
+
 def _api_url(method: str) -> str:
     return f"https://api.telegram.org/bot{settings.telegram_bot_token}/{method}"
 
@@ -811,6 +819,16 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
 
     if text.startswith("/start"):
         await handle_start(db, chat_id, from_user, text)
+        return
+
+    command = text.split()[0].split("@")[0].lower() if text else ""
+    if command == "/admin":
+        from app.services import admin_bot
+
+        await admin_bot.handle_admin_command(db, chat_id, from_user)
+        return
+
+    if await admin_bot_pin_if_needed(db, chat_id, from_user, text):
         return
 
     if not user_has_legal_consent(user):

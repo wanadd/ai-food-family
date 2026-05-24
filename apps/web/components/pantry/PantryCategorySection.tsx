@@ -2,10 +2,12 @@
 
 import { PantryItemRow } from "@/components/pantry/PantryItemRow";
 import { categoryMeta } from "@/lib/shopping/labels";
+import type { ShoppingCategory } from "@/lib/shopping/types";
 import type { PantryItem } from "@/lib/pantry/types";
 
 type PantryCategorySectionProps = {
   category: string;
+  categories?: ShoppingCategory[];
   items: PantryItem[];
   expanded: boolean;
   onToggleExpand: () => void;
@@ -15,13 +17,14 @@ type PantryCategorySectionProps = {
 
 export function PantryCategorySection({
   category,
+  categories = [],
   items,
   expanded,
   onToggleExpand,
   onEdit,
   onDelete,
 }: PantryCategorySectionProps) {
-  const meta = categoryMeta(category, []);
+  const meta = categoryMeta(category, categories);
 
   return (
     <section className="rounded-xl border border-stone-100 bg-white">

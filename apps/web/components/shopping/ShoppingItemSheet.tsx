@@ -1,9 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
 import { Sheet } from "@/components/ui/Sheet";
-import { categoryMeta } from "@/lib/shopping/labels";
+import { CategoryPicker } from "@/components/shopping/CategoryPicker";
 import type { ShoppingCategory, ShoppingItemDraft } from "@/lib/shopping/types";
 import { UNIT_OPTIONS } from "@/lib/shopping/units";
 
@@ -30,36 +28,12 @@ export function ShoppingItemSheet({
   onSubmit,
   loading = false,
 }: ShoppingItemSheetProps) {
-  const [categoryInput, setCategoryInput] = useState(draft.category);
-
-  const knownSlugs = useMemo(() => {
-    const set = new Set<string>();
-    for (const cat of categories) {
-      set.add(cat.slug);
-    }
-    for (const slug of categorySlugsFromItems) {
-      set.add(slug);
-    }
-    return Array.from(set);
-  }, [categories, categorySlugsFromItems]);
-
-  const normalizedInput = categoryInput.trim().toLowerCase();
-  const matchesKnown = knownSlugs.some(
-    (slug) =>
-      slug === normalizedInput ||
-      categoryMeta(slug, categories).label.toLowerCase() ===
-        normalizedInput,
-  );
-  const showCreateCategory =
-    normalizedInput.length > 0 && !matchesKnown;
-
   return (
     <Sheet open={open} title={title} onClose={onClose}>
       <form
         className="space-y-3"
         onSubmit={(event) => {
           event.preventDefault();
-          onChange({ ...draft, category: categoryInput.trim() || draft.category });
           onSubmit();
         }}
       >
@@ -76,46 +50,15 @@ export function ShoppingItemSheet({
           />
         </label>
 
-        <label className="block">
-          <span className="text-xs font-semibold text-stone-500">Категория</span>
-          <input
-            value={categoryInput}
-            onChange={(event) => {
-              setCategoryInput(event.target.value);
-              onChange({ ...draft, category: event.target.value });
-            }}
-            list="shopping-categories"
-            placeholder="Продукты"
-            className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
-          />
-          <datalist id="shopping-categories">
-            {knownSlugs.map((slug) => (
-              <option
-                key={slug}
-                value={categoryMeta(slug, categories).label}
-              />
-            ))}
-          </datalist>
-        </label>
-
-        {showCreateCategory ? (
-          <div className="rounded-lg border border-emerald-100 bg-emerald-50/80 px-3 py-2">
-            <p className="text-xs font-semibold text-emerald-800">
-              Создать категорию: {categoryInput.trim()}
-            </p>
-            <label className="mt-2 flex items-center gap-2 text-xs text-stone-700">
-              <input
-                type="checkbox"
-                checked={draft.is_food}
-                onChange={(event) =>
-                  onChange({ ...draft, is_food: event.target.checked })
-                }
-                className="h-4 w-4 rounded border-stone-300 text-emerald-600"
-              />
-              Это продукты? (попадут в запасы при покупке)
-            </label>
-          </div>
-        ) : null}
+        <CategoryPicker
+          value={draft.category || "продукты"}
+          categories={categories}
+          extraSlugs={categorySlugsFromItems}
+          onChange={(slug) => onChange({ ...draft, category: slug })}
+          allowCreate
+          isFood={draft.is_food}
+          onIsFoodChange={(is_food) => onChange({ ...draft, is_food })}
+        />
 
         <div className="grid grid-cols-2 gap-2">
           <label className="block">

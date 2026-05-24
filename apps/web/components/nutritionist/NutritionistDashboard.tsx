@@ -20,18 +20,35 @@ import { fetchSelectedMenu } from "@/lib/menu/api";
 import type { MenuVariant } from "@/lib/menu/types";
 import { fetchPantry } from "@/lib/pantry/api";
 import type { PantryList } from "@/lib/pantry/types";
+import { NutritionistAdviceCard } from "@/components/nutritionist/NutritionistAdviceCard";
+import { buildDailyStatus } from "@/lib/nutritionist/daily-status";
 import { buildFamilyMemberInsights } from "@/lib/nutritionist/family-insights";
+import { buildGoalProgressCard } from "@/lib/nutritionist/goal-progress";
 import { pickMainAdvice } from "@/lib/nutritionist/main-advice";
-import { buildTodayStatus } from "@/lib/nutritionist/today-status";
+import { withReturnTo } from "@/lib/navigation/return-to";
 import { fetchProgressOverview } from "@/lib/progress/api";
 import type { ProgressOverview } from "@/lib/progress/types";
 import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 
+const NUTRI_RETURN = "/nutritionist";
+
 const QUICK_ACTIONS = [
   { href: "/nutritionist/chat", label: "Спросить нутрициолога", emoji: "💬" },
-  { href: "/progress?focus=weight", label: "Добавить вес", emoji: "⚖️" },
-  { href: "/progress?focus=training", label: "Добавить тренировку", emoji: "🏃" },
-  { href: "/profile/nutrition", label: "Изменить цель", emoji: "🎯" },
+  {
+    href: withReturnTo("/progress?focus=weight", NUTRI_RETURN),
+    label: "Добавить вес",
+    emoji: "⚖️",
+  },
+  {
+    href: withReturnTo("/progress?focus=training", NUTRI_RETURN),
+    label: "Добавить тренировку",
+    emoji: "🏃",
+  },
+  {
+    href: withReturnTo("/profile/nutrition", NUTRI_RETURN),
+    label: "Изменить цель",
+    emoji: "🎯",
+  },
 ] as const;
 
 export function NutritionistDashboard() {
@@ -78,13 +95,8 @@ export function NutritionistDashboard() {
   const goalLabel = getNutritionGoalLabel(profile);
   const profileComplete = isNutritionProfileComplete(profile);
 
-  const today = buildTodayStatus({
-    goalLabel,
-    progress,
-    familyName: context?.family?.name ?? null,
-    memberCount: personsCount,
-    mode,
-  });
+  const daily = buildDailyStatus({ progress, menu, mode });
+  const goalCard = buildGoalProgressCard(profile, progress);
 
   const advice = pickMainAdvice({
     profile,
@@ -123,71 +135,92 @@ export function NutritionistDashboard() {
       subtitle="Семейный AI-помощник по питанию"
       contentClassName="space-y-3"
     >
-      <section className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-600 to-emerald-800 p-5 text-white shadow-lg shadow-emerald-200/50">
-        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
+      {!profileComplete ? (
+        <section className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+          <p className="font-semibold text-stone-900">Заполните профиль питания</p>
+          <p className="mt-1 text-sm text-stone-600">
+            Это основа персональных советов ПланАм
+          </p>
+          <Link
+            href={withReturnTo("/profile/nutrition", NUTRI_RETURN)}
+            className="mt-3 inline-flex min-h-[44px] items-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white"
+          >
+            Открыть профиль
+          </Link>
+        </section>
+      ) : null}
+
+      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
           Сегодня
         </p>
-        {profileComplete ? (
-          <>
-            <h2 className="mt-2 text-2xl font-bold leading-tight">
-              {today.goalLabel}
-            </h2>
-            {today.goalToTarget ? (
-              <p className="mt-3 text-sm text-emerald-50">
-                До цели:{" "}
-                <span className="text-lg font-bold text-white">
-                  {today.goalToTarget}
-                </span>
-              </p>
-            ) : null}
-            {today.progressPercent != null ? (
-              <div className="mt-4">
-                <div className="mb-1 flex justify-between text-xs text-emerald-100">
-                  <span>Прогресс</span>
-                  <span className="font-bold">{today.progressPercent}%</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-emerald-900/40">
-                  <div
-                    className="h-full rounded-full bg-white transition-all"
-                    style={{ width: `${today.progressPercent}%` }}
-                  />
-                </div>
-              </div>
-            ) : null}
-            <p className="mt-4 text-sm leading-relaxed text-emerald-50">
-              {today.statusLine}
-            </p>
-            {today.familyLine ? (
-              <p className="mt-2 text-sm font-medium text-white">
-                {today.familyLine}
-              </p>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <p className="mt-2 text-lg font-semibold">Заполните профиль питания</p>
-            <p className="mt-2 text-sm text-emerald-50">
-              Это основа персональных советов ПланАм
-            </p>
-            <Link
-              href="/profile/nutrition"
-              className="mt-4 inline-flex min-h-[44px] items-center rounded-xl bg-white px-4 text-sm font-semibold text-emerald-800"
-            >
-              Открыть профиль
-            </Link>
-          </>
-        )}
+        <p className="mt-1 text-sm font-medium text-emerald-800">{daily.title}</p>
+        <ul className="mt-3 space-y-1.5 text-sm text-stone-700">
+          <li>{daily.caloriesLine}</li>
+          <li>{daily.proteinLine}</li>
+          <li>{daily.waterLine}</li>
+          <li>{daily.trainingLine}</li>
+          <li>{daily.menuLine}</li>
+        </ul>
+        {daily.todoLine ? (
+          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
+            Осталось: {daily.todoLine}
+          </p>
+        ) : null}
       </section>
 
-      <section className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-wide text-amber-900">
-          Совет ПланАм
+      <section className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+          Прогресс к цели
         </p>
-        <p className="mt-2 text-base font-semibold text-stone-900">{advice.title}</p>
-        <p className="mt-1.5 text-sm leading-relaxed text-stone-700">
-          {advice.body}
+        <p className="mt-1 text-lg font-bold text-stone-900">
+          {goalLabel ?? "Цель не задана"}
         </p>
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <dt className="text-stone-500">Старт</dt>
+            <dd className="font-semibold text-stone-900">{goalCard.startWeight}</dd>
+          </div>
+          <div>
+            <dt className="text-stone-500">Сейчас</dt>
+            <dd className="font-semibold text-stone-900">{goalCard.currentWeight}</dd>
+          </div>
+          <div>
+            <dt className="text-stone-500">Цель</dt>
+            <dd className="font-semibold text-stone-900">{goalCard.targetWeight}</dd>
+          </div>
+          <div>
+            <dt className="text-stone-500">Осталось</dt>
+            <dd className="font-semibold text-emerald-800">
+              {goalCard.remaining ?? "—"}
+            </dd>
+          </div>
+        </dl>
+        {goalCard.percent != null ? (
+          <div className="mt-3">
+            <div className="flex justify-between text-xs text-stone-600">
+              <span>Выполнение</span>
+              <span className="font-bold text-emerald-800">{goalCard.percent}%</span>
+            </div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-stone-100">
+              <div
+                className="h-full rounded-full bg-emerald-500"
+                style={{ width: `${goalCard.percent}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
+        {goalCard.paceLine ? (
+          <p className="mt-2 text-sm text-stone-600">{goalCard.paceLine}</p>
+        ) : null}
+        {goalCard.forecastLine ? (
+          <p className="mt-1 text-sm text-stone-600">{goalCard.forecastLine}</p>
+        ) : null}
       </section>
+
+      {initData ? (
+        <NutritionistAdviceCard advice={advice} initData={initData} mode={mode} />
+      ) : null}
 
       <section>
         <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-stone-500">

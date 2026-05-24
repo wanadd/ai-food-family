@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BotQuickInputHint } from "@/components/bot/BotQuickInputHint";
@@ -16,6 +17,7 @@ import {
   createShoppingCategory,
   createShoppingItem,
   deleteShoppingItem,
+  fetchShoppingCategories,
   fetchShoppingList,
   syncShoppingList,
   toggleShoppingItem,
@@ -31,7 +33,21 @@ import {
 
 const POLL_INTERVAL_MS = 4000;
 
+function mergeCategories(
+  fromList: ShoppingList["categories"],
+  extra: ShoppingList["categories"],
+): ShoppingList["categories"] {
+  const map = new Map<number, ShoppingList["categories"][number]>();
+  for (const c of [...fromList, ...extra]) {
+    map.set(c.id, c);
+  }
+  return Array.from(map.values()).sort((a, b) =>
+    a.name.localeCompare(b.name, "ru"),
+  );
+}
+
 export function ShoppingListView() {
+  const searchParams = useSearchParams();
   const { mode } = useAppMode();
   const { initData, state: authState } = useProtectedScreen();
   const [list, setList] = useState<ShoppingList | null>(null);
@@ -58,7 +74,10 @@ export function ShoppingListView() {
       }
       setError(null);
       try {
-        const data = await fetchShoppingList(telegramInitData, appMode);
+        const [data, extraCats] = await Promise.all([
+          fetchShoppingList(telegramInitData, appMode),
+          fetchShoppingCategories(telegramInitData, appMode).catch(() => []),
+        ]);
         if (
           silent &&
           updatedAtRef.current &&
@@ -67,7 +86,10 @@ export function ShoppingListView() {
           return;
         }
         updatedAtRef.current = data.updated_at;
-        setList(data);
+        setList({
+          ...data,
+          categories: mergeCategories(data.categories ?? [], extraCats),
+        });
         if (!silent) {
           console.info("[PlanAm] Shopping loaded");
         }
@@ -91,6 +113,19 @@ export function ShoppingListView() {
       void loadList(initData, mode);
     }
   }, [initData, loadList, mode, authState]);
+
+  useEffect(() => {
+    const addName = searchParams.get("add");
+    if (addName && authState === "ready") {
+      setEditingItem(null);
+      setItemDraft({
+        ...EMPTY_SHOPPING_DRAFT,
+        name: addName,
+        category: "продукты",
+      });
+      setItemSheetOpen(true);
+    }
+  }, [searchParams, authState]);
 
   useEffect(() => {
     if (!initData) {

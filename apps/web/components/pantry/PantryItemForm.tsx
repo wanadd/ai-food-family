@@ -1,6 +1,8 @@
 "use client";
 
 import { Sheet } from "@/components/ui/Sheet";
+import { CategoryPicker } from "@/components/shopping/CategoryPicker";
+import type { ShoppingCategory } from "@/lib/shopping/types";
 import { UNIT_OPTIONS } from "@/lib/shopping/units";
 import type { PantryItemDraft } from "@/lib/pantry/types";
 
@@ -8,27 +10,18 @@ type PantryItemFormProps = {
   open: boolean;
   title: string;
   draft: PantryItemDraft;
+  categories: ShoppingCategory[];
   onChange: (draft: PantryItemDraft) => void;
   onSubmit: () => void;
   onClose: () => void;
   loading?: boolean;
 };
 
-const CATEGORY_SUGGESTIONS = [
-  "продукты",
-  "молочное",
-  "мясо",
-  "овощи",
-  "фрукты",
-  "крупы",
-  "напитки",
-  "другое",
-];
-
 export function PantryItemForm({
   open,
   title,
   draft,
+  categories,
   onChange,
   onSubmit,
   onClose,
@@ -56,22 +49,12 @@ export function PantryItemForm({
           />
         </label>
 
-        <label className="block">
-          <span className="text-xs font-semibold text-stone-500">Категория</span>
-          <input
-            value={draft.category}
-            onChange={(event) =>
-              onChange({ ...draft, category: event.target.value })
-            }
-            list="pantry-categories"
-            className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
-          />
-          <datalist id="pantry-categories">
-            {CATEGORY_SUGGESTIONS.map((cat) => (
-              <option key={cat} value={cat} />
-            ))}
-          </datalist>
-        </label>
+        <CategoryPicker
+          value={draft.category || "продукты"}
+          categories={categories}
+          onChange={(slug) => onChange({ ...draft, category: slug })}
+          allowCreate
+        />
 
         <div className="grid grid-cols-2 gap-2">
           <label className="block">

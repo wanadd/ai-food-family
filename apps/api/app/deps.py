@@ -11,6 +11,7 @@ from app.services.dev_auth import (
     is_dev_init_data,
 )
 from app.services.legal_consent import LEGAL_REQUIRED_MESSAGE, user_can_access_app
+from app.services.admin_auth import require_valid_session
 from app.services.users import (
     PHONE_REQUIRED_MESSAGE,
     get_or_create_user,
@@ -51,6 +52,11 @@ def get_current_user(
 
 
 def get_verified_user(user: User = Depends(get_current_user)) -> User:
+    if getattr(user, "is_blocked", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Аккаунт заблокирован",
+        )
     if not user_can_access_app(user):
         from app.services.legal_consent import user_has_legal_consent
 
@@ -79,10 +85,14 @@ def is_admin_user(user: User) -> bool:
     return bool(admin_ids) and user.telegram_id in admin_ids
 
 
-def require_admin_user(user: User = Depends(get_current_user)) -> User:
+def require_admin_user(
+    user: User = Depends(get_current_user),
+    x_admin_session: str | None = Header(default=None, alias="X-Admin-Session"),
+    db: Session = Depends(get_db),
+) -> User:
+    if not settings.admin_panel_enabled_flag:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     if not is_admin_user(user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Доступ только для администратора проекта",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    require_valid_session(db, user, x_admin_session)
     return user

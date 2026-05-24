@@ -1,40 +1,31 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { PageLoading } from "@/components/ui/PageLoading";
 import {
-  createAdminBackup,
-  fetchAdminAiUsage,
-  fetchAdminBackups,
   fetchAdminFamilies,
   fetchAdminPlans,
   fetchAdminSubscriptions,
   fetchAdminSummary,
+  fetchAdminAmaTransactions,
+  fetchAdminAmsSummary,
   fetchAdminUsers,
   grantAdminAms,
+  grantAdminFamilyAms,
   grantAdminSubscription,
 } from "@/lib/admin/api";
 import type {
-  AdminAiUsageRow,
-  AdminBackupRow,
+  AdminAmaTransactionRow,
+  AdminAmsSummary,
   AdminFamilyRow,
   AdminPlanOption,
   AdminSubscriptionRow,
   AdminSummary,
+  AdminTab,
   AdminUserRow,
 } from "@/lib/admin/types";
 import { useTelegram } from "@/components/TelegramProvider";
-
-type Tab =
-  | "summary"
-  | "users"
-  | "families"
-  | "subscriptions"
-  | "ams"
-  | "ai"
-  | "backups";
 
 function formatDate(value: string) {
   try {
@@ -48,12 +39,6 @@ function formatDate(value: string) {
   } catch {
     return value;
   }
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function ConfirmButton({
@@ -112,10 +97,9 @@ function ConfirmButton({
   );
 }
 
-export function AdminDashboard() {
-  const [tab, setTab] = useState<Tab>("summary");
+export function AdminDashboard({ forcedTab = "summary" }: { forcedTab?: AdminTab }) {
+  const tab = forcedTab;
   const [loading, setLoading] = useState(true);
-  const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -123,15 +107,19 @@ export function AdminDashboard() {
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [families, setFamilies] = useState<AdminFamilyRow[]>([]);
   const [subscriptions, setSubscriptions] = useState<AdminSubscriptionRow[]>([]);
-  const [aiUsage, setAiUsage] = useState<AdminAiUsageRow[]>([]);
-  const [backups, setBackups] = useState<AdminBackupRow[]>([]);
+  const [amsSummary, setAmsSummary] = useState<AdminAmsSummary | null>(null);
+  const [amaTx, setAmaTx] = useState<AdminAmaTransactionRow[]>([]);
   const [plans, setPlans] = useState<AdminPlanOption[]>([]);
+
+  const [userSearch, setUserSearch] = useState("");
+  const [userFilter, setUserFilter] = useState("all");
 
   const [grantUserId, setGrantUserId] = useState("");
   const [grantPlan, setGrantPlan] = useState("family");
   const [grantDays, setGrantDays] = useState("30");
   const [promoNote, setPromoNote] = useState("");
   const [amsUserId, setAmsUserId] = useState("");
+  const [amsFamilyId, setAmsFamilyId] = useState("");
   const [amsAmount, setAmsAmount] = useState("100");
 
   const { initData } = useTelegram();
@@ -145,31 +133,27 @@ export function AdminDashboard() {
     setError(null);
     try {
       if (tab === "summary") {
-        const data = await fetchAdminSummary(initData);
-        if (!data) {
-          setForbidden(true);
-          return;
-        }
-        setSummary(data);
-        setForbidden(false);
+        setSummary(await fetchAdminSummary(initData));
       } else if (tab === "users") {
-        setUsers(await fetchAdminUsers(initData));
+        setUsers(
+          await fetchAdminUsers(initData, {
+            q: userSearch || undefined,
+            filter: userFilter,
+          }),
+        );
       } else if (tab === "families") {
         setFamilies(await fetchAdminFamilies(initData));
       } else if (tab === "subscriptions") {
         setSubscriptions(await fetchAdminSubscriptions(initData));
         setPlans(await fetchAdminPlans(initData));
-      } else if (tab === "ai") {
-        setAiUsage(await fetchAdminAiUsage(initData));
-      } else if (tab === "backups") {
-        setBackups(await fetchAdminBackups(initData));
       } else if (tab === "ams") {
-        setPlans(await fetchAdminPlans(initData));
+        setAmsSummary(await fetchAdminAmsSummary(initData));
+        setAmaTx(await fetchAdminAmaTransactions(initData));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка загрузки");
     }
-  }, [initData, tab]);
+  }, [initData, tab, userSearch, userFilter]);
 
   useEffect(() => {
     setLoading(true);
@@ -205,70 +189,28 @@ export function AdminDashboard() {
     setMessage(result.message);
   };
 
-  const handleCreateBackup = async () => {
+  const handleGrantFamilyAms = async () => {
     if (!initData) return;
-    const result = await createAdminBackup(initData);
+    const familyId = Number(amsFamilyId);
+    const amount = Number(amsAmount);
+    if (!familyId || !amount) {
+      setError("Укажите family_id и сумму");
+      return;
+    }
+    const result = await grantAdminFamilyAms(initData, {
+      family_id: familyId,
+      amount,
+    });
     setMessage(result.message);
-    setBackups(await fetchAdminBackups(initData));
+    await loadTab();
   };
 
-  if (loading && !summary && !forbidden) {
-    return <PageLoading message="Загружаем админку..." />;
+  if (loading && tab === "summary" && !summary) {
+    return <PageLoading message="Загружаем..." />;
   }
-
-  if (forbidden) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-10 text-center">
-        <h1 className="text-lg font-bold text-stone-900">Нет доступа</h1>
-        <p className="mt-2 text-sm text-stone-600">
-          Раздел только для владельца проекта. Проверьте ADMIN_TELEGRAM_IDS на
-          сервере.
-        </p>
-        <Link href="/profile" className="mt-6 inline-block text-sm text-teal-700">
-          ← В профиль
-        </Link>
-      </div>
-    );
-  }
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "summary", label: "Сводка" },
-    { id: "users", label: "Пользователи" },
-    { id: "families", label: "Семьи" },
-    { id: "subscriptions", label: "Подписки" },
-    { id: "ams", label: "Амы" },
-    { id: "ai", label: "AI" },
-    { id: "backups", label: "Backup" },
-  ];
 
   return (
-    <div className="min-h-screen bg-stone-100 pb-24">
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white px-4 py-3">
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-lg font-bold text-stone-900">Админ ПланАм</h1>
-          <Link href="/profile" className="text-xs text-stone-500">
-            Профиль
-          </Link>
-        </div>
-        <div className="mt-2 flex gap-1 overflow-x-auto pb-1">
-          {tabs.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setTab(item.id)}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
-                tab === item.id
-                  ? "bg-stone-900 text-white"
-                  : "bg-stone-200 text-stone-700"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
+    <div className="space-y-3">
         {error ? (
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
@@ -284,15 +226,14 @@ export function AdminDashboard() {
           <section className="grid grid-cols-2 gap-2">
             {[
               ["Пользователей", summary.total_users],
-              ["Сегодня", summary.users_today],
+              ["Активно сегодня", summary.active_today],
+              ["Активно 7 дней", summary.active_7d],
               ["Семей", summary.total_families],
-              ["Активных подписок", summary.active_subscriptions],
-              ["Амов списано", summary.ams_used_total],
-              ["AI-запросов", summary.ai_requests_total],
-              [
-                "AI cost (USD)",
-                summary.ai_estimated_cost_usd.toFixed(4),
-              ],
+              ["Подписок", summary.active_subscriptions],
+              ["Бесплатных", summary.free_users],
+              ["Баланс Амов", summary.total_ams_balance],
+              ["OpenAI сегодня $", summary.openai_cost_today_usd.toFixed(4)],
+              ["OpenAI месяц $", summary.openai_cost_month_usd.toFixed(4)],
               ["Ошибок 24ч", summary.errors_last_24h],
             ].map(([label, value]) => (
               <div
@@ -308,6 +249,26 @@ export function AdminDashboard() {
 
         {tab === "users" ? (
           <section className="space-y-2">
+            <div className="space-y-2 rounded-xl border border-stone-200 bg-white p-3">
+              <input
+                type="search"
+                placeholder="Имя, username или Telegram ID"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="w-full rounded border border-stone-300 px-2 py-1.5 text-sm"
+              />
+              <select
+                value={userFilter}
+                onChange={(e) => setUserFilter(e.target.value)}
+                className="w-full rounded border border-stone-300 px-2 py-1.5 text-sm"
+              >
+                <option value="all">Все</option>
+                <option value="active">Активные</option>
+                <option value="free">Бесплатные</option>
+                <option value="paid">Платные</option>
+                <option value="blocked">Заблокированные</option>
+              </select>
+            </div>
             {users.map((user) => (
               <article
                 key={user.id}
@@ -319,7 +280,7 @@ export function AdminDashboard() {
                 </p>
                 <p className="mt-1 text-xs text-stone-600">
                   {user.plan_code} ({user.plan_status}) · {user.ama_balance} Амов ·
-                  меню: {user.menu_count}
+                  {user.family_name ? ` ${user.family_name} ·` : ""} {user.status}
                 </p>
                 <p className="text-[11px] text-stone-400">
                   Рег: {formatDate(user.created_at)} · Активность:{" "}
@@ -413,81 +374,83 @@ export function AdminDashboard() {
         ) : null}
 
         {tab === "ams" ? (
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
-            <p className="font-medium text-amber-950">Начислить Амы</p>
-            <div className="mt-2 space-y-2">
-              <input
-                type="number"
-                placeholder="user_id"
-                value={amsUserId}
-                onChange={(e) => setAmsUserId(e.target.value)}
-                className="w-full rounded border border-stone-300 px-2 py-1.5 text-sm"
-              />
-              <input
-                type="number"
-                placeholder="Количество Амов"
-                value={amsAmount}
-                onChange={(e) => setAmsAmount(e.target.value)}
-                className="w-full rounded border border-stone-300 px-2 py-1.5 text-sm"
-              />
-              <ConfirmButton
-                label="Начислить Амы"
-                confirmText="Подтвердить начисление"
-                variant="danger"
-                onConfirm={handleGrantAms}
-              />
-            </div>
-          </section>
+          <>
+            {amsSummary ? (
+              <section className="grid grid-cols-2 gap-2">
+                {[
+                  ["Начислено", amsSummary.credited_total],
+                  ["Списано", amsSummary.debited_total],
+                  ["Баланс users", amsSummary.user_balance_total],
+                  ["Баланс families", amsSummary.family_balance_total],
+                  ["Сегодня", amsSummary.spent_today],
+                  ["Месяц", amsSummary.spent_month],
+                ].map(([label, value]) => (
+                  <div
+                    key={String(label)}
+                    className="rounded-xl border border-stone-200 bg-white p-3"
+                  >
+                    <p className="text-[11px] text-stone-500">{label}</p>
+                    <p className="mt-1 text-lg font-semibold">{value}</p>
+                  </div>
+                ))}
+              </section>
+            ) : null}
+            <section className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
+              <p className="font-medium text-amber-950">Начислить Амы</p>
+              <div className="mt-2 space-y-2">
+                <input
+                  type="number"
+                  placeholder="user_id"
+                  value={amsUserId}
+                  onChange={(e) => setAmsUserId(e.target.value)}
+                  className="w-full rounded border border-stone-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  type="number"
+                  placeholder="family_id (семья)"
+                  value={amsFamilyId}
+                  onChange={(e) => setAmsFamilyId(e.target.value)}
+                  className="w-full rounded border border-stone-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  type="number"
+                  placeholder="Количество Амов"
+                  value={amsAmount}
+                  onChange={(e) => setAmsAmount(e.target.value)}
+                  className="w-full rounded border border-stone-300 px-2 py-1.5 text-sm"
+                />
+                <ConfirmButton
+                  label="Начислить пользователю"
+                  confirmText="Подтвердить"
+                  variant="danger"
+                  onConfirm={handleGrantAms}
+                />
+                <ConfirmButton
+                  label="Начислить семье"
+                  confirmText="Подтвердить"
+                  onConfirm={handleGrantFamilyAms}
+                />
+              </div>
+            </section>
+            <section className="space-y-2">
+              {amaTx.map((tx) => (
+                <article
+                  key={tx.id}
+                  className="rounded-xl border border-stone-200 bg-white p-3 text-sm"
+                >
+                  <p className="font-medium">
+                    {tx.amount > 0 ? "+" : ""}
+                    {tx.amount} · {tx.reason}
+                  </p>
+                  <p className="text-xs text-stone-500">
+                    user {tx.user_id ?? "—"} · family {tx.family_id ?? "—"} ·{" "}
+                    {formatDate(tx.created_at)}
+                  </p>
+                </article>
+              ))}
+            </section>
+          </>
         ) : null}
-
-        {tab === "ai" ? (
-          <section className="space-y-2">
-            {aiUsage.map((row) => (
-              <article
-                key={row.id}
-                className="rounded-xl border border-stone-200 bg-white p-3 text-sm"
-              >
-                <p className="font-medium">{row.action_type}</p>
-                <p className="text-xs text-stone-600">
-                  {row.user_name} · {row.ams_spent} Амов · {row.model ?? "—"}
-                </p>
-                <p className="text-[11px] text-stone-400">
-                  {row.input_tokens ?? "—"} / {row.output_tokens ?? "—"} tok · cost{" "}
-                  {row.estimated_cost ?? "—"} · {formatDate(row.created_at)}
-                </p>
-              </article>
-            ))}
-          </section>
-        ) : null}
-
-        {tab === "backups" ? (
-          <section className="space-y-3">
-            <ConfirmButton
-              label="Создать backup"
-              confirmText="Подтвердить создание"
-              variant="danger"
-              onConfirm={handleCreateBackup}
-            />
-            <p className="text-xs text-stone-500">
-              На сервере также: ./scripts/backup.sh (см. docs/DEPLOY_SAFE.md)
-            </p>
-            {backups.map((backup) => (
-              <article
-                key={backup.id}
-                className="rounded-xl border border-stone-200 bg-white p-3 text-sm"
-              >
-                <p className="font-semibold">{backup.id}</p>
-                <p className="text-xs text-stone-600">
-                  {formatBytes(backup.size_bytes)} · БД:{" "}
-                  {backup.has_database ? "да" : "нет"} · .env:{" "}
-                  {backup.has_env ? "да" : "нет"}
-                </p>
-                <p className="text-[11px] text-stone-400">{backup.created_at}</p>
-              </article>
-            ))}
-          </section>
-        ) : null}
-      </main>
     </div>
   );
 }

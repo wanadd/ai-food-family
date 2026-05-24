@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ChipSelect } from "@/components/onboarding/ChipSelect";
@@ -15,6 +15,11 @@ import { ToggleRow } from "@/components/nutrition-profile/ToggleRow";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useTelegram } from "@/components/TelegramProvider";
 import { fetchMyFamily, setAllowAdminProfileEdit } from "@/lib/family/api";
+import {
+  RETURN_TO_PARAM,
+  backLabelForReturnTo,
+  sanitizeReturnTo,
+} from "@/lib/navigation/return-to";
 import {
   fetchNutritionProfile,
   saveNutritionProfile,
@@ -81,6 +86,8 @@ function proSummary(data: NutritionProfileData): string {
 
 export function NutritionProfileForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM), "/profile");
   const { showToast } = useToast();
   const { initData } = useTelegram();
   const [data, setData] = useState<NutritionProfileData>(INITIAL_NUTRITION_PROFILE);
@@ -160,7 +167,7 @@ export function NutritionProfileForm() {
     try {
       await saveNutritionProfile(initData, { ...data, completed: true });
       await showToast("✓ Сохранено");
-      router.push("/profile");
+      router.replace(returnTo);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось сохранить");
     } finally {
@@ -184,7 +191,7 @@ export function NutritionProfileForm() {
     <ScreenLayout
       title="Профиль питания"
       subtitle="Откройте раздел и сохраните изменения"
-      back={{ label: "Профиль", href: "/profile" }}
+      back={{ label: backLabelForReturnTo(returnTo), href: returnTo }}
       footer={
         <StickyBottomBar>
           <button

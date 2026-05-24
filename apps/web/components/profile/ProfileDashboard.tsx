@@ -48,8 +48,23 @@ function SettingsGearLink() {
   );
 }
 
-function UserAvatar({ name }: { name: string }) {
+function UserAvatar({
+  name,
+  photoUrl,
+}: {
+  name: string;
+  photoUrl: string | null | undefined;
+}) {
   const initial = name.trim().charAt(0).toUpperCase() || "П";
+  if (photoUrl) {
+    return (
+      <img
+        src={photoUrl}
+        alt=""
+        className="h-14 w-14 shrink-0 rounded-2xl object-cover shadow-md ring-2 ring-white"
+      />
+    );
+  }
   return (
     <div
       className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-xl font-bold text-white shadow-md shadow-emerald-200/50"
@@ -113,7 +128,7 @@ export function ProfileDashboard() {
         <>
           <section className="rounded-3xl border border-stone-100 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-4">
-              <UserAvatar name={fullName} />
+              <UserAvatar name={fullName} photoUrl={user?.photo_url} />
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-xl font-bold text-stone-900">
                   {fullName}

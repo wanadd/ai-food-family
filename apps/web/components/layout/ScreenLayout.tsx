@@ -44,7 +44,7 @@ export function ScreenLayout({
       </header>
 
       <main
-        className={`mx-auto max-w-lg px-4 py-4 sm:px-5 ${
+        className={`mx-auto max-w-lg px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:px-5 ${
           footer ? "pb-[calc(8.5rem+env(safe-area-inset-bottom,0px))]" : ""
         } ${contentClassName}`}
       >

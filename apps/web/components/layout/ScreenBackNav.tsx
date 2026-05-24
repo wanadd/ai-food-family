@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { usePathname } from "next/navigation";
+
 import { useScrollPastRatio } from "@/hooks/useScrollPastRatio";
 import { FLOATING_BACK_OFFSET } from "@/lib/layout/constants";
+import { isTabRoute } from "@/lib/navigation/return-to";
 
 export type ScreenBackConfig = {
   label: string;
@@ -21,10 +24,12 @@ type ScreenBackNavProps = {
 export function ScreenBackNav({
   back,
   className = "",
-  showFloating = true,
+  showFloating = false,
 }: ScreenBackNavProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const scrolled = useScrollPastRatio(0.3);
+  const allowFloating = showFloating && !isTabRoute(pathname);
 
   function goBack() {
     if (back.onClick) {
@@ -53,7 +58,7 @@ export function ScreenBackNav({
   return (
     <>
       <div className={className}>{topNav}</div>
-      {showFloating && scrolled ? (
+      {allowFloating && scrolled ? (
         <button
           type="button"
           onClick={goBack}

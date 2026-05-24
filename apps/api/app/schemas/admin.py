@@ -6,11 +6,17 @@ from pydantic import BaseModel, Field
 class AdminSummaryResponse(BaseModel):
     total_users: int
     users_today: int
+    active_today: int
+    active_7d: int
     total_families: int
     active_subscriptions: int
+    free_users: int
+    total_ams_balance: int
     ams_used_total: int
     ai_requests_total: int
     ai_estimated_cost_usd: float
+    openai_cost_today_usd: float
+    openai_cost_month_usd: float
     errors_last_24h: int
 
 
@@ -25,6 +31,27 @@ class AdminUserRow(BaseModel):
     ama_balance: int
     menu_count: int
     last_activity_at: datetime
+    family_name: str | None = None
+    is_blocked: bool = False
+    status: str = "inactive"
+
+
+class AdminUserDetail(BaseModel):
+    id: int
+    display_name: str
+    telegram_id: int
+    username: str | None
+    created_at: datetime
+    last_activity_at: datetime
+    family_name: str | None
+    plan_code: str
+    plan_status: str
+    ama_balance: int
+    is_blocked: bool
+    ai_requests: int
+    ams_spent: int
+    openai_cost_usd: float
+    menu_count: int
 
 
 class AdminFamilyRow(BaseModel):
@@ -35,6 +62,9 @@ class AdminFamilyRow(BaseModel):
     admin_name: str
     admin_user_id: int | None
     created_at: datetime
+    ama_balance: int = 0
+    openai_cost_usd: float = 0.0
+    is_blocked: bool = False
 
 
 class AdminSubscriptionRow(BaseModel):
@@ -64,6 +94,63 @@ class AdminAiUsageRow(BaseModel):
     created_at: datetime
 
 
+class AdminOpenAiCategory(BaseModel):
+    category: str
+    requests: int
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    openai_cost_usd: float
+    ams_spent: int
+    avg_cost_usd: float
+
+
+class AdminOpenAiStats(BaseModel):
+    period: str
+    requests: int
+    openai_cost_usd: float
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    ams_spent: int
+    menu_generations: int
+    avg_request_cost_usd: float
+    avg_menu_cost_usd: float
+    avg_user_cost_usd: float
+    avg_family_cost_usd: float
+    categories: list[AdminOpenAiCategory]
+
+
+class AdminAmsSummary(BaseModel):
+    credited_total: int
+    debited_total: int
+    user_balance_total: int
+    family_balance_total: int
+    spent_today: int
+    spent_month: int
+
+
+class AdminAmaTransactionRow(BaseModel):
+    id: int
+    created_at: datetime
+    user_id: int | None
+    family_id: int | None
+    amount: int
+    reason: str
+    type: str
+
+
+class AdminErrorRow(BaseModel):
+    id: int
+    error_type: str
+    user_id: int | None
+    family_id: int | None
+    endpoint: str | None
+    message: str
+    status: int | None
+    created_at: datetime
+
+
 class AdminGrantSubscriptionRequest(BaseModel):
     user_id: int
     plan_code: str
@@ -77,9 +164,30 @@ class AdminGrantAmsRequest(BaseModel):
     reason: str = Field(default="admin_grant", max_length=64)
 
 
-class AdminGrantResponse(BaseModel):
+class AdminGrantFamilyAmsRequest(BaseModel):
+    family_id: int
+    amount: int = Field(ge=1, le=1_000_000)
+    reason: str = Field(default="admin_grant", max_length=64)
+
+
+class AdminDeductAmsRequest(BaseModel):
     user_id: int
+    amount: int = Field(ge=1, le=1_000_000)
+    reason: str = Field(default="admin_deduct", max_length=64)
+
+
+class AdminBlockRequest(BaseModel):
+    blocked: bool = True
+
+
+class AdminGrantResponse(BaseModel):
+    user_id: int | None = None
+    family_id: int | None = None
     message: str
+
+
+class AdminPingResponse(BaseModel):
+    ok: bool = True
 
 
 class AdminBackupRow(BaseModel):

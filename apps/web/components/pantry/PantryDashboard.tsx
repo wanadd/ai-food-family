@@ -17,6 +17,8 @@ import {
   fetchPantry,
   updatePantryItem,
 } from "@/lib/pantry/api";
+import { fetchShoppingCategories } from "@/lib/shopping/api";
+import type { ShoppingCategory } from "@/lib/shopping/types";
 import { categoryMeta } from "@/lib/shopping/labels";
 import {
   EMPTY_PANTRY_DRAFT,
@@ -48,15 +50,20 @@ export function PantryDashboard() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PantryItem | null>(null);
   const [draft, setDraft] = useState<PantryItemDraft>(EMPTY_PANTRY_DRAFT);
+  const [categories, setCategories] = useState<ShoppingCategory[]>([]);
 
   const loadPantry = useCallback(
     async (telegramInitData: string, appMode: typeof mode) => {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchPantry(telegramInitData, appMode);
+        const [data, cats] = await Promise.all([
+          fetchPantry(telegramInitData, appMode),
+          fetchShoppingCategories(telegramInitData, appMode).catch(() => []),
+        ]);
         setItems(data.items);
         setActiveCount(data.active_count);
+        setCategories(cats);
         console.info("[PlanAm] Pantry loaded");
       } catch (err) {
         setError(
@@ -105,9 +112,12 @@ export function PantryDashboard() {
       buckets.set(cat, existing);
     }
     return Array.from(buckets.entries()).sort(([a], [b]) =>
-      categoryMeta(a, []).label.localeCompare(categoryMeta(b, []).label, "ru"),
+      categoryMeta(a, categories).label.localeCompare(
+        categoryMeta(b, categories).label,
+        "ru",
+      ),
     );
-  }, [filteredItems]);
+  }, [filteredItems, categories]);
 
   function openAdd() {
     setEditingItem(null);
@@ -270,6 +280,7 @@ export function PantryDashboard() {
             <PantryCategorySection
               key={category}
               category={category}
+              categories={categories}
               items={categoryItems}
               expanded={expanded.has(category)}
               onToggleExpand={() => toggleCategory(category)}
@@ -284,6 +295,7 @@ export function PantryDashboard() {
         open={formOpen}
         title={editingItem ? "Редактировать" : "Добавить в запасы"}
         draft={draft}
+        categories={categories}
         onChange={setDraft}
         onClose={() => {
           setFormOpen(false);

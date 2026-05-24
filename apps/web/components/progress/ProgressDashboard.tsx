@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -14,6 +14,11 @@ import {
   fetchProgressOverview,
   updateProgressPrivacy,
 } from "@/lib/progress/api";
+import {
+  RETURN_TO_PARAM,
+  backLabelForReturnTo,
+  sanitizeReturnTo,
+} from "@/lib/navigation/return-to";
 import {
   STATUS_LABELS,
   formatWater,
@@ -39,7 +44,9 @@ function statusColor(status: string): string {
 }
 
 export function ProgressDashboard() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM), "/profile");
   const { initData, isTelegram } = useTelegram();
   const { mode } = useAppMode();
   const [data, setData] = useState<ProgressOverview | null>(null);
@@ -110,6 +117,9 @@ export function ProgressDashboard() {
       setHips("");
       setWeightNote("");
       await load();
+      if (returnTo.startsWith("/nutritionist")) {
+        router.replace(returnTo);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
     } finally {
@@ -133,6 +143,9 @@ export function ProgressDashboard() {
       setTrainingMin("");
       setTrainingNote("");
       await load();
+      if (returnTo.startsWith("/nutritionist")) {
+        router.replace(returnTo);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
     } finally {
@@ -179,7 +192,7 @@ export function ProgressDashboard() {
     <ScreenLayout
       title="Прогресс"
       subtitle="ПланАм PRO — сопровождение ваших целей"
-      back={{ label: "Профиль", href: "/profile" }}
+      back={{ label: backLabelForReturnTo(returnTo), href: returnTo }}
       contentClassName="space-y-3"
     >
         {error ? (

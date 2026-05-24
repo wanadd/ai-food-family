@@ -512,6 +512,58 @@ def run_schema_migrations(engine: Engine) -> None:
         """,
         "CREATE INDEX IF NOT EXISTS ix_meal_checkins_family_date ON meal_checkins (family_id, planned_date);",
         "CREATE INDEX IF NOT EXISTS ix_meal_checkins_user_date ON meal_checkins (user_id, planned_date);",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE families ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE",
+        """
+        CREATE TABLE IF NOT EXISTS admin_sessions (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            telegram_id BIGINT NOT NULL,
+            session_token VARCHAR(64) NOT NULL UNIQUE,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            expires_at TIMESTAMPTZ NOT NULL,
+            last_used_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_admin_sessions_user_id ON admin_sessions (user_id);",
+        "CREATE INDEX IF NOT EXISTS ix_admin_sessions_telegram_id ON admin_sessions (telegram_id);",
+        "CREATE INDEX IF NOT EXISTS ix_admin_sessions_token ON admin_sessions (session_token);",
+        """
+        CREATE TABLE IF NOT EXISTS admin_login_attempts (
+            id SERIAL PRIMARY KEY,
+            telegram_id BIGINT NOT NULL,
+            success BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_admin_login_attempts_telegram_id ON admin_login_attempts (telegram_id);",
+        """
+        CREATE TABLE IF NOT EXISTS admin_actions (
+            id SERIAL PRIMARY KEY,
+            admin_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            action_type VARCHAR(64) NOT NULL,
+            target_type VARCHAR(32),
+            target_id INTEGER,
+            metadata_json JSONB NOT NULL DEFAULT '{}',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_admin_actions_admin_user_id ON admin_actions (admin_user_id);",
+        """
+        CREATE TABLE IF NOT EXISTS admin_error_logs (
+            id SERIAL PRIMARY KEY,
+            error_type VARCHAR(32) NOT NULL DEFAULT 'unknown',
+            user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            family_id INTEGER REFERENCES families(id) ON DELETE SET NULL,
+            endpoint VARCHAR(512),
+            message TEXT NOT NULL DEFAULT '',
+            stack TEXT,
+            status INTEGER,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_admin_error_logs_created_at ON admin_error_logs (created_at);",
     ]
 
     with engine.begin() as connection:
