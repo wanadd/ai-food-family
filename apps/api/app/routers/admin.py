@@ -9,13 +9,17 @@ from app.models.user import User
 from app.schemas.admin import (
     AdminAiUsageRow,
     AdminAmaTransactionRow,
+    AdminAmsActionRequest,
     AdminAmsSummary,
     AdminBackupCreateResponse,
     AdminBackupRow,
-    AdminBlockRequest,
+    AdminBlockReasonRequest,
     AdminDeductAmsRequest,
     AdminErrorRow,
+    AdminFamilyCard,
+    AdminFamilyRenameRequest,
     AdminFamilyRow,
+    AdminFamilyTransferRequest,
     AdminGrantAmsRequest,
     AdminGrantFamilyAmsRequest,
     AdminGrantResponse,
@@ -23,12 +27,15 @@ from app.schemas.admin import (
     AdminOpenAiStats,
     AdminPingResponse,
     AdminPlanOption,
+    AdminSubscriptionActionRequest,
+    AdminSubscriptionExtendRequest,
     AdminSubscriptionRow,
     AdminSummaryResponse,
-    AdminUserDetail,
+    AdminUserCard,
     AdminUserRow,
 )
 from app.services import admin as admin_service
+from app.services import admin_manage as manage
 from app.services import backup as backup_service
 
 logger = logging.getLogger(__name__)
@@ -64,27 +71,192 @@ def admin_users(
     return [AdminUserRow(**row) for row in rows]
 
 
-@router.get("/users/{user_id}", response_model=AdminUserDetail)
-def admin_user_detail(
+@router.get("/users/{user_id}", response_model=AdminUserCard)
+def admin_user_card(
     user_id: int,
     _: User = Depends(require_admin_user),
     db: Session = Depends(get_db),
-) -> AdminUserDetail:
-    return AdminUserDetail(**admin_service.get_user_detail(db, user_id))
+) -> AdminUserCard:
+    return AdminUserCard(**manage.get_user_card(db, user_id))
+
+
+@router.delete("/users/{user_id}", response_model=AdminGrantResponse)
+def admin_delete_user(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.delete_user(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(user_id=user_id, message="Пользователь удалён")
 
 
 @router.post("/users/{user_id}/block", response_model=AdminGrantResponse)
 def admin_block_user(
     user_id: int,
-    payload: AdminBlockRequest,
+    payload: AdminBlockReasonRequest,
     admin: User = Depends(require_admin_user),
     db: Session = Depends(get_db),
 ) -> AdminGrantResponse:
-    result = admin_service.set_user_blocked(
-        db, user_id=user_id, blocked=payload.blocked, admin_user_id=admin.id
+    manage.block_user(db, user_id=user_id, admin=admin, reason=payload.reason)
+    return AdminGrantResponse(user_id=user_id, message="Пользователь заблокирован")
+
+
+@router.post("/users/{user_id}/unblock", response_model=AdminGrantResponse)
+def admin_unblock_user(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.unblock_user(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(user_id=user_id, message="Пользователь разблокирован")
+
+
+@router.post("/users/{user_id}/reset/onboarding", response_model=AdminGrantResponse)
+def admin_reset_onboarding(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.reset_user_onboarding(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(user_id=user_id, message="Onboarding сброшен")
+
+
+@router.post("/users/{user_id}/reset/phone", response_model=AdminGrantResponse)
+def admin_reset_phone(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.reset_user_phone(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(user_id=user_id, message="Телефон сброшен")
+
+
+@router.post("/users/{user_id}/reset/legal", response_model=AdminGrantResponse)
+def admin_reset_legal(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.reset_user_legal(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(user_id=user_id, message="Согласия сброшены")
+
+
+@router.post("/users/{user_id}/reset/nutrition", response_model=AdminGrantResponse)
+def admin_reset_nutrition(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.reset_user_nutrition(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(user_id=user_id, message="Профиль питания сброшен")
+
+
+@router.post("/users/{user_id}/subscription/grant", response_model=AdminGrantResponse)
+def admin_user_sub_grant(
+    user_id: int,
+    payload: AdminSubscriptionActionRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.grant_user_subscription(
+        db,
+        user_id=user_id,
+        admin=admin,
+        plan_code=payload.plan_code,
+        days=payload.days,
+        reason=payload.reason,
+        expires_at=payload.expires_at,
+        as_trial=payload.as_trial,
     )
-    verb = "заблокирован" if payload.blocked else "разблокирован"
-    return AdminGrantResponse(user_id=user_id, message=f"Пользователь {verb}")
+    return AdminGrantResponse(user_id=user_id, message="Подписка выдана")
+
+
+@router.post("/users/{user_id}/subscription/extend", response_model=AdminGrantResponse)
+def admin_user_sub_extend(
+    user_id: int,
+    payload: AdminSubscriptionExtendRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.extend_user_subscription(
+        db, user_id=user_id, admin=admin, days=payload.days, reason=payload.reason
+    )
+    return AdminGrantResponse(user_id=user_id, message="Подписка продлена")
+
+
+@router.post("/users/{user_id}/subscription/disable", response_model=AdminGrantResponse)
+def admin_user_sub_disable(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.disable_user_subscription(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(user_id=user_id, message="Подписка отключена")
+
+
+@router.post("/users/{user_id}/subscription/change-plan", response_model=AdminGrantResponse)
+def admin_user_sub_change(
+    user_id: int,
+    payload: AdminSubscriptionActionRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.change_user_plan(
+        db,
+        user_id=user_id,
+        admin=admin,
+        plan_code=payload.plan_code,
+        days=payload.days,
+        reason=payload.reason,
+    )
+    return AdminGrantResponse(user_id=user_id, message="Тариф изменён")
+
+
+@router.post("/users/{user_id}/ams/add", response_model=AdminGrantResponse)
+def admin_user_ams_add(
+    user_id: int,
+    payload: AdminAmsActionRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    result = manage.add_user_ams(
+        db,
+        user_id=user_id,
+        admin=admin,
+        amount=payload.amount,
+        reason=payload.reason,
+        comment=payload.comment,
+    )
+    return AdminGrantResponse(
+        user_id=user_id, message=f"Баланс: {result['balance']} Амов"
+    )
+
+
+@router.post("/users/{user_id}/ams/remove", response_model=AdminGrantResponse)
+def admin_user_ams_remove(
+    user_id: int,
+    payload: AdminAmsActionRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    result = manage.remove_user_ams(
+        db, user_id=user_id, admin=admin, amount=payload.amount, comment=payload.comment
+    )
+    return AdminGrantResponse(
+        user_id=user_id, message=f"Баланс: {result['balance']} Амов"
+    )
+
+
+@router.post("/users/{user_id}/ams/reset", response_model=AdminGrantResponse)
+def admin_user_ams_reset(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    result = manage.reset_user_ams(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(
+        user_id=user_id, message=f"Баланс обнулён: {result['balance']}"
+    )
 
 
 @router.get("/families", response_model=list[AdminFamilyRow])
@@ -99,18 +271,45 @@ def admin_families(
     ]
 
 
-@router.post("/families/{family_id}/block", response_model=AdminGrantResponse)
-def admin_block_family(
+@router.get("/families/{family_id}", response_model=AdminFamilyCard)
+def admin_family_card(
     family_id: int,
-    payload: AdminBlockRequest,
+    _: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminFamilyCard:
+    return AdminFamilyCard(**manage.get_family_card(db, family_id))
+
+
+@router.patch("/families/{family_id}", response_model=AdminGrantResponse)
+def admin_rename_family(
+    family_id: int,
+    payload: AdminFamilyRenameRequest,
     admin: User = Depends(require_admin_user),
     db: Session = Depends(get_db),
 ) -> AdminGrantResponse:
-    admin_service.set_family_blocked(
-        db, family_id=family_id, blocked=payload.blocked, admin_user_id=admin.id
-    )
-    verb = "заблокирована" if payload.blocked else "разблокирована"
-    return AdminGrantResponse(family_id=family_id, message=f"Семья {verb}")
+    manage.rename_family(db, family_id=family_id, name=payload.name, admin=admin)
+    return AdminGrantResponse(family_id=family_id, message="Название обновлено")
+
+
+@router.post("/families/{family_id}/block", response_model=AdminGrantResponse)
+def admin_block_family(
+    family_id: int,
+    payload: AdminBlockReasonRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.block_family(db, family_id=family_id, admin=admin, reason=payload.reason)
+    return AdminGrantResponse(family_id=family_id, message="Семья заблокирована")
+
+
+@router.post("/families/{family_id}/unblock", response_model=AdminGrantResponse)
+def admin_unblock_family(
+    family_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.unblock_family(db, family_id=family_id, admin=admin)
+    return AdminGrantResponse(family_id=family_id, message="Семья разблокирована")
 
 
 @router.delete("/families/{family_id}", response_model=AdminGrantResponse)
@@ -119,8 +318,148 @@ def admin_delete_family(
     admin: User = Depends(require_admin_user),
     db: Session = Depends(get_db),
 ) -> AdminGrantResponse:
-    admin_service.delete_family(db, family_id=family_id, admin_user_id=admin.id)
+    manage.delete_family_record(db, family_id=family_id, admin=admin)
     return AdminGrantResponse(family_id=family_id, message="Семья удалена")
+
+
+@router.post("/families/{family_id}/transfer-owner", response_model=AdminGrantResponse)
+def admin_transfer_family_owner(
+    family_id: int,
+    payload: AdminFamilyTransferRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.transfer_family_owner(
+        db,
+        family_id=family_id,
+        new_admin_user_id=payload.new_admin_user_id,
+        admin=admin,
+    )
+    return AdminGrantResponse(family_id=family_id, message="Администратор семьи назначен")
+
+
+@router.delete(
+    "/families/{family_id}/members/{member_id}",
+    response_model=AdminGrantResponse,
+)
+def admin_remove_family_member(
+    family_id: int,
+    member_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.remove_family_member(
+        db, family_id=family_id, member_id=member_id, admin=admin
+    )
+    return AdminGrantResponse(family_id=family_id, message="Участник удалён")
+
+
+@router.post("/families/{family_id}/subscription/grant", response_model=AdminGrantResponse)
+def admin_family_sub_grant(
+    family_id: int,
+    payload: AdminSubscriptionActionRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.grant_family_subscription(
+        db,
+        family_id=family_id,
+        admin=admin,
+        plan_code=payload.plan_code,
+        days=payload.days,
+        reason=payload.reason,
+        as_trial=payload.as_trial,
+    )
+    return AdminGrantResponse(family_id=family_id, message="Семейная подписка выдана")
+
+
+@router.post("/families/{family_id}/subscription/extend", response_model=AdminGrantResponse)
+def admin_family_sub_extend(
+    family_id: int,
+    payload: AdminSubscriptionExtendRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.extend_family_subscription(
+        db, family_id=family_id, admin=admin, days=payload.days, reason=payload.reason
+    )
+    return AdminGrantResponse(family_id=family_id, message="Подписка продлена")
+
+
+@router.post("/families/{family_id}/subscription/disable", response_model=AdminGrantResponse)
+def admin_family_sub_disable(
+    family_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.disable_family_subscription(db, family_id=family_id, admin=admin)
+    return AdminGrantResponse(family_id=family_id, message="Подписка отключена")
+
+
+@router.post(
+    "/families/{family_id}/subscription/change-plan", response_model=AdminGrantResponse
+)
+def admin_family_sub_change(
+    family_id: int,
+    payload: AdminSubscriptionActionRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.change_family_plan(
+        db,
+        family_id=family_id,
+        admin=admin,
+        plan_code=payload.plan_code,
+        days=payload.days,
+        reason=payload.reason,
+    )
+    return AdminGrantResponse(family_id=family_id, message="Тариф семьи изменён")
+
+
+@router.post("/families/{family_id}/ams/add", response_model=AdminGrantResponse)
+def admin_family_ams_add(
+    family_id: int,
+    payload: AdminAmsActionRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    result = manage.add_family_ams(
+        db,
+        family_id=family_id,
+        admin=admin,
+        amount=payload.amount,
+        comment=payload.comment,
+    )
+    return AdminGrantResponse(
+        family_id=family_id, message=f"Баланс семьи: {result['balance']}"
+    )
+
+
+@router.post("/families/{family_id}/ams/remove", response_model=AdminGrantResponse)
+def admin_family_ams_remove(
+    family_id: int,
+    payload: AdminAmsActionRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    result = manage.remove_family_ams(
+        db, family_id=family_id, admin=admin, amount=payload.amount, comment=payload.comment
+    )
+    return AdminGrantResponse(
+        family_id=family_id, message=f"Баланс семьи: {result['balance']}"
+    )
+
+
+@router.post("/families/{family_id}/ams/reset", response_model=AdminGrantResponse)
+def admin_family_ams_reset(
+    family_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    result = manage.reset_family_ams(db, family_id=family_id, admin=admin)
+    return AdminGrantResponse(
+        family_id=family_id, message=f"Баланс обнулён: {result['balance']}"
+    )
 
 
 @router.get("/subscriptions", response_model=list[AdminSubscriptionRow])

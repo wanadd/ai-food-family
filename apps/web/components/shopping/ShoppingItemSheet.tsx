@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { Sheet } from "@/components/ui/Sheet";
 import { CategoryPicker } from "@/components/shopping/CategoryPicker";
 import type { ShoppingCategory, ShoppingItemDraft } from "@/lib/shopping/types";
@@ -15,6 +17,9 @@ type ShoppingItemSheetProps = {
   onClose: () => void;
   onSubmit: () => void;
   loading?: boolean;
+  successMessage?: string | null;
+  nameInputId?: string;
+  onNameBlur?: (name: string) => void;
 };
 
 export function ShoppingItemSheet({
@@ -27,7 +32,20 @@ export function ShoppingItemSheet({
   onClose,
   onSubmit,
   loading = false,
+  successMessage = null,
+  nameInputId = "shopping-item-name",
+  onNameBlur,
 }: ShoppingItemSheetProps) {
+  useEffect(() => {
+    if (open && !title.includes("Редакт")) {
+      const t = window.setTimeout(
+        () => document.getElementById(nameInputId)?.focus(),
+        120,
+      );
+      return () => window.clearTimeout(t);
+    }
+  }, [open, title, nameInputId]);
+
   return (
     <Sheet open={open} title={title} onClose={onClose}>
       <form
@@ -40,10 +58,12 @@ export function ShoppingItemSheet({
         <label className="block">
           <span className="text-xs font-semibold text-stone-500">Название</span>
           <input
+            id={nameInputId}
             value={draft.name}
             onChange={(event) =>
               onChange({ ...draft, name: event.target.value })
             }
+            onBlur={(event) => onNameBlur?.(event.target.value)}
             required
             placeholder="Помидоры"
             className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
@@ -103,6 +123,12 @@ export function ShoppingItemSheet({
             className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
           />
         </label>
+
+        {successMessage ? (
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-center text-sm font-semibold text-emerald-800">
+            {successMessage}
+          </p>
+        ) : null}
 
         <button
           type="submit"

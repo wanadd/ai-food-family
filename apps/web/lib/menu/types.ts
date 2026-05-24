@@ -7,12 +7,20 @@ export type MenuMeal = {
   description: string;
   prep_time_minutes: number;
   calories_estimate?: number | null;
+  recipe_id?: number | null;
 };
 
 export type MenuIngredient = {
   name: string;
   amount: string;
   category?: string | null;
+};
+
+export type MenuDayPlan = {
+  day_index: number;
+  label: string;
+  date_iso?: string | null;
+  meals: MenuMeal[];
 };
 
 export type MenuVariant = {
@@ -24,6 +32,8 @@ export type MenuVariant = {
   total_prep_minutes: number;
   meals: MenuMeal[];
   ingredients: MenuIngredient[];
+  plan_days?: number | null;
+  days?: MenuDayPlan[] | null;
 };
 
 export type MenuGenerateResponse = {

@@ -15,7 +15,13 @@ from sqlalchemy.orm import Session
 
 from app.models.recipe import Recipe
 from app.models.user import User
-from app.schemas.menu import MenuIngredient, MenuMeal, MenuVariant, MenuVariantType
+from app.schemas.menu import (
+    MenuDayPlan,
+    MenuIngredient,
+    MenuMeal,
+    MenuVariant,
+    MenuVariantType,
+)
 from app.schemas.menu_overview import (
     RecipeEvaluationReason,
     RecipeEvaluationResponse,
@@ -152,6 +158,7 @@ async def generate_menu_ai(
     persons_count: int | None = None,
     drink_mode: str = "none",
     allow_alcohol: bool = False,
+    plan_days: int = 1,
 ) -> MenuAiResult:
     if not ai_client.is_ai_configured():
         raise AiUnavailableError()
@@ -175,7 +182,9 @@ async def generate_menu_ai(
         f"Контекст:\n{user_block}\n\n"
         f"Каталог рецептов (используй recipe_id когда подходит): "
         f"{catalog[:40]}\n\n"
-        "Сформируй меню на один день для всех персон из контекста."
+        f"Сформируй меню на {max(1, plan_days)} дней для всех персон из контекста. "
+        "Если дней больше одного — в каждом варианте добавь массив days "
+        "(day_index, label, meals) помимо meals за первый день."
     )
     data = await ai_client.chat_json(system=MENU_SYSTEM, user=prompt, temperature=0.6)
     menus = _menu_variants_from_ai(data)
@@ -244,6 +253,9 @@ def _menu_variants_from_ai(data: dict[str, Any]) -> list[MenuVariant]:
             if not ingredients and item.get("shopping_items"):
                 ingredients = _ingredients_from_ai_rows(item["shopping_items"])
 
+            days_parsed = _days_from_ai_rows(item.get("days") or [])
+            plan_days_val = len(days_parsed) if days_parsed else None
+
             menus.append(
                 MenuVariant(
                     variant=variant_key,  # type: ignore[arg-type]
@@ -256,10 +268,12 @@ def _menu_variants_from_ai(data: dict[str, Any]) -> list[MenuVariant]:
                         item.get("total_prep_minutes")
                         or sum(m.prep_time_minutes for m in meals)
                     ),
-                    meals=meals,
+                    meals=days_parsed[0].meals if days_parsed else meals,
                     ingredients=ingredients or [
                         MenuIngredient(name="Вода", amount="1 л", category="drinks")
                     ],
+                    plan_days=plan_days_val,
+                    days=days_parsed or None,
                 )
             )
         except Exception:
@@ -277,6 +291,44 @@ def _menu_variants_from_ai(data: dict[str, Any]) -> list[MenuVariant]:
         )
         return []
     return menus[:3]
+
+
+def _days_from_ai_rows(raw_days: list) -> list[MenuDayPlan]:
+    out: list[MenuDayPlan] = []
+    if not isinstance(raw_days, list):
+        return out
+    for block in raw_days:
+        if not isinstance(block, dict):
+            continue
+        day_meals: list[MenuMeal] = []
+        for m in block.get("meals") or []:
+            if not isinstance(m, dict):
+                continue
+            meal_type = m.get("meal_type") or "lunch"
+            title = m.get("title") or m.get("name") or "Блюдо"
+            day_meals.append(
+                MenuMeal(
+                    meal_type=meal_type,  # type: ignore[arg-type]
+                    name=title,
+                    description=m.get("description") or "",
+                    prep_time_minutes=int(m.get("prep_time_minutes") or 25),
+                    calories_estimate=_int_or_none(
+                        m.get("calories_estimate") or m.get("calories")
+                    ),
+                    recipe_id=m.get("recipe_id"),
+                )
+            )
+        if not day_meals:
+            continue
+        out.append(
+            MenuDayPlan(
+                day_index=int(block.get("day_index") or len(out) + 1),
+                label=str(block.get("label") or f"День {len(out) + 1}"),
+                date_iso=block.get("date_iso"),
+                meals=day_meals,
+            )
+        )
+    return out
 
 
 def _int_or_none(val: Any) -> int | None:

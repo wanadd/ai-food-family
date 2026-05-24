@@ -48,15 +48,37 @@ def get_current_user(
         ) from exc
 
     user, _ = get_or_create_user(db, telegram_user)
-    return user
-
-
-def get_verified_user(user: User = Depends(get_current_user)) -> User:
+    if getattr(user, "is_deleted", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ временно ограничен",
+        )
     if getattr(user, "is_blocked", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Аккаунт заблокирован",
+            detail="Доступ временно ограничен",
         )
+    return user
+
+
+def get_verified_user(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> User:
+    if getattr(user, "is_blocked", False) or getattr(user, "is_deleted", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ временно ограничен",
+        )
+    from app.services import family as family_service
+
+    membership = family_service.get_user_membership(db, user)
+    if membership:
+        family = membership.family
+        if family and getattr(family, "is_blocked", False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Доступ временно ограничен",
+            )
     if not user_can_access_app(user):
         from app.services.legal_consent import user_has_legal_consent
 

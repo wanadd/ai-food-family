@@ -149,17 +149,34 @@ export function MenuHub() {
   if (loadState === "empty" || !data) {
     return (
       <ScreenLayout title="Меню" contentClassName="space-y-4 pb-24">
-        <div className="rounded-2xl border border-stone-100 bg-white p-6 text-center shadow-sm">
-          <p className="text-lg font-bold text-stone-900">У вас пока нет меню</p>
+        <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+          <p className="text-lg font-bold text-stone-900">План пока не создан</p>
           <p className="mt-2 text-sm text-stone-600">
-            ПланАм может составить рацион с учётом целей, семьи, запасов и
-            ограничений.
+            ПланАм может составить меню с учётом:
           </p>
+          <ul className="mt-3 space-y-1.5 text-sm text-stone-700">
+            {[
+              "цели",
+              "семьи",
+              "запасов",
+              "аллергий",
+              "ограничений",
+              "бюджета",
+              "времени готовки",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <span className="text-emerald-600" aria-hidden>
+                  ✓
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
           <Link
             href="/menu/generate"
-            className="mt-5 inline-block rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white"
+            className="mt-6 flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/40"
           >
-            Создать меню
+            Составить меню
           </Link>
         </div>
       </ScreenLayout>

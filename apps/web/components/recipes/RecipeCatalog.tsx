@@ -7,7 +7,10 @@ import { useCallback, useEffect, useState } from "react";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { useTelegram } from "@/components/TelegramProvider";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
+import { RecipeCatalogSections } from "@/components/recipes/RecipeCatalogSections";
 import { RecipeDetailModal } from "@/components/recipes/RecipeDetailModal";
+import { CATALOG_MEAL_FILTERS } from "@/lib/recipes/labels";
+import { RECIPE_SECTION_PAGE_SIZE } from "@/lib/recipes/catalog-sections";
 import {
   fetchRecipe,
   fetchRecipeFilters,
@@ -27,7 +30,7 @@ type RecipeCatalogProps = {
 export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
   const router = useRouter();
   const { initData } = useTelegram();
-  const [filters, setFilters] = useState<RecipeFilters | null>(null);
+  const [_filters, setFilters] = useState<RecipeFilters | null>(null);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState<RecipeQuery>({});
@@ -38,6 +41,8 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchVisible, setSearchVisible] = useState(RECIPE_SECTION_PAGE_SIZE);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const loadRecipes = useCallback(
     async (telegramInitData: string, params: RecipeQuery) => {
@@ -98,6 +103,20 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
     }, 300);
     return () => window.clearTimeout(timer);
   }, [searchInput, initData, loadRecipes]);
+
+  useEffect(() => {
+    setSearchVisible(RECIPE_SECTION_PAGE_SIZE);
+  }, [recipes, searchInput, query]);
+
+  useEffect(() => {
+    function onScroll() {
+      setShowScrollTop(window.scrollY > 400);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const isSearchMode = searchInput.trim().length > 0 || Boolean(query.meal_type);
 
   function updateFilter(patch: Partial<RecipeQuery>) {
     if (!initData) {
@@ -218,42 +237,12 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              updateFilter({
-                favorites_only: !query.favorites_only,
-              })
-            }
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-              query.favorites_only
-                ? "bg-amber-400 text-amber-950"
-                : "bg-white text-stone-600 ring-1 ring-stone-200"
-            }`}
-          >
-            ★ Избранное
-          </button>
           <FilterChip
-            active={Boolean(query.drinks_only)}
-            label="Напитки"
+            active={Boolean(query.favorites_only)}
+            label="★ Избранное"
             onClick={() =>
-              updateFilter({
-                drinks_only: !query.drinks_only,
-                alcoholic_only: false,
-              })
+              updateFilter({ favorites_only: !query.favorites_only })
             }
-          />
-          <FilterChip
-            active={Boolean(query.for_children)}
-            label="Для детей"
-            onClick={() =>
-              updateFilter({ for_children: !query.for_children })
-            }
-          />
-          <FilterChip
-            active={Boolean(query.for_sport)}
-            label="Спорт"
-            onClick={() => updateFilter({ for_sport: !query.for_sport })}
           />
           <FilterChip
             active={Boolean(query.from_pantry)}
@@ -263,94 +252,89 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
             }
           />
           <FilterChip
-            active={Boolean(query.non_alcoholic)}
-            label="Безалк."
-            onClick={() =>
-              updateFilter({
-                non_alcoholic: !query.non_alcoholic,
-                alcoholic_only: false,
-              })
-            }
+            active={Boolean(query.for_sport)}
+            label="Спорт"
+            onClick={() => updateFilter({ for_sport: !query.for_sport })}
           />
           <FilterChip
-            active={Boolean(query.alcoholic_only)}
-            label="Алкоголь"
+            active={Boolean(query.protein_only)}
+            label="Белок"
             onClick={() =>
-              updateFilter({
-                alcoholic_only: !query.alcoholic_only,
-                drinks_only: true,
-              })
+              updateFilter({ protein_only: !query.protein_only })
             }
           />
         </div>
 
-        {filters ? (
-          <div className="space-y-3 rounded-2xl border border-stone-200 bg-white p-4">
-            <FilterSelect
-              label="Приём пищи"
-              value={query.meal_type ?? ""}
-              options={filters.meal_types}
-              onChange={(value) => updateFilter({ meal_type: value || undefined })}
-            />
-            <FilterSelect
-              label="Категория"
-              value={query.category ?? ""}
-              options={filters.categories}
-              onChange={(value) => updateFilter({ category: value || undefined })}
-            />
-            <FilterSelect
-              label="Диета"
-              value={query.diet ?? ""}
-              options={filters.diets}
-              onChange={(value) => updateFilter({ diet: value || undefined })}
-            />
-            <FilterSelect
-              label="Сложность"
-              value={query.difficulty ?? ""}
-              options={filters.difficulties}
-              onChange={(value) =>
-                updateFilter({ difficulty: value || undefined })
+        <div className="flex flex-wrap gap-2">
+          {CATALOG_MEAL_FILTERS.map((meal) => (
+            <FilterChip
+              key={meal.value}
+              active={query.meal_type === meal.value}
+              label={meal.label}
+              onClick={() =>
+                updateFilter({
+                  meal_type:
+                    query.meal_type === meal.value ? undefined : meal.value,
+                })
               }
             />
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                До {query.max_prep_time ?? filters.max_prep_time} мин
-              </span>
-              <input
-                type="range"
-                min={10}
-                max={filters.max_prep_time}
-                step={5}
-                value={query.max_prep_time ?? filters.max_prep_time}
-                onChange={(event) =>
-                  updateFilter({ max_prep_time: Number(event.target.value) })
-                }
-                className="mt-2 w-full accent-emerald-600"
-              />
-            </label>
-          </div>
-        ) : null}
-
-        <p className="text-sm text-stone-500">
-          {loading ? "Загрузка…" : `Найдено: ${total}`}
-        </p>
-
-        <div className="space-y-3 pb-8">
-          {recipes.map((recipe) => (
-            <RecipeCard
-              key={recipe.id}
-              recipe={recipe}
-              onOpen={() => openRecipe(recipe.id)}
-              onToggleFavorite={() => handleToggleFavorite(recipe.id)}
-              togglingFavorite={togglingId === recipe.id}
-            />
           ))}
-          {!loading && recipes.length === 0 ? (
-            <p className="py-12 text-center text-sm text-stone-400">
-              Ничего не найдено. Измените поиск или фильтры.
-            </p>
-          ) : null}
         </div>
+
+        {isSearchMode ? (
+          <>
+            <p className="text-sm text-stone-500">
+              {loading ? "Загрузка…" : `Найдено: ${total}`}
+            </p>
+            <div className="space-y-3 pb-8">
+              {recipes.slice(0, searchVisible).map((recipe) => (
+                <RecipeCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  onOpen={() => openRecipe(recipe.id)}
+                  onToggleFavorite={() => handleToggleFavorite(recipe.id)}
+                  togglingFavorite={togglingId === recipe.id}
+                />
+              ))}
+              {!loading && recipes.length === 0 ? (
+                <p className="py-12 text-center text-sm text-stone-400">
+                  Ничего не найдено. Измените поиск или фильтр.
+                </p>
+              ) : null}
+              {recipes.length > searchVisible ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSearchVisible((v) => v + RECIPE_SECTION_PAGE_SIZE)
+                  }
+                  className="w-full rounded-xl border border-stone-200 py-2.5 text-sm font-semibold text-stone-700"
+                >
+                  Показать ещё
+                </button>
+              ) : null}
+            </div>
+          </>
+        ) : loading ? (
+          <p className="text-sm text-stone-500">Загрузка каталога…</p>
+        ) : (
+          <RecipeCatalogSections
+            initData={initData}
+            onOpen={openRecipe}
+            onToggleFavorite={handleToggleFavorite}
+            togglingId={togglingId}
+          />
+        )}
+
+        {showScrollTop ? (
+          <button
+            type="button"
+            aria-label="Наверх"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="fixed bottom-20 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-stone-900 text-lg text-white shadow-lg"
+          >
+            ↑
+          </button>
+        ) : null}
 
       {detail && selectedId !== null && !loadingDetail ? (
         <RecipeDetailModal
@@ -367,13 +351,6 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
     </ScreenLayout>
   );
 }
-
-type FilterSelectProps = {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (value: string) => void;
-};
 
 function FilterChip({
   label,
@@ -399,24 +376,3 @@ function FilterChip({
   );
 }
 
-function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
-  return (
-    <label className="block">
-      <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
-      >
-        <option value="">Все</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}

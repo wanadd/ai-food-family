@@ -21,6 +21,14 @@ import type { MenuVariant } from "@/lib/menu/types";
 import { fetchPantry } from "@/lib/pantry/api";
 import type { PantryList } from "@/lib/pantry/types";
 import { NutritionistAdviceCard } from "@/components/nutritionist/NutritionistAdviceCard";
+import { WaterIntakePanel } from "@/components/nutritionist/WaterIntakePanel";
+import { buildAdviceWhy } from "@/lib/nutritionist/advice-why";
+import {
+  listDeferredAdvice,
+  migrateLocalDeferredAdvice,
+  removeDeferredAdvice,
+  type DeferredAdvice,
+} from "@/lib/nutritionist/advice-deferred";
 import { buildDailyStatus } from "@/lib/nutritionist/daily-status";
 import { buildFamilyMemberInsights } from "@/lib/nutritionist/family-insights";
 import { buildGoalProgressCard } from "@/lib/nutritionist/goal-progress";
@@ -62,6 +70,13 @@ export function NutritionistDashboard() {
   const [progress, setProgress] = useState<ProgressOverview | null>(null);
   const [familySummaryOpen, setFamilySummaryOpen] = useState(false);
   const [familyProgressOpen, setFamilyProgressOpen] = useState(false);
+  const [deferredAdvice, setDeferredAdvice] = useState<DeferredAdvice[]>([]);
+
+  const refreshDeferred = useCallback(async () => {
+    if (!initData) return;
+    const items = await listDeferredAdvice(initData, mode);
+    setDeferredAdvice(items);
+  }, [initData, mode]);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -91,6 +106,14 @@ export function NutritionistDashboard() {
     void load();
   }, [load, modeLoading, authState]);
 
+  useEffect(() => {
+    if (!initData || authState !== "ready") return;
+    void (async () => {
+      await migrateLocalDeferredAdvice(initData, mode);
+      await refreshDeferred();
+    })();
+  }, [initData, mode, authState, refreshDeferred]);
+
   const personsCount = getPersonsCount(mode, context);
   const goalLabel = getNutritionGoalLabel(profile);
   const profileComplete = isNutritionProfileComplete(profile);
@@ -104,6 +127,8 @@ export function NutritionistDashboard() {
     pantry,
     pantryActiveCount: pantry?.active_count ?? 0,
   });
+  const adviceWhy = buildAdviceWhy(profile);
+  const adviceHiddenByDefer = deferredAdvice.some((d) => d.title === advice.title);
 
   const familyInsights = useMemo(() => {
     if (mode !== "family" || !context?.family) return [];
@@ -150,20 +175,46 @@ export function NutritionistDashboard() {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-          Сегодня
-        </p>
-        <p className="mt-1 text-sm font-medium text-emerald-800">{daily.title}</p>
-        <ul className="mt-3 space-y-1.5 text-sm text-stone-700">
-          <li>{daily.caloriesLine}</li>
-          <li>{daily.proteinLine}</li>
-          <li>{daily.waterLine}</li>
-          <li>{daily.trainingLine}</li>
-          <li>{daily.menuLine}</li>
-        </ul>
+      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm space-y-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-stone-500">
+            {daily.planTitle}
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-stone-700">
+            <li>{daily.plan.calories}</li>
+            <li>{daily.plan.protein}</li>
+            <li>{daily.plan.fat}</li>
+            <li>{daily.plan.carbs}</li>
+            <li>{daily.plan.water}</li>
+          </ul>
+        </div>
+        <div className="border-t border-stone-100 pt-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
+            {daily.actualTitle}
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-stone-700">
+            <li>{daily.actual.calories}</li>
+            <li>{daily.actual.protein}</li>
+            <li>{daily.actual.fat}</li>
+            <li>{daily.actual.carbs}</li>
+            <li>{daily.actual.water}</li>
+          </ul>
+        </div>
+        <p className="text-xs text-stone-500">{daily.trainingLine}</p>
+        <p className="text-xs text-stone-500">{daily.menuLine}</p>
+        {initData ? (
+          <WaterIntakePanel onUpdated={() => void load()} />
+        ) : null}
+        {menu ? (
+          <Link
+            href="/menu/current"
+            className="inline-block text-xs font-semibold text-emerald-700"
+          >
+            Отметить, где поели →
+          </Link>
+        ) : null}
         {daily.todoLine ? (
-          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
             Осталось: {daily.todoLine}
           </p>
         ) : null}
@@ -210,6 +261,22 @@ export function NutritionistDashboard() {
             </div>
           </div>
         ) : null}
+        <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-emerald-100 pt-3 text-sm">
+          <div>
+            <dt className="text-stone-500">Начато</dt>
+            <dd className="font-semibold text-stone-900">
+              {goalCard.startedAt ?? "—"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-stone-500">Прошло</dt>
+            <dd className="font-semibold text-stone-900">
+              {goalCard.daysElapsed != null
+                ? `${goalCard.daysElapsed} дн.`
+                : "—"}
+            </dd>
+          </div>
+        </dl>
         {goalCard.paceLine ? (
           <p className="mt-2 text-sm text-stone-600">{goalCard.paceLine}</p>
         ) : null}
@@ -218,8 +285,81 @@ export function NutritionistDashboard() {
         ) : null}
       </section>
 
-      {initData ? (
-        <NutritionistAdviceCard advice={advice} initData={initData} mode={mode} />
+      {profileComplete ? (
+        <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wide text-stone-500">
+            Почему ПланАм рекомендует это?
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-stone-700">
+            {adviceWhy.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {initData && !adviceHiddenByDefer ? (
+        <NutritionistAdviceCard
+          advice={advice}
+          initData={initData}
+          mode={mode}
+          onDeferred={refreshDeferred}
+        />
+      ) : null}
+
+      {deferredAdvice.length > 0 ? (
+        <section className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+          <p className="text-sm font-bold text-stone-900">Отложенные рекомендации</p>
+          <ul className="mt-3 space-y-3">
+            {deferredAdvice.map((item) => (
+              <li
+                key={item.id}
+                className="rounded-xl border border-stone-200 bg-white p-3"
+              >
+                <p className="font-semibold text-stone-900">{item.title}</p>
+                <p className="mt-1 text-xs text-stone-600">{item.body}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!initData) return;
+                      void removeDeferredAdvice(initData, mode, item.id).then(
+                        refreshDeferred,
+                      );
+                    }}
+                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+                  >
+                    Выполнить
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!initData) return;
+                      void removeDeferredAdvice(initData, mode, item.id).then(
+                        refreshDeferred,
+                      );
+                    }}
+                    className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700"
+                  >
+                    Вернуть
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!initData) return;
+                      void removeDeferredAdvice(initData, mode, item.id).then(
+                        refreshDeferred,
+                      );
+                    }}
+                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600"
+                  >
+                    Удалить
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       <section>

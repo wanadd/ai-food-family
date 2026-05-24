@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -44,7 +44,6 @@ function statusColor(status: string): string {
 }
 
 export function ProgressDashboard() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM), "/profile");
   const { initData, isTelegram } = useTelegram();
@@ -117,9 +116,6 @@ export function ProgressDashboard() {
       setHips("");
       setWeightNote("");
       await load();
-      if (returnTo.startsWith("/nutritionist")) {
-        router.replace(returnTo);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
     } finally {
@@ -143,9 +139,6 @@ export function ProgressDashboard() {
       setTrainingMin("");
       setTrainingNote("");
       await load();
-      if (returnTo.startsWith("/nutritionist")) {
-        router.replace(returnTo);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
     } finally {

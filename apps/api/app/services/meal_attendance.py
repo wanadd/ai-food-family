@@ -99,7 +99,21 @@ def build_home_attendance_summary(
 def extract_today_meals(menu_data: dict | None) -> list[MenuTodayMeal]:
     if not menu_data or not isinstance(menu_data, dict):
         return []
-    meals = menu_data.get("meals")
+    today_iso = date.today().isoformat()
+    days = menu_data.get("days")
+    if isinstance(days, list):
+        for block in days:
+            if not isinstance(block, dict):
+                continue
+            if block.get("date_iso") == today_iso:
+                meals = block.get("meals")
+                break
+        else:
+            meals = None
+            if days and isinstance(days[0], dict):
+                meals = days[0].get("meals")
+    else:
+        meals = menu_data.get("meals")
     if not isinstance(meals, list):
         return []
     result: list[MenuTodayMeal] = []
@@ -157,7 +171,36 @@ def upsert_member_schedule(
     return row
 
 
-def create_meal_checkin(
+def _checkin_query(
+    db: Session,
+    scope: AppScope,
+    meal_type: str,
+    on_date: date,
+    family_member_id: int | None = None,
+):
+    q = db.query(MealCheckin).filter(
+        MealCheckin.meal_type == meal_type,
+        MealCheckin.planned_date == on_date,
+    )
+    if scope.is_family and scope.family_id:
+        q = q.filter(MealCheckin.family_id == scope.family_id)
+        if family_member_id is not None:
+            q = q.filter(MealCheckin.family_member_id == family_member_id)
+        else:
+            q = q.filter(MealCheckin.family_member_id.is_(None))
+        return q
+    q = q.filter(
+        MealCheckin.user_id == scope.user_id,
+        MealCheckin.family_id.is_(None),
+    )
+    if family_member_id is not None:
+        q = q.filter(MealCheckin.family_member_id == family_member_id)
+    else:
+        q = q.filter(MealCheckin.family_member_id.is_(None))
+    return q
+
+
+def upsert_meal_checkin(
     db: Session,
     user: User,
     scope: AppScope,
@@ -168,18 +211,46 @@ def create_meal_checkin(
     family_member_id: int | None = None,
     actual_description: str | None = None,
     leftover_servings_delta: int | None = None,
+    actual_calories: float | None = None,
+    actual_protein_g: float | None = None,
+    actual_fat_g: float | None = None,
+    actual_carbs_g: float | None = None,
+    recipe_id: int | None = None,
 ) -> MealCheckin:
-    row = MealCheckin(
-        user_id=user.id if not scope.is_family else None,
-        family_id=scope.family_id if scope.is_family else None,
-        family_member_id=family_member_id,
-        meal_type=meal_type,
-        planned_date=planned_date or date.today(),
-        actual_status=actual_status,
-        actual_description=actual_description,
-        leftover_servings_delta=leftover_servings_delta,
-    )
-    db.add(row)
+    on_date = planned_date or date.today()
+    row = _checkin_query(
+        db, scope, meal_type, on_date, family_member_id
+    ).first()
+    if row is None:
+        row = MealCheckin(
+            user_id=user.id if not scope.is_family else None,
+            family_id=scope.family_id if scope.is_family else None,
+            family_member_id=family_member_id,
+            meal_type=meal_type,
+            planned_date=on_date,
+        )
+        db.add(row)
+    row.actual_status = actual_status
+    row.actual_description = actual_description
+    row.leftover_servings_delta = leftover_servings_delta
+    row.recipe_id = recipe_id
+    if actual_calories is not None:
+        row.actual_calories = actual_calories
+    if actual_protein_g is not None:
+        row.actual_protein_g = actual_protein_g
+    if actual_fat_g is not None:
+        row.actual_fat_g = actual_fat_g
+    if actual_carbs_g is not None:
+        row.actual_carbs_g = actual_carbs_g
     db.commit()
     db.refresh(row)
     return row
+
+
+def create_meal_checkin(
+    db: Session,
+    user: User,
+    scope: AppScope,
+    **kwargs,
+) -> MealCheckin:
+    return upsert_meal_checkin(db, user, scope, **kwargs)

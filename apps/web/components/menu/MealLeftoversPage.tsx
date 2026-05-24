@@ -12,8 +12,14 @@ import {
   createMealLeftover,
   deleteMealLeftover,
   fetchMealLeftovers,
+  updateMealLeftover,
   type MealLeftover,
 } from "@/lib/meal-leftovers/api";
+import {
+  LEFTOVER_STATUS_OPTIONS,
+  leftoverStatusLabel,
+  type LeftoverStatus,
+} from "@/lib/meal-leftovers/status";
 
 export function MealLeftoversPage() {
   const { initData } = useTelegram();
@@ -23,6 +29,8 @@ export function MealLeftoversPage() {
   const [dishName, setDishName] = useState("");
   const [portions, setPortions] = useState("2");
   const [saving, setSaving] = useState(false);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!initData) return;
@@ -43,16 +51,34 @@ export function MealLeftoversPage() {
     e.preventDefault();
     if (!initData || !dishName.trim()) return;
     setSaving(true);
+    setSaveSuccess(null);
     try {
       await createMealLeftover(initData, mode, {
         dish_name: dishName.trim(),
         portions_remaining: parseInt(portions, 10) || 1,
       });
       setDishName("");
-      setPortions("2");
+      setSaveSuccess("✓ Добавлено");
       await load();
+      window.setTimeout(() => document.getElementById("leftover-dish-name")?.focus(), 80);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function setStatus(item: MealLeftover, status: LeftoverStatus) {
+    if (!initData) return;
+    setUpdatingId(item.id);
+    try {
+      const portions =
+        status === "consumed" || status === "discarded" ? 0 : item.portions_remaining;
+      await updateMealLeftover(initData, mode, item.id, {
+        leftover_status: status,
+        portions_remaining: portions,
+      });
+      await load();
+    } finally {
+      setUpdatingId(null);
     }
   }
 
@@ -67,45 +93,81 @@ export function MealLeftoversPage() {
   return (
     <ScreenLayout
       title="Остатки блюд"
-      subtitle="Учтём при следующем меню и покупках"
+      subtitle="Влияют на меню, запасы и покупки"
       back={{ label: "Меню", href: "/menu" }}
-      contentClassName="space-y-3"
+      contentClassName="space-y-3 pb-32"
     >
+      <p className="text-xs text-stone-500">
+        Отметьте статус — ПланАм учтёт при следующем плане. «Осталось» и «Заморожено»
+        попадают в генерацию меню.
+      </p>
+
       <ul className="space-y-2">
         {items.length === 0 ? (
           <li className="rounded-xl border border-dashed border-stone-200 px-4 py-6 text-center text-sm text-stone-500">
-            Пока нет остатков. Отметьте блюдо, которое осталось с прошлого дня.
+            Пока нет остатков. Добавьте блюдо ниже или отметьте приём пищи в текущем
+            меню.
           </li>
         ) : (
           items.map((item) => (
             <li
               key={item.id}
-              className="flex items-start justify-between gap-2 rounded-2xl border border-stone-100 bg-white p-4 shadow-sm"
+              className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm"
             >
-              <div>
-                <p className="font-semibold text-stone-900">{item.dish_name}</p>
-                <p className="mt-0.5 text-sm text-stone-500">
-                  {item.portions_remaining} порц.
-                  {item.valid_until
-                    ? ` · до ${new Date(item.valid_until).toLocaleDateString("ru-RU")}`
-                    : ""}
-                </p>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-stone-900">{item.dish_name}</p>
+                  <p className="mt-0.5 text-sm text-stone-500">
+                    {item.portions_remaining} порц. ·{" "}
+                    {leftoverStatusLabel(item.leftover_status ?? "active")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void deleteMealLeftover(initData!, mode, item.id).then(load)}
+                  className="text-xs font-semibold text-red-600"
+                >
+                  Удалить
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => void deleteMealLeftover(initData!, mode, item.id).then(load)}
-                className="text-xs font-semibold text-red-600"
-              >
-                Удалить
-              </button>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {LEFTOVER_STATUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={updatingId === item.id}
+                    onClick={() => void setStatus(item, opt.value)}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      (item.leftover_status ?? "active") === opt.value
+                        ? "bg-teal-600 text-white"
+                        : "bg-stone-100 text-stone-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </li>
           ))
         )}
       </ul>
 
+      <Link
+        href="/menu/current"
+        className="block text-center text-sm font-semibold text-emerald-700"
+      >
+        Отметить приёмы пищи в меню →
+      </Link>
+
       <StickyBottomBar>
         <form onSubmit={(e) => void handleAdd(e)} className="space-y-2">
+          {saveSuccess ? (
+            <p className="text-center text-sm font-semibold text-teal-800">
+              {saveSuccess}
+            </p>
+          ) : null}
           <input
+            id="leftover-dish-name"
             value={dishName}
             onChange={(e) => setDishName(e.target.value)}
             placeholder="Название блюда, например Борщ"

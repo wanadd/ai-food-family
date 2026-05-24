@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { PageLoading } from "@/components/ui/PageLoading";
@@ -274,7 +275,15 @@ export function AdminDashboard({ forcedTab = "summary" }: { forcedTab?: AdminTab
                 key={user.id}
                 className="rounded-xl border border-stone-200 bg-white p-3 text-sm"
               >
-                <p className="font-semibold text-stone-900">{user.display_name}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold text-stone-900">{user.display_name}</p>
+                  <Link
+                    href={`/admin/users/${user.id}`}
+                    className="shrink-0 text-xs font-medium text-teal-700"
+                  >
+                    Карточка →
+                  </Link>
+                </div>
                 <p className="text-xs text-stone-500">
                   @{user.username ?? "—"} · tg {user.telegram_id}
                 </p>
@@ -298,7 +307,15 @@ export function AdminDashboard({ forcedTab = "summary" }: { forcedTab?: AdminTab
                 key={family.id}
                 className="rounded-xl border border-stone-200 bg-white p-3 text-sm"
               >
-                <p className="font-semibold">{family.name}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold">{family.name}</p>
+                  <Link
+                    href={`/admin/families/${family.id}`}
+                    className="shrink-0 text-xs font-medium text-teal-700"
+                  >
+                    Карточка →
+                  </Link>
+                </div>
                 <p className="text-xs text-stone-600">
                   Участников: {family.member_count} · Тариф: {family.plan_code}
                 </p>

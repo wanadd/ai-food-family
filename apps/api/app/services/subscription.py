@@ -80,7 +80,7 @@ def get_active_subscription(db: Session, user: User) -> UserSubscription | None:
         db.query(UserSubscription)
         .filter(
             UserSubscription.user_id == user.id,
-            UserSubscription.status.in_(("active", "trial")),
+            UserSubscription.status.in_(("active", "trial", "manually_granted")),
         )
         .order_by(UserSubscription.id.desc())
         .first()
@@ -257,7 +257,7 @@ def list_ama_transactions(
 
 
 def _refresh_subscription_status(db: Session, sub: UserSubscription) -> None:
-    if sub.status not in ("active", "trial"):
+    if sub.status not in ("active", "trial", "manually_granted"):
         return
     if sub.plan_code == "trial":
         expired = False
@@ -302,7 +302,7 @@ def get_current_subscription(
 
 def ai_actions_allowed(sub: UserSubscription) -> bool:
     _ = sub  # status refreshed by caller
-    return sub.status in ("active", "trial")
+    return sub.status in ("active", "trial", "manually_granted")
 
 
 def check_feature_access(

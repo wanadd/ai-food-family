@@ -8,6 +8,7 @@ export type MealLeftover = {
   portions_remaining: number;
   valid_until: string | null;
   note: string | null;
+  leftover_status: string;
   created_at: string;
   updated_at: string;
 };
@@ -32,6 +33,21 @@ export async function createMealLeftover(
 ): Promise<MealLeftover> {
   return apiFetch(initData, mode, "/meal-leftovers", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateMealLeftover(
+  initData: string,
+  mode: AppMode,
+  id: number,
+  payload: {
+    portions_remaining?: number;
+    leftover_status?: string;
+  },
+): Promise<MealLeftover> {
+  return apiFetch(initData, mode, `/meal-leftovers/${id}`, {
+    method: "PATCH",
     body: JSON.stringify(payload),
   });
 }

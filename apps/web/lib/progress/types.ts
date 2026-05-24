@@ -4,6 +4,15 @@ export type MemberProgressStatus =
   | "attention"
   | "hidden";
 
+export type NutritionActual = {
+  calories_consumed: number;
+  protein_consumed_g: number;
+  fat_consumed_g: number;
+  carbs_consumed_g: number;
+  water_consumed_ml: number;
+  meals_logged: number;
+};
+
 export type NutritionTargets = {
   calories_target: number | null;
   protein_target_g: number | null;
@@ -49,9 +58,14 @@ export type ProgressOverview = {
   goal_label: string | null;
   goal_type: string | null;
   current_weight_kg: number | null;
+  start_weight_kg?: number | null;
+  target_weight_kg?: number | null;
+  goal_started_at?: string | null;
+  goal_forecast_date?: string | null;
   weight_change_week_kg: number | null;
   goal_progress_percent: number | null;
   targets: NutritionTargets | null;
+  daily_actual?: NutritionActual | null;
   trainings_this_week: number;
   training_minutes_week: number;
   show_progress_to_family: boolean;

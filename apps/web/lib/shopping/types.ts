@@ -50,7 +50,7 @@ export type ShoppingItemDraft = {
 
 export const EMPTY_SHOPPING_DRAFT: ShoppingItemDraft = {
   name: "",
-  category: "",
+  category: "продукты",
   quantity: "1",
   unit: "шт",
   note: "",

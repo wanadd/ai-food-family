@@ -815,6 +815,20 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
             language_code=from_user.get("language_code"),
         )
 
+    if getattr(user, "is_deleted", False) or getattr(user, "is_blocked", False):
+        await send_telegram_message(chat_id, "Доступ временно ограничен.")
+        return
+
+    from app.models.family import Family
+    from app.services import family as family_service
+
+    membership = family_service.get_user_membership(db, user)
+    if membership:
+        family = db.get(Family, membership.family_id)
+        if family and getattr(family, "is_blocked", False):
+            await send_telegram_message(chat_id, "Доступ временно ограничен.")
+            return
+
     text = (message.get("text") or "").strip()
 
     if text.startswith("/start"):

@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import type { AppMode } from "@/lib/app-mode/types";
 import { withReturnTo } from "@/lib/navigation/return-to";
+import { deferAdvice } from "@/lib/nutritionist/advice-deferred";
 import type { MainAdvice } from "@/lib/nutritionist/main-advice";
 
 type Props = {
   advice: MainAdvice;
   initData: string;
-  mode: string;
+  mode: AppMode;
+  onDeferred?: () => void;
 };
 
 function extractFoodHint(body: string): string {
@@ -20,12 +23,18 @@ function extractFoodHint(body: string): string {
   return "перекус";
 }
 
-export function NutritionistAdviceCard({ advice, initData: _initData, mode: _mode }: Props) {
-  const [dismissed, setDismissed] = useState(false);
+export function NutritionistAdviceCard({
+  advice,
+  initData,
+  mode,
+  onDeferred,
+}: Props) {
+  const [snoozed, setSnoozed] = useState(false);
+  const [deferring, setDeferring] = useState(false);
   const hint = extractFoodHint(advice.body);
   const returnTo = "/nutritionist";
 
-  if (dismissed) return null;
+  if (snoozed) return null;
 
   return (
     <section className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 shadow-sm">
@@ -55,10 +64,19 @@ export function NutritionistAdviceCard({ advice, initData: _initData, mode: _mod
         </Link>
         <button
           type="button"
-          onClick={() => setDismissed(true)}
-          className="rounded-xl border border-transparent px-2 py-2.5 text-center text-xs font-semibold text-stone-500"
+          disabled={deferring}
+          onClick={() => {
+            setDeferring(true);
+            void deferAdvice(initData, mode as import("@/lib/app-mode/types").AppMode, advice)
+              .then(() => {
+                setSnoozed(true);
+                onDeferred?.();
+              })
+              .finally(() => setDeferring(false));
+          }}
+          className="rounded-xl border border-transparent px-2 py-2.5 text-center text-xs font-semibold text-stone-500 disabled:opacity-50"
         >
-          Не сейчас
+          {deferring ? "…" : "Не сейчас"}
         </button>
       </div>
     </section>

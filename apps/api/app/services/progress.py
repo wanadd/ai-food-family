@@ -306,6 +306,7 @@ def calculate_goal_progress(
     goal_type: str | None,
     current_weight: float | None,
     start_weight: float | None,
+    target_weight: float | None = None,
     target_delta_kg: float | None = None,
 ) -> int | None:
     if current_weight is None:
@@ -315,12 +316,24 @@ def calculate_goal_progress(
         start_weight = current_weight
 
     if goal == "lose":
+        if target_weight is not None and start_weight is not None:
+            total = float(start_weight) - float(target_weight)
+            if total <= 0:
+                return 100 if current_weight <= target_weight else 0
+            done = float(start_weight) - float(current_weight)
+            return min(100, max(0, round((done / total) * 100)))
         target = target_delta_kg if target_delta_kg else 3.0
         lost = start_weight - current_weight
         if target <= 0:
             return 0
         return min(100, max(0, int((lost / target) * 100)))
     if goal == "gain":
+        if target_weight is not None and start_weight is not None:
+            total = float(target_weight) - float(start_weight)
+            if total <= 0:
+                return 100 if current_weight >= target_weight else 0
+            done = float(current_weight) - float(start_weight)
+            return min(100, max(0, round((done / total) * 100)))
         target = target_delta_kg if target_delta_kg else 2.0
         gained = current_weight - start_weight
         if target <= 0:
@@ -503,6 +516,14 @@ def get_progress_overview(
             .first()
         )
     start_weight = first_entry.weight_kg if first_entry else current_weight
+    from app.services.goal_details import goal_details_from_profile
+
+    goal_details = goal_details_from_profile(profile)
+    profile_start = goal_details.current_weight_kg
+    if profile_start is not None:
+        start_weight = profile_start
+    target_weight_kg = goal_details.target_weight_kg
+    goal_started_at = first_entry.recorded_at.date() if first_entry else None
     goal_pct = None
     trainings_week = 0
     minutes_week = 0
@@ -511,7 +532,12 @@ def get_progress_overview(
     family_progress: list[FamilyMemberProgressCard] = []
 
     if is_pro:
-        goal_pct = calculate_goal_progress(goal_type, current_weight, start_weight)
+        goal_pct = calculate_goal_progress(
+            goal_type,
+            current_weight,
+            start_weight,
+            target_weight=target_weight_kg,
+        )
         targets = get_nutrition_targets(db, user, scope)
         week_start = date.today() - timedelta(days=7)
         if user_id:
@@ -531,14 +557,39 @@ def get_progress_overview(
         if is_pro and scope.is_family and family_id:
             family_progress = _family_progress_cards(db, user, family_id)
 
+    forecast_date = None
+    if (
+        is_pro
+        and goal_type in ("lose", "gain")
+        and current_weight is not None
+        and target_weight_kg is not None
+        and weight_change is not None
+        and weight_change != 0
+    ):
+        remaining = float(current_weight) - float(target_weight_kg)
+        if goal_type == "gain":
+            remaining = float(target_weight_kg) - float(current_weight)
+        weeks = abs(remaining / weight_change) if weight_change else None
+        if weeks is not None and weeks > 0:
+            forecast_date = date.today() + timedelta(days=int(weeks * 7))
+
+    from app.services.meal_daily_nutrition import compute_today_nutrition_actual
+
+    daily_actual = compute_today_nutrition_actual(db, user, scope)
+
     return ProgressOverviewResponse(
         is_pro=is_pro,
         goal_label=goal_label,
         goal_type=goal_type,
         current_weight_kg=current_weight,
+        start_weight_kg=start_weight,
+        target_weight_kg=target_weight_kg,
+        goal_started_at=goal_started_at,
+        goal_forecast_date=forecast_date,
         weight_change_week_kg=weight_change,
         goal_progress_percent=goal_pct,
         targets=targets,
+        daily_actual=daily_actual,
         trainings_this_week=trainings_week,
         training_minutes_week=minutes_week,
         show_progress_to_family=get_show_progress_to_family(profile),

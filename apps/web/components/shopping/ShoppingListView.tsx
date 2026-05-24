@@ -23,6 +23,7 @@ import {
   toggleShoppingItem,
   updateShoppingItem,
 } from "@/lib/shopping/api";
+import { suggestCategorySlug } from "@/lib/shopping/category-suggest";
 import { categoryMeta } from "@/lib/shopping/labels";
 import {
   EMPTY_SHOPPING_DRAFT,
@@ -66,6 +67,7 @@ export function ShoppingListView() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryIsFood, setNewCategoryIsFood] = useState(false);
   const updatedAtRef = useRef<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
   const loadList = useCallback(
     async (telegramInitData: string, appMode: typeof mode, silent = false) => {
@@ -185,6 +187,7 @@ export function ShoppingListView() {
   function openAddItem() {
     setEditingItem(null);
     setItemDraft({ ...EMPTY_SHOPPING_DRAFT });
+    setSaveSuccess(null);
     setItemSheetOpen(true);
   }
 
@@ -264,33 +267,73 @@ export function ShoppingListView() {
     }
   }
 
+  function normalizeDraft(draft: ShoppingItemDraft): ShoppingItemDraft {
+    const name = draft.name.trim();
+    const category =
+      draft.category?.trim() || suggestCategorySlug(name) || "продукты";
+    return {
+      ...draft,
+      name,
+      category,
+      quantity: draft.quantity?.trim() || "1",
+      unit: draft.unit?.trim() || "шт",
+    };
+  }
+
   async function handleSaveItem() {
     if (!initData) {
       return;
     }
     setSaving(true);
     setError(null);
+    setSaveSuccess(null);
+    const payload = normalizeDraft(itemDraft);
     try {
       let data: ShoppingList;
       if (editingItem) {
         data = await updateShoppingItem(initData, mode, editingItem.id, {
-          name: itemDraft.name,
-          category: itemDraft.category,
-          quantity: itemDraft.quantity,
-          unit: itemDraft.unit,
-          note: itemDraft.note || null,
+          name: payload.name,
+          category: payload.category,
+          quantity: payload.quantity,
+          unit: payload.unit,
+          note: payload.note || null,
         });
+        updatedAtRef.current = data.updated_at;
+        setList(data);
+        setItemSheetOpen(false);
+        setEditingItem(null);
       } else {
-        data = await createShoppingItem(initData, mode, itemDraft);
+        data = await createShoppingItem(initData, mode, payload);
+        updatedAtRef.current = data.updated_at;
+        setList(data);
+        setItemDraft((prev) => ({
+          ...prev,
+          name: "",
+          category: payload.category,
+          quantity: payload.quantity,
+          unit: payload.unit,
+        }));
+        setSaveSuccess("✓ Товар добавлен");
+        window.setTimeout(
+          () => document.getElementById("shopping-item-name")?.focus(),
+          80,
+        );
       }
-      updatedAtRef.current = data.updated_at;
-      setList(data);
-      setItemSheetOpen(false);
-      setEditingItem(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function handleNameBlur(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed || itemDraft.category?.trim()) {
+      return;
+    }
+    const suggested = suggestCategorySlug(trimmed);
+    if (suggested) {
+      setItemDraft((prev) => ({ ...prev, category: suggested }));
     }
   }
 
@@ -516,9 +559,13 @@ export function ShoppingListView() {
         onClose={() => {
           setItemSheetOpen(false);
           setEditingItem(null);
+          setSaveSuccess(null);
         }}
         onSubmit={handleSaveItem}
         loading={saving}
+        successMessage={saveSuccess}
+        nameInputId="shopping-item-name"
+        onNameBlur={handleNameBlur}
       />
 
       <ShoppingCategorySheet

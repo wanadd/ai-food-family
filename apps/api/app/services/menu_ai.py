@@ -21,6 +21,7 @@ async def generate_menus(
     persons_count: int | None = None,
     drink_mode: str = "none",
     allow_alcohol: bool = False,
+    plan_days: int = 1,
 ) -> tuple[list[MenuVariant], bool]:
     """OpenAI first (if configured), then recipe DB, then heuristic fallback."""
     if db and user and scope:
@@ -33,6 +34,7 @@ async def generate_menus(
                 persons_count=persons_count,
                 drink_mode=drink_mode,
                 allow_alcohol=allow_alcohol,
+                plan_days=plan_days,
             )
             from app.services.menu_ai_legacy import _apply_leftovers
 

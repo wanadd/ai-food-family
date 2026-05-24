@@ -44,6 +44,15 @@ async def generate_menus_for_scope(
             persons = options.persons_count
         if options.plan_mode:
             plan_mode = options.plan_mode
+        if options.plan_days:
+            extras.append(
+                f"Составь меню на {options.plan_days} дней. "
+                "Для каждого дня укажи завтрак, обед, ужин и перекус при необходимости."
+            )
+        if options.nutrition_goal:
+            extras.append(
+                f"Цель питания для этого плана: {options.nutrition_goal}."
+            )
         extras.append(
             f"Количество персон (порций): {persons}. "
             "Умножай объёмы ингредиентов с учётом этого числа."
@@ -63,6 +72,8 @@ async def generate_menus_for_scope(
             drink_mode = options.drink_mode
         allow_alcohol = bool(options.allow_alcohol)
 
+    plan_days = options.plan_days if options and options.plan_days else 1
+
     menus, used_ai = await generate_menus(
         context,
         db=db,
@@ -71,7 +82,15 @@ async def generate_menus_for_scope(
         persons_count=persons,
         drink_mode=drink_mode,  # type: ignore[arg-type]
         allow_alcohol=allow_alcohol,
+        plan_days=plan_days,
     )
+    if plan_days > 1:
+        from app.services.menu_days import expand_variant_to_plan_days
+
+        menus = [
+            expand_variant_to_plan_days(db, m, plan_days, user=user, scope=scope)
+            for m in menus
+        ]
     subscription_service.commit_menu_generation(
         db,
         user,
@@ -170,6 +189,7 @@ def select_menu(
         "pantry_used_rub": pantry_used,
         "savings_rub": pantry_used,
         "leftovers_count": len(leftovers),
+        "plan_days": payload.menu.plan_days or menu_dict.get("plan_days") or 1,
     }
 
     if existing is not None:

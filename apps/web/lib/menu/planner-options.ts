@@ -17,13 +17,23 @@ export type MenuGoalId =
   | "kids";
 
 export const MENU_GOAL_OPTIONS: { value: MenuGoalId; label: string }[] = [
+  { value: "lose", label: "Похудение" },
   { value: "maintain", label: NUTRITION_GOAL_LABELS.maintain ?? "Поддержание веса" },
-  { value: "lose", label: NUTRITION_GOAL_LABELS.lose ?? "Похудение" },
-  { value: "gain", label: NUTRITION_GOAL_LABELS.gain ?? "Набор массы" },
-  { value: "healthy", label: NUTRITION_GOAL_LABELS.healthy ?? "Здоровое питание" },
-  { value: "sport", label: NUTRITION_GOAL_LABELS.sport ?? "Спорт" },
-  { value: "kids", label: "Детское питание" },
+  { value: "gain", label: "Набор массы" },
+  { value: "sport", label: "Спорт" },
+  { value: "kids", label: "Семейное питание" },
+  { value: "healthy", label: "Пост / лечебное питание" },
 ];
+
+export const MENU_DAY_OPTIONS = [1, 3, 5, 7, 14, 30] as const;
+
+export type MenuDayCount = (typeof MENU_DAY_OPTIONS)[number];
+
+export const MENU_BUDGET_OPTIONS = [
+  { value: "economy", label: "Экономно" },
+  { value: "standard", label: "Стандарт" },
+  { value: "premium", label: "Без ограничений" },
+] as const;
 
 export const PLAN_MODE_OPTIONS: {
   value: PlanModeId;

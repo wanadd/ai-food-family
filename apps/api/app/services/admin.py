@@ -184,7 +184,7 @@ def list_users(
     q: str | None = None,
     status_filter: str = "all",
 ) -> list[dict]:
-    query = db.query(User)
+    query = db.query(User).filter(User.is_deleted.is_(False))
     if q:
         needle = q.strip().lower()
         if needle.isdigit():

@@ -138,7 +138,12 @@ def _prep_minutes(recipe: Recipe) -> int:
     return recipe.prep_time_minutes or recipe.cooking_time_minutes or 30
 
 
-def _to_summary(recipe: Recipe, favorite_ids: set[int]) -> RecipeSummary:
+def _to_summary(
+    recipe: Recipe,
+    favorite_ids: set[int],
+    *,
+    fit_level: str | None = None,
+) -> RecipeSummary:
     return RecipeSummary(
         id=recipe.id,
         title=recipe.title,
@@ -159,6 +164,7 @@ def _to_summary(recipe: Recipe, favorite_ids: set[int]) -> RecipeSummary:
         suitable_for_children=recipe.suitable_for_children,
         suitable_for_sport=recipe.suitable_for_sport,
         suitable_for_event=recipe.suitable_for_event,
+        fit_level=fit_level,  # type: ignore[arg-type]
     )
 
 
@@ -299,7 +305,12 @@ def list_recipes(
         if goal == "sport":
             recipes.sort(key=lambda r: (not r.suitable_for_sport, r.title))
 
-    items = [_to_summary(recipe, favorite_ids) for recipe in recipes]
+    from app.services.recipe_analysis import quick_recipe_fit_level
+
+    items = []
+    for recipe in recipes:
+        fit = quick_recipe_fit_level(db, user, scope) if scope is not None else None
+        items.append(_to_summary(recipe, favorite_ids, fit_level=fit))
     return RecipeListResponse(items=items, total=len(items))
 
 

@@ -7,15 +7,19 @@ import { getAdminSessionToken } from "./session";
 import type {
   AdminAiUsageRow,
   AdminAmaTransactionRow,
+  AdminAmsActionBody,
   AdminAmsSummary,
   AdminBackupRow,
   AdminErrorRow,
+  AdminFamilyCard,
   AdminFamilyRow,
   AdminGrantResponse,
   AdminOpenAiStats,
   AdminPlanOption,
+  AdminSubscriptionActionBody,
   AdminSubscriptionRow,
   AdminSummary,
+  AdminUserCard,
   AdminUserRow,
 } from "./types";
 
@@ -200,14 +204,108 @@ export async function deductAdminAms(
   });
 }
 
-export async function setAdminUserBlocked(
+export async function fetchAdminUserCard(
   initData: string,
   userId: number,
-  blocked: boolean,
+): Promise<AdminUserCard | null> {
+  return adminGet<AdminUserCard>(initData, `/admin/users/${userId}`);
+}
+
+export async function fetchAdminFamilyCard(
+  initData: string,
+  familyId: number,
+): Promise<AdminFamilyCard | null> {
+  return adminGet<AdminFamilyCard>(initData, `/admin/families/${familyId}`);
+}
+
+export async function adminUserAction(
+  initData: string,
+  userId: number,
+  path: string,
+  method: "POST" | "DELETE" = "POST",
+  body?: unknown,
 ): Promise<AdminGrantResponse> {
-  return adminFetch(initData, `/admin/users/${userId}/block`, {
-    method: "POST",
-    body: JSON.stringify({ blocked }),
+  return adminFetch(initData, `/admin/users/${userId}${path}`, {
+    method,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
+export async function adminFamilyAction(
+  initData: string,
+  familyId: number,
+  path: string,
+  method: "POST" | "DELETE" | "PATCH" = "POST",
+  body?: unknown,
+): Promise<AdminGrantResponse> {
+  return adminFetch(initData, `/admin/families/${familyId}${path}`, {
+    method,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
+export async function adminUserSubscription(
+  initData: string,
+  userId: number,
+  action: "grant" | "extend" | "disable" | "change-plan",
+  body?: AdminSubscriptionActionBody | { days?: number; reason?: string },
+): Promise<AdminGrantResponse> {
+  return adminUserAction(initData, userId, `/subscription/${action}`, "POST", body);
+}
+
+export async function adminUserAms(
+  initData: string,
+  userId: number,
+  action: "add" | "remove" | "reset",
+  body?: AdminAmsActionBody,
+): Promise<AdminGrantResponse> {
+  return adminUserAction(initData, userId, `/ams/${action}`, "POST", body);
+}
+
+export async function adminFamilySubscription(
+  initData: string,
+  familyId: number,
+  action: "grant" | "extend" | "disable" | "change-plan",
+  body?: AdminSubscriptionActionBody | { days?: number; reason?: string },
+): Promise<AdminGrantResponse> {
+  return adminFamilyAction(
+    initData,
+    familyId,
+    `/subscription/${action}`,
+    "POST",
+    body,
+  );
+}
+
+export async function adminFamilyAms(
+  initData: string,
+  familyId: number,
+  action: "add" | "remove" | "reset",
+  body?: AdminAmsActionBody,
+): Promise<AdminGrantResponse> {
+  return adminFamilyAction(initData, familyId, `/ams/${action}`, "POST", body);
+}
+
+export async function adminRemoveFamilyMember(
+  initData: string,
+  familyId: number,
+  memberId: number,
+): Promise<AdminGrantResponse> {
+  return adminFetch(
+    initData,
+    `/admin/families/${familyId}/members/${memberId}`,
+    { method: "DELETE" },
+  );
+}
+
+export async function adminRenameFamily(
+  initData: string,
+  familyId: number,
+  name: string,
+): Promise<AdminGrantResponse> {
+  return adminFetch(initData, `/admin/families/${familyId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
   });
 }
 

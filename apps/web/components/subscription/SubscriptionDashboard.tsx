@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -48,7 +47,6 @@ function planHighlights(plan: SubscriptionOverview["plans"][0]): string[] {
 }
 
 export function SubscriptionDashboard() {
-  const router = useRouter();
   const { showToast } = useToast();
   const { initData, isTelegram } = useTelegram();
   const { mode } = useAppMode();
@@ -82,8 +80,7 @@ export function SubscriptionDashboard() {
     try {
       const updated = await selectPlanStub(initData, mode, planCode);
       setData(updated);
-      await showToast("✓ Сохранено");
-      router.push("/profile");
+      await showToast("✓ Тариф сохранён");
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Не удалось сменить тариф");
     } finally {

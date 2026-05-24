@@ -10,6 +10,8 @@ import type {
 export type MenuGenerateOptions = {
   persons_count?: number;
   plan_mode?: string;
+  plan_days?: number;
+  nutrition_goal?: string;
 };
 
 export async function generateMenus(

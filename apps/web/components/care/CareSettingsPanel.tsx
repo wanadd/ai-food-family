@@ -19,21 +19,41 @@ const CARE_MODES: {
   value: CareLevel;
   label: string;
   description: string;
+  frequency: string;
+  examples: string[];
 }[] = [
   {
     value: "minimal",
     label: "Только важное",
-    description: "Меню, покупки и запасы — без лишних напоминаний",
+    description: "Покупки · Меню · Запасы",
+    frequency: "1–3 уведомления в день",
+    examples: [
+      "«Не забудьте синхронизировать список покупок»",
+      "«Меню на завтра готово — откройте план»",
+      "«В запасах заканчивается молоко»",
+    ],
   },
   {
     value: "standard",
     label: "Баланс",
-    description: "Мягкие подсказки в удобное время",
+    description: "Вода · Белок · Прогресс · Полезные привычки",
+    frequency: "3–6 уведомлений в день",
+    examples: [
+      "«Выпейте стакан воды — осталось 500 мл до нормы»",
+      "«Добавьте белок к ужину»",
+      "«Отметьте вес — так точнее прогноз цели»",
+    ],
   },
   {
     value: "active",
     label: "Персональный коуч PRO",
-    description: "Больше заботы о воде, белке и прогрессе",
+    description: "Питание · Тренировки · Прогресс · Персональные советы",
+    frequency: "до 10 уведомлений в день",
+    examples: [
+      "«После тренировки — перекус с белком»",
+      "«По плану сегодня лёгкий ужин»",
+      "«Прогресс к цели: −0,3 кг за неделю»",
+    ],
   },
 ];
 
@@ -138,9 +158,17 @@ export function CareSettingsPanel() {
               }`}
             >
               <p className="font-semibold text-stone-900">{modeOption.label}</p>
-              <p className="mt-0.5 text-xs text-stone-500">
-                {modeOption.description}
+              <p className="mt-0.5 text-xs text-stone-600">{modeOption.description}</p>
+              <p className="mt-1 text-[11px] font-medium text-emerald-700">
+                {modeOption.frequency}
               </p>
+              <ul className="mt-2 space-y-1 border-t border-stone-100 pt-2">
+                {modeOption.examples.map((ex) => (
+                  <li key={ex} className="text-[11px] leading-snug text-stone-500">
+                    {ex}
+                  </li>
+                ))}
+              </ul>
             </button>
           ))}
         </div>

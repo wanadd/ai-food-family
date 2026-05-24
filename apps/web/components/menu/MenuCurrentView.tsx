@@ -6,6 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { MealCheckinPanel } from "@/components/menu/MealCheckinPanel";
+import { MenuDayPicker } from "@/components/menu/MenuDayPicker";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
 import { PageLoading } from "@/components/ui/PageLoading";
@@ -15,6 +17,12 @@ import {
   replaceDish,
   selectMenu,
 } from "@/lib/menu/api";
+import {
+  dateIsoForDayIndex,
+  defaultDayIndex,
+  menuHasMultipleDays,
+  menuViewForDay,
+} from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
 
 export function MenuCurrentView() {
@@ -27,6 +35,7 @@ export function MenuCurrentView() {
   const [replacing, setReplacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MenuVariant | null>(null);
+  const [dayIndex, setDayIndex] = useState(1);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -36,7 +45,11 @@ export function MenuCurrentView() {
     setLoading(true);
     try {
       const selected = await fetchSelectedMenu(initData, mode);
-      setMenu(selected?.menu ?? null);
+      const loaded = selected?.menu ?? null;
+      setMenu(loaded);
+      if (loaded) {
+        setDayIndex(defaultDayIndex(loaded));
+      }
       setSelectedAt(selected?.selected_at ?? null);
     } catch {
       setError("Не удалось загрузить план");
@@ -99,17 +112,31 @@ export function MenuCurrentView() {
     );
   }
 
-  const dateLabel = selectedAt
-    ? new Date(selectedAt).toLocaleDateString("ru-RU", {
+  const plannedDate = menu ? dateIsoForDayIndex(menu, dayIndex) : "";
+  const dayMenu = menu ? menuViewForDay(menu, dayIndex) : null;
+  const multiDay = menu ? menuHasMultipleDays(menu) : false;
+
+  const dateLabel = multiDay
+    ? new Date(plannedDate).toLocaleDateString("ru-RU", {
+        weekday: "short",
         day: "numeric",
-        month: "long",
+        month: "short",
       })
-    : "Сегодня";
+    : selectedAt
+      ? new Date(selectedAt).toLocaleDateString("ru-RU", {
+          day: "numeric",
+          month: "long",
+        })
+      : "Сегодня";
 
   return (
     <ScreenLayout
       title={menu.title}
-      subtitle={`${dateLabel} · активен`}
+      subtitle={
+        multiDay
+          ? `${dateLabel} · день ${dayIndex}${menu.plan_days ? ` из ${menu.plan_days}` : ""}`
+          : `${dateLabel} · активен`
+      }
       back={{ label: "Меню", href: "/menu" }}
       contentClassName="space-y-4"
     >
@@ -119,13 +146,31 @@ export function MenuCurrentView() {
           </p>
         ) : null}
 
-        <MenuVariantCard
-          menu={menu}
-          selected
-          onSelect={() => {}}
-          onReplace={() => setReplaceTarget(menu)}
-          selecting={false}
-        />
+        {multiDay ? (
+          <MenuDayPicker
+            menu={menu}
+            dayIndex={dayIndex}
+            onDayIndexChange={setDayIndex}
+          />
+        ) : null}
+
+        {dayMenu ? (
+          <MenuVariantCard
+            menu={dayMenu}
+            selected
+            onSelect={() => {}}
+            onReplace={() => setReplaceTarget(dayMenu)}
+            selecting={false}
+          />
+        ) : null}
+
+        {dayMenu ? (
+          <MealCheckinPanel
+            menu={dayMenu}
+            plannedDate={plannedDate}
+            onUpdated={() => void load()}
+          />
+        ) : null}
 
       {replaceTarget ? (
         <ReplaceDishModal

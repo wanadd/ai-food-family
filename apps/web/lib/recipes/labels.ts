@@ -3,7 +3,21 @@ export const MEAL_TYPE_LABELS: Record<string, string> = {
   lunch: "Обед",
   dinner: "Ужин",
   snack: "Перекус",
+  dessert: "Десерт",
+  drink: "Напитки",
+  drinks: "Напитки",
+  cocktail: "Коктейли",
 };
+
+/** Quick filters shown on the recipes catalog (no long dropdown lists). */
+export const CATALOG_MEAL_FILTERS: { value: string; label: string }[] = [
+  { value: "breakfast", label: "Завтрак" },
+  { value: "lunch", label: "Обед" },
+  { value: "dinner", label: "Ужин" },
+  { value: "snack", label: "Перекус" },
+  { value: "dessert", label: "Десерт" },
+  { value: "drink", label: "Напитки" },
+];
 
 export const CATEGORY_LABELS: Record<string, string> = {
   soup: "Суп",

@@ -5,6 +5,11 @@ import {
   difficultyLabel,
   mealLabel,
 } from "@/lib/recipes/labels";
+import {
+  FIT_BADGE_LABELS,
+  FIT_BADGE_STYLES,
+  type RecipeFitLevel,
+} from "@/lib/recipes/fit-labels";
 import type { RecipeSummary } from "@/lib/recipes/types";
 
 type RecipeCardProps = {
@@ -24,7 +29,16 @@ export function RecipeCard({
     <article className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-emerald-200">
       <div className="flex items-start justify-between gap-2">
         <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-          <h3 className="font-semibold text-stone-900">{recipe.title}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-semibold text-stone-900">{recipe.title}</h3>
+            {recipe.fit_level ? (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${FIT_BADGE_STYLES[recipe.fit_level as RecipeFitLevel]}`}
+              >
+                {FIT_BADGE_LABELS[recipe.fit_level as RecipeFitLevel]}
+              </span>
+            ) : null}
+          </div>
           <p className="mt-1 line-clamp-2 text-sm text-stone-500">
             {recipe.description}
           </p>

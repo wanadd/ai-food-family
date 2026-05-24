@@ -47,6 +47,15 @@ class TrainingEntryResponse(BaseModel):
     training_date: date
 
 
+class NutritionActualResponse(BaseModel):
+    calories_consumed: int = 0
+    protein_consumed_g: int = 0
+    fat_consumed_g: int = 0
+    carbs_consumed_g: int = 0
+    water_consumed_ml: int = 0
+    meals_logged: int = 0
+
+
 class NutritionTargetsResponse(BaseModel):
     calories_target: int | None
     protein_target_g: int | None
@@ -85,9 +94,14 @@ class ProgressOverviewResponse(BaseModel):
     goal_label: str | None
     goal_type: str | None
     current_weight_kg: float | None
+    start_weight_kg: float | None = None
+    target_weight_kg: float | None = None
+    goal_started_at: date | None = None
+    goal_forecast_date: date | None = None
     weight_change_week_kg: float | None
     goal_progress_percent: int | None
     targets: NutritionTargetsResponse | None = None
+    daily_actual: NutritionActualResponse | None = None
     trainings_this_week: int = 0
     training_minutes_week: int = 0
     show_progress_to_family: bool = True

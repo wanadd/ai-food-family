@@ -513,7 +513,15 @@ def run_schema_migrations(engine: Engine) -> None:
         "CREATE INDEX IF NOT EXISTS ix_meal_checkins_family_date ON meal_checkins (family_id, planned_date);",
         "CREATE INDEX IF NOT EXISTS ix_meal_checkins_user_date ON meal_checkins (user_id, planned_date);",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS blocked_at TIMESTAMPTZ",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS blocked_reason VARCHAR(500)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_by_admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL",
         "ALTER TABLE families ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE families ADD COLUMN IF NOT EXISTS blocked_at TIMESTAMPTZ",
+        "ALTER TABLE families ADD COLUMN IF NOT EXISTS blocked_reason VARCHAR(500)",
+        "ALTER TABLE user_subscriptions ADD COLUMN IF NOT EXISTS metadata_json JSONB",
         """
         CREATE TABLE IF NOT EXISTS admin_sessions (
             id SERIAL PRIMARY KEY,
@@ -564,6 +572,32 @@ def run_schema_migrations(engine: Engine) -> None:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_admin_error_logs_created_at ON admin_error_logs (created_at);",
+        """
+        CREATE TABLE IF NOT EXISTS deferred_nutrition_advice (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            advice_key VARCHAR(120) NOT NULL,
+            title VARCHAR(200) NOT NULL,
+            body TEXT NOT NULL,
+            status VARCHAR(16) NOT NULL DEFAULT 'deferred',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_deferred_advice_user ON deferred_nutrition_advice (user_id);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_deferred_advice_user_key ON deferred_nutrition_advice (user_id, advice_key) WHERE family_id IS NULL;",
+        """
+        CREATE TABLE IF NOT EXISTS water_intake_logs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            log_date DATE NOT NULL,
+            amount_ml INTEGER NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_water_intake_user_date ON water_intake_logs (user_id, log_date);",
     ]
 
     with engine.begin() as connection:

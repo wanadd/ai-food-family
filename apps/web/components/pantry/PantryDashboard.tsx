@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { suggestCategorySlug } from "@/lib/shopping/category-suggest";
 
 import { BotQuickInputHint } from "@/components/bot/BotQuickInputHint";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
@@ -51,6 +52,7 @@ export function PantryDashboard() {
   const [editingItem, setEditingItem] = useState<PantryItem | null>(null);
   const [draft, setDraft] = useState<PantryItemDraft>(EMPTY_PANTRY_DRAFT);
   const [categories, setCategories] = useState<ShoppingCategory[]>([]);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
   const loadPantry = useCallback(
     async (telegramInitData: string, appMode: typeof mode) => {
@@ -122,6 +124,7 @@ export function PantryDashboard() {
   function openAdd() {
     setEditingItem(null);
     setDraft({ ...EMPTY_PANTRY_DRAFT });
+    setSaveSuccess(null);
     setFormOpen(true);
   }
 
@@ -144,15 +147,36 @@ export function PantryDashboard() {
     }
     setSaving(true);
     setError(null);
+    setSaveSuccess(null);
+    const name = draft.name.trim();
+    const payload: PantryItemDraft = {
+      ...draft,
+      name,
+      category: draft.category?.trim() || suggestCategorySlug(name) || "продукты",
+      quantity: draft.quantity?.trim() || "1",
+      unit: draft.unit?.trim() || "шт",
+    };
     try {
       if (editingItem) {
-        await updatePantryItem(initData, mode, editingItem.id, draft);
+        await updatePantryItem(initData, mode, editingItem.id, payload);
+        setFormOpen(false);
+        setEditingItem(null);
+        setDraft({ ...EMPTY_PANTRY_DRAFT });
       } else {
-        await addPantryItem(initData, mode, draft);
+        await addPantryItem(initData, mode, payload);
+        setDraft((prev) => ({
+          ...prev,
+          name: "",
+          category: payload.category,
+          quantity: payload.quantity,
+          unit: payload.unit,
+        }));
+        setSaveSuccess("✓ Добавлено в запасы");
+        window.setTimeout(
+          () => document.getElementById("pantry-item-name")?.focus(),
+          80,
+        );
       }
-      setFormOpen(false);
-      setEditingItem(null);
-      setDraft({ ...EMPTY_PANTRY_DRAFT });
       await loadPantry(initData, mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
@@ -300,9 +324,12 @@ export function PantryDashboard() {
         onClose={() => {
           setFormOpen(false);
           setEditingItem(null);
+          setSaveSuccess(null);
         }}
         onSubmit={handleSave}
         loading={saving}
+        successMessage={saveSuccess}
+        nameInputId="pantry-item-name"
       />
     </div>
   );

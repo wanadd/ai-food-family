@@ -111,6 +111,13 @@ async def evaluate_recipe(
     return _evaluate_recipe_heuristic(db, user, scope, recipe)
 
 
+def quick_recipe_fit_level(
+    db: Session, user: User, scope: AppScope, recipe: Recipe
+) -> str:
+    """Lightweight fit for catalog cards (no AI)."""
+    return _evaluate_recipe_heuristic(db, user, scope, recipe).fit_level
+
+
 def _evaluate_recipe_heuristic(
     db: Session, user: User, scope: AppScope, recipe: Recipe
 ) -> RecipeEvaluationResponse:

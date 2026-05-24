@@ -11,6 +11,7 @@ class MealCheckinCreate(BaseModel):
     actual_description: str | None = Field(default=None, max_length=500)
     leftover_servings_delta: int | None = None
     leftover_status: str | None = Field(default=None, max_length=32)
+    recipe_id: int | None = None
 
 
 class MealCheckinResponse(BaseModel):
@@ -20,4 +21,6 @@ class MealCheckinResponse(BaseModel):
     actual_status: str
     actual_description: str | None
     leftover_servings_delta: int | None
+    family_member_id: int | None = None
+    member_name: str | None = None
     created_at: datetime

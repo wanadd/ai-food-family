@@ -16,6 +16,13 @@ class MenuMeal(BaseModel):
     recipe_id: int | None = None
 
 
+class MenuDayPlan(BaseModel):
+    day_index: int = Field(ge=1, le=30)
+    label: str = ""
+    date_iso: str | None = None
+    meals: list[MenuMeal] = Field(min_length=1)
+
+
 class MenuIngredient(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     amount: str = Field(min_length=1, max_length=80)
@@ -31,6 +38,8 @@ class MenuVariant(BaseModel):
     total_prep_minutes: int = Field(ge=0)
     meals: list[MenuMeal] = Field(min_length=1)
     ingredients: list[MenuIngredient] = Field(min_length=1)
+    plan_days: int | None = Field(default=None, ge=1, le=30)
+    days: list[MenuDayPlan] | None = None
 
 
 class MenuGenerateResponse(BaseModel):
@@ -61,6 +70,8 @@ DrinkMenuMode = Literal[
 class MenuGenerateRequest(BaseModel):
     persons_count: int | None = Field(default=None, ge=1, le=20)
     plan_mode: str | None = Field(default=None, max_length=64)
+    plan_days: int | None = Field(default=None, ge=1, le=30)
+    nutrition_goal: str | None = Field(default=None, max_length=32)
     drink_mode: DrinkMenuMode | None = None
     allow_alcohol: bool = False
 

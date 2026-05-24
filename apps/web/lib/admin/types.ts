@@ -31,6 +31,59 @@ export interface AdminUserRow {
   status?: string;
 }
 
+export interface AdminSubscriptionInfo {
+  id: number;
+  plan_code: string;
+  status: string;
+  started_at: string;
+  trial_ends_at: string | null;
+  current_period_ends_at: string | null;
+  family_id: number | null;
+  grant_source: string;
+  grant_reason: string | null;
+  kind: string;
+}
+
+export interface AdminAmsTransactionItem {
+  id: number;
+  amount: number;
+  type: string;
+  reason: string;
+  created_at: string;
+  comment?: string | null;
+}
+
+export interface AdminAmsBlock {
+  balance: number;
+  credited_total: number;
+  spent_total: number;
+  transactions: AdminAmsTransactionItem[];
+}
+
+export interface AdminUserCard {
+  id: number;
+  display_name: string;
+  telegram_id: number;
+  username: string | null;
+  created_at: string;
+  last_activity_at: string;
+  family_id: number | null;
+  family_name: string | null;
+  is_blocked: boolean;
+  blocked_at: string | null;
+  blocked_reason: string | null;
+  is_deleted: boolean;
+  phone_number: string | null;
+  legal_accepted: boolean;
+  profile_completed: boolean;
+  subscription: AdminSubscriptionInfo | null;
+  ams: AdminAmsBlock;
+  ai_requests: number;
+  ams_spent: number;
+  openai_cost_usd: number;
+  menu_count: number;
+}
+
 export interface AdminFamilyRow {
   id: number;
   name: string;
@@ -42,6 +95,29 @@ export interface AdminFamilyRow {
   ama_balance?: number;
   openai_cost_usd?: number;
   is_blocked?: boolean;
+}
+
+export interface AdminFamilyMemberItem {
+  id: number;
+  user_id: number | null;
+  display_name: string;
+  role: string;
+  is_virtual: boolean;
+}
+
+export interface AdminFamilyCard {
+  id: number;
+  name: string;
+  is_blocked: boolean;
+  blocked_at: string | null;
+  blocked_reason: string | null;
+  created_at: string;
+  member_count: number;
+  admin_user_id: number | null;
+  admin_name: string;
+  members: AdminFamilyMemberItem[];
+  subscription: AdminSubscriptionInfo | null;
+  ams: AdminAmsBlock;
 }
 
 export interface AdminSubscriptionRow {
@@ -154,3 +230,16 @@ export type AdminTab =
   | "families"
   | "subscriptions"
   | "ams";
+
+export interface AdminSubscriptionActionBody {
+  plan_code: string;
+  days?: number;
+  reason?: string;
+  as_trial?: boolean;
+}
+
+export interface AdminAmsActionBody {
+  amount: number;
+  reason?: string;
+  comment?: string;
+}
