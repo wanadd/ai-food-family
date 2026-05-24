@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from app.models.family import FamilyRole
 from app.models.user import User
 from app.models.user_profile import UserProfile
+from app.schemas.goal_details import NutritionGoalDetails
 from app.schemas.nutrition_profile import NutritionProfileData, NutritionProData
+from app.services.goal_details import goal_details_from_profile, validate_measurable_goal
 from app.services import family as family_service
 from app.services.nutrition_profile_labels import NUTRITION_GOAL_TO_LEGACY_GOALS
 from app.services.onboarding import get_or_create_profile
@@ -70,6 +72,7 @@ def profile_to_nutrition_schema(profile: UserProfile) -> NutritionProfileData:
         cooking_time=profile.cooking_time,
         dish_complexity=profile.dish_complexity,
         pro=_pro_from_db(profile.pro_data),
+        goal_details=goal_details_from_profile(profile),
         completed=is_profile_complete(profile),
     )
 
@@ -88,6 +91,7 @@ def sync_legacy_menu_fields(profile: UserProfile) -> None:
 def save_nutrition_profile(
     db: Session, user: User, payload: NutritionProfileData
 ) -> UserProfile:
+    validate_measurable_goal(payload)
     profile = get_or_create_profile(db, user)
     profile.age = payload.age
     profile.gender = payload.gender
@@ -105,6 +109,9 @@ def save_nutrition_profile(
     profile.cooking_time = payload.cooking_time
     profile.dish_complexity = payload.dish_complexity
     profile.pro_data = payload.pro.model_dump()
+    profile.goal_details = payload.goal_details.model_dump(exclude_none=True)
+    if payload.goal_details.current_weight_kg is not None:
+        profile.weight_kg = payload.goal_details.current_weight_kg
     sync_legacy_menu_fields(profile)
     db.commit()
     db.refresh(profile)

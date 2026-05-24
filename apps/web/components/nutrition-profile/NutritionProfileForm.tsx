@@ -8,6 +8,7 @@ import { OptionCards } from "@/components/onboarding/OptionCards";
 import { TextAreaField } from "@/components/onboarding/TextAreaField";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { StickyBottomBar } from "@/components/layout/StickyBottomBar";
+import { NutritionGoalDetailsFields } from "@/components/nutrition-profile/NutritionGoalDetailsFields";
 import { NutritionSection } from "@/components/nutrition-profile/NutritionSection";
 import { NumberInput } from "@/components/nutrition-profile/NumberInput";
 import { ToggleRow } from "@/components/nutrition-profile/ToggleRow";
@@ -302,6 +303,13 @@ export function NutritionProfileForm() {
                 options={NUTRITION_GOAL_OPTIONS}
                 value={data.nutrition_goal}
                 onChange={(nutrition_goal) => patch({ nutrition_goal })}
+              />
+              <NutritionGoalDetailsFields
+                goal={data.nutrition_goal}
+                details={data.goal_details}
+                profile={data}
+                onChange={(goal_details) => patch({ goal_details })}
+                onProfilePatch={patch}
               />
             </div>
             <div>

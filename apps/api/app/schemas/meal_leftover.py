@@ -15,6 +15,7 @@ class MealLeftoverUpdate(BaseModel):
     portions_remaining: int | None = Field(default=None, ge=1, le=50)
     valid_until: date | None = None
     note: str | None = Field(default=None, max_length=200)
+    leftover_status: str | None = Field(default=None, max_length=32)
 
 
 class MealLeftoverResponse(BaseModel):
@@ -24,5 +25,6 @@ class MealLeftoverResponse(BaseModel):
     portions_remaining: int
     valid_until: date | None
     note: str | None
+    leftover_status: str = "active"
     created_at: datetime
     updated_at: datetime

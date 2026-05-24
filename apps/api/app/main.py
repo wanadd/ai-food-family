@@ -16,6 +16,7 @@ from app.routers import (
     auth,
     care,
     families,
+    meal_checkins,
     meal_leftovers,
     legal,
     menus,
@@ -107,6 +108,7 @@ app.include_router(nutrition_profile.router)
 app.include_router(nutritionist_router.router)
 app.include_router(families.router)
 app.include_router(menus.router)
+app.include_router(meal_checkins.router)
 app.include_router(meal_leftovers.router)
 app.include_router(shopping_lists.router)
 app.include_router(subscriptions.router)

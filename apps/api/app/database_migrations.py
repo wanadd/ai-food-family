@@ -475,6 +475,43 @@ def run_schema_migrations(engine: Engine) -> None:
         """,
         "CREATE INDEX IF NOT EXISTS ix_event_plans_user_id ON event_plans (user_id);",
         "CREATE INDEX IF NOT EXISTS ix_event_plans_family_id ON event_plans (family_id);",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS goal_details JSONB NOT NULL DEFAULT '{}'",
+        "ALTER TABLE meal_leftovers ADD COLUMN IF NOT EXISTS leftover_status VARCHAR(32) NOT NULL DEFAULT 'active'",
+        """
+        CREATE TABLE IF NOT EXISTS meal_eating_schedules (
+            id SERIAL PRIMARY KEY,
+            family_member_id INTEGER NOT NULL UNIQUE REFERENCES family_members(id) ON DELETE CASCADE,
+            family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+            schedule_json JSONB NOT NULL DEFAULT '{}',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_meal_eating_schedules_family_id ON meal_eating_schedules (family_id);",
+        """
+        CREATE TABLE IF NOT EXISTS meal_checkins (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            family_member_id INTEGER REFERENCES family_members(id) ON DELETE SET NULL,
+            meal_plan_id INTEGER,
+            recipe_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL,
+            meal_type VARCHAR(16) NOT NULL,
+            planned_date DATE NOT NULL,
+            planned_servings INTEGER,
+            actual_status VARCHAR(32) NOT NULL DEFAULT 'planned',
+            actual_description VARCHAR(500),
+            actual_calories DOUBLE PRECISION,
+            actual_protein_g DOUBLE PRECISION,
+            actual_fat_g DOUBLE PRECISION,
+            actual_carbs_g DOUBLE PRECISION,
+            leftover_servings_delta INTEGER,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_meal_checkins_family_date ON meal_checkins (family_id, planned_date);",
+        "CREATE INDEX IF NOT EXISTS ix_meal_checkins_user_date ON meal_checkins (user_id, planned_date);",
     ]
 
     with engine.begin() as connection:

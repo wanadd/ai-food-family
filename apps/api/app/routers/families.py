@@ -11,6 +11,8 @@ from app.schemas.family import (
     FamilyMemberResponse,
     FamilyMemberUpdateRequest,
     FamilyResponse,
+    FamilyTransferAdminRequest,
+    FamilyUpdateRequest,
 )
 from app.schemas.family_member_nutrition import (
     AllowAdminEditRequest,
@@ -75,6 +77,40 @@ def get_my_family(
     db: Session = Depends(get_db),
 ) -> FamilyResponse | None:
     return family_service.get_my_family(db, user)
+
+
+@router.patch("/me", response_model=FamilyResponse)
+def patch_my_family(
+    payload: FamilyUpdateRequest,
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> FamilyResponse:
+    return family_service.update_family_name(db, user, payload)
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_my_family(
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> None:
+    family_service.delete_family(db, user)
+
+
+@router.post("/me/leave", status_code=status.HTTP_204_NO_CONTENT)
+def leave_my_family(
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> None:
+    family_service.leave_family(db, user)
+
+
+@router.post("/me/transfer-admin", response_model=FamilyResponse)
+def transfer_family_admin(
+    payload: FamilyTransferAdminRequest,
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> FamilyResponse:
+    return family_service.transfer_admin(db, user, payload.member_id)
 
 
 @router.post(

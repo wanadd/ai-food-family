@@ -34,6 +34,7 @@ class UserProfile(Base):
     banned_foods: Mapped[str] = mapped_column(Text, default="")
     dish_complexity: Mapped[str | None] = mapped_column(String(32), nullable=True)
     pro_data: Mapped[dict] = mapped_column(JSONB, default=dict)
+    goal_details: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

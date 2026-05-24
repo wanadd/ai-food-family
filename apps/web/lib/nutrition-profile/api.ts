@@ -19,6 +19,7 @@ type ApiNutritionProfile = {
   cooking_time: string | null;
   dish_complexity: string | null;
   pro: NutritionProfileData["pro"];
+  goal_details?: NutritionProfileData["goal_details"];
   completed: boolean;
 };
 
@@ -40,6 +41,7 @@ function toApi(data: NutritionProfileData): ApiNutritionProfile {
     cooking_time: data.cooking_time,
     dish_complexity: data.dish_complexity,
     pro: data.pro,
+    goal_details: data.goal_details,
     completed: data.completed,
   };
 }
@@ -69,6 +71,7 @@ function fromApi(payload: ApiNutritionProfile): NutritionProfileData {
       water_liters: null,
       track_macros: false,
     },
+    goal_details: payload.goal_details ?? {},
     completed: payload.completed ?? false,
   };
 }

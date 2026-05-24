@@ -182,3 +182,31 @@ export async function setAllowAdminProfileEdit(
     body: JSON.stringify({ allow_admin_profile_edit: allow }),
   });
 }
+
+export async function renameFamily(
+  initData: string,
+  name: string,
+): Promise<Family> {
+  return familyFetch<Family>("/families/me", initData, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function deleteFamily(initData: string): Promise<void> {
+  await familyFetch<void>("/families/me", initData, { method: "DELETE" });
+}
+
+export async function leaveFamily(initData: string): Promise<void> {
+  await familyFetch<void>("/families/me/leave", initData, { method: "POST" });
+}
+
+export async function transferFamilyAdmin(
+  initData: string,
+  memberId: number,
+): Promise<Family> {
+  return familyFetch<Family>("/families/me/transfer-admin", initData, {
+    method: "POST",
+    body: JSON.stringify({ member_id: memberId }),
+  });
+}

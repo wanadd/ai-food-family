@@ -30,6 +30,21 @@ export type MenuOverview = {
   persons_count: number;
   plan_mode: string | null;
   meal_leftovers_count: number;
+  today_meals: { meal_type: string; label: string; name: string | null }[];
+  home_attendance: {
+    breakfast_home: number;
+    lunch_home: number;
+    dinner_home: number;
+    total_members: number;
+  } | null;
+  settings_summary: {
+    persons_count: number;
+    goal_label: string;
+    plan_mode_label: string;
+    include_drinks: boolean;
+    use_pantry: boolean;
+  } | null;
+  nutritionist_advice_error?: string | null;
 };
 
 export type RecipeEvaluation = {

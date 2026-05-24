@@ -17,8 +17,10 @@ from app.services.pantry import get_active_items_for_scope
 
 
 def _profile_snapshot(profile) -> dict:
+    goal_details = profile.goal_details if isinstance(profile.goal_details, dict) else {}
     return {
         "nutrition_goal": profile.nutrition_goal,
+        "goal_details": goal_details,
         "activity_level": profile.activity_level,
         "age": profile.age,
         "gender": profile.gender,
@@ -119,6 +121,11 @@ def compute_context_fingerprint(
 def resolve_persons_count(db: Session, user: User, scope: AppScope) -> int:
     if scope.is_personal:
         return 1
+    from app.services.meal_attendance import count_home_eaters
+
+    home, _total = count_home_eaters(db, scope, meal_type="lunch")
+    if home > 0:
+        return home
     family = family_service.get_family_for_user(db, user)
     if family and family.members:
         return len(family.members)

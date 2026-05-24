@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas.goal_details import NutritionGoalDetails
+
 
 class NutritionProData(BaseModel):
     workouts_enabled: bool = False
@@ -29,6 +31,7 @@ class NutritionProfileData(BaseModel):
     cooking_time: str | None = None
     dish_complexity: str | None = None
     pro: NutritionProData = Field(default_factory=NutritionProData)
+    goal_details: NutritionGoalDetails = Field(default_factory=NutritionGoalDetails)
     completed: bool = False
 
 

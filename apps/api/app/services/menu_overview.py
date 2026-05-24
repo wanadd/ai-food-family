@@ -7,6 +7,7 @@ from app.schemas.menu_overview import (
     MenuNutritionistAdvice,
     MenuOverviewResponse,
     MenuPlanSummary,
+    MenuSettingsSummary,
     MenuWhyReason,
     ProGoalCoverage,
 )
@@ -16,7 +17,11 @@ from app.services.family_member_nutrition import member_is_virtual, virtual_nutr
 from app.services.meal_leftovers import list_active_leftovers
 from app.services.menu import _get_latest_selection
 from app.services.menu_selection import get_selected_menu
-from app.services.menu_context_fingerprint import get_stored_fingerprint
+from app.services.menu_context_fingerprint import (
+    compute_context_fingerprint,
+    get_stored_fingerprint,
+)
+from app.services.meal_attendance import build_home_attendance_summary, extract_today_meals
 from app.services.menu_labels import GOAL_LABELS, PLAN_MODE_PROMPT_HINTS
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import get_active_items_for_scope
@@ -56,6 +61,12 @@ from app.services.menu_context_fingerprint import resolve_persons_count
 
 
 def _goal_label(profile) -> str:
+    from app.services.goal_details import format_measurable_goal_summary
+
+    summary = format_measurable_goal_summary(profile)
+    if summary:
+        return summary
+
     key = profile.nutrition_goal or "healthy"
     return GOAL_LABELS.get(key) or NUTRITION_GOAL_FALLBACK.get(key, "Здоровое питание")
 
@@ -324,8 +335,36 @@ def get_menu_overview(db: Session, user: User, scope: AppScope) -> MenuOverviewR
     )
 
     why = build_why_reasons(db, user, scope, has_menu=has_menu)
-    advice = build_nutritionist_advice(
-        db, user, scope, has_menu=has_menu, menu_data=menu_data
+    advice_error: str | None = None
+    try:
+        advice = build_nutritionist_advice(
+            db, user, scope, has_menu=has_menu, menu_data=menu_data
+        )
+    except Exception:
+        advice = MenuNutritionistAdvice(
+            level="suggest_update",
+            title="Рекомендация нутрициолога",
+            body="Совет временно недоступен — меню и действия работают как обычно.",
+            freshness_status="current" if has_menu else "no_menu",
+            update_reason=None,
+        )
+        advice_error = "nutritionist_unavailable"
+
+    today_meals = extract_today_meals(menu_data) if menu_data else []
+    if not today_meals and selected and getattr(selected.menu, "meals", None):
+        meals_raw = [
+            m.model_dump() if hasattr(m, "model_dump") else m
+            for m in selected.menu.meals
+        ]
+        today_meals = extract_today_meals({"meals": meals_raw})
+
+    home_attendance = build_home_attendance_summary(db, user, scope)
+    settings_summary = MenuSettingsSummary(
+        persons_count=persons,
+        goal_label=_goal_label(profile),
+        plan_mode_label=PLAN_MODE_LABELS.get(plan_mode, "Сбалансированный"),
+        include_drinks=bool(meta.get("include_drinks", True)),
+        use_pantry=plan_mode == "use_pantry" or bool(meta.get("use_pantry")),
     )
     is_pro = user_has_pro(db, user)
 
@@ -339,4 +378,8 @@ def get_menu_overview(db: Session, user: User, scope: AppScope) -> MenuOverviewR
         persons_count=persons,
         plan_mode=plan_mode,
         meal_leftovers_count=len(leftovers),
+        today_meals=today_meals,
+        home_attendance=home_attendance,
+        settings_summary=settings_summary,
+        nutritionist_advice_error=advice_error,
     )

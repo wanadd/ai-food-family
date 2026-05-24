@@ -21,8 +21,19 @@ def _leftover_query(db: Session, scope: AppScope):
     )
 
 
-def list_active_leftovers(db: Session, scope: AppScope) -> list[MealLeftover]:
+USABLE_LEFTOVER_STATUSES = ("active", "planned_to_eat")
+
+
+def list_active_leftovers(
+    db: Session,
+    scope: AppScope,
+    *,
+    include_frozen: bool = False,
+) -> list[MealLeftover]:
     today = date.today()
+    statuses = list(USABLE_LEFTOVER_STATUSES)
+    if include_frozen:
+        statuses.append("frozen")
     return (
         _leftover_query(db, scope)
         .filter(
@@ -30,6 +41,7 @@ def list_active_leftovers(db: Session, scope: AppScope) -> list[MealLeftover]:
             | (MealLeftover.valid_until >= today)
         )
         .filter(MealLeftover.portions_remaining > 0)
+        .filter(MealLeftover.leftover_status.in_(statuses))
         .order_by(MealLeftover.valid_until.asc().nulls_last())
         .all()
     )
@@ -81,6 +93,8 @@ def update_leftover(
         row.valid_until = data["valid_until"]
     if "note" in data:
         row.note = data["note"] or None
+    if "leftover_status" in data and data["leftover_status"] is not None:
+        row.leftover_status = data["leftover_status"]
     db.commit()
     db.refresh(row)
     return _to_response(row, scope)
@@ -109,6 +123,7 @@ def _to_response(row: MealLeftover, scope: AppScope) -> MealLeftoverResponse:
         portions_remaining=row.portions_remaining,
         valid_until=row.valid_until,
         note=row.note,
+        leftover_status=getattr(row, "leftover_status", None) or "active",
         created_at=row.created_at,
         updated_at=row.updated_at,
     )

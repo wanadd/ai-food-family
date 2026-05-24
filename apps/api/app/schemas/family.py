@@ -8,6 +8,14 @@ from app.schemas.family_member_nutrition import VirtualNutritionProfile
 FamilyRoleType = Literal["admin", "adult", "child"]
 
 
+class FamilyUpdateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+
+class FamilyTransferAdminRequest(BaseModel):
+    member_id: int = Field(ge=1)
+
+
 class FamilyCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     admin_manage_consent: bool = False

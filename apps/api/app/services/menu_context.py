@@ -68,14 +68,20 @@ def build_menu_context(db: Session, user: User, scope: AppScope) -> MenuGenerati
     if family is None:
         raise ValueError("Family scope without family membership")
 
-    persons = len(family.members)
+    from app.services.meal_attendance import count_home_eaters
+
+    total = len(family.members)
+    b_home, _ = count_home_eaters(db, scope, meal_type="breakfast")
+    l_home, _ = count_home_eaters(db, scope, meal_type="lunch")
+    d_home, _ = count_home_eaters(db, scope, meal_type="dinner")
+    persons = max(b_home, l_home, d_home, 1)
     lines.append(
         f"Режим: семейный. Семья: {family.name}. "
-        f"Готовить на {persons} персон (все участники ниже)."
+        f"Участников: {total}. Дома едят: завтрак {b_home}, обед {l_home}, ужин {d_home}."
     )
     lines.append(
-        "Учти цели, аллергии и ограничения КАЖДОГО участника; "
-        "порции рассчитай на указанное число персон."
+        "Учти цели, аллергии и ограничения КАЖДОГО участника. "
+        f"Порции на домашние приёмы: завтрак {b_home}, обед {l_home}, ужин {d_home} персон."
     )
     for member in sorted(
         family.members,
@@ -89,7 +95,7 @@ def build_menu_context(db: Session, user: User, scope: AppScope) -> MenuGenerati
         scope_mode="family",
         context_label=f"Семья «{family.name}»",
         family_name=family.name,
-        members_count=len(family.members),
+        members_count=persons,
         prompt_text="\n".join(lines),
         has_family=True,
         leftovers=leftovers,

@@ -10,6 +10,7 @@ from app.schemas.family import (
     FamilyMemberUpdateRequest,
     FamilyResponse,
     FamilyMemberResponse,
+    FamilyUpdateRequest,
 )
 from app.schemas.family_member_nutrition import (
     AllowAdminEditRequest,
@@ -460,4 +461,106 @@ def delete_member(
         )
 
     db.delete(member)
+    db.commit()
+
+
+def update_family_name(
+    db: Session, user: User, payload: FamilyUpdateRequest
+) -> FamilyResponse:
+    membership = get_user_membership(db, user)
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not in a family")
+    require_admin(membership)
+    family = membership.family
+    family.name = payload.name.strip()
+    db.commit()
+    db.refresh(family)
+    return _family_response(db, family, user)
+
+
+def leave_family(db: Session, user: User) -> None:
+    membership = get_user_membership(db, user)
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not in a family")
+    if membership.role == FamilyRole.ADMIN.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Администратор не может покинуть семью — передайте права или удалите семью",
+        )
+    db.delete(membership)
+    db.commit()
+
+
+def transfer_admin(
+    db: Session, user: User, new_admin_member_id: int
+) -> FamilyResponse:
+    membership = get_user_membership(db, user)
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not in a family")
+    require_admin(membership)
+    if membership.id == new_admin_member_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Уже администратор",
+        )
+
+    target = (
+        db.query(FamilyMember)
+        .filter(
+            FamilyMember.id == new_admin_member_id,
+            FamilyMember.family_id == membership.family_id,
+        )
+        .one_or_none()
+    )
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+    if target.is_virtual or target.user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Нельзя передать права виртуальному участнику",
+        )
+
+    membership.role = FamilyRole.ADULT.value
+    target.role = FamilyRole.ADMIN.value
+    db.commit()
+    family = (
+        db.query(Family)
+        .options(joinedload(Family.members))
+        .filter(Family.id == membership.family_id)
+        .one()
+    )
+    return _family_response(db, family, user)
+
+
+def delete_family(db: Session, user: User) -> None:
+    membership = get_user_membership(db, user)
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not in a family")
+    require_admin(membership)
+    family = membership.family
+    family_id = family.id
+
+    from app.models.meal_checkin import MealCheckin
+    from app.models.meal_leftover import MealLeftover
+    from app.models.menu_selection import FamilyMenuSelection
+    from app.models.pantry import FamilyPantryItem
+    from app.models.shopping_list import FamilyShoppingList
+
+    db.query(MealCheckin).filter(MealCheckin.family_id == family_id).delete(
+        synchronize_session=False
+    )
+    db.query(MealLeftover).filter(MealLeftover.family_id == family_id).delete(
+        synchronize_session=False
+    )
+    db.query(FamilyMenuSelection).filter(
+        FamilyMenuSelection.family_id == family_id
+    ).delete(synchronize_session=False)
+    db.query(FamilyPantryItem).filter(
+        FamilyPantryItem.family_id == family_id
+    ).delete(synchronize_session=False)
+    db.query(FamilyShoppingList).filter(
+        FamilyShoppingList.family_id == family_id
+    ).delete(synchronize_session=False)
+
+    db.delete(family)
     db.commit()

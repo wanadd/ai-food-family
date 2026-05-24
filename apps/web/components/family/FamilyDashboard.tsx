@@ -8,6 +8,7 @@ import { useTelegram } from "@/components/TelegramProvider";
 import { AddPersonSheet } from "@/components/family/AddPersonSheet";
 import { InviteSheet } from "@/components/family/InviteSheet";
 import { MemberCard } from "@/components/family/MemberCard";
+import { FamilyManageSheet } from "@/components/family/FamilyManageSheet";
 import { VirtualMemberNutritionForm } from "@/components/family/VirtualMemberNutritionForm";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { StickyBottomBar } from "@/components/layout/StickyBottomBar";
@@ -101,6 +102,7 @@ export function FamilyDashboard() {
   const [showNutritionForm, setShowNutritionForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lastInvite, setLastInvite] = useState<FamilyInvite | null>(null);
+  const [showManage, setShowManage] = useState(false);
 
   const loadFamily = useCallback(async (telegramInitData: string) => {
     setLoading(true);
@@ -361,6 +363,13 @@ export function FamilyDashboard() {
                   Тариф: {family.plan_label}
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowManage(true)}
+                className="mt-4 w-full rounded-xl border border-stone-200 bg-white py-2.5 text-sm font-semibold text-stone-800"
+              >
+                Управление семьёй
+              </button>
             </section>
 
             {isAdmin ? (
@@ -417,6 +426,20 @@ export function FamilyDashboard() {
           onSuccess={(invite) => {
             setLastInvite(invite);
             setShowInviteSheet(false);
+          }}
+        />
+      ) : null}
+
+      {family ? (
+        <FamilyManageSheet
+          open={showManage}
+          onClose={() => setShowManage(false)}
+          family={family}
+          initData={initData}
+          onUpdated={async (updated) => {
+            setFamily(updated);
+            setShowManage(false);
+            await refreshContext();
           }}
         />
       ) : null}

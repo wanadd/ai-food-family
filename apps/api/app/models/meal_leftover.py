@@ -20,6 +20,7 @@ class MealLeftover(Base):
     portions_remaining: Mapped[int] = mapped_column(Integer, default=1)
     valid_until: Mapped[date | None] = mapped_column(Date, nullable=True)
     note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    leftover_status: Mapped[str] = mapped_column(String(32), default="active")
     added_by_user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

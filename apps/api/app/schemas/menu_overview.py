@@ -44,6 +44,27 @@ class MenuQuickActionId(BaseModel):
     id: str
 
 
+class MenuTodayMeal(BaseModel):
+    meal_type: str
+    label: str
+    name: str | None = None
+
+
+class MenuHomeAttendance(BaseModel):
+    breakfast_home: int
+    lunch_home: int
+    dinner_home: int
+    total_members: int
+
+
+class MenuSettingsSummary(BaseModel):
+    persons_count: int
+    goal_label: str
+    plan_mode_label: str
+    include_drinks: bool = True
+    use_pantry: bool = False
+
+
 class MenuOverviewResponse(BaseModel):
     plan_summary: MenuPlanSummary
     why_reasons: list[MenuWhyReason]
@@ -54,6 +75,10 @@ class MenuOverviewResponse(BaseModel):
     persons_count: int = 1
     plan_mode: str | None = None
     meal_leftovers_count: int = 0
+    today_meals: list[MenuTodayMeal] = Field(default_factory=list)
+    home_attendance: MenuHomeAttendance | None = None
+    settings_summary: MenuSettingsSummary | None = None
+    nutritionist_advice_error: str | None = None
 
 
 class MenuQuickActionRequest(BaseModel):
