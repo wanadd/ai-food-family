@@ -96,3 +96,12 @@ export const CHECKLIST_ITEMS = [
   { id: "budget", label: "Бюджет" },
   { id: "cooking_time", label: "Время на готовку" },
 ] as const;
+
+export const CHECKLIST_ADD_LINKS: Record<string, string> = {
+  profile: "/profile/nutrition",
+  pantry: "/pantry",
+  leftovers: "/menu/leftovers",
+  allergies: "/profile/nutrition",
+  budget: "/profile/nutrition",
+  cooking_time: "/profile/nutrition",
+};

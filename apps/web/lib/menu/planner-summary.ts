@@ -42,6 +42,26 @@ export function buildRestrictionsSummary(
   };
 }
 
+export type ChecklistItemStatus = "included" | "missing" | "add";
+
+export function buildChecklistItemStatuses(
+  profile: NutritionProfileData | null,
+  personsCount: number,
+  pantry: PantryList | null,
+  isFamily: boolean,
+): Record<string, ChecklistItemStatus> {
+  const state = buildChecklistState(profile, personsCount, pantry);
+  return {
+    profile: state.profile ? "included" : "add",
+    persons: isFamily ? (state.persons ? "included" : "missing") : "included",
+    pantry: state.pantry ? "included" : "add",
+    leftovers: state.leftovers ? "included" : "add",
+    allergies: state.allergies ? "included" : "add",
+    budget: state.budget ? "included" : "add",
+    cooking_time: state.cooking_time ? "included" : "add",
+  };
+}
+
 export function buildChecklistState(
   profile: NutritionProfileData | null,
   personsCount: number,

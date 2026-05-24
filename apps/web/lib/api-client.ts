@@ -1,4 +1,4 @@
-import { apiUrl } from "@/lib/api";
+import { buildApiUrl } from "@/lib/api-base";
 import { ApiRequestError, parseApiErrorDetail } from "@/lib/api-errors";
 
 import type { AppMode } from "@/lib/app-mode/types";
@@ -15,6 +15,30 @@ function sleep(ms: number): Promise<void> {
 
 function isRetryableStatus(status: number): boolean {
   return RETRYABLE_STATUS.has(status);
+}
+
+function isNetworkFetchError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message.toLowerCase();
+  return (
+    err.name === "TypeError" ||
+    msg.includes("failed to fetch") ||
+    msg.includes("networkerror") ||
+    msg.includes("load failed")
+  );
+}
+
+export function formatNetworkError(
+  err: unknown,
+  fallback = "Не удалось связаться с сервером",
+): Error {
+  if (isNetworkFetchError(err)) {
+    return new Error(fallback);
+  }
+  if (err instanceof Error) {
+    return err;
+  }
+  return new Error(fallback);
 }
 
 function formatHttpError(status: number, detail?: unknown): Error {
@@ -48,8 +72,10 @@ async function fetchWithRetry(
 
       return response;
     } catch (err) {
-      lastError =
-        err instanceof Error ? err : new Error("Не удалось связаться с сервером");
+      lastError = formatNetworkError(
+        err,
+        "Сервер временно недоступен. Попробуйте через несколько секунд.",
+      );
       if (attempt < MAX_ATTEMPTS) {
         await sleep(RETRY_DELAY_MS);
         continue;
@@ -69,7 +95,7 @@ export async function apiFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const response = await fetchWithRetry(`${apiUrl}${path}`, {
+  const response = await fetchWithRetry(buildApiUrl(path), {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -98,7 +124,7 @@ export async function apiGet<T>(
   mode: AppMode,
   path: string,
 ): Promise<T | null> {
-  const response = await fetchWithRetry(`${apiUrl}${path}`, {
+  const response = await fetchWithRetry(buildApiUrl(path), {
     headers: {
       "X-Telegram-Init-Data": initData,
       "X-App-Mode": mode,

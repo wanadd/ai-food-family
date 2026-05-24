@@ -15,9 +15,10 @@ import { StickyBottomBar } from "@/components/layout/StickyBottomBar";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
-  buildChecklistState,
+  buildChecklistItemStatuses,
   buildRestrictionsSummary,
 } from "@/lib/menu/planner-summary";
+import { maxWizardScreenIndex } from "@/lib/menu/wizard-steps";
 import {
   type MenuGoalId,
   PLAN_MODE_OPTIONS,
@@ -56,6 +57,7 @@ export function MenuPlanner() {
   const [selectedMenu, setSelectedMenu] = useState<SelectedMenu | null>(null);
   const [generatedMenus, setGeneratedMenus] = useState<MenuVariant[]>([]);
   const [previewMenu, setPreviewMenu] = useState<MenuVariant | null>(null);
+  const [generateSuccess, setGenerateSuccess] = useState(false);
 
   const [personsCount, setPersonsCount] = useState(1);
   const [planMode, setPlanMode] = useState<PlanModeId>("healthy");
@@ -128,7 +130,15 @@ export function MenuPlanner() {
   }, [defaultPersons]);
 
   const restrictions = buildRestrictionsSummary(profile);
-  const checklist = buildChecklistState(profile, personsCount, checklistPantry);
+  const isFamily = mode === "family";
+  const effectivePersons = isFamily ? personsCount : 1;
+  const checklistStatuses = buildChecklistItemStatuses(
+    profile,
+    effectivePersons,
+    checklistPantry,
+    isFamily,
+  );
+  const maxWizardStep = maxWizardScreenIndex(isFamily);
   const hasPlan = Boolean(selectedMenu?.menu);
 
   function changePlanMode(id: PlanModeId) {
@@ -144,7 +154,7 @@ export function MenuPlanner() {
       }
       setGoalStepError(null);
     }
-    if (wizardStep < 4) {
+    if (wizardStep < maxWizardStep) {
       setWizardStep((s) => s + 1);
       return;
     }
@@ -152,7 +162,10 @@ export function MenuPlanner() {
   }
 
   async function handleGenerate() {
-    if (!initData) return;
+    if (!initData) {
+      setError("Откройте приложение в Telegram и попробуйте снова.");
+      return;
+    }
     if (!wizardGoal) {
       setGoalStepError("Выберите цель для продолжения");
       setWizardStep(0);
@@ -160,20 +173,19 @@ export function MenuPlanner() {
     }
     setGenerating(true);
     setError(null);
+    setGenerateSuccess(false);
     try {
-      const modeForGenerate =
-        wizardBudget === "economy"
-          ? "economy"
-          : wizardBudget === "premium"
-            ? "healthy"
-            : planMode;
       const result = await generateMenus(initData, mode, {
-        persons_count: personsCount,
-        plan_mode: modeForGenerate,
-        plan_days: wizardDays,
-        nutrition_goal: wizardGoal,
+        mode,
+        goal: wizardGoal,
+        personsCount: effectivePersons,
+        planDays: wizardDays,
+        planMode,
+        wizardBudget,
+        pantry: checklistPantry,
       });
       setGeneratedMenus(result.menus);
+      setGenerateSuccess(true);
       setPhase("choose");
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -181,14 +193,11 @@ export function MenuPlanner() {
         if (err.code === "menu_generation_limit" && err.canPayWithAms) {
           text = `${text} Дополнительная генерация спишет Амы с баланса.`;
         }
-        if (err.code === "menu_generation_limit" || err.code === "trial_expired") {
-          text = `${text} `;
-        }
         setError(text.trim());
       } else {
-        setError(
-          err instanceof Error ? err.message : "Не удалось составить план",
-        );
+        const msg =
+          err instanceof Error ? err.message : "Не удалось создать меню. Попробуйте ещё раз.";
+        setError(msg);
       }
     } finally {
       setGenerating(false);
@@ -264,9 +273,9 @@ export function MenuPlanner() {
           ) : null}
           <h1 className="mt-1 text-xl font-bold text-stone-900">Составить меню</h1>
           <p className="mt-0.5 text-sm text-stone-500">
-            {personsCount === 1
+            {effectivePersons === 1
               ? "На 1 человека"
-              : `На ${personsCount} человек`}
+              : `На ${effectivePersons} человек`}
             {" · "}
             вы выбираете финальный план
           </p>
@@ -289,23 +298,39 @@ export function MenuPlanner() {
         ) : null}
 
         {phase === "choose" ? (
-          <MenuChooseVariants
-            menus={generatedMenus}
-            selecting={selecting}
-            onSelect={(menu) => void handleSelect(menu)}
-            onPreview={setPreviewMenu}
-          />
+          <>
+            {generateSuccess ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                <p className="font-semibold">Меню создано</p>
+                <p className="mt-1">
+                  Выберите вариант ниже или откройте план после сохранения.
+                </p>
+                <Link
+                  href="/menu/current"
+                  className="mt-2 inline-block font-semibold text-emerald-800"
+                >
+                  Открыть план →
+                </Link>
+              </div>
+            ) : null}
+            <MenuChooseVariants
+              menus={generatedMenus}
+              selecting={selecting}
+              onSelect={(menu) => void handleSelect(menu)}
+              onPreview={setPreviewMenu}
+            />
+          </>
         ) : (
           <>
             <MenuWizardSteps
-              step={wizardStep}
+              screenIndex={wizardStep}
               goal={wizardGoal}
               goalError={goalStepError}
               onGoalChange={(g) => {
                 setWizardGoal(g);
                 setGoalStepError(null);
               }}
-              personsCount={personsCount}
+              personsCount={effectivePersons}
               onPersonsChange={setPersonsCount}
               days={wizardDays}
               onDaysChange={setWizardDays}
@@ -313,9 +338,9 @@ export function MenuPlanner() {
               onBudgetChange={setWizardBudget}
               planMode={planMode}
               onPlanModeChange={changePlanMode}
-              checklist={checklist}
+              checklistStatuses={checklistStatuses}
               familyName={context?.family?.name}
-              isFamily={mode === "family"}
+              isFamily={isFamily}
             />
             {hasPlan && selectedMenu ? (
               <MenuPlannerSection title="Текущий план">
@@ -360,7 +385,7 @@ export function MenuPlanner() {
             >
               {generating
                 ? "Составляем…"
-                : wizardStep < 4
+                : wizardStep < maxWizardStep
                   ? "Продолжить"
                   : "Сгенерировать меню"}
             </button>

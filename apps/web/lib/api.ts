@@ -1,4 +1,6 @@
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { getApiBaseUrl } from "@/lib/api-base";
+
+const apiUrl = getApiBaseUrl();
 
 export type AuthUser = {
   id: number;

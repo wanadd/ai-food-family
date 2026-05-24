@@ -1,6 +1,13 @@
-import { apiFetch, apiGet } from "@/lib/api-client";
+import { buildApiUrl } from "@/lib/api-base";
+import { apiFetch, apiGet, formatNetworkError } from "@/lib/api-client";
+import { ApiRequestError } from "@/lib/api-errors";
 import type { AppMode } from "@/lib/app-mode/types";
 
+import {
+  buildMenuGeneratePayload,
+  menuGenerateDebugMeta,
+  type BuildGeneratePayloadInput,
+} from "./generate-payload";
 import type {
   MenuGenerateResponse,
   MenuVariant,
@@ -14,15 +21,58 @@ export type MenuGenerateOptions = {
   nutrition_goal?: string;
 };
 
+const MENU_GENERATE_PATH = "/menus/generate";
+
+function menuGenDevLog(
+  event: "menu generate request started" | "menu generate request failed" | "menu generate response received",
+  meta?: Record<string, unknown>,
+): void {
+  if (process.env.NODE_ENV === "development") {
+    console.info(`[PlanAm] ${event}`, meta ?? "");
+  }
+}
+
 export async function generateMenus(
   initData: string,
   mode: AppMode,
-  options?: MenuGenerateOptions,
+  input: BuildGeneratePayloadInput,
 ): Promise<MenuGenerateResponse> {
-  return apiFetch<MenuGenerateResponse>(initData, mode, "/menus/generate", {
-    method: "POST",
-    body: JSON.stringify(options ?? {}),
-  });
+  if (!initData?.trim()) {
+    throw new Error("Нет данных авторизации Telegram. Перезапустите Mini App.");
+  }
+
+  const payload = buildMenuGeneratePayload(input);
+  const url = buildApiUrl(MENU_GENERATE_PATH);
+
+  menuGenDevLog("menu generate request started", menuGenerateDebugMeta(input, url));
+
+  try {
+    const result = await apiFetch<MenuGenerateResponse>(
+      initData,
+      mode,
+      MENU_GENERATE_PATH,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+    menuGenDevLog("menu generate response received", {
+      variants: result.menus?.length ?? 0,
+    });
+    return result;
+  } catch (err) {
+    menuGenDevLog("menu generate request failed", {
+      message: err instanceof Error ? err.message : String(err),
+      url,
+    });
+    if (err instanceof ApiRequestError) {
+      throw err;
+    }
+    throw formatNetworkError(
+      err,
+      "Не удалось создать меню. Попробуйте ещё раз.",
+    );
+  }
 }
 
 export async function replaceDish(
