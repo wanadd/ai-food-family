@@ -11,6 +11,7 @@ import { MenuChooseVariants } from "@/components/menu/MenuChooseVariants";
 import { MenuPlannerSection } from "@/components/menu/MenuPlannerSection";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { MenuWizardSteps } from "@/components/menu/MenuWizardSteps";
+import { StickyBottomBar } from "@/components/layout/StickyBottomBar";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
@@ -59,7 +60,8 @@ export function MenuPlanner() {
   const [personsCount, setPersonsCount] = useState(1);
   const [planMode, setPlanMode] = useState<PlanModeId>("healthy");
   const [wizardStep, setWizardStep] = useState(0);
-  const [wizardGoal, setWizardGoal] = useState<MenuGoalId>("healthy");
+  const [wizardGoal, setWizardGoal] = useState<MenuGoalId | null>(null);
+  const [goalStepError, setGoalStepError] = useState<string | null>(null);
   const [wizardDays, setWizardDays] = useState(7);
   const [wizardBudget, setWizardBudget] = useState("standard");
   const [checklistPantry, setChecklistPantry] = useState<
@@ -91,6 +93,7 @@ export function MenuPlanner() {
       const ng = nutrition?.nutrition_goal as MenuGoalId | undefined;
       if (ng && ["maintain", "lose", "gain", "healthy", "sport", "kids"].includes(ng)) {
         setWizardGoal(ng);
+        setGoalStepError(null);
       }
       const storedPersons = loadPersonsOverride();
       setPersonsCount(storedPersons ?? defaultPersons);
@@ -133,8 +136,28 @@ export function MenuPlanner() {
     savePlanMode(id);
   }
 
+  function handleWizardContinue() {
+    if (wizardStep === 0) {
+      if (!wizardGoal) {
+        setGoalStepError("Выберите цель для продолжения");
+        return;
+      }
+      setGoalStepError(null);
+    }
+    if (wizardStep < 4) {
+      setWizardStep((s) => s + 1);
+      return;
+    }
+    void handleGenerate();
+  }
+
   async function handleGenerate() {
     if (!initData) return;
+    if (!wizardGoal) {
+      setGoalStepError("Выберите цель для продолжения");
+      setWizardStep(0);
+      return;
+    }
     setGenerating(true);
     setError(null);
     try {
@@ -215,7 +238,13 @@ export function MenuPlanner() {
     : null;
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-28">
+    <div
+      className="min-h-screen bg-stone-50"
+      style={{
+        paddingBottom:
+          "calc(4.75rem + env(safe-area-inset-bottom, 0px) + 5.25rem)",
+      }}
+    >
       <header className="border-b border-stone-100 bg-white px-4 py-4">
         <div className="mx-auto max-w-lg">
           <Link href="/menu" className="text-sm font-semibold text-emerald-700">
@@ -271,7 +300,11 @@ export function MenuPlanner() {
             <MenuWizardSteps
               step={wizardStep}
               goal={wizardGoal}
-              onGoalChange={setWizardGoal}
+              goalError={goalStepError}
+              onGoalChange={(g) => {
+                setWizardGoal(g);
+                setGoalStepError(null);
+              }}
               personsCount={personsCount}
               onPersonsChange={setPersonsCount}
               days={wizardDays}
@@ -305,12 +338,15 @@ export function MenuPlanner() {
       </main>
 
       {phase === "setup" ? (
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-stone-200/90 bg-white/95 px-4 py-3 backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="mx-auto flex max-w-lg gap-2">
+        <StickyBottomBar>
+          <div className="flex gap-2">
             {wizardStep > 0 ? (
               <button
                 type="button"
-                onClick={() => setWizardStep((s) => s - 1)}
+                onClick={() => {
+                  setGoalStepError(null);
+                  setWizardStep((s) => s - 1);
+                }}
                 className="min-h-[48px] shrink-0 rounded-2xl border border-stone-200 px-4 text-sm font-semibold text-stone-700"
               >
                 Назад
@@ -319,23 +355,17 @@ export function MenuPlanner() {
             <button
               type="button"
               disabled={generating || !initData}
-              onClick={() => {
-                if (wizardStep < 4) {
-                  setWizardStep((s) => s + 1);
-                  return;
-                }
-                void handleGenerate();
-              }}
+              onClick={handleWizardContinue}
               className="w-full min-h-[48px] flex-1 rounded-2xl bg-emerald-600 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/40 disabled:opacity-50"
             >
               {generating
                 ? "Составляем…"
                 : wizardStep < 4
-                  ? "Далее"
+                  ? "Продолжить"
                   : "Сгенерировать меню"}
             </button>
           </div>
-        </div>
+        </StickyBottomBar>
       ) : null}
 
       {previewMenu ? (

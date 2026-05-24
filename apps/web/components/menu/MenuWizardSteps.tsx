@@ -12,7 +12,8 @@ import { MenuPlannerSection } from "@/components/menu/MenuPlannerSection";
 
 type Props = {
   step: number;
-  goal: MenuGoalId;
+  goal: MenuGoalId | null;
+  goalError?: string | null;
   onGoalChange: (g: MenuGoalId) => void;
   personsCount: number;
   onPersonsChange: (n: number) => void;
@@ -30,6 +31,7 @@ type Props = {
 export function MenuWizardSteps({
   step,
   goal,
+  goalError,
   onGoalChange,
   personsCount,
   onPersonsChange,
@@ -62,6 +64,16 @@ export function MenuWizardSteps({
             </button>
           ))}
         </div>
+        {goalError ? (
+          <p className="mt-3 text-sm font-medium text-red-700" role="alert">
+            {goalError}
+          </p>
+        ) : null}
+        <p className="mt-3 text-xs text-stone-500">
+          {goal
+            ? "Нажмите «Продолжить» внизу экрана"
+            : "Выберите цель, затем нажмите «Продолжить»"}
+        </p>
       </MenuPlannerSection>
     );
   }
