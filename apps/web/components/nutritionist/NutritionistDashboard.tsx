@@ -24,9 +24,12 @@ import { NutritionistAdviceCard } from "@/components/nutritionist/NutritionistAd
 import { WaterIntakePanel } from "@/components/nutritionist/WaterIntakePanel";
 import { buildAdviceWhy } from "@/lib/nutritionist/advice-why";
 import {
+  completeDeferredAdvice,
+  dismissDeferredAdvicePermanently,
   listDeferredAdvice,
+  listSuppressedAdviceTitles,
   migrateLocalDeferredAdvice,
-  removeDeferredAdvice,
+  returnDeferredAdvice,
   type DeferredAdvice,
 } from "@/lib/nutritionist/advice-deferred";
 import { buildDailyStatus } from "@/lib/nutritionist/daily-status";
@@ -71,11 +74,16 @@ export function NutritionistDashboard() {
   const [familySummaryOpen, setFamilySummaryOpen] = useState(false);
   const [familyProgressOpen, setFamilyProgressOpen] = useState(false);
   const [deferredAdvice, setDeferredAdvice] = useState<DeferredAdvice[]>([]);
+  const [suppressedTitles, setSuppressedTitles] = useState<string[]>([]);
 
   const refreshDeferred = useCallback(async () => {
     if (!initData) return;
-    const items = await listDeferredAdvice(initData, mode);
+    const [items, suppressed] = await Promise.all([
+      listDeferredAdvice(initData, mode),
+      listSuppressedAdviceTitles(initData, mode),
+    ]);
     setDeferredAdvice(items);
+    setSuppressedTitles(suppressed);
   }, [initData, mode]);
 
   const load = useCallback(async () => {
@@ -128,7 +136,9 @@ export function NutritionistDashboard() {
     pantryActiveCount: pantry?.active_count ?? 0,
   });
   const adviceWhy = buildAdviceWhy(profile);
-  const adviceHiddenByDefer = deferredAdvice.some((d) => d.title === advice.title);
+  const adviceHiddenByDefer =
+    deferredAdvice.some((d) => d.title === advice.title) ||
+    suppressedTitles.includes(advice.title);
 
   const familyInsights = useMemo(() => {
     if (mode !== "family" || !context?.family) return [];
@@ -323,7 +333,7 @@ export function NutritionistDashboard() {
                     type="button"
                     onClick={() => {
                       if (!initData) return;
-                      void removeDeferredAdvice(initData, mode, item.id).then(
+                      void completeDeferredAdvice(initData, mode, item.id).then(
                         refreshDeferred,
                       );
                     }}
@@ -335,7 +345,7 @@ export function NutritionistDashboard() {
                     type="button"
                     onClick={() => {
                       if (!initData) return;
-                      void removeDeferredAdvice(initData, mode, item.id).then(
+                      void returnDeferredAdvice(initData, mode, item.id).then(
                         refreshDeferred,
                       );
                     }}
@@ -347,9 +357,11 @@ export function NutritionistDashboard() {
                     type="button"
                     onClick={() => {
                       if (!initData) return;
-                      void removeDeferredAdvice(initData, mode, item.id).then(
-                        refreshDeferred,
-                      );
+                      void dismissDeferredAdvicePermanently(
+                        initData,
+                        mode,
+                        item.id,
+                      ).then(refreshDeferred);
                     }}
                     className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600"
                   >

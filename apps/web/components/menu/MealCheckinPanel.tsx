@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -164,6 +165,13 @@ export function MealCheckinPanel({ menu, plannedDate, onUpdated }: Props) {
           );
         })}
       </ul>
+
+      <Link
+        href="/menu/leftovers"
+        className="mt-4 flex min-h-[40px] items-center justify-center rounded-xl border border-dashed border-stone-200 bg-stone-50 px-3 text-xs font-semibold text-emerald-800"
+      >
+        Остатки блюд
+      </Link>
     </section>
   );
 }

@@ -84,6 +84,19 @@ def delete_deferred(db: Session, user: User, scope: AppScope, advice_id: int) ->
     db.commit()
 
 
+def list_suppressed_titles(db: Session, user: User, scope: AppScope) -> list[str]:
+    """Titles hidden from active advice (completed or dismissed)."""
+    q = db.query(DeferredNutritionAdvice.title).filter(
+        DeferredNutritionAdvice.user_id == user.id,
+        DeferredNutritionAdvice.status.in_(("completed", "dismissed")),
+    )
+    if scope.is_family and scope.family_id:
+        q = q.filter(DeferredNutritionAdvice.family_id == scope.family_id)
+    else:
+        q = q.filter(DeferredNutritionAdvice.family_id.is_(None))
+    return [str(row[0]) for row in q.all()]
+
+
 def is_advice_deferred(db: Session, user: User, scope: AppScope, title: str) -> bool:
     key = _advice_key(title)
     return (

@@ -2,8 +2,10 @@ import type { AppMode } from "@/lib/app-mode/types";
 import type { MainAdvice } from "@/lib/nutritionist/main-advice";
 import {
   deferAdviceApi,
-  dismissDeferredAdvice,
   fetchDeferredAdvice,
+  fetchSuppressedAdviceTitles,
+  restoreDeferredAdvice,
+  updateDeferredAdviceStatus,
   type DeferredAdviceRow,
 } from "@/lib/nutritionist/deferred-advice-api";
 
@@ -54,6 +56,13 @@ export async function listDeferredAdvice(
   return rows.map(rowToDeferred);
 }
 
+export async function listSuppressedAdviceTitles(
+  initData: string,
+  mode: AppMode,
+): Promise<string[]> {
+  return fetchSuppressedAdviceTitles(initData, mode);
+}
+
 export async function deferAdvice(
   initData: string,
   mode: AppMode,
@@ -62,12 +71,31 @@ export async function deferAdvice(
   await deferAdviceApi(initData, mode, advice);
 }
 
-export async function removeDeferredAdvice(
+/** Show again in active recommendations. */
+export async function returnDeferredAdvice(
   initData: string,
   mode: AppMode,
   id: string,
 ): Promise<void> {
-  await dismissDeferredAdvice(initData, mode, parseInt(id, 10));
+  await restoreDeferredAdvice(initData, mode, parseInt(id, 10));
+}
+
+/** Mark as done — hide from active and deferred lists. */
+export async function completeDeferredAdvice(
+  initData: string,
+  mode: AppMode,
+  id: string,
+): Promise<void> {
+  await updateDeferredAdviceStatus(initData, mode, parseInt(id, 10), "completed");
+}
+
+/** Permanently hide from active recommendations. */
+export async function dismissDeferredAdvicePermanently(
+  initData: string,
+  mode: AppMode,
+  id: string,
+): Promise<void> {
+  await updateDeferredAdviceStatus(initData, mode, parseInt(id, 10), "dismissed");
 }
 
 export function listDeferredAdviceLocal(): DeferredAdvice[] {

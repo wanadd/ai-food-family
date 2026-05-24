@@ -25,6 +25,18 @@ export async function fetchDeferredAdvice(
   return data ?? [];
 }
 
+export async function fetchSuppressedAdviceTitles(
+  initData: string,
+  mode: AppMode,
+): Promise<string[]> {
+  const data = await apiGet<string[]>(
+    initData,
+    mode,
+    "/nutritionist/deferred-advice/suppressed-titles",
+  );
+  return data ?? [];
+}
+
 export async function deferAdviceApi(
   initData: string,
   mode: AppMode,
@@ -36,7 +48,8 @@ export async function deferAdviceApi(
   });
 }
 
-export async function dismissDeferredAdvice(
+/** Remove deferral so the advice can appear in active recommendations again. */
+export async function restoreDeferredAdvice(
   initData: string,
   mode: AppMode,
   id: number,
@@ -46,10 +59,14 @@ export async function dismissDeferredAdvice(
   });
 }
 
-export async function restoreDeferredAdvice(
+export async function updateDeferredAdviceStatus(
   initData: string,
   mode: AppMode,
   id: number,
-): Promise<void> {
-  await dismissDeferredAdvice(initData, mode, id);
+  status: "completed" | "dismissed",
+): Promise<DeferredAdviceRow> {
+  return apiFetch(initData, mode, `/nutritionist/deferred-advice/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
 }

@@ -36,6 +36,7 @@ export function MenuCurrentView() {
   const [error, setError] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MenuVariant | null>(null);
   const [dayIndex, setDayIndex] = useState(1);
+  const justSaved = searchParams.get("saved") === "1";
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -140,6 +141,15 @@ export function MenuCurrentView() {
       back={{ label: "Меню", href: "/menu" }}
       contentClassName="space-y-4"
     >
+        {justSaved ? (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            <p className="font-semibold">Меню сохранено</p>
+            <p className="mt-1 text-emerald-800">
+              План активен — отмечайте приёмы пищи и смотрите другие дни ниже.
+            </p>
+          </div>
+        ) : null}
+
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
@@ -171,6 +181,13 @@ export function MenuCurrentView() {
             onUpdated={() => void load()}
           />
         ) : null}
+
+        <Link
+          href="/menu/leftovers"
+          className="flex min-h-[44px] items-center justify-center rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-800 shadow-sm"
+        >
+          Остатки блюд
+        </Link>
 
       {replaceTarget ? (
         <ReplaceDishModal

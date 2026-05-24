@@ -41,6 +41,15 @@ def list_deferred_advice(
     return deferred_advice_service.list_deferred(db, user, scope)
 
 
+@router.get("/deferred-advice/suppressed-titles", response_model=list[str])
+def list_suppressed_advice_titles(
+    user: User = Depends(get_verified_user),
+    scope: AppScope = Depends(get_app_scope),
+    db: Session = Depends(get_db),
+) -> list[str]:
+    return deferred_advice_service.list_suppressed_titles(db, user, scope)
+
+
 @router.post(
     "/deferred-advice",
     response_model=DeferredAdviceResponse,

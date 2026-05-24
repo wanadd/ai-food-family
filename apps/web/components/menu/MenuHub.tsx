@@ -14,6 +14,7 @@ import {
   runMenuQuickAction,
   type QuickActionId,
 } from "@/lib/menu/overview-api";
+import { menuHasMultipleDays } from "@/lib/menu/menu-days";
 import type { MenuOverview } from "@/lib/menu/overview-types";
 
 const QUICK_ACTIONS: { id: QuickActionId; label: string }[] = [
@@ -186,6 +187,8 @@ export function MenuHub() {
   const { plan_summary: plan, nutritionist_advice: advice } = data;
   const needsUpdate = advice.freshness_status === "needs_update";
   const adviceFailed = Boolean(data.nutritionist_advice_error);
+  const activeMenu = data.selected_menu?.menu ?? null;
+  const multiDayPlan = activeMenu ? menuHasMultipleDays(activeMenu) : false;
 
   return (
     <ScreenLayout
@@ -275,7 +278,7 @@ export function MenuHub() {
 
       {data.today_meals.length > 0 ? (
         <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-stone-900">Блюда на сегодня</p>
+          <p className="text-sm font-bold text-stone-900">Сегодня</p>
           <ul className="mt-2 space-y-2">
             {data.today_meals.map((meal) => (
               <li
@@ -287,12 +290,22 @@ export function MenuHub() {
               </li>
             ))}
           </ul>
-          <Link
-            href="/menu/current"
-            className="mt-3 inline-block text-sm font-semibold text-emerald-700"
-          >
-            Подробнее →
-          </Link>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            <Link
+              href="/menu/current"
+              className="text-sm font-semibold text-emerald-700"
+            >
+              Подробнее →
+            </Link>
+            {multiDayPlan ? (
+              <Link
+                href="/menu/current"
+                className="text-sm font-semibold text-emerald-700"
+              >
+                Открыть все дни →
+              </Link>
+            ) : null}
+          </div>
         </section>
       ) : null}
 
@@ -369,6 +382,27 @@ export function MenuHub() {
         <span className="font-semibold text-stone-900">
           {plan.menu_title ?? "Текущее меню"}
         </span>
+        <span className="text-stone-400">→</span>
+      </Link>
+
+      <Link
+        href="/menu/leftovers"
+        className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-4 py-3.5 shadow-sm"
+      >
+        <span className="font-semibold text-stone-900">Остатки блюд</span>
+        <span className="text-sm text-stone-500">
+          {data.meal_leftovers_count > 0
+            ? `${data.meal_leftovers_count} · `
+            : ""}
+          →
+        </span>
+      </Link>
+
+      <Link
+        href="/recipes"
+        className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-4 py-3.5 shadow-sm"
+      >
+        <span className="font-semibold text-stone-900">Рецепты</span>
         <span className="text-stone-400">→</span>
       </Link>
     </ScreenLayout>

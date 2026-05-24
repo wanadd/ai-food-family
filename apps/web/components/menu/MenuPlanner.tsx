@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { ApiRequestError } from "@/lib/api-errors";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -40,6 +41,7 @@ import type { MenuVariant } from "@/lib/menu/types";
 type Phase = "setup" | "choose";
 
 export function MenuPlanner() {
+  const router = useRouter();
   const { initData, isTelegram } = useTelegram();
   const { mode, context, loading: modeLoading } = useAppMode();
 
@@ -175,11 +177,8 @@ export function MenuPlanner() {
     setSelecting(true);
     setError(null);
     try {
-      const saved = await selectMenu(initData, mode, menu);
-      setSelectedMenu(saved);
-      setGeneratedMenus([]);
-      setPhase("setup");
-      setPreviewMenu(null);
+      await selectMenu(initData, mode, menu);
+      router.push("/menu/current?saved=1");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить план");
     } finally {
