@@ -141,7 +141,7 @@ export function CareTelegramBlock({
         </div>
         {showSettingsLink && !compact ? (
           <Link
-            href="/settings/care"
+            href="/nutritionist/care"
             className="shrink-0 text-xs font-semibold text-emerald-700"
           >
             Подробнее
