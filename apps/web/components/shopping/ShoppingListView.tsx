@@ -253,7 +253,9 @@ export function ShoppingListView() {
       current?.checked &&
       (current.added_to_pantry || current.linked_pantry_item_id)
     ) {
-      const remove = window.confirm("Убрать товар из запасов?");
+      const remove = window.confirm(
+        "Этот товар уже в запасах. Убрать его и оттуда?",
+      );
       setTogglingId(itemId);
       setError(null);
       try {
@@ -454,7 +456,8 @@ export function ShoppingListView() {
           <div className="min-w-0">
             <h1 className="text-xl font-bold text-stone-900">Покупки</h1>
             <p className="mt-0.5 text-xs text-stone-500">
-              Отметили ✓ — товар попадёт в запасы автоматически
+              Отметили ✓ — товар сразу попадёт в запасы. Снимите галочку,
+              чтобы отменить.
             </p>
           </div>
           <button

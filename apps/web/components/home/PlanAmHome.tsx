@@ -274,11 +274,11 @@ export function PlanAmHome() {
             >
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-stone-900">
-                  Дозаполнить профиль
+                  Можно дополнить профиль
                 </p>
                 <p className="mt-0.5 text-xs text-stone-600">
-                  Заполнено {profileProgress}% — ПланАм сможет точнее
-                  подбирать меню и советы.
+                  Заполнено {profileProgress}%. Если хотите —
+                  меню и советы станут точнее.
                 </p>
               </div>
               <span

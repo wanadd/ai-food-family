@@ -213,9 +213,9 @@ export function NutritionistDashboard() {
     >
       {!profileComplete ? (
         <section className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-          <p className="font-semibold text-stone-900">Дозаполнить профиль</p>
+          <p className="font-semibold text-stone-900">Можно дополнить профиль</p>
           <p className="mt-1 text-sm text-stone-600">
-            Чем точнее данные — тем точнее советы.
+            Если хотите — советы будут точнее. Без этого ПланАм тоже работает.
           </p>
           <Link
             href={withReturnTo("/profile/nutrition", NUTRI_RETURN)}

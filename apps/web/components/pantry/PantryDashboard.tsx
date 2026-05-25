@@ -268,7 +268,7 @@ export function PantryDashboard() {
           <div className="min-w-0">
             <h1 className="text-xl font-bold text-stone-900">Запасы дома</h1>
             <p className="mt-0.5 text-xs text-stone-500">
-              ПланАм учитывает их при составлении меню
+              Количество, название и срок можно изменить в любой момент
             </p>
             <p className="mt-1 text-xs font-medium text-teal-700">
               {activeCount} {activeCount === 1 ? "товар" : "товаров"} в запасах
@@ -317,14 +317,24 @@ export function PantryDashboard() {
               Запасов пока нет
             </p>
             <p className="mt-2 text-sm leading-relaxed text-stone-600">
-              Отмечайте продукты купленными — они появятся здесь автоматически
+              Отметьте продукты купленными — они сразу появятся здесь.
+              Или добавьте сами, если что-то уже есть дома.
             </p>
-            <Link
-              href="/shopping"
-              className="mt-4 inline-block text-sm font-semibold text-emerald-700"
-            >
-              Перейти к покупкам →
-            </Link>
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <Link
+                href="/shopping"
+                className="text-sm font-semibold text-emerald-700"
+              >
+                Перейти к покупкам →
+              </Link>
+              <button
+                type="button"
+                onClick={openAdd}
+                className="text-sm font-semibold text-teal-700"
+              >
+                Добавить вручную
+              </button>
+            </div>
           </div>
         ) : null}
 

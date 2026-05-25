@@ -253,7 +253,8 @@ export function MenuHub() {
         <section className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
           <p className="text-lg font-bold text-stone-900">План пока не создан</p>
           <p className="mt-2 text-sm text-stone-600">
-            ПланАм соберёт меню за минуту — с учётом цели, семьи и запасов.
+            ПланАм предложит варианты — вы сможете выбрать или заменить
+            любое блюдо.
           </p>
           <Link
             href="/menu/generate"
@@ -261,6 +262,10 @@ export function MenuHub() {
           >
             Составить меню
           </Link>
+          <p className="mt-2 text-xs text-stone-500">
+            После генерации можно выбрать вариант, заменить блюдо
+            или начать с чистого листа.
+          </p>
           <details className="mt-4 text-sm text-stone-600">
             <summary className="cursor-pointer font-semibold text-stone-700">
               Что будет учтено
@@ -309,16 +314,19 @@ export function MenuHub() {
       {needsUpdate ? (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-950">
-            Цель изменилась — рекомендуется обновить меню
+            Цель изменилась — ПланАм может пересобрать меню под неё
           </p>
           {advice.update_reason ? (
             <p className="mt-1 text-xs text-amber-900">{advice.update_reason}</p>
           ) : null}
+          <p className="mt-1 text-xs text-amber-900/80">
+            Можно оставить как есть — текущий план продолжит работать.
+          </p>
           <Link
             href="/menu/generate"
             className="mt-3 inline-block rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
           >
-            Обновить меню
+            Пересобрать меню
           </Link>
         </section>
       ) : null}
