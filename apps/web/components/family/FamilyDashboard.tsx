@@ -406,6 +406,34 @@ export function FamilyDashboard() {
                 />
               ))}
             </section>
+
+            <section className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+                Следующий шаг
+              </p>
+              <p className="mt-1 text-sm text-stone-700">
+                {family.members_count <= 1
+                  ? "Добавьте ещё участника или соберите семейное меню — оба шага не обязательны."
+                  : "Соберите меню для семьи — ПланАм учтёт всех участников и их ограничения."}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  href="/menu/generate"
+                  className="inline-flex min-h-[40px] items-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm active:scale-[0.99]"
+                >
+                  Составить семейное меню
+                </Link>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPerson(true)}
+                    className="inline-flex min-h-[40px] items-center rounded-xl border border-emerald-200 bg-white px-4 text-sm font-semibold text-emerald-800"
+                  >
+                    + Добавить участника
+                  </button>
+                ) : null}
+              </div>
+            </section>
           </>
         )}
       </ScreenLayout>

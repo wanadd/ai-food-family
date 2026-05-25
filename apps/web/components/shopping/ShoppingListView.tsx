@@ -10,6 +10,7 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
 import { useProtectedScreen } from "@/lib/use-protected-screen";
 import { PageLoading } from "@/components/ui/PageLoading";
+import { useToast } from "@/components/ui/ToastProvider";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
 import { ShoppingCategorySheet } from "@/components/shopping/ShoppingCategorySheet";
 import { ShoppingItemSheet } from "@/components/shopping/ShoppingItemSheet";
@@ -51,6 +52,7 @@ export function ShoppingListView() {
   const searchParams = useSearchParams();
   const { mode } = useAppMode();
   const { initData, state: authState } = useProtectedScreen();
+  const { showToast } = useToast();
   const [list, setList] = useState<ShoppingList | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -244,7 +246,7 @@ export function ShoppingListView() {
         setList(data);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Не удалось обновить позицию",
+          err instanceof Error ? err.message : "Не получилось обновить позицию",
         );
       } finally {
         setTogglingId(null);
@@ -258,9 +260,17 @@ export function ShoppingListView() {
       const data = await toggleShoppingItem(initData, mode, itemId, checked);
       updatedAtRef.current = data.updated_at;
       setList(data);
+      if (checked && current) {
+        const nextItem = data.items.find((it) => it.id === itemId);
+        const wentToPantry =
+          nextItem?.added_to_pantry || nextItem?.linked_pantry_item_id;
+        if (wentToPantry) {
+          void showToast(`✓ ${current.name} → в запасы`);
+        }
+      }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Не удалось обновить позицию",
+        err instanceof Error ? err.message : "Не получилось обновить позицию",
       );
     } finally {
       setTogglingId(null);
@@ -420,7 +430,7 @@ export function ShoppingListView() {
           <div className="min-w-0">
             <h1 className="text-xl font-bold text-stone-900">Покупки</h1>
             <p className="mt-0.5 text-xs text-stone-500">
-              Всё, что нужно купить для дома и меню
+              Отметили ✓ — товар попадёт в запасы автоматически
             </p>
           </div>
           <button
