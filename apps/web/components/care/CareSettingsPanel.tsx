@@ -5,6 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
+  cacheKey,
+  getCached,
+  setCached,
+} from "@/lib/cache/session-cache";
+import {
   fetchCareSettings,
   sendTestCareNotification,
   updateCareSettings,
@@ -74,8 +79,11 @@ const TOGGLE_ITEMS: {
 export function CareSettingsPanel() {
   const { initData } = useTelegram();
   const { mode } = useAppMode();
-  const [settings, setSettings] = useState<CareSettings | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cached = initData
+    ? getCached<CareSettings>(cacheKey.careSettings(mode))
+    : null;
+  const [settings, setSettings] = useState<CareSettings | null>(cached);
+  const [loading, setLoading] = useState(cached == null);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -85,9 +93,17 @@ export function CareSettingsPanel() {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    const primed = getCached<CareSettings>(cacheKey.careSettings(mode));
+    if (primed) {
+      setSettings(primed);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
-      setSettings(await fetchCareSettings(initData, mode));
+      const data = await fetchCareSettings(initData, mode);
+      setCached(cacheKey.careSettings(mode), data);
+      setSettings(data);
     } finally {
       setLoading(false);
     }
@@ -105,6 +121,7 @@ export function CareSettingsPanel() {
     setFeedback(null);
     try {
       const updated = await updateCareSettings(initData, mode, partial);
+      setCached(cacheKey.careSettings(mode), updated);
       setSettings(updated);
       setFeedback("✓ Сохранено");
     } catch (err) {

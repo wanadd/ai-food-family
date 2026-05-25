@@ -9,6 +9,12 @@ import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
 import { useProtectedScreen } from "@/lib/use-protected-screen";
+import {
+  cacheKey,
+  fetchOrCache,
+  getCached,
+  invalidate as invalidateCache,
+} from "@/lib/cache/session-cache";
 import { getPersonsCount } from "@/lib/home/plan-summary";
 import {
   getNutritionGoalLabel,
@@ -64,11 +70,35 @@ export function NutritionistDashboard() {
   const { initData, state: authState } = useProtectedScreen();
   const { mode, context, loading: modeLoading } = useAppMode();
 
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<NutritionProfileData | null>(null);
-  const [menu, setMenu] = useState<MenuVariant | null>(null);
-  const [pantry, setPantry] = useState<PantryList | null>(null);
-  const [progress, setProgress] = useState<ProgressOverview | null>(null);
+  const cachedProfile = initData
+    ? getCached<NutritionProfileData>(cacheKey.nutritionProfile())
+    : null;
+  const cachedSelected = initData
+    ? getCached<{ menu: MenuVariant | null }>(cacheKey.selectedMenu(mode))
+    : null;
+  const cachedPantry = initData
+    ? getCached<PantryList>(cacheKey.pantry(mode))
+    : null;
+  const cachedProgress = initData
+    ? getCached<ProgressOverview>(cacheKey.progressOverview(mode))
+    : null;
+  const cacheReady =
+    cachedProfile != null &&
+    cachedSelected != null &&
+    cachedPantry != null &&
+    cachedProgress != null;
+
+  const [loading, setLoading] = useState(!cacheReady);
+  const [profile, setProfile] = useState<NutritionProfileData | null>(
+    cachedProfile,
+  );
+  const [menu, setMenu] = useState<MenuVariant | null>(
+    cachedSelected?.menu ?? null,
+  );
+  const [pantry, setPantry] = useState<PantryList | null>(cachedPantry);
+  const [progress, setProgress] = useState<ProgressOverview | null>(
+    cachedProgress,
+  );
   const [familySummaryOpen, setFamilySummaryOpen] = useState(false);
   const [familyProgressOpen, setFamilyProgressOpen] = useState(false);
   const [deferredAdvice, setDeferredAdvice] = useState<DeferredAdvice[]>([]);
@@ -88,13 +118,26 @@ export function NutritionistDashboard() {
     if (!initData) {
       return;
     }
-    setLoading(true);
+    const hasAny =
+      getCached(cacheKey.nutritionProfile()) != null ||
+      getCached(cacheKey.selectedMenu(mode)) != null ||
+      getCached(cacheKey.pantry(mode)) != null ||
+      getCached(cacheKey.progressOverview(mode)) != null;
+    if (!hasAny) setLoading(true);
     try {
       const [nutrition, selected, pantryList, progressData] = await Promise.all([
-        fetchNutritionProfile(initData).catch(() => null),
-        fetchSelectedMenu(initData, mode).catch(() => null),
-        fetchPantry(initData, mode).catch(() => null),
-        fetchProgressOverview(initData, mode).catch(() => null),
+        fetchOrCache(cacheKey.nutritionProfile(), () =>
+          fetchNutritionProfile(initData),
+        ).catch(() => null),
+        fetchOrCache(cacheKey.selectedMenu(mode), () =>
+          fetchSelectedMenu(initData, mode),
+        ).catch(() => null),
+        fetchOrCache(cacheKey.pantry(mode), () =>
+          fetchPantry(initData, mode),
+        ).catch(() => null),
+        fetchOrCache(cacheKey.progressOverview(mode), () =>
+          fetchProgressOverview(initData, mode),
+        ).catch(() => null),
       ]);
       setProfile(nutrition);
       setMenu(selected?.menu ?? null);
@@ -211,7 +254,14 @@ export function NutritionistDashboard() {
         <p className="text-xs text-stone-500">{daily.trainingLine}</p>
         <p className="text-xs text-stone-500">{daily.menuLine}</p>
         {initData ? (
-          <WaterIntakePanel onUpdated={() => void load()} />
+          <WaterIntakePanel
+            onUpdated={() => {
+              // Water intake changes progress totals → drop progress
+              // cache so the dashboard pulls fresh data on next load.
+              invalidateCache("progress-overview");
+              void load();
+            }}
+          />
         ) : null}
         {menu ? (
           <Link

@@ -9,6 +9,12 @@ import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
 import { useProtectedScreen } from "@/lib/use-protected-screen";
+import {
+  cacheKey,
+  getCached,
+  invalidate as invalidateCache,
+  setCached,
+} from "@/lib/cache/session-cache";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useToast } from "@/components/ui/ToastProvider";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
@@ -53,8 +59,18 @@ export function ShoppingListView() {
   const { mode } = useAppMode();
   const { initData, state: authState } = useProtectedScreen();
   const { showToast } = useToast();
-  const [list, setList] = useState<ShoppingList | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cachedList = initData
+    ? getCached<ShoppingList>(cacheKey.shoppingList(mode))
+    : null;
+  const [list, setListState] = useState<ShoppingList | null>(cachedList);
+  const setList = useCallback(
+    (next: ShoppingList | null) => {
+      setListState(next);
+      if (next) setCached(cacheKey.shoppingList(mode), next);
+    },
+    [mode],
+  );
+  const [loading, setLoading] = useState(cachedList == null);
   const [syncing, setSyncing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -90,10 +106,11 @@ export function ShoppingListView() {
           return;
         }
         updatedAtRef.current = data.updated_at;
-        setList({
+        const merged: ShoppingList = {
           ...data,
           categories: mergeCategories(data.categories ?? [], extraCats),
-        });
+        };
+        setList(merged);
         if (!silent) {
           console.info("[PlanAm] Shopping loaded");
         }
@@ -109,7 +126,7 @@ export function ShoppingListView() {
         }
       }
     },
-    [],
+    [setList],
   );
 
   useEffect(() => {
@@ -244,6 +261,7 @@ export function ShoppingListView() {
         });
         updatedAtRef.current = data.updated_at;
         setList(data);
+        if (remove) invalidateCache("pantry");
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Не получилось обновить позицию",
@@ -265,6 +283,7 @@ export function ShoppingListView() {
         const wentToPantry =
           nextItem?.added_to_pantry || nextItem?.linked_pantry_item_id;
         if (wentToPantry) {
+          invalidateCache("pantry");
           void showToast(`✓ ${current.name} → в запасы`);
         }
       }

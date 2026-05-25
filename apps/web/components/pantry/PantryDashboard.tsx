@@ -13,6 +13,12 @@ import { PageLoading } from "@/components/ui/PageLoading";
 import { PantryCategorySection } from "@/components/pantry/PantryCategorySection";
 import { PantryItemForm } from "@/components/pantry/PantryItemForm";
 import {
+  cacheKey,
+  getCached,
+  invalidate as invalidateCache,
+  setCached,
+} from "@/lib/cache/session-cache";
+import {
   addPantryItem,
   deletePantryItem,
   fetchPantry,
@@ -41,9 +47,16 @@ const RECENT_DAYS = 7;
 export function PantryDashboard() {
   const { mode } = useAppMode();
   const { initData, state: authState } = useProtectedScreen();
-  const [items, setItems] = useState<PantryItem[]>([]);
-  const [activeCount, setActiveCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const cachedPantry = initData
+    ? getCached<{ items: PantryItem[]; active_count: number }>(
+        cacheKey.pantry(mode),
+      )
+    : null;
+  const [items, setItems] = useState<PantryItem[]>(cachedPantry?.items ?? []);
+  const [activeCount, setActiveCount] = useState(
+    cachedPantry?.active_count ?? 0,
+  );
+  const [loading, setLoading] = useState(cachedPantry == null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PantryFilter>("all");
@@ -56,13 +69,26 @@ export function PantryDashboard() {
 
   const loadPantry = useCallback(
     async (telegramInitData: string, appMode: typeof mode) => {
-      setLoading(true);
+      const cached = getCached<{ items: PantryItem[]; active_count: number }>(
+        cacheKey.pantry(appMode),
+      );
+      if (cached) {
+        setItems(cached.items);
+        setActiveCount(cached.active_count);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       try {
         const [data, cats] = await Promise.all([
           fetchPantry(telegramInitData, appMode),
           fetchShoppingCategories(telegramInitData, appMode).catch(() => []),
         ]);
+        setCached(cacheKey.pantry(appMode), {
+          items: data.items,
+          active_count: data.active_count,
+        });
         setItems(data.items);
         setActiveCount(data.active_count);
         setCategories(cats);
@@ -177,6 +203,8 @@ export function PantryDashboard() {
           80,
         );
       }
+      invalidateCache("pantry");
+      invalidateCache("shopping-list");
       await loadPantry(initData, mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
@@ -195,6 +223,8 @@ export function PantryDashboard() {
     setError(null);
     try {
       await deletePantryItem(initData, mode, item.id);
+      invalidateCache("pantry");
+      invalidateCache("shopping-list");
       await loadPantry(initData, mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось удалить");

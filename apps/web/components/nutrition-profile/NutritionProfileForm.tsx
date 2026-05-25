@@ -14,6 +14,7 @@ import { NumberInput } from "@/components/nutrition-profile/NumberInput";
 import { ToggleRow } from "@/components/nutrition-profile/ToggleRow";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useTelegram } from "@/components/TelegramProvider";
+import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
 import { fetchMyFamily, setAllowAdminProfileEdit } from "@/lib/family/api";
 import {
   RETURN_TO_PARAM,
@@ -166,6 +167,9 @@ export function NutritionProfileForm() {
     setError(null);
     try {
       await saveNutritionProfile(initData, { ...data, completed: true });
+      // Profile drives KBJU / advice / home cards — invalidate.
+      invalidateCache("nutrition-profile");
+      invalidateCache("progress-overview");
       await showToast("✓ Сохранено");
       router.replace(returnTo);
     } catch (e) {

@@ -18,6 +18,12 @@ const AmaConfirmDialog = dynamic(
     ),
   { ssr: false },
 );
+import {
+  cacheKey,
+  getCached,
+  invalidate as invalidateCache,
+  setCached,
+} from "@/lib/cache/session-cache";
 import { useProtectedScreen } from "@/lib/use-protected-screen";
 import {
   fetchMenuOverview,
@@ -84,8 +90,14 @@ export function MenuHub() {
   const router = useRouter();
   const { initData, state: authState } = useProtectedScreen();
   const { mode, loading: modeLoading } = useAppMode();
-  const [data, setData] = useState<MenuOverview | null>(null);
-  const [loadState, setLoadState] = useState<LoadState>("loading");
+  const cachedOverview = initData
+    ? getCached<MenuOverview>(cacheKey.menuOverview(mode))
+    : null;
+  const [data, setData] = useState<MenuOverview | null>(cachedOverview);
+  const [loadState, setLoadState] = useState<LoadState>(() => {
+    if (!cachedOverview) return "loading";
+    return cachedOverview.plan_summary.has_selected_menu ? "success" : "empty";
+  });
   const [acting, setActing] = useState<QuickActionId | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -100,31 +112,45 @@ export function MenuHub() {
   const amaBalance = subscription?.ama_balance ?? null;
   const amaCosts = subscription?.ama_costs ?? null;
 
-  const load = useCallback(async () => {
-    if (!initData) {
-      return;
-    }
-    setLoadState("loading");
-    console.info("[PlanAm] menu selected request started");
-    try {
-      const overview = await fetchMenuOverview(initData, mode);
-      setData(overview);
-      if (!overview.plan_summary.has_selected_menu) {
-        setLoadState("empty");
-        console.info("[PlanAm] menu selected empty");
+  const load = useCallback(
+    async (opts: { force?: boolean } = {}) => {
+      if (!initData) return;
+      const key = cacheKey.menuOverview(mode);
+      if (!opts.force) {
+        const primed = getCached<MenuOverview>(key);
+        if (primed) {
+          setData(primed);
+          setLoadState(
+            primed.plan_summary.has_selected_menu ? "success" : "empty",
+          );
+        } else {
+          setLoadState("loading");
+        }
       } else {
-        setLoadState("success");
-        console.info("[PlanAm] menu selected loaded");
+        setLoadState("loading");
       }
-    } catch (err) {
-      setData(null);
-      setLoadState("error");
-      setMessage(
-        err instanceof Error ? err.message : "Не удалось загрузить меню",
-      );
-      console.info("[PlanAm] menu selected failed");
-    }
-  }, [initData, mode]);
+      console.info("[PlanAm] menu selected request started");
+      try {
+        const overview = await fetchMenuOverview(initData, mode);
+        setCached(key, overview);
+        setData(overview);
+        if (!overview.plan_summary.has_selected_menu) {
+          setLoadState("empty");
+          console.info("[PlanAm] menu selected empty");
+        } else {
+          setLoadState("success");
+          console.info("[PlanAm] menu selected loaded");
+        }
+      } catch (err) {
+        setLoadState("error");
+        setMessage(
+          err instanceof Error ? err.message : "Не удалось загрузить меню",
+        );
+        console.info("[PlanAm] menu selected failed");
+      }
+    },
+    [initData, mode],
+  );
 
   useEffect(() => {
     console.info("[PlanAm] menu screen mounted");
@@ -157,7 +183,12 @@ export function MenuHub() {
         return;
       }
       if (result.message) setMessage(result.message);
-      await load();
+      // Quick actions change the active plan and downstream shopping/pantry.
+      invalidateCache("menu-overview");
+      invalidateCache("selected-menu");
+      invalidateCache("shopping-list");
+      invalidateCache("pantry");
+      await load({ force: true });
       void refreshSubscription();
     } catch (err) {
       setMessage(

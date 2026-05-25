@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useTelegram } from "@/components/TelegramProvider";
+import {
+  cacheKey,
+  fetchOrCache,
+  getCached as getCachedOrNull,
+} from "@/lib/cache/session-cache";
 import {
   countExpiringSoon,
   countPantryMatches,
@@ -27,6 +33,8 @@ import {
 import { fetchShoppingList } from "@/lib/shopping/api";
 import type { ShoppingList } from "@/lib/shopping/types";
 
+const PREFETCH_TABS = ["/menu", "/shopping", "/pantry", "/nutritionist"];
+
 function ProfileIcon() {
   return (
     <svg
@@ -47,16 +55,35 @@ function ProfileIcon() {
 }
 
 export function PlanAmHome() {
+  const router = useRouter();
   const { initData } = useTelegram();
   const { mode, context, loading: modeLoading } = useAppMode();
 
-  const [menuLoading, setMenuLoading] = useState(true);
-  const [selectedMenu, setSelectedMenu] = useState<SelectedMenu | null>(null);
-  const [shopping, setShopping] = useState<ShoppingList | null>(null);
-  const [pantry, setPantry] = useState<PantryList | null>(null);
+  // Initialise from session cache so a return visit renders instantly.
+  const cachedSelectedMenu = initData
+    ? getCachedOrNull<SelectedMenu>(cacheKey.selectedMenu(mode))
+    : null;
+  const cachedShopping = initData
+    ? getCachedOrNull<ShoppingList>(cacheKey.shoppingList(mode))
+    : null;
+  const cachedPantry = initData
+    ? getCachedOrNull<PantryList>(cacheKey.pantry(mode))
+    : null;
+  const cachedProfile = initData
+    ? getCachedOrNull<NutritionProfileData>(cacheKey.nutritionProfile())
+    : null;
+
+  const [menuLoading, setMenuLoading] = useState(
+    Boolean(initData) && cachedSelectedMenu == null,
+  );
+  const [selectedMenu, setSelectedMenu] = useState<SelectedMenu | null>(
+    cachedSelectedMenu,
+  );
+  const [shopping, setShopping] = useState<ShoppingList | null>(cachedShopping);
+  const [pantry, setPantry] = useState<PantryList | null>(cachedPantry);
   const [nutritionProfile, setNutritionProfile] =
-    useState<NutritionProfileData | null>(null);
-  const [profileLoaded, setProfileLoaded] = useState(false);
+    useState<NutritionProfileData | null>(cachedProfile);
+  const [profileLoaded, setProfileLoaded] = useState(cachedProfile != null);
 
   useEffect(() => {
     if (modeLoading) {
@@ -75,8 +102,17 @@ export function PlanAmHome() {
 
     let cancelled = false;
 
-    setMenuLoading(true);
-    void fetchSelectedMenu(initData, mode)
+    const primed = getCachedOrNull<SelectedMenu>(cacheKey.selectedMenu(mode));
+    if (primed != null) {
+      setSelectedMenu(primed);
+      setMenuLoading(false);
+    } else {
+      setMenuLoading(true);
+    }
+
+    void fetchOrCache(cacheKey.selectedMenu(mode), () =>
+      fetchSelectedMenu(initData, mode),
+    )
       .then((selected) => {
         if (cancelled) return;
         setSelectedMenu(selected);
@@ -90,7 +126,10 @@ export function PlanAmHome() {
         setMenuLoading(false);
       });
 
-    void fetchShoppingList(initData, mode)
+    void fetchOrCache(cacheKey.shoppingList(mode), async () => {
+      const list = await fetchShoppingList(initData, mode);
+      return list;
+    })
       .then((list) => {
         if (cancelled) return;
         setShopping(list);
@@ -100,7 +139,10 @@ export function PlanAmHome() {
         setShopping(null);
       });
 
-    void fetchPantry(initData, mode)
+    void fetchOrCache(cacheKey.pantry(mode), async () => {
+      const list = await fetchPantry(initData, mode);
+      return list;
+    })
       .then((pantryList) => {
         if (cancelled) return;
         setPantry(pantryList);
@@ -110,8 +152,13 @@ export function PlanAmHome() {
         setPantry(null);
       });
 
-    setProfileLoaded(false);
-    void fetchNutritionProfile(initData)
+    if (cachedProfile == null) {
+      setProfileLoaded(false);
+    }
+    void fetchOrCache(cacheKey.nutritionProfile(), async () => {
+      const profile = await fetchNutritionProfile(initData);
+      return profile;
+    })
       .then((profile) => {
         if (cancelled) return;
         setNutritionProfile(profile);
@@ -128,7 +175,18 @@ export function PlanAmHome() {
     return () => {
       cancelled = true;
     };
+    // cachedProfile only read at mount; intentionally not in deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initData, mode, modeLoading]);
+
+  // Warm the JS chunks for the bottom tabs after first paint so the next
+  // tap navigates without a network round-trip for the route bundle.
+  useEffect(() => {
+    if (!initData) return;
+    for (const path of PREFETCH_TABS) {
+      router.prefetch(path);
+    }
+  }, [initData, router]);
 
   const hasPlan = Boolean(selectedMenu?.menu);
   const mealRows = useMemo(

@@ -5,6 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useTelegram } from "@/components/TelegramProvider";
 
 import {
+  cacheKey,
+  getCached,
+  setCached,
+} from "@/lib/cache/session-cache";
+import {
   buildIcsFile,
   downloadIcs,
   nextOccurrence,
@@ -104,14 +109,25 @@ function ReminderCard({
 
 export function NotificationSettingsForm() {
   const { initData } = useTelegram();
-  const [settings, setSettings] = useState<NotificationSettings | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cached = initData
+    ? getCached<NotificationSettings>(cacheKey.notificationSettings())
+    : null;
+  const [settings, setSettings] = useState<NotificationSettings | null>(cached);
+  const [loading, setLoading] = useState(cached == null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   const loadSettings = useCallback(async (telegramInitData: string) => {
-    setLoading(true);
+    const primed = getCached<NotificationSettings>(
+      cacheKey.notificationSettings(),
+    );
+    if (primed) {
+      setSettings(primed);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const data = await fetchNotificationSettings(telegramInitData);
@@ -124,8 +140,10 @@ export function NotificationSettingsForm() {
         const synced = await updateNotificationSettings(telegramInitData, {
           timezone: deviceTz,
         });
+        setCached(cacheKey.notificationSettings(), synced);
         setSettings(synced);
       } else {
+        setCached(cacheKey.notificationSettings(), data);
         setSettings(data);
       }
     } catch (err) {
@@ -157,6 +175,7 @@ export function NotificationSettingsForm() {
         ...patch,
         timezone: getDeviceTimezone(),
       });
+      setCached(cacheKey.notificationSettings(), data);
       setSettings(data);
       setSaved(true);
     } catch (err) {

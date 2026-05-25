@@ -23,6 +23,12 @@ import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
+  cacheKey,
+  getCached,
+  invalidate as invalidateCache,
+  setCached,
+} from "@/lib/cache/session-cache";
+import {
   fetchSelectedMenu,
   replaceDish,
   selectMenu,
@@ -36,13 +42,23 @@ import {
 import type { MenuVariant } from "@/lib/menu/types";
 import { MEAL_LABELS } from "@/lib/menu/labels";
 
+type CachedSelected = { menu: MenuVariant | null; selected_at: string | null };
+
 export function MenuCurrentView() {
   const searchParams = useSearchParams();
   const { initData } = useTelegram();
   const { mode, loading: modeLoading } = useAppMode();
-  const [menu, setMenu] = useState<MenuVariant | null>(null);
-  const [selectedAt, setSelectedAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const cachedSelected = initData
+    ? getCached<CachedSelected>(cacheKey.selectedMenu(mode))
+    : null;
+  const [menu, setMenu] = useState<MenuVariant | null>(
+    cachedSelected?.menu ?? null,
+  );
+  const [selectedAt, setSelectedAt] = useState<string | null>(
+    cachedSelected?.selected_at ?? null,
+  );
+  const [loading, setLoading] = useState(cachedSelected == null);
   const [replacing, setReplacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MenuVariant | null>(null);
@@ -54,7 +70,9 @@ export function MenuCurrentView() {
   } = useSubscriptionOverview();
   const amaBalance = subscription?.ama_balance ?? null;
   const amaCosts = subscription?.ama_costs ?? null;
-  const [dayIndex, setDayIndex] = useState(1);
+  const [dayIndex, setDayIndex] = useState(() =>
+    cachedSelected?.menu ? defaultDayIndex(cachedSelected.menu) : 1,
+  );
   const justSaved = searchParams.get("saved") === "1";
 
   const load = useCallback(async () => {
@@ -62,14 +80,26 @@ export function MenuCurrentView() {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    const key = cacheKey.selectedMenu(mode);
+    const primed = getCached<CachedSelected>(key);
+    if (primed) {
+      const loaded = primed.menu;
+      setMenu(loaded);
+      if (loaded) setDayIndex(defaultDayIndex(loaded));
+      setSelectedAt(primed.selected_at);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
       const selected = await fetchSelectedMenu(initData, mode);
       const loaded = selected?.menu ?? null;
+      setCached(key, {
+        menu: loaded,
+        selected_at: selected?.selected_at ?? null,
+      });
       setMenu(loaded);
-      if (loaded) {
-        setDayIndex(defaultDayIndex(loaded));
-      }
+      if (loaded) setDayIndex(defaultDayIndex(loaded));
       setSelectedAt(selected?.selected_at ?? null);
     } catch {
       setError("Не удалось загрузить план");
@@ -106,6 +136,15 @@ export function MenuCurrentView() {
         pendingMealIndex,
       );
       await selectMenu(initData, mode, updated);
+      // Plan changed → drop overview, selected and downstream caches.
+      invalidateCache("selected-menu");
+      invalidateCache("menu-overview");
+      invalidateCache("shopping-list");
+      invalidateCache("pantry");
+      setCached(cacheKey.selectedMenu(mode), {
+        menu: updated,
+        selected_at: new Date().toISOString(),
+      });
       setMenu(updated);
       setReplaceTarget(null);
       setPendingMealIndex(null);
