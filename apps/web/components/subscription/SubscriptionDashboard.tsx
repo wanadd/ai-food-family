@@ -183,8 +183,10 @@ export function SubscriptionDashboard() {
           </section>
         ) : null}
 
-        <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-stone-900">Что такое Амы</p>
+        <details className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+          <summary className="cursor-pointer text-sm font-bold text-stone-900">
+            Что такое Амы
+          </summary>
           <p className="mt-2 text-sm leading-relaxed text-stone-600">
             Амы — внутренний ресурс ПланАм для дополнительных AI-действий: вопрос
             нутрициологу, разбор чека, голос, глубокий анализ. Просмотр меню,
@@ -200,13 +202,13 @@ export function SubscriptionDashboard() {
               </li>
             ))}
           </ul>
-        </section>
+        </details>
 
-        <section>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
-            Тарифы
-          </p>
-          <ul className="space-y-2">
+        <details className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+          <summary className="cursor-pointer text-sm font-bold text-stone-900">
+            Подробнее о тарифах
+          </summary>
+          <ul className="mt-3 space-y-2">
             {data.plans.map((plan) => {
               const isCurrent = plan.is_current;
               return (
@@ -254,7 +256,7 @@ export function SubscriptionDashboard() {
           <p className="mt-2 px-1 text-xs text-stone-500">
             Оплата пока не подключена — выбор тарифа для теста без списания.
           </p>
-        </section>
+        </details>
 
         <section className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/30 p-4">
           <p className="font-semibold text-stone-900">Пополнение баланса</p>

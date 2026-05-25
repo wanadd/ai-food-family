@@ -250,36 +250,40 @@ export function MenuHub() {
   if (loadState === "empty" || !data) {
     return (
       <ScreenLayout title="Меню" contentClassName="space-y-4 pb-24">
-        <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
           <p className="text-lg font-bold text-stone-900">План пока не создан</p>
           <p className="mt-2 text-sm text-stone-600">
-            ПланАм может составить меню с учётом:
+            ПланАм соберёт меню за минуту — с учётом цели, семьи и запасов.
           </p>
-          <ul className="mt-3 space-y-1.5 text-sm text-stone-700">
-            {[
-              "цели",
-              "семьи",
-              "запасов",
-              "аллергий",
-              "ограничений",
-              "бюджета",
-              "времени готовки",
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <span className="text-emerald-600" aria-hidden>
-                  ✓
-                </span>
-                {item}
-              </li>
-            ))}
-          </ul>
           <Link
             href="/menu/generate"
-            className="mt-6 flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/40"
+            className="mt-5 flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/40"
           >
             Составить меню
           </Link>
-        </div>
+          <details className="mt-4 text-sm text-stone-600">
+            <summary className="cursor-pointer font-semibold text-stone-700">
+              Что будет учтено
+            </summary>
+            <ul className="mt-2 space-y-1.5">
+              {[
+                "цель и режим питания",
+                "состав семьи",
+                "что уже есть в запасах",
+                "аллергии и ограничения",
+                "бюджет",
+                "время на готовку",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <span className="text-emerald-600" aria-hidden>
+                    ✓
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </details>
+        </section>
       </ScreenLayout>
     );
   }
@@ -293,7 +297,7 @@ export function MenuHub() {
   return (
     <ScreenLayout
       title="Меню"
-      subtitle="ПланАм рекомендует — вы выбираете"
+      subtitle="ПланАм подскажет — выбираете вы"
       contentClassName="space-y-3 pb-32"
     >
       {message ? (
@@ -319,37 +323,70 @@ export function MenuHub() {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-          ПланАм рекомендует
+      {data.today_meals.length > 0 ? (
+        <section className="rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/70 to-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            Сегодня в плане
+          </p>
+          <ul className="mt-3 space-y-2">
+            {data.today_meals.map((meal) => (
+              <li
+                key={meal.meal_type}
+                className="flex justify-between gap-2 text-sm"
+              >
+                <span className="text-stone-500">{meal.label}</span>
+                <span className="text-right font-semibold text-stone-900">
+                  {meal.name}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Link
+            href="/menu/current"
+            className="mt-4 flex min-h-[44px] w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99]"
+          >
+            {multiDayPlan ? "Открыть все дни" : "Открыть план"}
+          </Link>
+        </section>
+      ) : null}
+
+      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+          План
         </p>
-        <p className="mt-2 text-xl font-bold text-stone-900">{plan.goal_label}</p>
-        <p className="mt-1 text-sm text-stone-600">{plan.persons_label}</p>
-        <p className="text-sm text-stone-600">Тип плана: {plan.plan_mode_label}</p>
-        <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <dt className="text-stone-500">Стоимость</dt>
-            <dd className="font-bold text-stone-900">
-              {formatRub(plan.estimated_cost_rub)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-stone-500">Запасы</dt>
-            <dd className="font-bold text-stone-900">
-              {plan.pantry_used_rub != null
-                ? `на ${formatRub(plan.pantry_used_rub)}`
-                : "—"}
-            </dd>
-          </div>
-          {plan.savings_rub != null ? (
-            <div className="col-span-2">
-              <dt className="text-stone-500">Экономия</dt>
-              <dd className="font-bold text-emerald-800">
-                {formatRub(plan.savings_rub)}
-              </dd>
-            </div>
+        <p className="mt-1 text-sm font-semibold text-stone-900">
+          {plan.goal_label} · {plan.persons_label}
+        </p>
+        <p className="mt-1 text-xs text-stone-500">
+          Купить на {formatRub(plan.estimated_cost_rub)}
+          {plan.pantry_used_rub != null
+            ? ` · из запасов на ${formatRub(plan.pantry_used_rub)}`
+            : ""}
+          {plan.savings_rub != null
+            ? ` · экономия ${formatRub(plan.savings_rub)}`
+            : ""}
+        </p>
+        <details className="mt-3 text-sm text-stone-600">
+          <summary className="cursor-pointer text-xs font-semibold text-emerald-700">
+            Подробнее о плане
+          </summary>
+          <p className="mt-2">Тип плана: {plan.plan_mode_label}</p>
+          {data.home_attendance ? (
+            <ul className="mt-2 space-y-1">
+              <li>Завтрак дома: {data.home_attendance.breakfast_home} чел.</li>
+              <li>Обед дома: {data.home_attendance.lunch_home} чел.</li>
+              <li>Ужин дома: {data.home_attendance.dinner_home} чел.</li>
+            </ul>
           ) : null}
-        </dl>
+          {data.home_attendance ? (
+            <Link
+              href="/menu/settings"
+              className="mt-2 inline-block text-xs font-semibold text-emerald-700"
+            >
+              Изменить на сегодня →
+            </Link>
+          ) : null}
+        </details>
       </section>
 
       <section
@@ -360,7 +397,7 @@ export function MenuHub() {
         }`}
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">
-          Рекомендация нутрициолога
+          Совет нутрициолога
         </p>
         {adviceFailed ? (
           <p className="mt-2 text-sm text-stone-600">
@@ -375,56 +412,6 @@ export function MenuHub() {
           </>
         )}
       </section>
-
-      {data.today_meals.length > 0 ? (
-        <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-stone-900">Сегодня</p>
-          <ul className="mt-2 space-y-2">
-            {data.today_meals.map((meal) => (
-              <li
-                key={meal.meal_type}
-                className="flex justify-between gap-2 text-sm"
-              >
-                <span className="text-stone-500">{meal.label}</span>
-                <span className="font-medium text-stone-900">{meal.name}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-            <Link
-              href="/menu/current"
-              className="text-sm font-semibold text-emerald-700"
-            >
-              Подробнее →
-            </Link>
-            {multiDayPlan ? (
-              <Link
-                href="/menu/current"
-                className="text-sm font-semibold text-emerald-700"
-              >
-                Открыть все дни →
-              </Link>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
-      {data.home_attendance ? (
-        <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-stone-900">Сегодня дома едят</p>
-          <ul className="mt-2 space-y-1 text-sm text-stone-700">
-            <li>Завтрак: {data.home_attendance.breakfast_home} человек</li>
-            <li>Обед: {data.home_attendance.lunch_home} человек</li>
-            <li>Ужин: {data.home_attendance.dinner_home} человек</li>
-          </ul>
-          <Link
-            href="/menu/settings"
-            className="mt-3 inline-block text-sm font-semibold text-emerald-700"
-          >
-            Изменить на сегодня →
-          </Link>
-        </section>
-      ) : null}
 
       <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
         <p className="text-sm font-bold text-stone-900">Быстрые действия</p>
@@ -478,36 +465,26 @@ export function MenuHub() {
         </section>
       ) : null}
 
-      <Link
-        href="/menu/current"
-        className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-white px-4 py-3.5 shadow-sm"
-      >
-        <span className="font-semibold text-stone-900">
-          {plan.menu_title ?? "Текущее меню"}
-        </span>
-        <span className="text-stone-400">→</span>
-      </Link>
-
-      <Link
-        href="/menu/leftovers"
-        className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-4 py-3.5 shadow-sm"
-      >
-        <span className="font-semibold text-stone-900">Остатки блюд</span>
-        <span className="text-sm text-stone-500">
-          {data.meal_leftovers_count > 0
-            ? `${data.meal_leftovers_count} · `
-            : ""}
-          →
-        </span>
-      </Link>
-
-      <Link
-        href="/recipes"
-        className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-4 py-3.5 shadow-sm"
-      >
-        <span className="font-semibold text-stone-900">Рецепты</span>
-        <span className="text-stone-400">→</span>
-      </Link>
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href="/menu/leftovers"
+          className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-3 py-3 text-sm shadow-sm"
+        >
+          <span className="font-semibold text-stone-900">Остатки</span>
+          <span className="text-stone-400">
+            {data.meal_leftovers_count > 0
+              ? `${data.meal_leftovers_count} →`
+              : "→"}
+          </span>
+        </Link>
+        <Link
+          href="/recipes"
+          className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-3 py-3 text-sm shadow-sm"
+        >
+          <span className="font-semibold text-stone-900">Рецепты</span>
+          <span className="text-stone-400">→</span>
+        </Link>
+      </div>
 
       <AmaConfirmDialog
         open={pendingAction !== null}

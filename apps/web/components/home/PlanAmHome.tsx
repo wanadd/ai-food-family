@@ -212,6 +212,29 @@ export function PlanAmHome() {
   const profileNeedsAttention =
     profileLoaded && nutritionProfile != null && profileProgress < 80;
 
+  // A short, state-driven subtitle that replaces the static slogan.
+  // Examples:
+  //   "Меню готово · купить 4 · 2 заканчиваются"
+  //   "Меню готово · всё уже в запасах"
+  //   "Плана пока нет — соберите его за минуту"
+  const subtitleParts: string[] = [];
+  if (isBusy) {
+    subtitleParts.push("Готовим сводку…");
+  } else if (hasPlan) {
+    subtitleParts.push("Меню готово");
+    if (toBuy > 0) {
+      subtitleParts.push(`купить ${formatGoodsCount(toBuy)}`);
+    } else if (pantryUsed > 0) {
+      subtitleParts.push("всё уже в запасах");
+    }
+    if (expiringSoon > 0) {
+      subtitleParts.push(`${expiringSoon} заканчиваются`);
+    }
+  } else {
+    subtitleParts.push("Плана пока нет — соберите за минуту");
+  }
+  const heroSubtitle = subtitleParts.join(" · ");
+
   return (
     <div className="min-h-screen bg-stone-50">
       <div className="mx-auto max-w-lg px-4 pb-4 pt-5 sm:px-5">
@@ -221,8 +244,17 @@ export function PlanAmHome() {
               ПланАм
             </h1>
             <p className="mt-0.5 text-sm leading-snug text-stone-500">
-              Умный план питания и покупок
+              {heroSubtitle}
             </p>
+            {isFamily ? (
+              <p className="mt-0.5 text-xs text-stone-400">
+                Семья: {context.family!.name}
+              </p>
+            ) : personsCount > 1 ? (
+              <p className="mt-0.5 text-xs text-stone-400">
+                {formatPersonsLabel(personsCount)}
+              </p>
+            ) : null}
           </div>
           <Link
             href="/profile"
@@ -234,28 +266,6 @@ export function PlanAmHome() {
         </header>
 
         <main className="mt-4 space-y-3">
-          <section className="rounded-2xl border border-stone-100 bg-white px-4 py-3 shadow-sm">
-            {isFamily ? (
-              <>
-                <p className="text-sm font-semibold text-stone-900">
-                  Семья: {context.family!.name}
-                </p>
-                <p className="mt-0.5 text-sm text-stone-500">
-                  {context.family!.members_count}{" "}
-                  {context.family!.members_count === 1
-                    ? "участник"
-                    : context.family!.members_count >= 2 &&
-                        context.family!.members_count <= 4
-                      ? "участника"
-                      : "участников"}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm font-semibold text-stone-900">
-                {formatPersonsLabel(personsCount)}
-              </p>
-            )}
-          </section>
 
           {profileNeedsAttention ? (
             <Link

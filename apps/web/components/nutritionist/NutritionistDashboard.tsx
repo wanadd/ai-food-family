@@ -208,15 +208,14 @@ export function NutritionistDashboard() {
   return (
     <ScreenLayout
       title="Нутрициолог"
-      subtitle="Семейный AI-помощник по питанию"
+      subtitle="Спокойный помощник по питанию"
       contentClassName="space-y-3"
     >
       {!profileComplete ? (
         <section className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
           <p className="font-semibold text-stone-900">Дозаполнить профиль</p>
           <p className="mt-1 text-sm text-stone-600">
-            Чем точнее данные — тем точнее советы ПланАм. Заполнить можно
-            в любой момент.
+            Чем точнее данные — тем точнее советы.
           </p>
           <Link
             href={withReturnTo("/profile/nutrition", NUTRI_RETURN)}
@@ -227,90 +226,94 @@ export function NutritionistDashboard() {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm space-y-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-stone-500">
-            {daily.planTitle}
-          </p>
-          <ul className="mt-2 space-y-1 text-sm text-stone-700">
-            <li>{daily.plan.calories}</li>
-            <li>{daily.plan.protein}</li>
-            <li>{daily.plan.fat}</li>
-            <li>{daily.plan.carbs}</li>
-            <li>{daily.plan.water}</li>
-          </ul>
-        </div>
-        <div className="border-t border-stone-100 pt-3">
-          <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
-            {daily.actualTitle}
-          </p>
-          <ul className="mt-2 space-y-1 text-sm text-stone-700">
-            <li>{daily.actual.calories}</li>
-            <li>{daily.actual.protein}</li>
-            <li>{daily.actual.fat}</li>
-            <li>{daily.actual.carbs}</li>
-            <li>{daily.actual.water}</li>
-          </ul>
-        </div>
-        <p className="text-xs text-stone-500">{daily.trainingLine}</p>
-        <p className="text-xs text-stone-500">{daily.menuLine}</p>
-        {initData ? (
-          <WaterIntakePanel
-            onUpdated={() => {
-              // Water intake changes progress totals → drop progress
-              // cache so the dashboard pulls fresh data on next load.
-              invalidateCache("progress-overview");
-              void load();
-            }}
-          />
-        ) : null}
-        {menu ? (
-          <Link
-            href="/menu/current"
-            className="inline-block text-xs font-semibold text-emerald-700"
-          >
-            Отметить, где поели →
-          </Link>
-        ) : null}
+      {/* Lead card: today's main KPI + one main action (open chat). */}
+      <section className="rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/70 to-white p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          Сегодня
+        </p>
+        <ul className="mt-2 space-y-1 text-sm text-stone-800">
+          <li>{daily.plan.calories}</li>
+          <li>{daily.actual.calories}</li>
+          <li>{daily.plan.water}</li>
+        </ul>
         {daily.todoLine ? (
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
+          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
             Осталось: {daily.todoLine}
           </p>
         ) : null}
+        <Link
+          href="/nutritionist/chat"
+          className="mt-4 flex min-h-[44px] w-full items-center justify-center rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99]"
+        >
+          Открыть чат нутрициолога
+        </Link>
+        <details className="mt-3 text-sm text-stone-600">
+          <summary className="cursor-pointer text-xs font-semibold text-emerald-700">
+            План vs факт КБЖУ
+          </summary>
+          <div className="mt-2 grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase text-stone-500">
+                {daily.planTitle}
+              </p>
+              <ul className="mt-1 space-y-0.5 text-sm">
+                <li>{daily.plan.protein}</li>
+                <li>{daily.plan.fat}</li>
+                <li>{daily.plan.carbs}</li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase text-emerald-800">
+                {daily.actualTitle}
+              </p>
+              <ul className="mt-1 space-y-0.5 text-sm">
+                <li>{daily.actual.protein}</li>
+                <li>{daily.actual.fat}</li>
+                <li>{daily.actual.carbs}</li>
+                <li>{daily.actual.water}</li>
+              </ul>
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-stone-500">{daily.trainingLine}</p>
+          <p className="mt-1 text-xs text-stone-500">{daily.menuLine}</p>
+          {menu ? (
+            <Link
+              href="/menu/current"
+              className="mt-2 inline-block text-xs font-semibold text-emerald-700"
+            >
+              Отметить, где поели →
+            </Link>
+          ) : null}
+        </details>
+        {initData ? (
+          <div className="mt-3">
+            <WaterIntakePanel
+              onUpdated={() => {
+                invalidateCache("progress-overview");
+                void load();
+              }}
+            />
+          </div>
+        ) : null}
       </section>
 
-      <section className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-          Прогресс к цели
+      {/* Goal progress — one summary line + details. */}
+      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+          Цель
         </p>
-        <p className="mt-1 text-lg font-bold text-stone-900">
+        <p className="mt-1 text-sm font-semibold text-stone-900">
           {goalLabel ?? "Цель не задана"}
         </p>
-        <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <dt className="text-stone-500">Старт</dt>
-            <dd className="font-semibold text-stone-900">{goalCard.startWeight}</dd>
-          </div>
-          <div>
-            <dt className="text-stone-500">Сейчас</dt>
-            <dd className="font-semibold text-stone-900">{goalCard.currentWeight}</dd>
-          </div>
-          <div>
-            <dt className="text-stone-500">Цель</dt>
-            <dd className="font-semibold text-stone-900">{goalCard.targetWeight}</dd>
-          </div>
-          <div>
-            <dt className="text-stone-500">Осталось</dt>
-            <dd className="font-semibold text-emerald-800">
-              {goalCard.remaining ?? "—"}
-            </dd>
-          </div>
-        </dl>
         {goalCard.percent != null ? (
-          <div className="mt-3">
+          <div className="mt-2">
             <div className="flex justify-between text-xs text-stone-600">
-              <span>Выполнение</span>
-              <span className="font-bold text-emerald-800">{goalCard.percent}%</span>
+              <span>
+                {goalCard.currentWeight} → {goalCard.targetWeight}
+              </span>
+              <span className="font-bold text-emerald-800">
+                {goalCard.percent}%
+              </span>
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-stone-100">
               <div
@@ -320,48 +323,52 @@ export function NutritionistDashboard() {
             </div>
           </div>
         ) : null}
-        <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-emerald-100 pt-3 text-sm">
-          <div>
-            <dt className="text-stone-500">Начато</dt>
-            <dd className="font-semibold text-stone-900">
-              {goalCard.startedAt ?? "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-stone-500">Прошло</dt>
-            <dd className="font-semibold text-stone-900">
-              {goalCard.daysElapsed != null
-                ? `${goalCard.daysElapsed} дн.`
-                : "—"}
-            </dd>
-          </div>
-        </dl>
-        {goalCard.paceLine ? (
-          <p className="mt-2 text-sm text-stone-600">{goalCard.paceLine}</p>
-        ) : null}
-        {goalCard.forecastLine ? (
-          <p className="mt-1 text-sm text-stone-600">{goalCard.forecastLine}</p>
-        ) : null}
-        <Link
-          href={withReturnTo("/progress", NUTRI_RETURN)}
-          className="mt-3 inline-block text-xs font-semibold text-emerald-700"
-        >
-          Подробнее в прогрессе →
-        </Link>
+        <details className="mt-3 text-sm text-stone-600">
+          <summary className="cursor-pointer text-xs font-semibold text-emerald-700">
+            Подробнее о прогрессе
+          </summary>
+          <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <dt className="text-stone-500">Старт</dt>
+              <dd className="font-semibold text-stone-900">
+                {goalCard.startWeight}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-stone-500">Осталось</dt>
+              <dd className="font-semibold text-emerald-800">
+                {goalCard.remaining ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-stone-500">Начато</dt>
+              <dd className="font-semibold text-stone-900">
+                {goalCard.startedAt ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-stone-500">Прошло</dt>
+              <dd className="font-semibold text-stone-900">
+                {goalCard.daysElapsed != null
+                  ? `${goalCard.daysElapsed} дн.`
+                  : "—"}
+              </dd>
+            </div>
+          </dl>
+          {goalCard.paceLine ? (
+            <p className="mt-2">{goalCard.paceLine}</p>
+          ) : null}
+          {goalCard.forecastLine ? (
+            <p className="mt-1">{goalCard.forecastLine}</p>
+          ) : null}
+          <Link
+            href={withReturnTo("/progress", NUTRI_RETURN)}
+            className="mt-2 inline-block text-xs font-semibold text-emerald-700"
+          >
+            Подробнее в прогрессе →
+          </Link>
+        </details>
       </section>
-
-      {profileComplete ? (
-        <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wide text-stone-500">
-            Почему ПланАм рекомендует это?
-          </p>
-          <ul className="mt-2 space-y-1 text-sm text-stone-700">
-            {adviceWhy.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       {initData && !adviceHiddenByDefer ? (
         <NutritionistAdviceCard
@@ -370,6 +377,19 @@ export function NutritionistDashboard() {
           mode={mode}
           onDeferred={refreshDeferred}
         />
+      ) : null}
+
+      {profileComplete && adviceWhy.length > 0 ? (
+        <details className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm text-sm text-stone-600">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-stone-500">
+            Почему ПланАм советует это
+          </summary>
+          <ul className="mt-2 space-y-1 text-stone-700">
+            {adviceWhy.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </details>
       ) : null}
 
       {deferredAdvice.length > 0 ? (
@@ -511,13 +531,6 @@ export function NutritionistDashboard() {
       ) : null}
 
       <CareTelegramLinkCard />
-
-      <Link
-        href="/nutritionist/chat"
-        className="flex min-h-[52px] items-center justify-center rounded-2xl bg-stone-900 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-md active:scale-[0.99]"
-      >
-        Открыть чат нутрициолога
-      </Link>
     </ScreenLayout>
   );
 }

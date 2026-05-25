@@ -213,13 +213,22 @@ export function NotificationSettingsForm() {
         </p>
       ) : null}
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4">
-        <p className="text-sm font-bold text-stone-900">
-          Готовка и покупки по расписанию
-        </p>
-        <p className="mt-1 text-xs text-stone-500">
-          Время — с вашего устройства ({deviceTz}). Если удобно, добавьте событие
-          в календарь телефона.
+      <details className="group rounded-2xl border border-stone-100 bg-white p-4">
+        <summary className="cursor-pointer list-none">
+          <span className="flex items-center justify-between">
+            <span className="text-sm font-bold text-stone-900">
+              Готовка и покупки по расписанию
+            </span>
+            <span className="text-xs text-stone-400 group-open:rotate-180 transition">
+              ▼
+            </span>
+          </span>
+          <span className="mt-0.5 block text-xs text-stone-500">
+            Время — с вашего устройства ({deviceTz})
+          </span>
+        </summary>
+        <p className="mt-3 text-xs text-stone-500">
+          Если удобно, добавьте событие в календарь телефона.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button
@@ -259,7 +268,8 @@ export function NotificationSettingsForm() {
           Дни недели для Telegram-рассылки настраиваются на сервере; в календарь
           можно экспортировать ближайшее событие по кнопке ниже.
         </p>
-      </section>
+
+        <div className="mt-4 space-y-3">
 
       <ReminderCard
         emoji="🛒"
@@ -355,6 +365,9 @@ export function NotificationSettingsForm() {
           );
         }}
       />
+
+        </div>
+      </details>
 
       <p className="text-center text-xs text-stone-400">
         {saving

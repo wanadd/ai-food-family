@@ -157,8 +157,34 @@ export function CareSettingsPanel() {
     );
   }
 
+  const activeMode = CARE_MODES.find((m) => m.value === settings.care_level);
+  const activeRemindersCount = TOGGLE_ITEMS.filter((it) =>
+    Boolean(settings[it.key]),
+  ).length;
+  const quietRange =
+    settings.quiet_hours_start && settings.quiet_hours_end
+      ? `${settings.quiet_hours_start}–${settings.quiet_hours_end}`
+      : null;
+
   return (
     <div className="space-y-4">
+      {/* Summary line — one card showing current care state. */}
+      <section className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          Режим заботы
+        </p>
+        <p className="mt-1 text-sm font-semibold text-stone-900">
+          {activeMode?.label ?? "Не задано"}
+        </p>
+        <p className="mt-0.5 text-xs text-stone-600">
+          Активных напоминаний: {activeRemindersCount}
+          {quietRange ? ` · тихие часы ${quietRange}` : ""}
+        </p>
+        {feedback ? (
+          <p className="mt-2 text-xs text-emerald-800">{feedback}</p>
+        ) : null}
+      </section>
+
       <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-bold text-stone-900">Режим заботы</h2>
         <div className="mt-3 space-y-2">
@@ -191,9 +217,19 @@ export function CareSettingsPanel() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-bold text-stone-900">Что напоминать</h2>
-        <p className="mt-1 text-xs text-stone-500">
+      <details className="group rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+        <summary className="cursor-pointer list-none">
+          <span className="flex items-center justify-between">
+            <span className="text-sm font-bold text-stone-900">Что напоминать</span>
+            <span className="text-xs text-stone-400 group-open:rotate-180 transition">
+              ▼
+            </span>
+          </span>
+          <span className="mt-0.5 block text-xs text-stone-500">
+            Активных: {activeRemindersCount} из {TOGGLE_ITEMS.length}
+          </span>
+        </summary>
+        <p className="mt-3 text-xs text-stone-500">
           Если что-то не нужно — отключите. Можно вернуть в любой момент.
         </p>
         <ul className="mt-3 space-y-2">
@@ -241,13 +277,22 @@ export function CareSettingsPanel() {
             );
           })}
         </ul>
-      </section>
+      </details>
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-bold text-stone-900">Тихие часы</h2>
-        <p className="mt-1 text-xs text-stone-500">
-          В это время ПланАм ничего не присылает. Если оставить пустым — сообщения
-          могут приходить в любое время.
+      <details className="group rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+        <summary className="cursor-pointer list-none">
+          <span className="flex items-center justify-between">
+            <span className="text-sm font-bold text-stone-900">Тихие часы</span>
+            <span className="text-xs text-stone-400 group-open:rotate-180 transition">
+              ▼
+            </span>
+          </span>
+          <span className="mt-0.5 block text-xs text-stone-500">
+            {quietRange ?? "ПланАм может писать в любое время"}
+          </span>
+        </summary>
+        <p className="mt-3 text-xs text-stone-500">
+          В это время ПланАм ничего не присылает.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <label className="block">
@@ -295,13 +340,7 @@ export function CareSettingsPanel() {
             Поставить 22:00–08:00
           </button>
         )}
-      </section>
-
-      {feedback ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          {feedback}
-        </p>
-      ) : null}
+      </details>
 
       <button
         type="button"
