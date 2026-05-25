@@ -1,18 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import { formatAmasBalance } from "@/lib/profile/billing";
-import {
-  fetchSubscriptionOverview,
-  selectPlanStub,
-} from "@/lib/subscription/api";
+import { selectPlanStub } from "@/lib/subscription/api";
 import { AMA_ACTION_LABELS, formatAmaCost } from "@/lib/subscription/ama";
 import type { SubscriptionOverview } from "@/lib/subscription/types";
 
@@ -50,28 +48,18 @@ export function SubscriptionDashboard() {
   const { showToast } = useToast();
   const { initData, isTelegram } = useTelegram();
   const { mode } = useAppMode();
-  const [data, setData] = useState<SubscriptionOverview | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    overview: data,
+    loading,
+    ensureLoaded: ensureSubscriptionLoaded,
+    patchOverview,
+  } = useSubscriptionOverview();
   const [selecting, setSelecting] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!initData) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const overview = await fetchSubscriptionOverview(initData, mode);
-      setData(overview);
-    } finally {
-      setLoading(false);
-    }
-  }, [initData, mode]);
-
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (initData) ensureSubscriptionLoaded();
+  }, [initData, ensureSubscriptionLoaded]);
 
   async function handleSelectPlan(planCode: string) {
     if (!initData) return;
@@ -79,7 +67,7 @@ export function SubscriptionDashboard() {
     setMessage(null);
     try {
       const updated = await selectPlanStub(initData, mode, planCode);
-      setData(updated);
+      patchOverview(updated);
       await showToast("✓ Тариф сохранён");
     } catch (err) {
       setMessage(

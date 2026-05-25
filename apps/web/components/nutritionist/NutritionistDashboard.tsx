@@ -39,7 +39,6 @@ import { pickMainAdvice } from "@/lib/nutritionist/main-advice";
 import { withReturnTo } from "@/lib/navigation/return-to";
 import { fetchProgressOverview } from "@/lib/progress/api";
 import type { ProgressOverview } from "@/lib/progress/types";
-import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 
 const NUTRI_RETURN = "/nutritionist";
 
@@ -101,7 +100,6 @@ export function NutritionistDashboard() {
       setMenu(selected?.menu ?? null);
       setPantry(pantryList);
       setProgress(progressData);
-      void fetchSubscriptionOverview(initData, mode);
       console.info("[PlanAm] Nutritionist dashboard loaded");
     } finally {
       setLoading(false);

@@ -1,10 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
 import { useTelegram } from "@/components/TelegramProvider";
+
+const AmaConfirmDialog = dynamic(
+  () =>
+    import("@/components/subscription/AmaConfirmDialog").then(
+      (m) => m.AmaConfirmDialog,
+    ),
+  { ssr: false },
+);
 import { askNutritionist } from "@/lib/nutritionist/api";
 import {
   appendChatMessage,

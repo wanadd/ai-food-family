@@ -6,23 +6,29 @@ import { useState } from "react";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { NutritionistChat } from "@/components/nutritionist/NutritionistChat";
+import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
 import { useTelegram } from "@/components/TelegramProvider";
 import { fetchNutritionProfile } from "@/lib/nutrition-profile/api";
 import type { NutritionProfileData } from "@/lib/nutrition-profile/types";
 import { fetchSelectedMenu } from "@/lib/menu/api";
 import type { MenuVariant } from "@/lib/menu/types";
-import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 import { getNutritionistAskCost } from "@/lib/subscription/ama";
 import { useCallback, useEffect } from "react";
 
 export default function NutritionistChatPage() {
   const { initData } = useTelegram();
   const { mode } = useAppMode();
+  const {
+    overview: subscription,
+    ensureLoaded: ensureSubscriptionLoaded,
+    patchOverview: patchSubscription,
+  } = useSubscriptionOverview();
   const [profile, setProfile] = useState<NutritionProfileData | null>(null);
   const [menu, setMenu] = useState<MenuVariant | null>(null);
-  const [amaBalance, setAmaBalance] = useState(0);
-  const [amaAskCost, setAmaAskCost] = useState(2);
   const [loading, setLoading] = useState(true);
+
+  const amaBalance = subscription?.ama_balance ?? 0;
+  const amaAskCost = getNutritionistAskCost(subscription?.ama_costs);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -31,17 +37,12 @@ export default function NutritionistChatPage() {
     }
     setLoading(true);
     try {
-      const [nutrition, selected, sub] = await Promise.all([
+      const [nutrition, selected] = await Promise.all([
         fetchNutritionProfile(initData),
         fetchSelectedMenu(initData, mode).catch(() => null),
-        fetchSubscriptionOverview(initData, mode),
       ]);
       setProfile(nutrition);
       setMenu(selected?.menu ?? null);
-      if (sub) {
-        setAmaBalance(sub.ama_balance);
-        setAmaAskCost(getNutritionistAskCost(sub.ama_costs));
-      }
     } finally {
       setLoading(false);
     }
@@ -50,6 +51,10 @@ export default function NutritionistChatPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (initData) ensureSubscriptionLoaded();
+  }, [initData, ensureSubscriptionLoaded]);
 
   if (!initData) {
     return (
@@ -75,7 +80,9 @@ export default function NutritionistChatPage() {
           menu={menu}
           amaAskCost={amaAskCost}
           amaBalance={amaBalance}
-          onBalanceChange={setAmaBalance}
+          onBalanceChange={(balance) =>
+            patchSubscription({ ama_balance: balance })
+          }
         />
       )}
       <p className="mt-3 text-center text-xs text-stone-500">

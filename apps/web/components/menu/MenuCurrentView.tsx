@@ -1,12 +1,21 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
-import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
+import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
+
+const AmaConfirmDialog = dynamic(
+  () =>
+    import("@/components/subscription/AmaConfirmDialog").then(
+      (m) => m.AmaConfirmDialog,
+    ),
+  { ssr: false },
+);
 import { MealCheckinPanel } from "@/components/menu/MealCheckinPanel";
 import { MenuDayPicker } from "@/components/menu/MenuDayPicker";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
@@ -26,7 +35,6 @@ import {
 } from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
 import { MEAL_LABELS } from "@/lib/menu/labels";
-import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 
 export function MenuCurrentView() {
   const searchParams = useSearchParams();
@@ -39,8 +47,13 @@ export function MenuCurrentView() {
   const [error, setError] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MenuVariant | null>(null);
   const [pendingMealIndex, setPendingMealIndex] = useState<number | null>(null);
-  const [amaBalance, setAmaBalance] = useState<number | null>(null);
-  const [amaCosts, setAmaCosts] = useState<Record<string, number> | null>(null);
+  const {
+    overview: subscription,
+    ensureLoaded: ensureSubscriptionLoaded,
+    refresh: refreshSubscription,
+  } = useSubscriptionOverview();
+  const amaBalance = subscription?.ama_balance ?? null;
+  const amaCosts = subscription?.ama_costs ?? null;
   const [dayIndex, setDayIndex] = useState(1);
   const justSaved = searchParams.get("saved") === "1";
 
@@ -78,18 +91,8 @@ export function MenuCurrentView() {
 
   useEffect(() => {
     if (!initData) return;
-    void (async () => {
-      try {
-        const sub = await fetchSubscriptionOverview(initData, mode);
-        if (sub) {
-          setAmaBalance(sub.ama_balance);
-          setAmaCosts(sub.ama_costs ?? null);
-        }
-      } catch {
-        // Soft fallback: dialog will say ``может потребовать Амы``.
-      }
-    })();
-  }, [initData, mode]);
+    ensureSubscriptionLoaded();
+  }, [initData, ensureSubscriptionLoaded]);
 
   async function handleConfirmReplace() {
     if (!initData || !replaceTarget || pendingMealIndex == null || !menu) return;
@@ -106,6 +109,7 @@ export function MenuCurrentView() {
       setMenu(updated);
       setReplaceTarget(null);
       setPendingMealIndex(null);
+      void refreshSubscription();
     } catch (err) {
       setError(
         err instanceof Error

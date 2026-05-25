@@ -1,10 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
+import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
 import { useTelegram } from "@/components/TelegramProvider";
+
+const AmaConfirmDialog = dynamic(
+  () =>
+    import("@/components/subscription/AmaConfirmDialog").then(
+      (m) => m.AmaConfirmDialog,
+    ),
+  { ssr: false },
+);
 import {
   categoryLabel,
   dietLabel,
@@ -18,7 +27,6 @@ import {
   fetchRecipeFamilyFit,
   fetchRecipeImproveSuggestions,
 } from "@/lib/recipes/analysis-api";
-import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 import type {
   RecipeEvaluation,
   RecipeFamilyFit,
@@ -61,14 +69,20 @@ export function RecipeDetailModal({
   const [aiBusy, setAiBusy] = useState<AiAction | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<AiAction | null>(null);
-  const [amaBalance, setAmaBalance] = useState<number | null>(null);
-  const [amaCosts, setAmaCosts] = useState<Record<string, number> | null>(null);
+  const {
+    overview: subscription,
+    ensureLoaded: ensureSubscriptionLoaded,
+    refresh: refreshSubscription,
+  } = useSubscriptionOverview();
+  const amaBalance = subscription?.ama_balance ?? null;
+  const amaCosts = subscription?.ama_costs ?? null;
 
   /**
    * Auto-load family compatibility only. It is a pure heuristic on the
    * backend (no OpenAI call, no Amas charge) — safe to fetch on mount.
    * AI-backed endpoints /evaluate and /improve are gated behind explicit
-   * user clicks and AmaConfirmDialog (see handleRequestAi below).
+   * user clicks and AmaConfirmDialog. Subscription overview is fetched
+   * lazily only when user requests an AI action (see requestAiAction).
    */
   const loadFamilyFit = useCallback(async () => {
     if (!initData) return;
@@ -84,20 +98,10 @@ export function RecipeDetailModal({
     void loadFamilyFit();
   }, [loadFamilyFit]);
 
-  useEffect(() => {
-    if (!initData) return;
-    void (async () => {
-      try {
-        const sub = await fetchSubscriptionOverview(initData, mode);
-        if (sub) {
-          setAmaBalance(sub.ama_balance);
-          setAmaCosts(sub.ama_costs ?? null);
-        }
-      } catch {
-        // Soft fallback: dialog will say ``может потребовать Амы``.
-      }
-    })();
-  }, [initData, mode]);
+  function requestAiAction(action: AiAction) {
+    ensureSubscriptionLoaded();
+    setPendingAction(action);
+  }
 
   async function runConfirmedAiAction(action: AiAction) {
     if (!initData) {
@@ -110,6 +114,7 @@ export function RecipeDetailModal({
       if (action === "evaluate") {
         const ev = await evaluateRecipe(initData, mode, recipe.id);
         setEvaluation(ev);
+        void refreshSubscription();
       } else {
         const res = await fetchRecipeImproveSuggestions(
           initData,
@@ -255,7 +260,7 @@ export function RecipeDetailModal({
               <button
                 type="button"
                 disabled={aiBusy === "evaluate" || !initData}
-                onClick={() => setPendingAction("evaluate")}
+                onClick={() => requestAiAction("evaluate")}
                 className="mt-3 inline-flex min-h-[40px] items-center rounded-xl bg-stone-900 px-4 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {aiBusy === "evaluate" ? "Минуточку…" : "Получить AI-оценку"}
@@ -305,7 +310,7 @@ export function RecipeDetailModal({
               <button
                 type="button"
                 disabled={aiBusy === "improve" || !initData}
-                onClick={() => setPendingAction("improve")}
+                onClick={() => requestAiAction("improve")}
                 className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-800 disabled:opacity-50"
               >
                 {aiBusy === "improve" ? "Минуточку…" : "Подобрать улучшения"}

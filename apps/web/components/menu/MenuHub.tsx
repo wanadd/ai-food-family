@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -8,7 +9,15 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
-import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
+import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
+
+const AmaConfirmDialog = dynamic(
+  () =>
+    import("@/components/subscription/AmaConfirmDialog").then(
+      (m) => m.AmaConfirmDialog,
+    ),
+  { ssr: false },
+);
 import { useProtectedScreen } from "@/lib/use-protected-screen";
 import {
   fetchMenuOverview,
@@ -17,7 +26,6 @@ import {
 } from "@/lib/menu/overview-api";
 import { menuHasMultipleDays } from "@/lib/menu/menu-days";
 import type { MenuOverview } from "@/lib/menu/overview-types";
-import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 
 type QuickActionMeta = {
   id: QuickActionId;
@@ -84,8 +92,13 @@ export function MenuHub() {
   const [pendingAction, setPendingAction] = useState<QuickActionMeta | null>(
     null,
   );
-  const [amaBalance, setAmaBalance] = useState<number | null>(null);
-  const [amaCosts, setAmaCosts] = useState<Record<string, number> | null>(null);
+  const {
+    overview: subscription,
+    ensureLoaded: ensureSubscriptionLoaded,
+    refresh: refreshSubscription,
+  } = useSubscriptionOverview();
+  const amaBalance = subscription?.ama_balance ?? null;
+  const amaCosts = subscription?.ama_costs ?? null;
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -130,18 +143,8 @@ export function MenuHub() {
 
   useEffect(() => {
     if (!initData || authState !== "ready") return;
-    void (async () => {
-      try {
-        const sub = await fetchSubscriptionOverview(initData, mode);
-        if (sub) {
-          setAmaBalance(sub.ama_balance);
-          setAmaCosts(sub.ama_costs ?? null);
-        }
-      } catch {
-        // Soft fallback: dialog will say ``может потребовать Амы``.
-      }
-    })();
-  }, [initData, mode, authState]);
+    ensureSubscriptionLoaded();
+  }, [initData, authState, ensureSubscriptionLoaded]);
 
   async function runConfirmedQuickAction(action: QuickActionId) {
     if (!initData) return;
@@ -155,6 +158,7 @@ export function MenuHub() {
       }
       if (result.message) setMessage(result.message);
       await load();
+      void refreshSubscription();
     } catch (err) {
       setMessage(
         err instanceof Error
