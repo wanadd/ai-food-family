@@ -4,24 +4,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ApiRequestError } from "@/lib/api-errors";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MenuChooseVariants } from "@/components/menu/MenuChooseVariants";
 import { MenuPlannerSection } from "@/components/menu/MenuPlannerSection";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
-import { MenuWizardSteps } from "@/components/menu/MenuWizardSteps";
 import { StickyBottomBar } from "@/components/layout/StickyBottomBar";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
   buildChecklistItemStatuses,
-  buildRestrictionsSummary,
 } from "@/lib/menu/planner-summary";
-import { maxWizardScreenIndex } from "@/lib/menu/wizard-steps";
 import {
-  type MenuGoalId,
+  CHECKLIST_ADD_LINKS,
+  CHECKLIST_ITEMS,
+  MENU_BUDGET_OPTIONS,
+  MENU_DAY_OPTIONS,
+  MENU_GOAL_OPTIONS,
   PLAN_MODE_OPTIONS,
+  type MenuGoalId,
   type PlanModeId,
 } from "@/lib/menu/planner-options";
 import {
@@ -37,8 +39,7 @@ import {
 import { fetchNutritionProfile } from "@/lib/nutrition-profile/api";
 import type { NutritionProfileData } from "@/lib/nutrition-profile/types";
 import { fetchPantry } from "@/lib/pantry/api";
-import type { SelectedMenu } from "@/lib/menu/types";
-import type { MenuVariant } from "@/lib/menu/types";
+import type { SelectedMenu, MenuVariant } from "@/lib/menu/types";
 
 type Phase = "setup" | "choose";
 
@@ -61,11 +62,11 @@ export function MenuPlanner() {
 
   const [personsCount, setPersonsCount] = useState(1);
   const [planMode, setPlanMode] = useState<PlanModeId>("healthy");
-  const [wizardStep, setWizardStep] = useState(0);
   const [wizardGoal, setWizardGoal] = useState<MenuGoalId | null>(null);
-  const [goalStepError, setGoalStepError] = useState<string | null>(null);
+  const [goalError, setGoalError] = useState<string | null>(null);
   const [wizardDays, setWizardDays] = useState(7);
   const [wizardBudget, setWizardBudget] = useState("standard");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [checklistPantry, setChecklistPantry] = useState<
     Awaited<ReturnType<typeof fetchPantry>> | null
   >(null);
@@ -95,7 +96,7 @@ export function MenuPlanner() {
       const ng = nutrition?.nutrition_goal as MenuGoalId | undefined;
       if (ng && ["maintain", "lose", "gain", "healthy", "sport", "kids"].includes(ng)) {
         setWizardGoal(ng);
-        setGoalStepError(null);
+        setGoalError(null);
       }
       const storedPersons = loadPersonsOverride();
       setPersonsCount(storedPersons ?? defaultPersons);
@@ -129,7 +130,6 @@ export function MenuPlanner() {
     });
   }, [defaultPersons]);
 
-  const restrictions = buildRestrictionsSummary(profile);
   const isFamily = mode === "family";
   const effectivePersons = isFamily ? personsCount : 1;
   const checklistStatuses = buildChecklistItemStatuses(
@@ -138,27 +138,18 @@ export function MenuPlanner() {
     checklistPantry,
     isFamily,
   );
-  const maxWizardStep = maxWizardScreenIndex(isFamily);
   const hasPlan = Boolean(selectedMenu?.menu);
+
+  const accountedItems = CHECKLIST_ITEMS.filter(
+    (item) => (isFamily || item.id !== "persons") && checklistStatuses[item.id] === "included",
+  );
+  const missingItems = CHECKLIST_ITEMS.filter(
+    (item) => (isFamily || item.id !== "persons") && checklistStatuses[item.id] !== "included",
+  );
 
   function changePlanMode(id: PlanModeId) {
     setPlanMode(id);
     savePlanMode(id);
-  }
-
-  function handleWizardContinue() {
-    if (wizardStep === 0) {
-      if (!wizardGoal) {
-        setGoalStepError("Выберите цель для продолжения");
-        return;
-      }
-      setGoalStepError(null);
-    }
-    if (wizardStep < maxWizardStep) {
-      setWizardStep((s) => s + 1);
-      return;
-    }
-    void handleGenerate();
   }
 
   async function handleGenerate() {
@@ -167,8 +158,7 @@ export function MenuPlanner() {
       return;
     }
     if (!wizardGoal) {
-      setGoalStepError("Выберите цель для продолжения");
-      setWizardStep(0);
+      setGoalError("Выберите цель — ПланАм поймёт, что для вас составить");
       return;
     }
     setGenerating(true);
@@ -191,12 +181,14 @@ export function MenuPlanner() {
       if (err instanceof ApiRequestError) {
         let text = err.message;
         if (err.code === "menu_generation_limit" && err.canPayWithAms) {
-          text = `${text} Дополнительная генерация спишет Амы с баланса.`;
+          text = `${text} Если хотите продолжить — повторная генерация спишет Амы с баланса.`;
         }
         setError(text.trim());
       } else {
         const msg =
-          err instanceof Error ? err.message : "Не удалось создать меню. Попробуйте ещё раз.";
+          err instanceof Error
+            ? err.message
+            : "Не получилось составить меню. Попробуйте ещё раз через минуту.";
         setError(msg);
       }
     } finally {
@@ -277,7 +269,7 @@ export function MenuPlanner() {
               ? "На 1 человека"
               : `На ${effectivePersons} человек`}
             {" · "}
-            вы выбираете финальный план
+            финальный план выбираете вы
           </p>
         </div>
       </header>
@@ -301,9 +293,10 @@ export function MenuPlanner() {
           <>
             {generateSuccess ? (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                <p className="font-semibold">Меню создано</p>
+                <p className="font-semibold">Меню готово</p>
                 <p className="mt-1">
-                  Выберите вариант ниже или откройте план после сохранения.
+                  Выберите вариант ниже. Если что-то не подходит — любое блюдо
+                  можно заменить уже в активном плане.
                 </p>
                 <Link
                   href="/menu/current"
@@ -319,29 +312,239 @@ export function MenuPlanner() {
               onSelect={(menu) => void handleSelect(menu)}
               onPreview={setPreviewMenu}
             />
+            <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+              <h2 className="text-sm font-bold text-stone-900">
+                Свой вариант
+              </h2>
+              <p className="mt-1 text-sm text-stone-600">
+                Если ни один не подошёл — выберите ближайший, а потом замените
+                любое блюдо в плане под себя. ПланАм пересчитает покупки.
+              </p>
+            </section>
           </>
         ) : (
           <>
-            <MenuWizardSteps
-              screenIndex={wizardStep}
-              goal={wizardGoal}
-              goalError={goalStepError}
-              onGoalChange={(g) => {
-                setWizardGoal(g);
-                setGoalStepError(null);
-              }}
-              personsCount={effectivePersons}
-              onPersonsChange={setPersonsCount}
-              days={wizardDays}
-              onDaysChange={setWizardDays}
-              budget={wizardBudget}
-              onBudgetChange={setWizardBudget}
-              planMode={planMode}
-              onPlanModeChange={changePlanMode}
-              checklistStatuses={checklistStatuses}
-              familyName={context?.family?.name}
-              isFamily={isFamily}
-            />
+            <MenuPlannerSection title="Цель">
+              <div className="grid gap-2">
+                {MENU_GOAL_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      setWizardGoal(opt.value);
+                      setGoalError(null);
+                    }}
+                    className={`rounded-xl border px-4 py-3 text-left text-sm font-medium ${
+                      wizardGoal === opt.value
+                        ? "border-emerald-600 bg-emerald-50 text-emerald-900"
+                        : "border-stone-200 bg-white text-stone-800"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {goalError ? (
+                <p className="mt-3 text-sm font-medium text-red-700" role="alert">
+                  {goalError}
+                </p>
+              ) : null}
+            </MenuPlannerSection>
+
+            <MenuPlannerSection title="На сколько дней">
+              <div className="grid grid-cols-3 gap-2">
+                {MENU_DAY_OPTIONS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setWizardDays(d)}
+                    className={`min-h-[44px] rounded-xl border text-sm font-semibold ${
+                      wizardDays === d
+                        ? "border-emerald-600 bg-emerald-50 text-emerald-900"
+                        : "border-stone-200 bg-white"
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </MenuPlannerSection>
+
+            <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+              <h2 className="text-sm font-bold text-stone-900">ПланАм учтёт</h2>
+              {accountedItems.length > 0 ? (
+                <ul className="mt-2 flex flex-wrap gap-1.5">
+                  {accountedItems.map((item) => (
+                    <li
+                      key={item.id}
+                      className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800"
+                    >
+                      {item.label}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-stone-600">
+                  Пока опираемся на цель и количество дней. Можно дополнить
+                  профиль ниже — план станет точнее.
+                </p>
+              )}
+              {missingItems.length > 0 ? (
+                <p className="mt-3 text-xs text-stone-500">
+                  Можно дополнить:{" "}
+                  {missingItems
+                    .map((item) => {
+                      const href = CHECKLIST_ADD_LINKS[item.id];
+                      return href ? (
+                        <Link
+                          key={item.id}
+                          href={href}
+                          className="font-semibold text-emerald-700"
+                        >
+                          {item.label}
+                        </Link>
+                      ) : (
+                        <span key={item.id}>{item.label}</span>
+                      );
+                    })
+                    .reduce<ReactNode[]>((acc, node, idx) => {
+                      if (idx > 0) acc.push(", ");
+                      acc.push(node);
+                      return acc;
+                    }, [])}
+                  .
+                </p>
+              ) : null}
+            </section>
+
+            <details
+              className="group rounded-2xl border border-stone-100 bg-white shadow-sm"
+              open={advancedOpen}
+              onToggle={(e) => setAdvancedOpen((e.target as HTMLDetailsElement).open)}
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3.5 text-sm font-semibold text-stone-900">
+                <span>Настроить подробнее</span>
+                <span
+                  aria-hidden
+                  className="text-stone-400 transition group-open:rotate-180"
+                >
+                  ▾
+                </span>
+              </summary>
+
+              <div className="space-y-5 border-t border-stone-100 px-4 py-4">
+                {isFamily ? (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                      Количество человек
+                    </p>
+                    {context?.family?.name ? (
+                      <p className="mt-1 text-xs text-stone-500">
+                        Семья: {context.family.name}
+                      </p>
+                    ) : null}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setPersonsCount(n)}
+                          className={`min-h-[40px] min-w-[40px] rounded-xl border text-sm font-semibold ${
+                            personsCount === n
+                              ? "border-emerald-600 bg-emerald-50 text-emerald-900"
+                              : "border-stone-200 bg-white"
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Бюджет
+                  </p>
+                  <div className="mt-2 grid gap-2">
+                    {MENU_BUDGET_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setWizardBudget(opt.value)}
+                        className={`rounded-xl border px-3 py-2.5 text-left text-sm font-medium ${
+                          wizardBudget === opt.value
+                            ? "border-emerald-600 bg-emerald-50 text-emerald-900"
+                            : "border-stone-200 bg-white text-stone-800"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Режим плана
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {PLAN_MODE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => changePlanMode(opt.value)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+                          planMode === opt.value
+                            ? "border-emerald-600 bg-emerald-50 font-semibold"
+                            : "border-stone-200"
+                        }`}
+                        title={opt.hint}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-stone-500">
+                    {PLAN_MODE_OPTIONS.find((o) => o.value === planMode)?.hint}
+                  </p>
+                </div>
+
+                {missingItems.length > 0 ? (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                      Что можно дополнить в профиле
+                    </p>
+                    <ul className="mt-2 space-y-1.5">
+                      {missingItems.map((item) => {
+                        const href = CHECKLIST_ADD_LINKS[item.id];
+                        return (
+                          <li
+                            key={item.id}
+                            className="flex items-center justify-between gap-2 text-sm"
+                          >
+                            <span className="text-stone-700">{item.label}</span>
+                            {href ? (
+                              <Link
+                                href={href}
+                                className="shrink-0 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800"
+                              >
+                                Дополнить
+                              </Link>
+                            ) : (
+                              <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs text-stone-500">
+                                нет
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </details>
+
             {hasPlan && selectedMenu ? (
               <MenuPlannerSection title="Текущий план">
                 <p className="text-sm font-semibold text-stone-900">
@@ -364,32 +567,14 @@ export function MenuPlanner() {
 
       {phase === "setup" ? (
         <StickyBottomBar>
-          <div className="flex gap-2">
-            {wizardStep > 0 ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setGoalStepError(null);
-                  setWizardStep((s) => s - 1);
-                }}
-                className="min-h-[48px] shrink-0 rounded-2xl border border-stone-200 px-4 text-sm font-semibold text-stone-700"
-              >
-                Назад
-              </button>
-            ) : null}
-            <button
-              type="button"
-              disabled={generating || !initData}
-              onClick={handleWizardContinue}
-              className="w-full min-h-[48px] flex-1 rounded-2xl bg-emerald-600 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/40 disabled:opacity-50"
-            >
-              {generating
-                ? "Составляем…"
-                : wizardStep < maxWizardStep
-                  ? "Продолжить"
-                  : "Сгенерировать меню"}
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={generating || !initData}
+            onClick={handleGenerate}
+            className="w-full min-h-[48px] rounded-2xl bg-emerald-600 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/40 disabled:opacity-50"
+          >
+            {generating ? "Составляем…" : "Сгенерировать меню"}
+          </button>
         </StickyBottomBar>
       ) : null}
 
