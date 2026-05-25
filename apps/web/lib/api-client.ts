@@ -4,8 +4,37 @@ import { ApiRequestError, parseApiErrorDetail } from "@/lib/api-errors";
 import type { AppMode } from "@/lib/app-mode/types";
 
 const RETRYABLE_STATUS = new Set([502, 503, 504]);
-const MAX_ATTEMPTS = 3;
-const RETRY_DELAY_MS = 1500;
+
+/**
+ * GET fetches sit on the startup critical path (auth → app-context →
+ * home data fetches) so we keep the retry budget short to avoid hiding
+ * multiple seconds of latency. A single 300ms retry catches transient
+ * gateway errors without blocking the user noticeably.
+ */
+const MAX_ATTEMPTS_GET = 2;
+const RETRY_DELAY_GET_MS = 300;
+
+/**
+ * Mutations are less frequent and the user usually sees a busy state,
+ * so we can afford a slightly longer retry to ride out cold backends
+ * or short nginx blips.
+ */
+const MAX_ATTEMPTS_MUTATION = 2;
+const RETRY_DELAY_MUTATION_MS = 800;
+
+function retryProfile(method: string | undefined): {
+  maxAttempts: number;
+  delayMs: number;
+} {
+  const upper = (method ?? "GET").toUpperCase();
+  if (upper === "GET" || upper === "HEAD") {
+    return { maxAttempts: MAX_ATTEMPTS_GET, delayMs: RETRY_DELAY_GET_MS };
+  }
+  return {
+    maxAttempts: MAX_ATTEMPTS_MUTATION,
+    delayMs: RETRY_DELAY_MUTATION_MS,
+  };
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -59,14 +88,15 @@ async function fetchWithRetry(
   url: string,
   init: RequestInit,
 ): Promise<Response> {
+  const { maxAttempts, delayMs } = retryProfile(init.method);
   let lastError: Error | null = null;
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       const response = await fetch(url, init);
 
-      if (isRetryableStatus(response.status) && attempt < MAX_ATTEMPTS) {
-        await sleep(RETRY_DELAY_MS);
+      if (isRetryableStatus(response.status) && attempt < maxAttempts) {
+        await sleep(delayMs);
         continue;
       }
 
@@ -76,8 +106,8 @@ async function fetchWithRetry(
         err,
         "Сервер временно недоступен. Попробуйте через несколько секунд.",
       );
-      if (attempt < MAX_ATTEMPTS) {
-        await sleep(RETRY_DELAY_MS);
+      if (attempt < maxAttempts) {
+        await sleep(delayMs);
         continue;
       }
     }

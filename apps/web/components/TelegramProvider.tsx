@@ -15,6 +15,7 @@ import {
   authenticateWithTelegram,
   type AuthUser,
 } from "@/lib/api";
+import { prefetchAppContext } from "@/lib/app-mode/api";
 import { isClientDevMode, storeDevInitData } from "@/lib/dev-auth";
 import { loadTelegramWebApp } from "@/lib/telegram-webapp";
 
@@ -102,6 +103,12 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         setInitData(telegramInitData);
         setIsTelegram(true);
         setIsDevMode(false);
+        // Kick off /users/me/app-context immediately in parallel with the
+        // ensuing render cycle so AppModeProvider can read it from cache
+        // instead of triggering a fresh request.
+        void prefetchAppContext(telegramInitData).catch(() => {
+          // Swallow — AppModeProvider will retry on mount if cache empty.
+        });
         console.info("[PlanAm] Telegram auth success", {
           userId: result.user.id,
           isNew: result.is_new,
@@ -130,6 +137,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         setIsTelegram(false);
         setIsDevMode(true);
         setPlatform("dev");
+        void prefetchAppContext(result.dev_init_data).catch(() => {});
         console.info("[PlanAm] Dev auth success", { userId: result.user.id });
       } catch (error) {
         const message =
