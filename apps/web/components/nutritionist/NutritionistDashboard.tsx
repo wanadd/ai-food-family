@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { CareTelegramLinkCard } from "@/components/care/CareTelegramLinkCard";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { SkeletonCard, SkeletonList } from "@/components/ui/Skeleton";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
 import { useProtectedScreen } from "@/lib/use-protected-screen";
 import {
@@ -198,9 +198,10 @@ export function NutritionistDashboard() {
 
   if (loading || modeLoading) {
     return (
-      <div className="min-h-screen bg-stone-50">
-        <PageLoading message="Загрузка…" />
-      </div>
+      <ScreenLayout title="Нутрициолог" contentClassName="space-y-3 pb-24">
+        <SkeletonCard titleWidth="w-1/2" lines={3} withButton />
+        <SkeletonList count={2} />
+      </ScreenLayout>
     );
   }
 

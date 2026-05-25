@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
 
@@ -213,9 +213,9 @@ export function MenuHub() {
 
   if (loadState === "loading") {
     return (
-      <div className="min-h-screen bg-stone-50">
-        <PageLoading message="Загрузка меню…" />
-      </div>
+      <ScreenLayout title="Меню" contentClassName="space-y-3 pb-24">
+        <SkeletonList count={3} />
+      </ScreenLayout>
     );
   }
 

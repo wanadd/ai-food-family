@@ -9,7 +9,8 @@ import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallba
 import { useProtectedScreen } from "@/lib/use-protected-screen";
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { PantryCategorySection } from "@/components/pantry/PantryCategorySection";
 import { PantryItemForm } from "@/components/pantry/PantryItemForm";
 import {
@@ -253,7 +254,11 @@ export function PantryDashboard() {
   }
 
   if (loading) {
-    return <PageLoading message="Загружаем запасы..." />;
+    return (
+      <ScreenLayout title="Запасы" contentClassName="space-y-3 pb-24">
+        <SkeletonList count={3} />
+      </ScreenLayout>
+    );
   }
 
   return (

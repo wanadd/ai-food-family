@@ -20,7 +20,7 @@ import { MealCheckinPanel } from "@/components/menu/MealCheckinPanel";
 import { MenuDayPicker } from "@/components/menu/MenuDayPicker";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { SkeletonCard, SkeletonList } from "@/components/ui/Skeleton";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
   cacheKey,
@@ -162,9 +162,14 @@ export function MenuCurrentView() {
 
   if (loading || modeLoading) {
     return (
-      <div className="min-h-screen bg-stone-50">
-        <PageLoading message="Загрузка плана…" />
-      </div>
+      <ScreenLayout
+        title="Текущий план"
+        back={{ href: "/menu", label: "Меню" }}
+        contentClassName="space-y-3 pb-24"
+      >
+        <SkeletonCard titleWidth="w-1/2" lines={4} withButton />
+        <SkeletonList count={2} />
+      </ScreenLayout>
     );
   }
 

@@ -7,7 +7,7 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
 import { useToast } from "@/components/ui/ToastProvider";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { SkeletonCard, SkeletonList } from "@/components/ui/Skeleton";
 import { useTelegram } from "@/components/TelegramProvider";
 import { formatAmasBalance } from "@/lib/profile/billing";
 import { selectPlanStub } from "@/lib/subscription/api";
@@ -90,9 +90,10 @@ export function SubscriptionDashboard() {
 
   if (loading || !data) {
     return (
-      <div className="min-h-screen bg-stone-50">
-        <PageLoading message="Загрузка тарифа…" />
-      </div>
+      <ScreenLayout title="Тариф" contentClassName="space-y-3 pb-24">
+        <SkeletonCard titleWidth="w-1/3" lines={2} withButton />
+        <SkeletonList count={2} />
+      </ScreenLayout>
     );
   }
 

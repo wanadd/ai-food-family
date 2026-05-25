@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ProgressProLocked } from "@/components/progress/ProgressProLocked";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
   createProgressEntry,
@@ -173,9 +173,9 @@ export function ProgressDashboard() {
 
   if (loading || !data) {
     return (
-      <div className="min-h-screen bg-stone-50">
-        <PageLoading message="Загрузка прогресса…" />
-      </div>
+      <ScreenLayout title="Прогресс" contentClassName="space-y-3 pb-24">
+        <SkeletonList count={3} />
+      </ScreenLayout>
     );
   }
 

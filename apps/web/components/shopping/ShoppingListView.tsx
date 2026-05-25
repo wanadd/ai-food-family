@@ -15,7 +15,8 @@ import {
   invalidate as invalidateCache,
   setCached,
 } from "@/lib/cache/session-cache";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/ToastProvider";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
 import { ShoppingCategorySheet } from "@/components/shopping/ShoppingCategorySheet";
@@ -439,7 +440,11 @@ export function ShoppingListView() {
   }
 
   if (loading) {
-    return <PageLoading message="Загружаем покупки..." />;
+    return (
+      <ScreenLayout title="Покупки" contentClassName="space-y-3 pb-24">
+        <SkeletonList count={3} />
+      </ScreenLayout>
+    );
   }
 
   return (

@@ -1,15 +1,16 @@
 import { Suspense } from "react";
 
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { ProgressDashboard } from "@/components/progress/ProgressDashboard";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { SkeletonList } from "@/components/ui/Skeleton";
 
 export default function ProgressPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-stone-50">
-          <PageLoading message="Загрузка…" />
-        </div>
+        <ScreenLayout title="Прогресс" contentClassName="space-y-3 pb-24">
+          <SkeletonList count={3} />
+        </ScreenLayout>
       }
     >
       <ProgressDashboard />
