@@ -47,14 +47,14 @@ const defaultContext: TelegramContextValue = {
   retryAuth: () => {},
 };
 
-function readTelegramInitData(): string {
-  if (typeof window === "undefined") {
-    return "";
-  }
-  return (
-    (window as Window & { Telegram?: { WebApp?: { initData?: string } } }).Telegram
-      ?.WebApp?.initData ?? ""
-  );
+const isDev =
+  typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
+
+function debugAuthLog(message: string, extra?: Record<string, unknown>) {
+  if (!isDev) return;
+  if (typeof console === "undefined") return;
+  if (extra) console.info(`[PlanAm/Auth] ${message}`, extra);
+  else console.info(`[PlanAm/Auth] ${message}`);
 }
 
 export function TelegramProvider({ children }: { children: ReactNode }) {
@@ -72,30 +72,44 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-
-    void (async () => {
-      const webApp = await loadTelegramWebApp();
-      if (webApp?.initData) {
-        webApp.ready();
-        webApp.expand();
-        setPlatform(webApp.platform);
-        setColorScheme(webApp.colorScheme);
-        document.documentElement.style.setProperty(
-          "--tg-theme-bg-color",
-          webApp.themeParams.bg_color ?? "#f8fafc",
-        );
-      } else if (isClientDevMode()) {
-        setPlatform("dev");
-      }
-    })();
   }, []);
 
   const runAuth = useCallback(async () => {
-    const telegramInitData = readTelegramInitData();
+    // Step 1: actually wait for Telegram.WebApp before deciding whether
+    // we're in Telegram or in dev. The previous version read the global
+    // synchronously and could see an empty initData if the client
+    // injected the global a tick later — that produced the auth-loop
+    // ("Open in Telegram" → share phone → still no initData → repeat).
+    setIsAuthenticating(true);
+    setAuthError(null);
+
+    const webApp = await loadTelegramWebApp();
+    const telegramInitData = webApp?.initData ?? "";
+
+    debugAuthLog("loadTelegramWebApp resolved", {
+      hasWebApp: Boolean(webApp),
+      hasInitData: telegramInitData.length > 0,
+      platform: webApp?.platform,
+    });
+
+    if (webApp) {
+      try {
+        webApp.ready();
+        webApp.expand();
+      } catch {
+        /* old clients may not implement these — safe to ignore */
+      }
+      setPlatform(webApp.platform || "unknown");
+      setColorScheme(webApp.colorScheme || "light");
+      if (typeof document !== "undefined") {
+        document.documentElement.style.setProperty(
+          "--tg-theme-bg-color",
+          webApp.themeParams?.bg_color ?? "#f8fafc",
+        );
+      }
+    }
 
     if (telegramInitData.length > 0) {
-      setIsAuthenticating(true);
-      setAuthError(null);
       try {
         const result = await authenticateWithTelegram(telegramInitData);
         setUser(result.user);
@@ -106,9 +120,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         // Kick off /users/me/app-context immediately in parallel with the
         // ensuing render cycle so AppModeProvider can read it from cache
         // instead of triggering a fresh request.
-        void prefetchAppContext(telegramInitData).catch(() => {
-          // Swallow — AppModeProvider will retry on mount if cache empty.
-        });
+        void prefetchAppContext(telegramInitData).catch(() => {});
         console.info("[PlanAm] Telegram auth success", {
           userId: result.user.id,
           isNew: result.is_new,
@@ -125,9 +137,9 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Step 2: no Telegram initData. Try dev login if we look like a
+    // local/preview environment.
     if (isClientDevMode()) {
-      setIsAuthenticating(true);
-      setAuthError(null);
       try {
         const result = await authenticateDevLogin();
         storeDevInitData(result.dev_init_data);
@@ -152,11 +164,15 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Step 3: genuinely outside Telegram and outside dev — show the
+    // "open in Telegram" screen.
+    debugAuthLog("No initData and no dev mode — falling back to TelegramRequired");
     setAuthError("Откройте приложение через Telegram");
     setUser(null);
     setInitData("");
     setIsTelegram(false);
     setIsDevMode(false);
+    setIsAuthenticating(false);
   }, []);
 
   useEffect(() => {
