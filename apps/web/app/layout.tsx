@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 
 import { AppProviders } from "@/components/AppProviders";
 import "./globals.css";
@@ -19,10 +18,6 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className="min-h-screen bg-white text-stone-900 antialiased">
-        <Script
-          src="https://telegram.org/js/telegram-web-app.js"
-          strategy="afterInteractive"
-        />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
