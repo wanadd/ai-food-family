@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
   categoryLabel,
   dietLabel,
-  difficultyLabel,
   mealLabel,
 } from "@/lib/recipes/labels";
 import type { RecipeDetail } from "@/lib/recipes/types";
@@ -18,6 +18,7 @@ import {
   fetchRecipeFamilyFit,
   fetchRecipeImproveSuggestions,
 } from "@/lib/recipes/analysis-api";
+import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 import type {
   RecipeEvaluation,
   RecipeFamilyFit,
@@ -32,6 +33,8 @@ type RecipeDetailModalProps = {
   menuMode?: boolean;
   onAddedToMenu?: () => void;
 };
+
+type AiAction = "evaluate" | "improve";
 
 const FIT_STYLES = {
   good: "border-emerald-200 bg-emerald-50 text-emerald-900",
@@ -55,26 +58,77 @@ export function RecipeDetailModal({
   const [adding, setAdding] = useState(false);
   const [addingShopping, setAddingShopping] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [aiBusy, setAiBusy] = useState<AiAction | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<AiAction | null>(null);
+  const [amaBalance, setAmaBalance] = useState<number | null>(null);
+  const [amaCosts, setAmaCosts] = useState<Record<string, number> | null>(null);
 
-  const loadAnalysis = useCallback(async () => {
+  /**
+   * Auto-load family compatibility only. It is a pure heuristic on the
+   * backend (no OpenAI call, no Amas charge) — safe to fetch on mount.
+   * AI-backed endpoints /evaluate and /improve are gated behind explicit
+   * user clicks and AmaConfirmDialog (see handleRequestAi below).
+   */
+  const loadFamilyFit = useCallback(async () => {
     if (!initData) return;
     try {
-      const [ev, fam, imp] = await Promise.all([
-        evaluateRecipe(initData, mode, recipe.id),
-        fetchRecipeFamilyFit(initData, mode, recipe.id),
-        fetchRecipeImproveSuggestions(initData, mode, recipe.id),
-      ]);
-      setEvaluation(ev);
+      const fam = await fetchRecipeFamilyFit(initData, mode, recipe.id);
       setFamilyFit(fam);
-      setSuggestions(imp.suggestions ?? []);
     } catch {
-      setEvaluation(null);
+      setFamilyFit(null);
     }
   }, [initData, mode, recipe.id]);
 
   useEffect(() => {
-    void loadAnalysis();
-  }, [loadAnalysis]);
+    void loadFamilyFit();
+  }, [loadFamilyFit]);
+
+  useEffect(() => {
+    if (!initData) return;
+    void (async () => {
+      try {
+        const sub = await fetchSubscriptionOverview(initData, mode);
+        if (sub) {
+          setAmaBalance(sub.ama_balance);
+          setAmaCosts(sub.ama_costs ?? null);
+        }
+      } catch {
+        // Soft fallback: dialog will say ``может потребовать Амы``.
+      }
+    })();
+  }, [initData, mode]);
+
+  async function runConfirmedAiAction(action: AiAction) {
+    if (!initData) {
+      setPendingAction(null);
+      return;
+    }
+    setAiBusy(action);
+    setAiError(null);
+    try {
+      if (action === "evaluate") {
+        const ev = await evaluateRecipe(initData, mode, recipe.id);
+        setEvaluation(ev);
+      } else {
+        const res = await fetchRecipeImproveSuggestions(
+          initData,
+          mode,
+          recipe.id,
+        );
+        setSuggestions(res.suggestions ?? []);
+      }
+    } catch (err) {
+      setAiError(
+        err instanceof Error
+          ? err.message
+          : "Не получилось получить ответ AI. Попробуйте ещё раз.",
+      );
+    } finally {
+      setAiBusy(null);
+      setPendingAction(null);
+    }
+  }
 
   async function handleAddToShopping() {
     if (!initData) return;
@@ -100,7 +154,9 @@ export function RecipeDetailModal({
       await addRecipeToMenu(initData, mode, recipe.id, {
         meal_type: recipe.meal_type,
       });
-      setMessage("Блюдо добавлено в меню. Решение за вами — ПланАм только подсказал.");
+      setMessage(
+        "Блюдо добавлено в меню. Решение за вами — ПланАм только подсказал.",
+      );
       onAddedToMenu?.();
     } catch (err) {
       setMessage(
@@ -110,6 +166,8 @@ export function RecipeDetailModal({
       setAdding(false);
     }
   }
+
+  const evaluateCost = amaCosts?.recipe_analyze ?? null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/50 p-0 sm:items-center sm:p-4">
@@ -165,6 +223,12 @@ export function RecipeDetailModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 pb-28">
+          {aiError ? (
+            <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {aiError}
+            </p>
+          ) : null}
+
           {evaluation ? (
             <section
               className={`mb-4 rounded-xl border p-3 ${FIT_STYLES[evaluation.fit_level]}`}
@@ -179,7 +243,25 @@ export function RecipeDetailModal({
                 Это рекомендация, не запрет — выбор всегда за вами.
               </p>
             </section>
-          ) : null}
+          ) : (
+            <section className="mb-4 rounded-xl border border-stone-100 bg-stone-50 p-3">
+              <p className="text-sm font-bold text-stone-900">
+                AI-оценка рецепта
+              </p>
+              <p className="mt-1 text-xs text-stone-600">
+                ПланАм подскажет, подходит ли блюдо вашей цели и ограничениям.
+                Действие платное — Амы спишутся только после подтверждения.
+              </p>
+              <button
+                type="button"
+                disabled={aiBusy === "evaluate" || !initData}
+                onClick={() => setPendingAction("evaluate")}
+                className="mt-3 inline-flex min-h-[40px] items-center rounded-xl bg-stone-900 px-4 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {aiBusy === "evaluate" ? "Минуточку…" : "Получить AI-оценку"}
+              </button>
+            </section>
+          )}
 
           {familyFit && familyFit.members.length > 0 ? (
             <section className="mb-4 rounded-xl border border-stone-100 bg-stone-50 p-3">
@@ -210,7 +292,26 @@ export function RecipeDetailModal({
                 ))}
               </ul>
             </section>
-          ) : null}
+          ) : (
+            <section className="mb-4 rounded-xl border border-stone-100 bg-stone-50 p-3">
+              <p className="text-sm font-bold text-stone-900">
+                Как улучшить рецепт
+              </p>
+              <p className="mt-1 text-xs text-stone-600">
+                ПланАм предложит варианты под ваш профиль. Просмотр предложений
+                не списывает Амы — Амы списываются только когда вы выберете
+                конкретное улучшение и подтвердите его применение.
+              </p>
+              <button
+                type="button"
+                disabled={aiBusy === "improve" || !initData}
+                onClick={() => setPendingAction("improve")}
+                className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-800 disabled:opacity-50"
+              >
+                {aiBusy === "improve" ? "Минуточку…" : "Подобрать улучшения"}
+              </button>
+            </section>
+          )}
 
           {message ? (
             <p className="mb-3 text-sm text-emerald-800">{message}</p>
@@ -284,6 +385,49 @@ export function RecipeDetailModal({
           </button>
         </div>
       </div>
+
+      <AmaConfirmDialog
+        open={pendingAction === "evaluate"}
+        title="AI-оценка рецепта"
+        description={
+          <span>
+            ПланАм проверит, подходит ли «{recipe.title}» вашей цели,
+            аллергиям и ограничениям. Ответ появится в карточке выше —
+            окончательное решение остаётся за вами.
+          </span>
+        }
+        costAma={evaluateCost}
+        balanceAma={amaBalance}
+        busy={aiBusy === "evaluate"}
+        confirmLabel="Получить AI-оценку"
+        onCancel={() => {
+          if (aiBusy !== "evaluate") setPendingAction(null);
+        }}
+        onConfirm={() => void runConfirmedAiAction("evaluate")}
+      />
+
+      <AmaConfirmDialog
+        open={pendingAction === "improve"}
+        title="Подобрать улучшения"
+        description={
+          <span>
+            ПланАм предложит, что можно поменять в рецепте под ваш профиль.
+            Просмотр предложений не списывает Амы. Если выберете конкретное
+            улучшение и подтвердите его применение — спишется{" "}
+            {amaCosts?.recipe_improve != null
+              ? `${amaCosts.recipe_improve} Ам/Ама.`
+              : "стоимость улучшения (показана в окне подтверждения)."}
+          </span>
+        }
+        costAma={0}
+        balanceAma={amaBalance}
+        busy={aiBusy === "improve"}
+        confirmLabel="Показать предложения"
+        onCancel={() => {
+          if (aiBusy !== "improve") setPendingAction(null);
+        }}
+        onConfirm={() => void runConfirmedAiAction("improve")}
+      />
     </div>
   );
 }

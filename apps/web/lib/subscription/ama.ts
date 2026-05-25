@@ -7,6 +7,8 @@ export const AMA_ACTION_LABELS: Record<string, string> = {
   deep_nutrition_analysis: "Глубокий анализ питания",
   menu_rebuild: "Перестроение меню",
   ai_report: "AI-отчёт",
+  recipe_analyze: "AI-оценка рецепта",
+  recipe_improve: "Улучшения рецепта",
 };
 
 export function formatAmaCost(cost: number): string {
