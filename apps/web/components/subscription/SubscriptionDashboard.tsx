@@ -82,7 +82,11 @@ export function SubscriptionDashboard() {
       setData(updated);
       await showToast("✓ Тариф сохранён");
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Не удалось сменить тариф");
+      setMessage(
+        err instanceof Error
+          ? err.message
+          : "Не получилось сменить тариф. Попробуйте ещё раз через минуту.",
+      );
     } finally {
       setSelecting(null);
     }
@@ -91,7 +95,7 @@ export function SubscriptionDashboard() {
   if (!initData && !isTelegram && !loading) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-stone-600">
-        Откройте приложение в Telegram
+        Тариф и баланс доступны в Telegram Mini App.
       </div>
     );
   }
@@ -134,7 +138,8 @@ export function SubscriptionDashboard() {
           ) : null}
           {!data.ai_actions_enabled ? (
             <p className="mt-2 text-sm font-medium text-amber-800">
-              Новые AI-действия недоступны — выберите тариф
+              Сейчас AI-действия временно недоступны. Можно выбрать тариф —
+              просмотр меню, покупок и запасов остаётся свободным.
             </p>
           ) : null}
         </section>
@@ -263,9 +268,10 @@ export function SubscriptionDashboard() {
         </section>
 
         <section className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/30 p-4">
-          <p className="font-semibold text-stone-900">Купить Амы</p>
+          <p className="font-semibold text-stone-900">Пополнение баланса</p>
           <p className="mt-1 text-sm text-stone-600">
-            Пополнение баланса появится в следующем обновлении.
+            Покупка Амов появится в одном из следующих обновлений. До этого
+            момента баланс пополняется ежемесячно по выбранному тарифу.
           </p>
           <button
             type="button"

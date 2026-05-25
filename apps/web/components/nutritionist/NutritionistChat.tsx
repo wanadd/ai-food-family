@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
@@ -115,9 +116,17 @@ export function NutritionistChat({
       </p>
 
       {chatError ? (
-        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          {chatError}
-        </p>
+        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <p>{chatError}</p>
+          {/Лимит|Амов?|Ам |тариф|Пробный/i.test(chatError) ? (
+            <Link
+              href="/subscription"
+              className="mt-1.5 inline-block font-semibold text-emerald-800"
+            >
+              Посмотреть тариф и баланс →
+            </Link>
+          ) : null}
+        </div>
       ) : null}
 
       <div
