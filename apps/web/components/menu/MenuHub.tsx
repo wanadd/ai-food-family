@@ -8,6 +8,7 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
+import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
 import { useProtectedScreen } from "@/lib/use-protected-screen";
 import {
   fetchMenuOverview,
@@ -16,13 +17,52 @@ import {
 } from "@/lib/menu/overview-api";
 import { menuHasMultipleDays } from "@/lib/menu/menu-days";
 import type { MenuOverview } from "@/lib/menu/overview-types";
+import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 
-const QUICK_ACTIONS: { id: QuickActionId; label: string }[] = [
-  { id: "cheaper", label: "Сделать дешевле" },
-  { id: "more_pantry", label: "Использовать запасы" },
-  { id: "more_protein", label: "Больше белка" },
-  { id: "less_cooking_time", label: "Меньше времени на готовку" },
-  { id: "replace_dish", label: "Заменить блюдо" },
+type QuickActionMeta = {
+  id: QuickActionId;
+  label: string;
+  description: string;
+  /**
+   * Backend cost key in SubscriptionOverview.ama_costs. If unset, the
+   * action is assumed free or server-decided and we show ``может
+   * потребовать Амы``.
+   */
+  costKey?: string;
+};
+
+const QUICK_ACTIONS: QuickActionMeta[] = [
+  {
+    id: "cheaper",
+    label: "Сделать дешевле",
+    description:
+      "ПланАм пересоберёт меню с акцентом на экономные блюда. Активный план изменится, список покупок пересчитается.",
+  },
+  {
+    id: "more_pantry",
+    label: "Использовать запасы",
+    description:
+      "ПланАм постарается использовать продукты, которые уже есть в запасах, и обновит список покупок.",
+  },
+  {
+    id: "more_protein",
+    label: "Больше белка",
+    description:
+      "ПланАм увеличит долю белковых блюд в плане. Покупки обновятся под новые ингредиенты.",
+  },
+  {
+    id: "less_cooking_time",
+    label: "Меньше времени на готовку",
+    description:
+      "ПланАм заменит длительные рецепты на более быстрые. Активный план и покупки обновятся.",
+  },
+  {
+    id: "replace_dish",
+    label: "Заменить блюдо",
+    description:
+      "Выберите блюдо в активном плане — ПланАм предложит альтернативу с учётом ваших ограничений.",
+    costKey: "menu_replace_dish",
+  },
 ];
 
 type LoadState = "loading" | "success" | "empty" | "error";
@@ -41,6 +81,11 @@ export function MenuHub() {
   const [acting, setActing] = useState<QuickActionId | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<QuickActionMeta | null>(
+    null,
+  );
+  const [amaBalance, setAmaBalance] = useState<number | null>(null);
+  const [amaCosts, setAmaCosts] = useState<Record<string, number> | null>(null);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -83,7 +128,22 @@ export function MenuHub() {
     void load();
   }, [load, modeLoading, authState]);
 
-  async function handleQuickAction(action: QuickActionId) {
+  useEffect(() => {
+    if (!initData || authState !== "ready") return;
+    void (async () => {
+      try {
+        const sub = await fetchSubscriptionOverview(initData, mode);
+        if (sub) {
+          setAmaBalance(sub.ama_balance);
+          setAmaCosts(sub.ama_costs ?? null);
+        }
+      } catch {
+        // Soft fallback: dialog will say ``может потребовать Амы``.
+      }
+    })();
+  }, [initData, mode, authState]);
+
+  async function runConfirmedQuickAction(action: QuickActionId) {
     if (!initData) return;
     setActing(action);
     setMessage(null);
@@ -96,9 +156,14 @@ export function MenuHub() {
       if (result.message) setMessage(result.message);
       await load();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Не удалось выполнить действие");
+      setMessage(
+        err instanceof Error
+          ? err.message
+          : "Не получилось выполнить действие. Попробуйте ещё раз.",
+      );
     } finally {
       setActing(null);
+      setPendingAction(null);
     }
   }
 
@@ -328,13 +393,16 @@ export function MenuHub() {
 
       <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
         <p className="text-sm font-bold text-stone-900">Быстрые действия</p>
+        <p className="mt-1 text-xs text-stone-500">
+          ПланАм предложит вариант — вы решаете, применять или нет.
+        </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {QUICK_ACTIONS.map((action) => (
             <button
               key={action.id}
               type="button"
               disabled={Boolean(acting)}
-              onClick={() => void handleQuickAction(action.id)}
+              onClick={() => setPendingAction(action)}
               className="min-h-[44px] rounded-xl border border-stone-200 bg-stone-50 px-2 py-2.5 text-xs font-semibold text-stone-800 disabled:opacity-50"
             >
               {acting === action.id ? "…" : action.label}
@@ -405,6 +473,25 @@ export function MenuHub() {
         <span className="font-semibold text-stone-900">Рецепты</span>
         <span className="text-stone-400">→</span>
       </Link>
+
+      <AmaConfirmDialog
+        open={pendingAction !== null}
+        title={pendingAction?.label ?? ""}
+        description={pendingAction?.description ?? ""}
+        costAma={
+          pendingAction?.costKey != null
+            ? (amaCosts?.[pendingAction.costKey] ?? null)
+            : null
+        }
+        balanceAma={amaBalance}
+        busy={Boolean(acting)}
+        onCancel={() => {
+          if (!acting) setPendingAction(null);
+        }}
+        onConfirm={() => {
+          if (pendingAction) void runConfirmedQuickAction(pendingAction.id);
+        }}
+      />
     </ScreenLayout>
   );
 }

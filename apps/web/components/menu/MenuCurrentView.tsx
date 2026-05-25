@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
 import { MealCheckinPanel } from "@/components/menu/MealCheckinPanel";
 import { MenuDayPicker } from "@/components/menu/MenuDayPicker";
 import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
@@ -24,6 +25,8 @@ import {
   menuViewForDay,
 } from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
+import { MEAL_LABELS } from "@/lib/menu/labels";
+import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 
 export function MenuCurrentView() {
   const searchParams = useSearchParams();
@@ -35,6 +38,9 @@ export function MenuCurrentView() {
   const [replacing, setReplacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MenuVariant | null>(null);
+  const [pendingMealIndex, setPendingMealIndex] = useState<number | null>(null);
+  const [amaBalance, setAmaBalance] = useState<number | null>(null);
+  const [amaCosts, setAmaCosts] = useState<Record<string, number> | null>(null);
   const [dayIndex, setDayIndex] = useState(1);
   const justSaved = searchParams.get("saved") === "1";
 
@@ -70,8 +76,23 @@ export function MenuCurrentView() {
     }
   }, [searchParams, menu]);
 
-  async function handleReplace(mealIndex: number) {
-    if (!initData || !replaceTarget || !menu) return;
+  useEffect(() => {
+    if (!initData) return;
+    void (async () => {
+      try {
+        const sub = await fetchSubscriptionOverview(initData, mode);
+        if (sub) {
+          setAmaBalance(sub.ama_balance);
+          setAmaCosts(sub.ama_costs ?? null);
+        }
+      } catch {
+        // Soft fallback: dialog will say ``может потребовать Амы``.
+      }
+    })();
+  }, [initData, mode]);
+
+  async function handleConfirmReplace() {
+    if (!initData || !replaceTarget || pendingMealIndex == null || !menu) return;
     setReplacing(true);
     setError(null);
     try {
@@ -79,13 +100,18 @@ export function MenuCurrentView() {
         initData,
         mode,
         replaceTarget,
-        mealIndex,
+        pendingMealIndex,
       );
       await selectMenu(initData, mode, updated);
       setMenu(updated);
       setReplaceTarget(null);
+      setPendingMealIndex(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось заменить блюдо");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Не получилось заменить блюдо. Попробуйте ещё раз.",
+      );
     } finally {
       setReplacing(false);
     }
@@ -189,14 +215,46 @@ export function MenuCurrentView() {
           Остатки блюд
         </Link>
 
-      {replaceTarget ? (
+      {replaceTarget && pendingMealIndex === null ? (
         <ReplaceDishModal
           menu={replaceTarget}
           onClose={() => !replacing && setReplaceTarget(null)}
-          onReplace={handleReplace}
+          onSelectMeal={setPendingMealIndex}
           loading={replacing}
         />
       ) : null}
+
+      <AmaConfirmDialog
+        open={pendingMealIndex !== null && replaceTarget !== null}
+        title="Заменить блюдо"
+        description={(() => {
+          const meal =
+            replaceTarget && pendingMealIndex !== null
+              ? replaceTarget.meals[pendingMealIndex]
+              : null;
+          if (!meal) return null;
+          return (
+            <span>
+              ПланАм предложит альтернативу для блюда
+              {" «"}
+              <span className="font-semibold text-stone-900">{meal.name}</span>
+              {"» ("}
+              {MEAL_LABELS[meal.meal_type]}
+              {"). "}
+              Активный план обновится, список покупок пересчитается. Если новое
+              блюдо не подойдёт — можно заменить ещё раз.
+            </span>
+          );
+        })()}
+        costAma={amaCosts?.menu_replace_dish ?? null}
+        balanceAma={amaBalance}
+        busy={replacing}
+        confirmLabel="Подтвердить замену"
+        onCancel={() => {
+          if (!replacing) setPendingMealIndex(null);
+        }}
+        onConfirm={() => void handleConfirmReplace()}
+      />
     </ScreenLayout>
   );
 }

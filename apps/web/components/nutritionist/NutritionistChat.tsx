@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
 import { useTelegram } from "@/components/TelegramProvider";
 import { askNutritionist } from "@/lib/nutritionist/api";
 import {
@@ -42,6 +43,7 @@ export function NutritionistChat({
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,10 +58,17 @@ export function NutritionistChat({
 
   useEffect(() => {
     if (!initialPrompt) return;
-    void sendMessage(initialPrompt);
+    setInput(initialPrompt);
+    setPendingPrompt(initialPrompt);
     onInitialPromptConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPrompt]);
+
+  function requestSend(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || sending) return;
+    setPendingPrompt(trimmed);
+  }
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
@@ -81,6 +90,7 @@ export function NutritionistChat({
         if (err instanceof ApiRequestError) {
           setChatError(err.message);
           setSending(false);
+          setPendingPrompt(null);
           return;
         }
         answer = buildFallbackReply(trimmed, profile, menu);
@@ -91,6 +101,7 @@ export function NutritionistChat({
 
     setMessages((prev) => appendChatMessage(prev, "assistant", answer));
     setSending(false);
+    setPendingPrompt(null);
   }
 
   return (
@@ -137,7 +148,7 @@ export function NutritionistChat({
         className="mt-3 flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          void sendMessage(input);
+          requestSend(input);
         }}
       >
         <input
@@ -156,6 +167,27 @@ export function NutritionistChat({
           {sending ? "…" : "→"}
         </button>
       </form>
+
+      <AmaConfirmDialog
+        open={pendingPrompt !== null && !sending}
+        title="Спросить нутрициолога"
+        description={
+          <span>
+            ПланАм ответит на ваш вопрос с учётом цели и текущего меню. Ответ
+            появится в чате — вы решаете, что с ним делать.
+          </span>
+        }
+        costAma={amaAskCost > 0 ? amaAskCost : null}
+        balanceAma={amaBalance}
+        busy={sending}
+        confirmLabel="Спросить"
+        onCancel={() => {
+          if (!sending) setPendingPrompt(null);
+        }}
+        onConfirm={() => {
+          if (pendingPrompt) void sendMessage(pendingPrompt);
+        }}
+      />
     </section>
   );
 }

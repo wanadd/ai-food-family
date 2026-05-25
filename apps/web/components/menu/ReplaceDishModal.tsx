@@ -6,14 +6,14 @@ import type { MenuVariant } from "@/lib/menu/types";
 type ReplaceDishModalProps = {
   menu: MenuVariant;
   onClose: () => void;
-  onReplace: (mealIndex: number, hint: string) => void;
+  onSelectMeal: (mealIndex: number) => void;
   loading: boolean;
 };
 
 export function ReplaceDishModal({
   menu,
   onClose,
-  onReplace,
+  onSelectMeal,
   loading,
 }: ReplaceDishModalProps) {
   return (
@@ -31,7 +31,8 @@ export function ReplaceDishModal({
           Заменить блюдо
         </h3>
         <p className="mt-1 text-sm text-stone-500">
-          Выберите приём пищи — AI предложит альтернативу с учётом семьи
+          Выберите приём пищи — ПланАм предложит альтернативу с учётом
+          ваших ограничений. На следующем шаге покажем стоимость.
         </p>
 
         <ul className="mt-4 max-h-64 space-y-2 overflow-y-auto">
@@ -40,7 +41,7 @@ export function ReplaceDishModal({
               <button
                 type="button"
                 disabled={loading}
-                onClick={() => onReplace(index, "")}
+                onClick={() => onSelectMeal(index)}
                 className="w-full rounded-xl border border-stone-200 px-4 py-3 text-left transition hover:border-emerald-300 hover:bg-emerald-50 disabled:opacity-50"
               >
                 <span className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
