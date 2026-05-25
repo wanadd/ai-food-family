@@ -194,6 +194,7 @@ export function NutritionistChat({
             появится в чате — вы решаете, что с ним делать.
           </span>
         }
+        benefit="Подберём подсказку под вашу ситуацию и текущий план"
         costAma={amaAskCost > 0 ? amaAskCost : null}
         balanceAma={amaBalance}
         busy={sending}

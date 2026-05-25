@@ -34,6 +34,10 @@ export function ReplaceDishModal({
           Выберите приём пищи — ПланАм предложит альтернативу с учётом
           ваших ограничений. На следующем шаге покажем стоимость.
         </p>
+        <p className="mt-1 text-xs text-stone-400">
+          Это предложение, а не финальный выбор: если не понравится,
+          можно попросить ещё раз или закрыть окно.
+        </p>
 
         <ul className="mt-4 max-h-64 space-y-2 overflow-y-auto">
           {menu.meals.map((meal, index) => (

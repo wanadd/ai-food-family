@@ -294,6 +294,7 @@ export function MenuCurrentView() {
             </span>
           );
         })()}
+        benefit="ПланАм учтёт ваши предпочтения и обновит покупки"
         costAma={amaCosts?.menu_replace_dish ?? null}
         balanceAma={amaBalance}
         busy={replacing}

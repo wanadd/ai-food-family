@@ -401,6 +401,7 @@ export function RecipeDetailModal({
             окончательное решение остаётся за вами.
           </span>
         }
+        benefit="Поможет понять, насколько рецепт подходит именно вам"
         costAma={evaluateCost}
         balanceAma={amaBalance}
         busy={aiBusy === "evaluate"}
@@ -424,6 +425,7 @@ export function RecipeDetailModal({
               : "стоимость улучшения (показана в окне подтверждения)."}
           </span>
         }
+        benefit="Показать предложения — бесплатно. Применять — выбор за вами"
         costAma={0}
         balanceAma={amaBalance}
         busy={aiBusy === "improve"}

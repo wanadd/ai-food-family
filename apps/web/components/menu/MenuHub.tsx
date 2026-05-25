@@ -424,7 +424,8 @@ export function MenuHub() {
       <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
         <p className="text-sm font-bold text-stone-900">Быстрые действия</p>
         <p className="mt-1 text-xs text-stone-500">
-          ПланАм предложит вариант — вы решаете, применять или нет.
+          Это предложения, а не требования — выбор за вами. Любое
+          блюдо можно заменить или оставить как есть.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {QUICK_ACTIONS.map((action) => (
@@ -498,6 +499,11 @@ export function MenuHub() {
         open={pendingAction !== null}
         title={pendingAction?.label ?? ""}
         description={pendingAction?.description ?? ""}
+        benefit={
+          pendingAction
+            ? "Меню и список покупок подстроятся под выбранную опцию"
+            : undefined
+        }
         costAma={
           pendingAction?.costKey != null
             ? (amaCosts?.[pendingAction.costKey] ?? null)
@@ -505,6 +511,8 @@ export function MenuHub() {
         }
         balanceAma={amaBalance}
         busy={Boolean(acting)}
+        cancelLabel="Передумал"
+        confirmLabel="Да, применить"
         onCancel={() => {
           if (!acting) setPendingAction(null);
         }}
