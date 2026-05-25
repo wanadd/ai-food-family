@@ -37,16 +37,20 @@ export function CareTelegramLinkCard() {
 
   return (
     <Link
-      href="/nutritionist/care"
+      href="/notifications"
       className="block rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50/80 to-white p-4 shadow-sm transition active:scale-[0.99]"
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">
-        Telegram
+        Уведомления
       </p>
       <p className="mt-1 text-base font-bold text-stone-900">
-        {active ? "Забота ПланАм активна" : "Настроить заботу в Telegram"}
+        {active
+          ? "Забота ПланАм активна"
+          : "Настроить заботливые напоминания"}
       </p>
-      <p className="mt-1 text-sm text-stone-600">Нажмите для настройки →</p>
+      <p className="mt-1 text-sm text-stone-600">
+        Открыть настройки уведомлений →
+      </p>
     </Link>
   );
 }

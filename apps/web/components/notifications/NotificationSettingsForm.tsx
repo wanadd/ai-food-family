@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { useTelegram } from "@/components/TelegramProvider";
 
 import {
@@ -169,25 +167,13 @@ export function NotificationSettingsForm() {
   }
 
   if (!initData) {
-    return (
-      <div className="mx-auto max-w-lg px-5 py-16 text-center">
-        <p className="text-sm text-stone-600">
-          Уведомления настраиваются в Telegram Mini App после авторизации.
-        </p>
-        <Link
-          href="/"
-          className="mt-6 inline-block text-sm font-semibold text-emerald-700"
-        >
-          На главную
-        </Link>
-      </div>
-    );
+    return null;
   }
 
   if (loading || !settings) {
     return (
-      <p className="py-20 text-center text-sm text-stone-500">
-        Загрузка настроек…
+      <p className="py-10 text-center text-sm text-stone-500">
+        Загрузка расписания…
       </p>
     );
   }
@@ -195,12 +181,7 @@ export function NotificationSettingsForm() {
   const deviceTz = getDeviceTimezone();
 
   return (
-    <ScreenLayout
-      title="Уведомления"
-      subtitle={`Время с устройства (${deviceTz})`}
-      back={{ label: "Профиль", href: "/profile" }}
-      contentClassName="space-y-5"
-    >
+    <div className="space-y-5">
       {error ? (
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -214,10 +195,12 @@ export function NotificationSettingsForm() {
       ) : null}
 
       <section className="rounded-2xl border border-stone-100 bg-white p-4">
-        <p className="text-sm font-semibold text-stone-900">Настроить неделю</p>
+        <p className="text-sm font-bold text-stone-900">
+          Готовка и покупки по расписанию
+        </p>
         <p className="mt-1 text-xs text-stone-500">
-          ПланАм присылает напоминания в Telegram. Также можно добавить событие в
-          календарь устройства.
+          Время — с вашего устройства ({deviceTz}). Если удобно, добавьте событие
+          в календарь телефона.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button
@@ -356,9 +339,9 @@ export function NotificationSettingsForm() {
 
       <p className="text-center text-xs text-stone-400">
         {saving
-          ? "Сохранение…"
-          : "Убедитесь, что бот может писать вам в личные сообщения"}
+          ? "Сохраняем…"
+          : "Чтобы напоминания приходили, разрешите боту писать вам в Telegram."}
       </p>
-    </ScreenLayout>
+    </div>
   );
 }

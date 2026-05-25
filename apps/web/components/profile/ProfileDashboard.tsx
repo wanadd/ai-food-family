@@ -19,7 +19,7 @@ const PROFILE_MENU = [
   { href: "/family", label: "Семья", desc: "Участники и меню", emoji: "👨‍👩‍👧" },
   { href: "/subscription", label: "Подписка", desc: "Тариф и Амы", emoji: "✨" },
   { href: "/progress", label: "Прогресс", desc: "Вес и цели", emoji: "📈" },
-  { href: "/notifications", label: "Уведомления", desc: "Покупки и готовка", emoji: "🔔" },
+  { href: "/notifications", label: "Уведомления", desc: "Забота, готовка, тихие часы", emoji: "🔔" },
   { href: "/settings/about", label: "О приложении", desc: "Версия и поддержка", emoji: "ℹ️" },
 ] as const;
 

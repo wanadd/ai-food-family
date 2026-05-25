@@ -175,7 +175,10 @@ export function CareSettingsPanel() {
       </section>
 
       <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-bold text-stone-900">Тонкие настройки</h2>
+        <h2 className="text-sm font-bold text-stone-900">Что напоминать</h2>
+        <p className="mt-1 text-xs text-stone-500">
+          Если что-то не нужно — отключите. Можно вернуть в любой момент.
+        </p>
         <ul className="mt-3 space-y-2">
           {TOGGLE_ITEMS.map((item) => {
             const isPro = item.key === "pro_enabled";
@@ -221,6 +224,60 @@ export function CareSettingsPanel() {
             );
           })}
         </ul>
+      </section>
+
+      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-bold text-stone-900">Тихие часы</h2>
+        <p className="mt-1 text-xs text-stone-500">
+          В это время ПланАм ничего не присылает. Если оставить пустым — сообщения
+          могут приходить в любое время.
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="text-xs font-medium text-stone-600">С</span>
+            <input
+              type="time"
+              value={settings.quiet_hours_start ?? ""}
+              disabled={saving}
+              onChange={(e) =>
+                void patch({ quiet_hours_start: e.target.value || null })
+              }
+              className="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-stone-600">До</span>
+            <input
+              type="time"
+              value={settings.quiet_hours_end ?? ""}
+              disabled={saving}
+              onChange={(e) =>
+                void patch({ quiet_hours_end: e.target.value || null })
+              }
+              className="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base"
+            />
+          </label>
+        </div>
+        {settings.quiet_hours_start && settings.quiet_hours_end ? (
+          <p className="mt-2 text-[11px] text-stone-500">
+            С {settings.quiet_hours_start} до {settings.quiet_hours_end} ПланАм
+            будет молчать.
+          </p>
+        ) : (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() =>
+              void patch({
+                quiet_hours_start: "22:00",
+                quiet_hours_end: "08:00",
+              })
+            }
+            className="mt-3 inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700"
+          >
+            Поставить 22:00–08:00
+          </button>
+        )}
       </section>
 
       {feedback ? (
