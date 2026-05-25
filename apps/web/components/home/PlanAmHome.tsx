@@ -17,8 +17,13 @@ import {
 } from "@/lib/home/plan-summary";
 import { fetchSelectedMenu } from "@/lib/menu/api";
 import type { SelectedMenu } from "@/lib/menu/types";
+import { fetchNutritionProfile } from "@/lib/nutrition-profile/api";
+import type { NutritionProfileData } from "@/lib/nutrition-profile/types";
 import { fetchPantry } from "@/lib/pantry/api";
 import type { PantryList } from "@/lib/pantry/types";
+import {
+  getNutritionProfileProgress,
+} from "@/lib/profile/nutrition-summary";
 import { fetchShoppingList } from "@/lib/shopping/api";
 import type { ShoppingList } from "@/lib/shopping/types";
 
@@ -49,6 +54,8 @@ export function PlanAmHome() {
   const [selectedMenu, setSelectedMenu] = useState<SelectedMenu | null>(null);
   const [shopping, setShopping] = useState<ShoppingList | null>(null);
   const [pantry, setPantry] = useState<PantryList | null>(null);
+  const [nutritionProfile, setNutritionProfile] =
+    useState<NutritionProfileData | null>(null);
 
   const loadHomeData = useCallback(async () => {
     if (!initData) {
@@ -56,19 +63,22 @@ export function PlanAmHome() {
       setSelectedMenu(null);
       setShopping(null);
       setPantry(null);
+      setNutritionProfile(null);
       return;
     }
 
     setLoading(true);
     try {
-      const [selected, list, pantryList] = await Promise.all([
+      const [selected, list, pantryList, profile] = await Promise.all([
         fetchSelectedMenu(initData, mode),
         fetchShoppingList(initData, mode).catch(() => null),
         fetchPantry(initData, mode).catch(() => null),
+        fetchNutritionProfile(initData).catch(() => null),
       ]);
       setSelectedMenu(selected);
       setShopping(list);
       setPantry(pantryList);
+      setNutritionProfile(profile);
     } finally {
       setLoading(false);
     }
@@ -99,6 +109,12 @@ export function PlanAmHome() {
 
   const isFamily = mode === "family" && context?.family;
   const isBusy = loading || modeLoading;
+
+  const profileProgress = nutritionProfile
+    ? getNutritionProfileProgress(nutritionProfile)
+    : 0;
+  const profileNeedsAttention =
+    !isBusy && nutritionProfile != null && profileProgress < 80;
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -144,6 +160,29 @@ export function PlanAmHome() {
               </p>
             )}
           </section>
+
+          {profileNeedsAttention ? (
+            <Link
+              href="/profile/nutrition"
+              className="flex items-start justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 shadow-sm transition active:scale-[0.99]"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-stone-900">
+                  Дозаполнить профиль
+                </p>
+                <p className="mt-0.5 text-xs text-stone-600">
+                  Заполнено {profileProgress}% — ПланАм сможет точнее
+                  подбирать меню и советы.
+                </p>
+              </div>
+              <span
+                className="shrink-0 self-center rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-emerald-800"
+                aria-hidden
+              >
+                Открыть
+              </span>
+            </Link>
+          ) : null}
 
           {isBusy ? (
             <section
@@ -223,16 +262,16 @@ export function PlanAmHome() {
                 План на сегодня
               </p>
               <h2 className="mt-2 text-lg font-bold text-stone-900">
-                План питания ещё не создан
+                Плана пока нет
               </h2>
               <p className="mt-1 text-sm text-stone-500">
-                Соберите меню в разделе «Меню»
+                Соберите его — ПланАм подскажет, что приготовить и купить.
               </p>
               <Link
                 href="/menu"
                 className="mt-4 flex min-h-[44px] w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-200/50 transition active:scale-[0.99]"
               >
-                Составить план
+                Составить меню
               </Link>
             </section>
           )}

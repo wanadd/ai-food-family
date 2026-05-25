@@ -44,7 +44,6 @@ import { fetchSubscriptionOverview } from "@/lib/subscription/api";
 const NUTRI_RETURN = "/nutritionist";
 
 const QUICK_ACTIONS = [
-  { href: "/nutritionist/chat", label: "Спросить нутрициолога", emoji: "💬" },
   {
     href: withReturnTo("/progress?focus=weight", NUTRI_RETURN),
     label: "Добавить вес",
@@ -172,9 +171,10 @@ export function NutritionistDashboard() {
     >
       {!profileComplete ? (
         <section className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-          <p className="font-semibold text-stone-900">Заполните профиль питания</p>
+          <p className="font-semibold text-stone-900">Дозаполнить профиль</p>
           <p className="mt-1 text-sm text-stone-600">
-            Это основа персональных советов ПланАм
+            Чем точнее данные — тем точнее советы ПланАм. Заполнить можно
+            в любой момент.
           </p>
           <Link
             href={withReturnTo("/profile/nutrition", NUTRI_RETURN)}
@@ -293,6 +293,12 @@ export function NutritionistDashboard() {
         {goalCard.forecastLine ? (
           <p className="mt-1 text-sm text-stone-600">{goalCard.forecastLine}</p>
         ) : null}
+        <Link
+          href={withReturnTo("/progress", NUTRI_RETURN)}
+          className="mt-3 inline-block text-xs font-semibold text-emerald-700"
+        >
+          Подробнее в прогрессе →
+        </Link>
       </section>
 
       {profileComplete ? (
