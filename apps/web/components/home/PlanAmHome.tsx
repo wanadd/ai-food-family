@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useTelegram } from "@/components/TelegramProvider";
@@ -50,47 +50,85 @@ export function PlanAmHome() {
   const { initData } = useTelegram();
   const { mode, context, loading: modeLoading } = useAppMode();
 
-  const [loading, setLoading] = useState(true);
+  const [menuLoading, setMenuLoading] = useState(true);
   const [selectedMenu, setSelectedMenu] = useState<SelectedMenu | null>(null);
   const [shopping, setShopping] = useState<ShoppingList | null>(null);
   const [pantry, setPantry] = useState<PantryList | null>(null);
   const [nutritionProfile, setNutritionProfile] =
     useState<NutritionProfileData | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
-  const loadHomeData = useCallback(async () => {
+  useEffect(() => {
+    if (modeLoading) {
+      setMenuLoading(true);
+      return;
+    }
     if (!initData) {
-      setLoading(false);
+      setMenuLoading(false);
       setSelectedMenu(null);
       setShopping(null);
       setPantry(null);
       setNutritionProfile(null);
+      setProfileLoaded(false);
       return;
     }
 
-    setLoading(true);
-    try {
-      const [selected, list, pantryList, profile] = await Promise.all([
-        fetchSelectedMenu(initData, mode),
-        fetchShoppingList(initData, mode).catch(() => null),
-        fetchPantry(initData, mode).catch(() => null),
-        fetchNutritionProfile(initData).catch(() => null),
-      ]);
-      setSelectedMenu(selected);
-      setShopping(list);
-      setPantry(pantryList);
-      setNutritionProfile(profile);
-    } finally {
-      setLoading(false);
-    }
-  }, [initData, mode]);
+    let cancelled = false;
 
-  useEffect(() => {
-    if (modeLoading) {
-      setLoading(true);
-      return;
-    }
-    void loadHomeData();
-  }, [loadHomeData, modeLoading]);
+    setMenuLoading(true);
+    void fetchSelectedMenu(initData, mode)
+      .then((selected) => {
+        if (cancelled) return;
+        setSelectedMenu(selected);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSelectedMenu(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setMenuLoading(false);
+      });
+
+    void fetchShoppingList(initData, mode)
+      .then((list) => {
+        if (cancelled) return;
+        setShopping(list);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setShopping(null);
+      });
+
+    void fetchPantry(initData, mode)
+      .then((pantryList) => {
+        if (cancelled) return;
+        setPantry(pantryList);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPantry(null);
+      });
+
+    setProfileLoaded(false);
+    void fetchNutritionProfile(initData)
+      .then((profile) => {
+        if (cancelled) return;
+        setNutritionProfile(profile);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setNutritionProfile(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setProfileLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initData, mode, modeLoading]);
 
   const hasPlan = Boolean(selectedMenu?.menu);
   const mealRows = useMemo(
@@ -108,13 +146,13 @@ export function PlanAmHome() {
   const expiringSoon = countExpiringSoon(pantry?.items ?? []);
 
   const isFamily = mode === "family" && context?.family;
-  const isBusy = loading || modeLoading;
+  const isBusy = menuLoading || modeLoading;
 
   const profileProgress = nutritionProfile
     ? getNutritionProfileProgress(nutritionProfile)
     : 0;
   const profileNeedsAttention =
-    !isBusy && nutritionProfile != null && profileProgress < 80;
+    profileLoaded && nutritionProfile != null && profileProgress < 80;
 
   return (
     <div className="min-h-screen bg-stone-50">
