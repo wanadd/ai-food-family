@@ -598,6 +598,100 @@ def run_schema_migrations(engine: Engine) -> None:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_water_intake_user_date ON water_intake_logs (user_id, log_date);",
+        # Recipe Engine v1 — Sprint 2 tables (additive, does not alter existing recipes)
+        """
+        CREATE TABLE IF NOT EXISTS recipe_collections (
+            id SERIAL PRIMARY KEY,
+            owner_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            owner_family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            visibility VARCHAR(16) NOT NULL DEFAULT 'personal',
+            name VARCHAR(120) NOT NULL,
+            description VARCHAR(500) NOT NULL DEFAULT '',
+            emoji VARCHAR(8),
+            color VARCHAR(16),
+            is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+            is_dynamic BOOLEAN NOT NULL DEFAULT FALSE,
+            position INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipe_collections_visibility ON recipe_collections (visibility);",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_collections_owner_user ON recipe_collections (owner_user_id) WHERE owner_user_id IS NOT NULL;",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_collections_owner_family ON recipe_collections (owner_family_id) WHERE owner_family_id IS NOT NULL;",
+        """
+        CREATE TABLE IF NOT EXISTS collection_recipes (
+            id SERIAL PRIMARY KEY,
+            collection_id INTEGER NOT NULL REFERENCES recipe_collections(id) ON DELETE CASCADE,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            position INTEGER NOT NULL DEFAULT 0,
+            added_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            note VARCHAR(200),
+            CONSTRAINT uq_collection_recipes_collection_recipe UNIQUE (collection_id, recipe_id)
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_collection_recipes_collection ON collection_recipes (collection_id);",
+        "CREATE INDEX IF NOT EXISTS ix_collection_recipes_recipe ON collection_recipes (recipe_id);",
+        """
+        CREATE TABLE IF NOT EXISTS recipe_history (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            family_id INTEGER REFERENCES families(id) ON DELETE SET NULL,
+            family_member_id INTEGER REFERENCES family_members(id) ON DELETE SET NULL,
+            servings INTEGER,
+            cooked_on DATE NOT NULL DEFAULT CURRENT_DATE,
+            source VARCHAR(16) NOT NULL DEFAULT 'manual',
+            notes VARCHAR(200),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipe_history_recipe_cooked ON recipe_history (recipe_id, cooked_on DESC);",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_history_user_cooked ON recipe_history (user_id, cooked_on DESC) WHERE user_id IS NOT NULL;",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_history_family_cooked ON recipe_history (family_id, cooked_on DESC) WHERE family_id IS NOT NULL;",
+        """
+        CREATE TABLE IF NOT EXISTS family_recipe_preferences (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+            family_member_id INTEGER NOT NULL REFERENCES family_members(id) ON DELETE CASCADE,
+            liked BOOLEAN NOT NULL DEFAULT FALSE,
+            disliked BOOLEAN NOT NULL DEFAULT FALSE,
+            is_loved BOOLEAN NOT NULL DEFAULT FALSE,
+            note VARCHAR(200),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            CONSTRAINT uq_family_recipe_preferences_member_recipe UNIQUE (family_member_id, recipe_id)
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_family_recipe_preferences_recipe ON family_recipe_preferences (recipe_id);",
+        "CREATE INDEX IF NOT EXISTS ix_family_recipe_preferences_family ON family_recipe_preferences (family_id);",
+        """
+        CREATE TABLE IF NOT EXISTS recipe_scenarios (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            scenario VARCHAR(32) NOT NULL,
+            score DOUBLE PRECISION NOT NULL DEFAULT 1.0,
+            source VARCHAR(16) NOT NULL DEFAULT 'auto',
+            CONSTRAINT uq_recipe_scenarios_recipe_scenario UNIQUE (recipe_id, scenario)
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipe_scenarios_scenario ON recipe_scenarios (scenario);",
+        """
+        CREATE TABLE IF NOT EXISTS recipe_explanations (
+            id SERIAL PRIMARY KEY,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            summary VARCHAR(500) NOT NULL DEFAULT '',
+            reasons_json JSONB NOT NULL DEFAULT '{}',
+            score_total DOUBLE PRECISION NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            CONSTRAINT uq_recipe_explanations_scope UNIQUE (recipe_id, user_id, family_id)
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipe_explanations_recipe ON recipe_explanations (recipe_id);",
     ]
 
     with engine.begin() as connection:
