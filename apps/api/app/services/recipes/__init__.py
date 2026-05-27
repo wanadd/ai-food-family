@@ -56,6 +56,15 @@ from app.services.recipes.cooking_history import (
     CookingStats,
     HistoryTypes,
 )
+from app.services.recipes.family_preferences import (
+    DISLIKED_WEIGHT,
+    LIKED_WEIGHT,
+    LOVED_WEIGHT,
+    FamilyCompatibilityResult,
+    FamilyPreferenceScore,
+    FamilyPreferenceService,
+    HardExcludeReason,
+)
 
 __all__ = [
     "FILTER_LABELS",
@@ -63,6 +72,13 @@ __all__ = [
     "CookingHistoryService",
     "CookingStats",
     "HistoryTypes",
+    "LOVED_WEIGHT",
+    "LIKED_WEIGHT",
+    "DISLIKED_WEIGHT",
+    "HardExcludeReason",
+    "FamilyPreferenceScore",
+    "FamilyCompatibilityResult",
+    "FamilyPreferenceService",
     "ExplainabilityResult",
     "ExplainabilityService",
     "RecommendationReason",
