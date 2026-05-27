@@ -40,6 +40,19 @@ class CollectionVisibility(str, Enum):
     FAMILY = "family"
 
 
+# Sprint 4 naming compatibility (constants referenced by the architecture
+# spec). Values match Pydantic ``VisibilityLiteral`` in
+# ``apps/api/app/schemas/recipe_collection.py``.
+SYSTEM_COLLECTION = CollectionVisibility.SYSTEM.value
+PERSONAL_COLLECTION = CollectionVisibility.PERSONAL.value
+FAMILY_COLLECTION = CollectionVisibility.FAMILY.value
+
+
+# Internal type alias requested by Sprint 4: "CollectionTypes".
+# In this codebase we model it as the same enum as visibility.
+CollectionTypes = CollectionVisibility
+
+
 @dataclass(frozen=True)
 class CollectionRef:
     """Lightweight collection reference for lists & menus."""
