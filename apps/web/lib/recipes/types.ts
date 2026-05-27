@@ -137,3 +137,22 @@ export type RecipeHistory = {
   total: number;
   stats?: CookingStats | null;
 };
+
+export type RecipeCollection = {
+  id: number;
+  name: string;
+  visibility: "system" | "personal" | "family";
+  description: string;
+  emoji?: string | null;
+  color?: string | null;
+  is_pinned: boolean;
+  is_dynamic: boolean;
+  recipes_count: number;
+  owner_user_id?: number | null;
+  owner_family_id?: number | null;
+};
+
+export type RecipeCollectionDetail = {
+  collection: RecipeCollection;
+  recipe_ids: number[];
+};

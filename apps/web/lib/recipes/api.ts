@@ -5,6 +5,8 @@ import type { AppMode } from "@/lib/app-mode/types";
 import type {
   CookingEvent,
   MarkCookedPayload,
+  RecipeCollection,
+  RecipeCollectionDetail,
   RecipeDetail,
   RecipeFilters,
   RecipeHistory,
@@ -136,6 +138,51 @@ export async function fetchRecipeHistory(
   recipeId: number,
 ): Promise<RecipeHistory | null> {
   return apiGet<RecipeHistory>(initData, mode, `/recipes/${recipeId}/history`);
+}
+
+export async function fetchRecipeCollections(
+  initData: string,
+  mode: AppMode,
+): Promise<RecipeCollection[]> {
+  const result = await apiGet<RecipeCollection[]>(initData, mode, "/collections");
+  return result ?? [];
+}
+
+export async function createRecipeCollection(
+  initData: string,
+  mode: AppMode,
+  payload: {
+    name: string;
+    visibility: "personal" | "family";
+    description?: string;
+  },
+): Promise<RecipeCollection> {
+  return recipeFetch<RecipeCollection>("/collections", initData, {
+    method: "POST",
+    headers: { "X-App-Mode": mode },
+    body: JSON.stringify({
+      name: payload.name,
+      visibility: payload.visibility,
+      description: payload.description ?? "",
+    }),
+  });
+}
+
+export async function addRecipeToCollection(
+  initData: string,
+  mode: AppMode,
+  collectionId: number,
+  recipeId: number,
+): Promise<RecipeCollectionDetail> {
+  return recipeFetch<RecipeCollectionDetail>(
+    `/collections/${collectionId}/recipes`,
+    initData,
+    {
+      method: "POST",
+      headers: { "X-App-Mode": mode },
+      body: JSON.stringify({ recipe_ids: [recipeId] }),
+    },
+  );
 }
 
 export async function toggleRecipeFavorite(

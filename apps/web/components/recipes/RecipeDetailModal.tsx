@@ -21,11 +21,15 @@ import {
 } from "@/lib/recipes/labels";
 import type { RecipeDetail, RecipeHistory, RecipeWhy } from "@/lib/recipes/types";
 import {
+  addRecipeToCollection,
   addRecipeToShopping,
+  createRecipeCollection,
+  fetchRecipeCollections,
   fetchRecipeHistory,
   fetchRecipeWhy,
   markRecipeCooked,
 } from "@/lib/recipes/api";
+import type { RecipeCollection } from "@/lib/recipes/types";
 import {
   addRecipeToMenu,
   evaluateRecipe,
@@ -98,6 +102,14 @@ export function RecipeDetailModal({
   const [history, setHistory] = useState<RecipeHistory | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [markingCooked, setMarkingCooked] = useState(false);
+  const [collections, setCollections] = useState<RecipeCollection[]>([]);
+  const [collectionId, setCollectionId] = useState<number | null>(null);
+  const [collectionName, setCollectionName] = useState("");
+  const [collectionVisibility, setCollectionVisibility] = useState<
+    "personal" | "family"
+  >("personal");
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const [savingCollection, setSavingCollection] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addingShopping, setAddingShopping] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -161,6 +173,24 @@ export function RecipeDetailModal({
     }
   }, [initData, mode, recipe.id]);
 
+  const loadCollections = useCallback(async () => {
+    if (!initData) {
+      setCollectionsLoading(false);
+      return;
+    }
+    setCollectionsLoading(true);
+    try {
+      const result = await fetchRecipeCollections(initData, mode);
+      setCollections(result);
+      setCollectionId((prev) => prev ?? result[0]?.id ?? null);
+    } catch {
+      setCollections([]);
+      setCollectionId(null);
+    } finally {
+      setCollectionsLoading(false);
+    }
+  }, [initData, mode]);
+
   useEffect(() => {
     void loadFamilyFit();
   }, [loadFamilyFit]);
@@ -172,6 +202,10 @@ export function RecipeDetailModal({
   useEffect(() => {
     void loadHistory();
   }, [loadHistory]);
+
+  useEffect(() => {
+    void loadCollections();
+  }, [loadCollections]);
 
   function requestAiAction(action: AiAction) {
     ensureSubscriptionLoaded();
@@ -263,6 +297,45 @@ export function RecipeDetailModal({
       );
     } finally {
       setMarkingCooked(false);
+    }
+  }
+
+  async function handleCreateCollection() {
+    if (!initData || !collectionName.trim()) return;
+    setSavingCollection(true);
+    setMessage(null);
+    try {
+      const created = await createRecipeCollection(initData, mode, {
+        name: collectionName.trim(),
+        visibility: collectionVisibility,
+      });
+      setCollectionName("");
+      setCollections((prev) => [...prev, created]);
+      setCollectionId(created.id);
+      setMessage("Коллекция создана. Можно сохранить в неё рецепт.");
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Не получилось создать коллекцию",
+      );
+    } finally {
+      setSavingCollection(false);
+    }
+  }
+
+  async function handleSaveToCollection() {
+    if (!initData || collectionId == null) return;
+    setSavingCollection(true);
+    setMessage(null);
+    try {
+      await addRecipeToCollection(initData, mode, collectionId, recipe.id);
+      setMessage("✓ Рецепт сохранён в коллекцию");
+      await loadCollections();
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Не получилось сохранить рецепт",
+      );
+    } finally {
+      setSavingCollection(false);
     }
   }
 
@@ -445,6 +518,79 @@ export function RecipeDetailModal({
               ) : (
                 <span>Пока не готовили. Можно начать историю с одного нажатия.</span>
               )}
+            </div>
+          </section>
+
+          <section className="mb-4 rounded-xl border border-stone-100 bg-white p-3 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-stone-900">
+                  Сохранить в коллекцию
+                </p>
+                <p className="mt-1 text-xs text-stone-600">
+                  Избранное — звёздочка сверху. Здесь можно собрать личные и
+                  семейные подборки.
+                </p>
+              </div>
+              <span className="text-xl">{recipe.is_favorited ? "★" : "☆"}</span>
+            </div>
+            {collectionsLoading ? (
+              <p className="mt-3 text-xs text-stone-500">Загружаю коллекции…</p>
+            ) : collections.length > 0 ? (
+              <div className="mt-3 flex gap-2">
+                <select
+                  value={collectionId ?? ""}
+                  onChange={(event) => setCollectionId(Number(event.target.value))}
+                  className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm"
+                >
+                  {collections.map((collection) => (
+                    <option key={collection.id} value={collection.id}>
+                      {collection.visibility === "family" ? "Семья · " : "Моя · "}
+                      {collection.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={savingCollection || collectionId == null}
+                  onClick={() => void handleSaveToCollection()}
+                  className="rounded-xl bg-stone-900 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  Сохранить
+                </button>
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-stone-500">
+                Коллекций пока нет. Создайте первую подборку ниже.
+              </p>
+            )}
+            <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+              <input
+                value={collectionName}
+                onChange={(event) => setCollectionName(event.target.value)}
+                placeholder="Новая коллекция"
+                className="rounded-xl border border-stone-200 px-3 py-2 text-sm"
+              />
+              <select
+                value={collectionVisibility}
+                onChange={(event) =>
+                  setCollectionVisibility(
+                    event.target.value === "family" ? "family" : "personal",
+                  )
+                }
+                className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm"
+              >
+                <option value="personal">Личная</option>
+                {mode === "family" ? <option value="family">Семейная</option> : null}
+              </select>
+              <button
+                type="button"
+                disabled={savingCollection || !collectionName.trim()}
+                onClick={() => void handleCreateCollection()}
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 disabled:opacity-50"
+              >
+                Создать
+              </button>
             </div>
           </section>
 
