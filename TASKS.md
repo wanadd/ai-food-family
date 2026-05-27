@@ -19,6 +19,7 @@
 - [x] Telegram reminders (buy, cook, time settings)
 - [x] Pantry leftovers (personal or family)
 - [x] Recipe database (search, filters, favorites per user)
+- [x] Recipe Engine v1 — Sprint 1 foundations (layers, search abstraction, explainability/collections/history/family/scenarios, feature flags)
 - [x] Production deploy (Timeweb Cloud, nginx, HTTPS, DEPLOY.md)
 - [x] ПланАм: новый главный экран, нижняя навигация, профиль
 - [x] Telegram bot /start + request_contact + phone_number
@@ -35,6 +36,7 @@
 
 - [x] Auto-register Telegram webhook on API startup (`setup_webhook`)
 - [ ] Install dependencies and run the stack locally
+- [ ] Sprint 2: wiring explainability + search scalability foundation (without DB migrations in steps)
 
 ## Later
 
