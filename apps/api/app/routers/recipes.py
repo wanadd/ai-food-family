@@ -31,10 +31,13 @@ from app.routers.recipe_engine_common import require_feature
 from app.schemas.recipe_engine_api import (
     CookingEventResponse,
     CookingStatsResponse,
+    FromPantryListResponse,
+    FromPantryRecipeItem,
     MarkCookedRequest,
     RecipeHistoryListResponse,
     RecipeRateRequest,
     RecipeRateResponse,
+    RecipeSummaryRef,
     RecipeScenariosListResponse,
     RecipeWhyResponse,
     RecommendationReasonResponse,
@@ -42,6 +45,8 @@ from app.schemas.recipe_engine_api import (
 )
 from app.services import recipe_analysis
 from app.services.app_scope import AppScope
+from app.services.pantry import get_active_items_for_scope
+from app.services.recipe_storage import get_structured_ingredients
 from app.services import recipes as recipes_service
 from app.services.recipes.cooking_history import (
     CookingEvent,
@@ -101,6 +106,20 @@ def _to_cooking_event_response(event: CookingEvent) -> CookingEventResponse:
         user_id=event.user_id,
         family_id=event.family_id,
         family_member_id=event.family_member_id,
+    )
+
+
+def _normalized_ingredient_name(name: str) -> str:
+    return " ".join(name.strip().lower().split())
+
+
+def _ingredient_in_pantry(name: str, pantry_names: set[str]) -> bool:
+    normalized = _normalized_ingredient_name(name)
+    if not normalized:
+        return False
+    return any(
+        item == normalized or item in normalized or normalized in item
+        for item in pantry_names
     )
 
 
@@ -210,6 +229,70 @@ def recipe_history(
         items=[_to_cooking_event_response(event) for event in events],
         total=len(events),
     )
+
+
+@router.get("/from-pantry", response_model=FromPantryListResponse)
+def recipes_from_pantry(
+    max_missing: int = Query(default=3, ge=0, le=20),
+    limit: int = Query(default=30, ge=1, le=100),
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> FromPantryListResponse:
+    _ = user
+    pantry_names = {
+        _normalized_ingredient_name(item.name)
+        for item in get_active_items_for_scope(db, scope)
+        if item.name
+    }
+    if not pantry_names:
+        return FromPantryListResponse(items=[], total=0)
+
+    candidates = recipes_service.list_recipes(db, user, scope=scope).items
+    rows: list[FromPantryRecipeItem] = []
+    for summary in candidates:
+        recipe = recipes_service.get_recipe_model(db, summary.id)
+        if recipe is None:
+            continue
+
+        ingredients = [
+            str(item.get("name", "")).strip()
+            for item in get_structured_ingredients(recipe)
+            if str(item.get("name", "")).strip()
+        ]
+        total = len(ingredients)
+        if total == 0:
+            continue
+
+        missing = [
+            name
+            for name in ingredients
+            if not _ingredient_in_pantry(name, pantry_names)
+        ]
+        have = total - len(missing)
+        if have <= 0 or len(missing) > max_missing:
+            continue
+
+        rows.append(
+            FromPantryRecipeItem(
+                recipe_id=summary.id,
+                title=summary.title,
+                have=have,
+                total=total,
+                missing_ingredients=missing,
+                coverage_ratio=round(have / total, 3),
+                summary=RecipeSummaryRef(
+                    id=summary.id,
+                    title=summary.title,
+                    meal_type=summary.meal_type,
+                    category=summary.category,
+                    cooking_time_minutes=summary.cooking_time_minutes,
+                ),
+            )
+        )
+
+    rows.sort(key=lambda item: (-item.coverage_ratio, len(item.missing_ingredients), item.title))
+    return FromPantryListResponse(items=rows[:limit], total=len(rows))
 
 
 @router.get("/scenarios", response_model=RecipeScenariosListResponse)
