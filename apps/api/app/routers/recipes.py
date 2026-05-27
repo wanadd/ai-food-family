@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_verified_user
+from app.models.family import FamilyMember
 from app.models.user import User
 from app.deps import get_app_scope
 from app.schemas.menu_overview import (
@@ -32,6 +33,8 @@ from app.schemas.recipe_engine_api import (
     CookingStatsResponse,
     MarkCookedRequest,
     RecipeHistoryListResponse,
+    RecipeRateRequest,
+    RecipeRateResponse,
     RecipeWhyResponse,
     RecommendationReasonResponse,
 )
@@ -44,6 +47,7 @@ from app.services.recipes.cooking_history import (
     HistoryTypes,
 )
 from app.services.recipes.explainability import ExplainabilityService
+from app.services.recipes.family_preferences import FamilyPreferenceService
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -282,6 +286,58 @@ def recipe_history_for_recipe(
             cooked_count=stats.cooked_count,
             last_cooked_on=stats.last_cooked_on,
         ),
+    )
+
+
+@router.post("/{recipe_id}/rate", response_model=RecipeRateResponse)
+def rate_recipe_for_family(
+    recipe_id: int,
+    payload: RecipeRateRequest,
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> RecipeRateResponse:
+    require_feature(settings.family_recipe_preferences, "FAMILY_RECIPE_PREFERENCES")
+    _recipe_or_404(db, user, recipe_id)
+    if scope.family_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Family recipe preferences require family scope",
+        )
+
+    member = db.get(FamilyMember, payload.family_member_id)
+    if member is None or member.family_id != scope.family_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Family member not found",
+        )
+
+    liked = bool(payload.liked)
+    disliked = bool(payload.disliked)
+    is_loved = bool(payload.is_loved)
+    if payload.rating == "loved":
+        liked, disliked, is_loved = True, False, True
+    elif payload.rating == "liked":
+        liked, disliked, is_loved = True, False, False
+    elif payload.rating == "disliked":
+        liked, disliked, is_loved = False, True, False
+
+    saved = FamilyPreferenceService(db).set_preference(
+        recipe_id=recipe_id,
+        family_id=scope.family_id,
+        family_member_id=payload.family_member_id,
+        liked=liked,
+        disliked=disliked,
+        is_loved=is_loved,
+        note=payload.note,
+    )
+    return RecipeRateResponse(
+        recipe_id=saved.recipe_id,
+        family_member_id=saved.family_member_id,
+        liked=saved.liked,
+        disliked=saved.disliked,
+        is_loved=saved.is_loved,
+        note=saved.note,
     )
 
 
