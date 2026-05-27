@@ -50,9 +50,19 @@ from app.services.recipes.explainability import (
     RecommendationReason,
     RecommendationReasonEntry,
 )
+from app.services.recipes.cooking_history import (
+    CookingEvent,
+    CookingHistoryService,
+    CookingStats,
+    HistoryTypes,
+)
 
 __all__ = [
     "FILTER_LABELS",
+    "CookingEvent",
+    "CookingHistoryService",
+    "CookingStats",
+    "HistoryTypes",
     "ExplainabilityResult",
     "ExplainabilityService",
     "RecommendationReason",
