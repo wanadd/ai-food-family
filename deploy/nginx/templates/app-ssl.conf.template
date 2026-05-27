@@ -1,13 +1,15 @@
 # Production HTTPS (after Let's Encrypt certificates are issued)
-upstream web_upstream {
-    server web:3000;
-    keepalive 8;
-}
-
-upstream api_upstream {
-    server api:8000;
-    keepalive 8;
-}
+#
+# WHY NO upstream{} BLOCKS:
+# nginx resolves upstream server names ONCE at startup and caches the IP
+# forever.  After a container rebuild the service gets a new Docker-assigned
+# IP; nginx keeps hitting the old one → 502 until manual restart.
+#
+# FIX: store the address in a variable and rely on the resolver directive
+# (see nginx.conf: resolver 127.0.0.11 valid=10s).  When proxy_pass receives
+# a variable value nginx re-resolves the hostname via Docker DNS on each
+# request (respecting the `valid` TTL), so the new IP is picked up within
+# 10 seconds of any container restart.
 
 server {
     listen 80;
@@ -26,40 +28,52 @@ server {
     listen 443 ssl http2;
     server_name ${DOMAIN};
 
-    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
     ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:10m;
-    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers off;
 
-    add_header X-Frame-Options SAMEORIGIN always;
+    add_header X-Frame-Options   SAMEORIGIN always;
     add_header X-Content-Type-Options nosniff always;
 
+    # ------------------------------------------------------------------ API --
+    # Strip the /api prefix before forwarding to FastAPI.
+    # proxy_pass with a variable forces Docker DNS re-resolution (see above).
     location /api/ {
-        proxy_pass http://api_upstream/;
+        set $api_upstream http://api:8000;
+        rewrite ^/api/(.*) /$1 break;
+        proxy_pass $api_upstream;
+
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Connection "";
+        proxy_set_header Connection        "";
+
         proxy_connect_timeout 60s;
-        proxy_send_timeout 120s;
-        proxy_read_timeout 180s;
+        proxy_send_timeout   120s;
+        proxy_read_timeout   180s;
     }
 
+    # --------------------------------------------------------------- Frontend -
     location / {
-        proxy_pass http://web_upstream;
+        set $web_upstream http://web:3000;
+        proxy_pass $web_upstream;
+
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
+        # WebSocket / Next.js HMR
+        proxy_set_header Upgrade    $http_upgrade;
         proxy_set_header Connection "upgrade";
+
         proxy_connect_timeout 60s;
-        proxy_send_timeout 120s;
-        proxy_read_timeout 180s;
+        proxy_send_timeout   120s;
+        proxy_read_timeout   180s;
     }
 }
