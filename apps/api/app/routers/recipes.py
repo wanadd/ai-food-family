@@ -25,9 +25,51 @@ from app.schemas.recipe import (
 )
 from app.services.app_scope import AppScope
 from app.services import recipe_analysis
+from app.config import settings
+from app.schemas.recipe_engine_api import (
+    RecipeWhyResponse,
+    RecommendationReasonResponse,
+)
+from app.services.recipes.explainability import ExplainabilityService
+from app.routers.recipe_engine_common import require_feature
 from app.services import recipes as recipes_service
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
+
+
+def _to_why_response(result) -> RecipeWhyResponse:
+    return RecipeWhyResponse(
+        recipe_id=result.recipe_id,
+        summary=result.summary,
+        positives=[
+            RecommendationReasonResponse(
+                code=entry.reason,
+                label=entry.label,
+                kind=entry.kind,
+                weight=entry.weight,
+            )
+            for entry in result.positives
+        ],
+        warnings=[
+            RecommendationReasonResponse(
+                code=entry.reason,
+                label=entry.label,
+                kind=entry.kind,
+                weight=entry.weight,
+            )
+            for entry in result.warnings
+        ],
+        hard_blocks=[
+            RecommendationReasonResponse(
+                code=entry.reason,
+                label=entry.label,
+                kind=entry.kind,
+                weight=entry.weight,
+            )
+            for entry in result.hard_blocks
+        ],
+        score_total=result.score_total,
+    )
 
 
 @router.get("/filters", response_model=RecipeFiltersResponse)
@@ -133,6 +175,19 @@ def get_recipe(
     if recipe is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
     return recipe
+
+
+@router.get("/{recipe_id}/why", response_model=RecipeWhyResponse)
+def recipe_why(
+    recipe_id: int,
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> RecipeWhyResponse:
+    require_feature(settings.recipe_explainability, "RECIPE_EXPLAINABILITY")
+    _recipe_or_404(db, user, recipe_id)
+    result = ExplainabilityService(db).explain(recipe_id, user=user, scope=scope)
+    return _to_why_response(result)
 
 
 @router.post("/{recipe_id}/favorite", response_model=FavoriteToggleResponse)
