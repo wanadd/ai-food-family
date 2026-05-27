@@ -287,10 +287,20 @@ DATABASE_URL="postgresql://app_user:secret@localhost:15432/food_family" \
 5. users                        (DELETE WHERE id = ?)  → всё остальное каскадно
 ```
 
-### Транзакционность
+### Транзакционность и изоляция соединений
 
-Шаги 1–5 выполняются в одной `BEGIN / COMMIT` транзакции через SQLAlchemy `conn.begin()`.
-При исключении на любом шаге транзакция откатывается и БД остаётся неизменной.
+Скрипт использует **два независимых соединения**:
+
+| Фаза | Соединение | Цель |
+|------|-----------|------|
+| Preview (lookup + dry-run counts) | `engine.connect()` | Только SELECT; закрывается до промпта |
+| Writes (шаги 1–5) | `engine.begin()` | Явная транзакция; commit при успехе, rollback при любом исключении |
+
+Промпт `YES` запрашивается **между** фазами, когда ни одно соединение не открыто.
+
+Это исключает ошибку `InvalidRequestError: This connection has already initialized
+a SQLAlchemy Transaction() via autobegin; can't call begin() here`, которая
+возникает если SELECT и DELETE делить одно соединение с `engine.connect()`.
 
 ### Идентификаторы
 

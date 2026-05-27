@@ -12,6 +12,15 @@ SAFETY GUARANTEES
 * If the family has only this one real member (no other non-virtual users) the
   entire family record is removed so no orphaned family data is left behind.
 
+TRANSACTION DESIGN
+------------------
+Preview (dry-run / confirm-preview) uses a dedicated read-only connection that is
+fully closed before any user input is requested.  The actual deletes run on a
+separate connection opened via engine.begin(), which provides an explicit
+transaction: auto-commit on success, auto-rollback on any exception.  This avoids
+the SQLAlchemy "autobegin already active" error that would occur if both phases
+shared one connection.
+
 USAGE
 -----
     # Preview (read-only, no changes)
@@ -472,9 +481,14 @@ def main() -> None:
 
     engine = _get_engine()
 
-    with engine.connect() as conn:
+    # ------------------------------------------------------------------
+    # Phase 1: lookup + preview on a dedicated read connection.
+    # The connection is fully closed before any user input is requested,
+    # so no transaction is left open during the interactive prompt.
+    # ------------------------------------------------------------------
+    with engine.connect() as read_conn:
         user_row = _lookup_user(
-            conn,
+            read_conn,
             telegram_id=args.telegram_id,
             user_id=args.user_id,
         )
@@ -487,27 +501,33 @@ def main() -> None:
             print(f"ERROR: User not found ({ident})", file=sys.stderr)
             sys.exit(1)
 
-        if args.dry_run:
-            _dry_run_report(conn, user_row)
-            return
+        _dry_run_report(read_conn, user_row)
+    # read_conn is closed here; user_row is a plain tuple (data already fetched)
 
-        # --confirm: show preview, require explicit "YES"
-        _dry_run_report(conn, user_row)
+    if args.dry_run:
+        return
 
-        uid = int(user_row[0])
-        tid = int(user_row[1])
-        print(f"WARNING: This will PERMANENTLY DELETE all data for")
-        print(f"         user_id={uid}  telegram_id={tid}")
-        print()
-        print("This action is IRREVERSIBLE. Make a database backup first.")
-        print()
-        answer = input("Type  YES  (all caps) to confirm: ").strip()
-        if answer != "YES":
-            print("\nAborted — no changes were made.")
-            sys.exit(0)
+    # ------------------------------------------------------------------
+    # Phase 2: confirmation prompt — no DB connection held during input().
+    # ------------------------------------------------------------------
+    uid = int(user_row[0])
+    tid = int(user_row[1])
+    print(f"WARNING: This will PERMANENTLY DELETE all data for")
+    print(f"         user_id={uid}  telegram_id={tid}")
+    print()
+    print("This action is IRREVERSIBLE. Make a database backup first.")
+    print()
+    answer = input("Type  YES  (all caps) to confirm: ").strip()
+    if answer != "YES":
+        print("\nAborted — no changes were made.")
+        sys.exit(0)
 
-        with conn.begin():
-            _execute_reset(conn, user_row)
+    # ------------------------------------------------------------------
+    # Phase 3: writes on a fresh connection with an explicit transaction.
+    # engine.begin() commits on clean exit, rolls back on any exception.
+    # ------------------------------------------------------------------
+    with engine.begin() as write_conn:
+        _execute_reset(write_conn, user_row)
 
 
 if __name__ == "__main__":
