@@ -35,8 +35,10 @@ from app.schemas.recipe_engine_api import (
     RecipeHistoryListResponse,
     RecipeRateRequest,
     RecipeRateResponse,
+    RecipeScenariosListResponse,
     RecipeWhyResponse,
     RecommendationReasonResponse,
+    ScenarioListItemResponse,
 )
 from app.services import recipe_analysis
 from app.services.app_scope import AppScope
@@ -48,6 +50,7 @@ from app.services.recipes.cooking_history import (
 )
 from app.services.recipes.explainability import ExplainabilityService
 from app.services.recipes.family_preferences import FamilyPreferenceService
+from app.services.recipes.scenarios import ScenarioService, ScenarioType
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -150,10 +153,21 @@ def list_recipes(
     tea_coffee_only: bool = Query(default=False),
     exclude_allergens: str | None = Query(default=None),
     goal: str | None = Query(default=None),
+    scenario: str | None = Query(default=None),
     user: User = Depends(get_verified_user),
     scope: AppScope = Depends(get_app_scope),
     db: Session = Depends(get_db),
 ) -> RecipeListResponse:
+    if scenario:
+        require_feature(settings.recipe_scenarios, "RECIPE_SCENARIOS")
+        try:
+            scenario = ScenarioType(scenario).value
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unknown recipe scenario",
+            ) from exc
+
     return recipes_service.list_recipes(
         db,
         user,
@@ -176,6 +190,7 @@ def list_recipes(
         tea_coffee_only=tea_coffee_only,
         exclude_allergens=exclude_allergens,
         goal=goal,
+        scenario=scenario,
         scope=scope,
     )
 
@@ -195,6 +210,25 @@ def recipe_history(
         items=[_to_cooking_event_response(event) for event in events],
         total=len(events),
     )
+
+
+@router.get("/scenarios", response_model=RecipeScenariosListResponse)
+def recipe_scenarios(
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> RecipeScenariosListResponse:
+    _ = user
+    require_feature(settings.recipe_scenarios, "RECIPE_SCENARIOS")
+    items = [
+        ScenarioListItemResponse(
+            scenario=scenario.value,
+            label=label,
+            recipes_count=count,
+            active=True,
+        )
+        for scenario, label, count in ScenarioService(db).list_available()
+    ]
+    return RecipeScenariosListResponse(items=items)
 
 
 @router.patch("/{recipe_id}", response_model=RecipeDetail)

@@ -44,6 +44,21 @@ AUTO_SCENARIOS = {
     ScenarioType.ALMOST_NO_COOKING,
 }
 
+SCENARIO_LABELS: dict[ScenarioType, str] = {
+    ScenarioType.QUICK: "Быстро",
+    ScenarioType.ULTRA_QUICK: "Очень быстро",
+    ScenarioType.CHEAP: "Недорого",
+    ScenarioType.KIDS_LOVED: "Детям нравится",
+    ScenarioType.FROM_PANTRY: "Из запасов",
+    ScenarioType.LOSE_WEIGHT: "Похудение",
+    ScenarioType.GAIN_WEIGHT: "Набор массы",
+    ScenarioType.WORK_LUNCH: "Обед на работу",
+    ScenarioType.TRAVEL: "В дорогу",
+    ScenarioType.GUESTS: "Для гостей",
+    ScenarioType.HOLIDAY: "Праздник",
+    ScenarioType.ALMOST_NO_COOKING: "Почти без готовки",
+}
+
 
 @dataclass(frozen=True)
 class ScenarioMatchResult:
@@ -150,6 +165,24 @@ class ScenarioService:
         if not settings.recipe_scenarios:
             return []
         return self._repo.list_for_recipe(recipe_id)
+
+    def list_available(self) -> list[tuple[ScenarioType, str, int]]:
+        if not settings.recipe_scenarios:
+            return []
+
+        recipes = self._db.query(Recipe).filter(Recipe.is_active.is_(True)).all()
+        items: list[tuple[ScenarioType, str, int]] = []
+        for scenario, label in SCENARIO_LABELS.items():
+            if scenario == ScenarioType.FROM_PANTRY:
+                count = 0
+            else:
+                count = sum(
+                    1
+                    for recipe in recipes
+                    if self._matcher.match_recipe(recipe, scenario).matched
+                )
+            items.append((scenario, label, count))
+        return items
 
     def match_any(
         self,

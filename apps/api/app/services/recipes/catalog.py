@@ -24,6 +24,7 @@ from app.services.recipe_storage import (
 )
 from . import repository
 from app.services.recipes.mapper import to_detail, to_summary
+from app.services.recipes.scenarios import ScenarioMatcher, ScenarioType
 from app.services.recipes.types import RecipeListFilters
 
 FILTER_LABELS: dict[str, list[dict[str, str]]] = {
@@ -156,6 +157,7 @@ def list_recipes(
     tea_coffee_only: bool = False,
     exclude_allergens: str | None = None,
     goal: str | None = None,
+    scenario: str | None = None,
     scope: AppScope | None = None,
 ) -> RecipeListResponse:
     favorite_ids = repository.favorite_ids_for_user(db, user.id)
@@ -181,6 +183,15 @@ def list_recipes(
     )
 
     recipes = repository.query_recipes(db, filters)
+
+    if scenario:
+        scenario_type = ScenarioType(scenario)
+        matcher = ScenarioMatcher()
+        recipes = [
+            recipe
+            for recipe in recipes
+            if matcher.match_recipe(recipe, scenario_type).matched
+        ]
 
     if from_pantry and scope:
         pantry = {p.name.lower() for p in get_active_items_for_scope(db, scope)}
