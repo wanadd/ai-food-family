@@ -16,6 +16,7 @@ from typing import Literal
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.user import User
 from app.services.app_scope import AppScope
 
@@ -73,6 +74,13 @@ class ExplainabilityService:
         user: User,
         scope: AppScope | None = None,
     ) -> ExplainabilityResult:
+        if not settings.recipe_explainability:
+            _ = (user, scope)
+            return ExplainabilityResult(
+                recipe_id=recipe_id,
+                summary=self.NEUTRAL_SUMMARY,
+            )
+
         _ = (user, scope)
         return ExplainabilityResult(recipe_id=recipe_id, summary=self.NEUTRAL_SUMMARY)
 

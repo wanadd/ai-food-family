@@ -23,6 +23,7 @@ from enum import Enum
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.user import User
 from app.services.app_scope import AppScope
 
@@ -75,5 +76,9 @@ class FamilyPreferenceService:
         scope: AppScope | None = None,
     ) -> FamilyCompatibilityResult:
         _ = (user, scope)
+        if not settings.family_recipe_preferences:
+            # Stable contract: still return a neutral result, but do not
+            # perform any additional evaluation.
+            return FamilyCompatibilityResult(recipe_id=recipe_id)
         return FamilyCompatibilityResult(recipe_id=recipe_id)
 

@@ -15,6 +15,7 @@ from enum import Enum
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.user import User
 from app.services.app_scope import AppScope
 
@@ -64,6 +65,10 @@ class CookingHistoryService:
         scope: AppScope | None = None,
     ) -> None:
         _ = (event, user, scope)
+        if not settings.recipe_history:
+            raise NotImplementedError(
+                "Cooking history is disabled (recipe_history feature flag)."
+            )
         raise NotImplementedError(
             "Cooking history write is reserved for Sprint 6+ when DB wiring is introduced."
         )

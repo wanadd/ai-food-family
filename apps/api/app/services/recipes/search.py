@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.user import User
 from app.schemas.recipe_search import (
     RecipeSearchHit,
@@ -42,6 +43,15 @@ class SearchService:
         user: User,
         scope: AppScope | None = None,
     ) -> RecipeSearchResponse:
+        if not settings.recipe_engine_v1:
+            return RecipeSearchResponse(
+                items=[],
+                total=0,
+                limit=query.limit,
+                offset=query.offset,
+                sort=query.sort,
+            )
+
         resp = catalog.list_recipes(
             self._db,
             user,

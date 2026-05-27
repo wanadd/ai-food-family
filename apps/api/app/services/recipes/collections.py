@@ -28,6 +28,7 @@ from typing import Iterable
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.user import User
 from app.services.app_scope import AppScope
 
@@ -153,6 +154,9 @@ class CollectionService:
         ``system`` + the user's own ``personal`` + the active family's
         ``family`` collections.
         """
+
+        if not settings.recipe_collections:
+            return []
 
         _ = (user, scope)
         return []

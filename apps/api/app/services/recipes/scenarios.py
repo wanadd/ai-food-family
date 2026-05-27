@@ -13,6 +13,7 @@ from enum import Enum
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.user import User
 from app.services.app_scope import AppScope
 
@@ -70,6 +71,9 @@ class ScenarioService:
         scope: AppScope | None = None,
     ) -> list[ScenarioMatchResult]:
         _ = self._db
+        if not settings.recipe_scenarios:
+            return [ScenarioMatchResult(scenario=sc, matched=False) for sc in scenarios]
+
         return [
             self._matcher.match(
                 scenario=sc,
