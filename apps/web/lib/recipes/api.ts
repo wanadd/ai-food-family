@@ -3,8 +3,11 @@ import { apiGet } from "@/lib/api-client";
 import type { AppMode } from "@/lib/app-mode/types";
 
 import type {
+  CookingEvent,
+  MarkCookedPayload,
   RecipeDetail,
   RecipeFilters,
+  RecipeHistory,
   RecipeList,
   RecipeQuery,
   RecipeWhy,
@@ -107,6 +110,32 @@ export async function fetchRecipeWhy(
   recipeId: number,
 ): Promise<RecipeWhy | null> {
   return apiGet<RecipeWhy>(initData, mode, `/recipes/${recipeId}/why`);
+}
+
+export async function markRecipeCooked(
+  initData: string,
+  mode: AppMode,
+  recipeId: number,
+  payload: MarkCookedPayload = {},
+): Promise<CookingEvent> {
+  const result = await recipeFetch<CookingEvent>(
+    `/recipes/${recipeId}/cooked`,
+    initData,
+    {
+      method: "POST",
+      headers: { "X-App-Mode": mode },
+      body: JSON.stringify({ source: "manual", ...payload }),
+    },
+  );
+  return result;
+}
+
+export async function fetchRecipeHistory(
+  initData: string,
+  mode: AppMode,
+  recipeId: number,
+): Promise<RecipeHistory | null> {
+  return apiGet<RecipeHistory>(initData, mode, `/recipes/${recipeId}/history`);
 }
 
 export async function toggleRecipeFavorite(

@@ -19,8 +19,13 @@ import {
   dietLabel,
   mealLabel,
 } from "@/lib/recipes/labels";
-import type { RecipeDetail, RecipeWhy } from "@/lib/recipes/types";
-import { addRecipeToShopping, fetchRecipeWhy } from "@/lib/recipes/api";
+import type { RecipeDetail, RecipeHistory, RecipeWhy } from "@/lib/recipes/types";
+import {
+  addRecipeToShopping,
+  fetchRecipeHistory,
+  fetchRecipeWhy,
+  markRecipeCooked,
+} from "@/lib/recipes/api";
 import {
   addRecipeToMenu,
   evaluateRecipe,
@@ -61,6 +66,20 @@ const SIMPLE_REASON_LABELS: Record<string, string> = {
   family_approved: "Семья оценила положительно",
 };
 
+function relativeCookedLabel(dateText?: string | null) {
+  if (!dateText) return "ещё не готовили";
+  const today = new Date();
+  const value = new Date(`${dateText}T00:00:00`);
+  const days = Math.max(
+    0,
+    Math.floor((today.getTime() - value.getTime()) / 86_400_000),
+  );
+  if (days === 0) return "сегодня";
+  if (days === 1) return "вчера";
+  if (days < 5) return `${days} дня назад`;
+  return `${days} дней назад`;
+}
+
 export function RecipeDetailModal({
   recipe,
   onClose,
@@ -76,6 +95,9 @@ export function RecipeDetailModal({
   const [suggestions, setSuggestions] = useState<RecipeImproveSuggestion[]>([]);
   const [why, setWhy] = useState<RecipeWhy | null>(null);
   const [whyLoading, setWhyLoading] = useState(true);
+  const [history, setHistory] = useState<RecipeHistory | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [markingCooked, setMarkingCooked] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addingShopping, setAddingShopping] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -123,6 +145,22 @@ export function RecipeDetailModal({
     }
   }, [initData, mode, recipe.id]);
 
+  const loadHistory = useCallback(async () => {
+    if (!initData) {
+      setHistoryLoading(false);
+      return;
+    }
+    setHistoryLoading(true);
+    try {
+      const result = await fetchRecipeHistory(initData, mode, recipe.id);
+      setHistory(result);
+    } catch {
+      setHistory(null);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [initData, mode, recipe.id]);
+
   useEffect(() => {
     void loadFamilyFit();
   }, [loadFamilyFit]);
@@ -130,6 +168,10 @@ export function RecipeDetailModal({
   useEffect(() => {
     void loadWhy();
   }, [loadWhy]);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
 
   function requestAiAction(action: AiAction) {
     ensureSubscriptionLoaded();
@@ -202,6 +244,25 @@ export function RecipeDetailModal({
       );
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function handleMarkCooked() {
+    if (!initData) return;
+    setMarkingCooked(true);
+    setMessage(null);
+    try {
+      await markRecipeCooked(initData, mode, recipe.id, {
+        servings: recipe.servings,
+      });
+      setMessage("✓ Добавлено в историю");
+      await loadHistory();
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Не получилось добавить в историю",
+      );
+    } finally {
+      setMarkingCooked(false);
     }
   }
 
@@ -354,6 +415,38 @@ export function RecipeDetailModal({
           {message ? (
             <p className="mb-3 text-sm text-emerald-800">{message}</p>
           ) : null}
+
+          <section className="mb-4 rounded-xl border border-stone-100 bg-white p-3 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-stone-900">Я приготовил</p>
+                <p className="mt-1 text-xs text-stone-600">
+                  Отметьте блюдо, чтобы ПланАм помнил, что семье уже заходило.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={markingCooked || !initData}
+                onClick={() => void handleMarkCooked()}
+                className="shrink-0 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                {markingCooked ? "…" : "Я приготовил"}
+              </button>
+            </div>
+            <div className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-600">
+              {historyLoading ? (
+                <span>Загружаю историю…</span>
+              ) : history?.stats && history.stats.cooked_count > 0 ? (
+                <span>
+                  Готовили: {history.stats.cooked_count}{" "}
+                  {history.stats.cooked_count === 1 ? "раз" : "раза"} · последний раз{" "}
+                  {relativeCookedLabel(history.stats.last_cooked_on)}
+                </span>
+              ) : (
+                <span>Пока не готовили. Можно начать историю с одного нажатия.</span>
+              )}
+            </div>
+          </section>
 
           <section className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
             <div className="flex items-start justify-between gap-3">

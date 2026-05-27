@@ -104,3 +104,36 @@ export type RecipeWhy = {
   uses_ai: boolean;
   uses_ama: boolean;
 };
+
+export type MarkCookedPayload = {
+  cooked_on?: string | null;
+  servings?: number | null;
+  notes?: string | null;
+  family_member_id?: number | null;
+  source?: "manual" | "menu" | "bot" | "checkin";
+};
+
+export type CookingEvent = {
+  id: number;
+  recipe_id: number;
+  cooked_on: string;
+  servings?: number | null;
+  source: string;
+  notes?: string | null;
+  user_id?: number | null;
+  family_id?: number | null;
+  family_member_id?: number | null;
+  created_at?: string | null;
+};
+
+export type CookingStats = {
+  recipe_id: number;
+  cooked_count: number;
+  last_cooked_on?: string | null;
+};
+
+export type RecipeHistory = {
+  items: CookingEvent[];
+  total: number;
+  stats?: CookingStats | null;
+};
