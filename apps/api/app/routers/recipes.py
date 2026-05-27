@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -23,16 +25,25 @@ from app.schemas.recipe import (
     RecipeRecommendationsResponse,
     RecipeUpdateRequest,
 )
-from app.services.app_scope import AppScope
-from app.services import recipe_analysis
 from app.config import settings
+from app.routers.recipe_engine_common import require_feature
 from app.schemas.recipe_engine_api import (
+    CookingEventResponse,
+    CookingStatsResponse,
+    MarkCookedRequest,
+    RecipeHistoryListResponse,
     RecipeWhyResponse,
     RecommendationReasonResponse,
 )
-from app.services.recipes.explainability import ExplainabilityService
-from app.routers.recipe_engine_common import require_feature
+from app.services import recipe_analysis
+from app.services.app_scope import AppScope
 from app.services import recipes as recipes_service
+from app.services.recipes.cooking_history import (
+    CookingEvent,
+    CookingHistoryService,
+    HistoryTypes,
+)
+from app.services.recipes.explainability import ExplainabilityService
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -69,6 +80,20 @@ def _to_why_response(result) -> RecipeWhyResponse:
             for entry in result.hard_blocks
         ],
         score_total=result.score_total,
+    )
+
+
+def _to_cooking_event_response(event: CookingEvent) -> CookingEventResponse:
+    return CookingEventResponse(
+        id=event.id or 0,
+        recipe_id=event.recipe_id,
+        cooked_on=event.cooked_on,
+        servings=event.servings,
+        source=event.source.value,
+        notes=event.notes,
+        user_id=event.user_id,
+        family_id=event.family_id,
+        family_member_id=event.family_member_id,
     )
 
 
@@ -151,6 +176,23 @@ def list_recipes(
     )
 
 
+@router.get("/history", response_model=RecipeHistoryListResponse)
+def recipe_history(
+    limit: int = Query(default=50, ge=1, le=200),
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> RecipeHistoryListResponse:
+    require_feature(settings.recipe_history, "RECIPE_HISTORY")
+    events = CookingHistoryService(db).list_scope_events(
+        user=user, scope=scope, limit=limit
+    )
+    return RecipeHistoryListResponse(
+        items=[_to_cooking_event_response(event) for event in events],
+        total=len(events),
+    )
+
+
 @router.patch("/{recipe_id}", response_model=RecipeDetail)
 def patch_recipe(
     recipe_id: int,
@@ -188,6 +230,59 @@ def recipe_why(
     _recipe_or_404(db, user, recipe_id)
     result = ExplainabilityService(db).explain(recipe_id, user=user, scope=scope)
     return _to_why_response(result)
+
+
+@router.post(
+    "/{recipe_id}/cooked",
+    response_model=CookingEventResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def mark_recipe_cooked(
+    recipe_id: int,
+    payload: MarkCookedRequest,
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> CookingEventResponse:
+    require_feature(settings.recipe_history, "RECIPE_HISTORY")
+    _recipe_or_404(db, user, recipe_id)
+    event = CookingHistoryService(db).mark_cooked(
+        event=CookingEvent(
+            recipe_id=recipe_id,
+            cooked_on=payload.cooked_on or date.today(),
+            servings=payload.servings,
+            source=HistoryTypes(payload.source),
+            notes=payload.notes,
+            family_member_id=payload.family_member_id,
+        ),
+        user=user,
+        scope=scope,
+    )
+    return _to_cooking_event_response(event)
+
+
+@router.get("/{recipe_id}/history", response_model=RecipeHistoryListResponse)
+def recipe_history_for_recipe(
+    recipe_id: int,
+    limit: int = Query(default=20, ge=1, le=100),
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> RecipeHistoryListResponse:
+    require_feature(settings.recipe_history, "RECIPE_HISTORY")
+    _recipe_or_404(db, user, recipe_id)
+    service = CookingHistoryService(db)
+    events = service.list_events(recipe_id=recipe_id, user=user, scope=scope, limit=limit)
+    stats = service.get_stats(recipe_id=recipe_id, user=user, scope=scope)
+    return RecipeHistoryListResponse(
+        items=[_to_cooking_event_response(event) for event in events],
+        total=len(events),
+        stats=CookingStatsResponse(
+            recipe_id=recipe_id,
+            cooked_count=stats.cooked_count,
+            last_cooked_on=stats.last_cooked_on,
+        ),
+    )
 
 
 @router.post("/{recipe_id}/favorite", response_model=FavoriteToggleResponse)

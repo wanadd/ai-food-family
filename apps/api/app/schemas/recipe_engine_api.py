@@ -58,6 +58,7 @@ class CookingStatsResponse(BaseModel):
 class RecipeHistoryListResponse(BaseModel):
     items: list[CookingEventResponse] = Field(default_factory=list)
     total: int = 0
+    stats: CookingStatsResponse | None = None
 
 
 class RecipeRateRequest(BaseModel):

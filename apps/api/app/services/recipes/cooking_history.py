@@ -149,3 +149,32 @@ class CookingHistoryService:
             )
             for r in rows
         ]
+
+    def list_scope_events(
+        self,
+        *,
+        user: User,
+        scope: AppScope | None = None,
+        limit: int = 50,
+    ) -> list[CookingEvent]:
+        if not settings.recipe_history:
+            return []
+
+        user_id, family_id = self._scope_ids(user, scope)
+        rows = self._repo.list_recent(
+            user_id=user_id, family_id=family_id, limit=limit
+        )
+        return [
+            CookingEvent(
+                id=r.id,
+                recipe_id=r.recipe_id,
+                cooked_on=r.cooked_on,
+                servings=r.servings,
+                source=HistoryTypes(r.source),
+                notes=r.notes,
+                user_id=r.user_id,
+                family_id=r.family_id,
+                family_member_id=r.family_member_id,
+            )
+            for r in rows
+        ]

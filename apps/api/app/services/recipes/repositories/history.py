@@ -70,3 +70,21 @@ class RecipeHistoryRepository:
             q = q.filter(RecipeHistory.family_id == family_id)
         value = q.scalar()
         return value
+
+    def list_recent(
+        self,
+        *,
+        user_id: int | None = None,
+        family_id: int | None = None,
+        limit: int = 50,
+    ) -> list[RecipeHistory]:
+        q = self._db.query(RecipeHistory)
+        if family_id is not None:
+            q = q.filter(RecipeHistory.family_id == family_id)
+        elif user_id is not None:
+            q = q.filter(RecipeHistory.user_id == user_id)
+        return (
+            q.order_by(RecipeHistory.cooked_on.desc(), RecipeHistory.id.desc())
+            .limit(limit)
+            .all()
+        )
