@@ -44,9 +44,19 @@ from app.services.recipes.catalog import (
 )
 from app.services.recipes.recommendations import get_recommendations
 from app.services.recipes.search import SearchService
+from app.services.recipes.explainability import (
+    ExplainabilityResult,
+    ExplainabilityService,
+    RecommendationReason,
+    RecommendationReasonEntry,
+)
 
 __all__ = [
     "FILTER_LABELS",
+    "ExplainabilityResult",
+    "ExplainabilityService",
+    "RecommendationReason",
+    "RecommendationReasonEntry",
     "add_recipe_to_shopping",
     "create_recipe",
     "get_filters",
