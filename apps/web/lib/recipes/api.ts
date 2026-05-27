@@ -84,6 +84,9 @@ function buildQuery(params: RecipeQuery): string {
   if (params.goal) {
     search.set("goal", params.goal);
   }
+  if (params.scenario) {
+    search.set("scenario", params.scenario);
+  }
   const query = search.toString();
   return query ? `?${query}` : "";
 }

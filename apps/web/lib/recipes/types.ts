@@ -75,6 +75,7 @@ export type RecipeQuery = {
   smoothie_only?: boolean;
   tea_coffee_only?: boolean;
   goal?: string;
+  scenario?: string;
 };
 
 export type RecommendationReasonCode =
