@@ -1,6 +1,7 @@
 """Recipe Engine v1 — extended storage models.
 
-Tables introduced in Sprint 2 (see ``database_migrations.py``).
+Tables introduced in Sprint 2. DDL runs only in ``database_migrations.py``
+(``RECIPE_ENGINE_TABLES``); not created via ``Base.metadata.create_all``.
 Existing ``recipes`` and related tables are unchanged.
 """
 

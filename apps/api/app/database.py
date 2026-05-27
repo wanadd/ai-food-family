@@ -42,11 +42,10 @@ def init_db() -> None:
     from app.models import care as care_models  # noqa: F401
     from app.models import progress as progress_models  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
+    from app.database_migrations import ensure_database_schema
 
-    from app.database_migrations import run_schema_migrations
-
-    run_schema_migrations(engine)
+    # Legacy tables: SQLAlchemy create_all. Recipe Engine tables: SQL migrations only.
+    ensure_database_schema(engine, Base)
 
     from app.services.recipes import seed_recipes_if_empty
     from app.services.subscription import (
