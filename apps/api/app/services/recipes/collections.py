@@ -29,8 +29,13 @@ from typing import Iterable
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.models.recipe_engine import CollectionRecipe, RecipeCollection
 from app.models.user import User
 from app.services.app_scope import AppScope
+from app.services.recipes.repositories.collections import (
+    CollectionRecipeRepository,
+    RecipeCollectionRepository,
+)
 
 
 class CollectionVisibility(str, Enum):
@@ -83,6 +88,27 @@ class CollectionDetail:
     recipe_ids: tuple[int, ...] = field(default_factory=tuple)
 
 
+def _ref_from_orm(
+    row: RecipeCollection, *, recipes_count: int | None = None
+) -> CollectionRef:
+    count = recipes_count
+    if count is None and not row.is_dynamic:
+        count = len(row.recipe_links)
+    return CollectionRef(
+        id=row.id,
+        name=row.name,
+        visibility=CollectionVisibility(row.visibility),
+        description=row.description or "",
+        emoji=row.emoji,
+        color=row.color,
+        is_pinned=row.is_pinned,
+        is_dynamic=row.is_dynamic,
+        recipes_count=count or 0,
+        owner_user_id=row.owner_user_id,
+        owner_family_id=row.owner_family_id,
+    )
+
+
 class CollectionMapper:
     """ORM → DTO conversion for collections.
 
@@ -122,44 +148,43 @@ class CollectionMapper:
 
 
 class CollectionService:
-    """Read/write façade for collections.
-
-    Sprint 1 status:
-
-      - Read methods return empty results (no table exists yet).
-      - Write methods raise ``NotImplementedError`` so that any caller
-        wired in by mistake fails loudly rather than silently corrupting
-        data.
-
-    The ``CollectionService`` is the only entry point future commits and
-    Sprint 2 routes should depend on.
-    """
-
-    _WRITE_NOT_AVAILABLE_MSG = (
-        "Collection write API is reserved for Sprint 2 — gated by the "
-        "`recipe_collections` feature flag (see commit 8)."
-    )
+    """Read/write façade for recipe collections."""
 
     def __init__(self, db: Session) -> None:
         self._db = db
+        self._collections = RecipeCollectionRepository(db)
+        self._links = CollectionRecipeRepository(db)
 
-    # ------------------------------------------------------------------ read
+    def _enabled(self) -> bool:
+        return bool(settings.recipe_collections)
+
+    def _can_write(
+        self, row: RecipeCollection, user: User, scope: AppScope | None
+    ) -> bool:
+        if row.visibility == CollectionVisibility.SYSTEM.value:
+            return False
+        if row.visibility == CollectionVisibility.PERSONAL.value:
+            return row.owner_user_id == user.id
+        if row.visibility == CollectionVisibility.FAMILY.value:
+            return (
+                scope is not None
+                and scope.family_id is not None
+                and row.owner_family_id == scope.family_id
+            )
+        return False
 
     def list_visible(
         self, user: User, scope: AppScope | None = None
     ) -> list[CollectionRef]:
-        """List collections visible to the user in the given scope.
-
-        Sprint 2 will query ``recipe_collections`` with visibility rules:
-        ``system`` + the user's own ``personal`` + the active family's
-        ``family`` collections.
-        """
-
-        if not settings.recipe_collections:
+        if not self._enabled():
             return []
 
-        _ = (user, scope)
-        return []
+        rows: list[RecipeCollection] = list(self._collections.list_system())
+        rows.extend(self._collections.list_for_user(user.id))
+        if scope is not None and scope.family_id is not None:
+            rows.extend(self._collections.list_for_family(scope.family_id))
+
+        return [_ref_from_orm(r) for r in rows]
 
     def get(
         self,
@@ -168,8 +193,27 @@ class CollectionService:
         user: User,
         scope: AppScope | None = None,
     ) -> CollectionDetail | None:
-        _ = (collection_id, user, scope)
-        return None
+        if not self._enabled():
+            return None
+
+        row = self._collections.get(collection_id)
+        if row is None:
+            return None
+
+        if row.is_dynamic:
+            recipe_ids = self.resolve_dynamic(
+                _ref_from_orm(row), user=user, scope=scope
+            )
+            return CollectionDetail(
+                ref=_ref_from_orm(row, recipes_count=len(recipe_ids)),
+                recipe_ids=recipe_ids,
+            )
+
+        links = self._links.list_for_collection(collection_id)
+        ref = _ref_from_orm(row, recipes_count=len(links))
+        return CollectionDetail(
+            ref=ref, recipe_ids=tuple(link.recipe_id for link in links)
+        )
 
     def resolve_dynamic(
         self,
@@ -178,18 +222,8 @@ class CollectionService:
         user: User,
         scope: AppScope | None = None,
     ) -> tuple[int, ...]:
-        """Resolve the recipe set of a *dynamic* collection at read time.
-
-        Used for collections whose membership is computed (e.g. the
-        ``Из запасов`` system collection in
-        ``docs/RECIPE_ENGINE_V1.md`` § 2.17). Stub returns empty until
-        the from-pantry pipeline lands in Sprint 2.
-        """
-
         _ = (collection, user, scope)
         return ()
-
-    # ----------------------------------------------------------------- write
 
     def create(
         self,
@@ -202,8 +236,34 @@ class CollectionService:
         emoji: str | None = None,
         color: str | None = None,
     ) -> CollectionRef:
-        _ = (name, visibility, user, scope, description, emoji, color)
-        raise NotImplementedError(self._WRITE_NOT_AVAILABLE_MSG)
+        if not self._enabled():
+            raise NotImplementedError("recipe_collections feature flag is disabled")
+
+        owner_user_id: int | None = None
+        owner_family_id: int | None = None
+
+        if visibility == CollectionVisibility.PERSONAL:
+            owner_user_id = user.id
+        elif visibility == CollectionVisibility.FAMILY:
+            if scope is None or scope.family_id is None:
+                raise ValueError("Family collection requires family scope")
+            owner_family_id = scope.family_id
+        else:
+            raise ValueError("Cannot create system collections via service")
+
+        row = RecipeCollection(
+            name=name,
+            visibility=visibility.value,
+            description=description,
+            emoji=emoji,
+            color=color,
+            owner_user_id=owner_user_id,
+            owner_family_id=owner_family_id,
+        )
+        self._collections.create(row)
+        self._db.commit()
+        self._db.refresh(row)
+        return _ref_from_orm(row)
 
     def update(
         self,
@@ -213,8 +273,23 @@ class CollectionService:
         scope: AppScope | None = None,
         **changes: object,
     ) -> CollectionRef | None:
-        _ = (collection_id, user, scope, changes)
-        raise NotImplementedError(self._WRITE_NOT_AVAILABLE_MSG)
+        if not self._enabled():
+            raise NotImplementedError("recipe_collections feature flag is disabled")
+
+        row = self._collections.get(collection_id)
+        if row is None or not self._can_write(row, user, scope):
+            return None
+
+        for key, value in changes.items():
+            if value is None:
+                continue
+            if hasattr(row, key):
+                setattr(row, key, value)
+
+        self._collections.update(row)
+        self._db.commit()
+        self._db.refresh(row)
+        return _ref_from_orm(row)
 
     def delete(
         self,
@@ -223,8 +298,16 @@ class CollectionService:
         user: User,
         scope: AppScope | None = None,
     ) -> bool:
-        _ = (collection_id, user, scope)
-        raise NotImplementedError(self._WRITE_NOT_AVAILABLE_MSG)
+        if not self._enabled():
+            return False
+
+        row = self._collections.get(collection_id)
+        if row is None or not self._can_write(row, user, scope):
+            return False
+
+        self._collections.delete(row)
+        self._db.commit()
+        return True
 
     def add_recipes(
         self,
@@ -234,8 +317,31 @@ class CollectionService:
         user: User,
         scope: AppScope | None = None,
     ) -> int:
-        _ = (collection_id, list(recipe_ids), user, scope)
-        raise NotImplementedError(self._WRITE_NOT_AVAILABLE_MSG)
+        if not self._enabled():
+            return 0
+
+        row = self._collections.get(collection_id)
+        if row is None or row.is_dynamic or not self._can_write(row, user, scope):
+            return 0
+
+        added = 0
+        position = len(self._links.list_for_collection(collection_id))
+        for recipe_id in recipe_ids:
+            if self._links.get_link(collection_id, recipe_id) is not None:
+                continue
+            self._links.add(
+                CollectionRecipe(
+                    collection_id=collection_id,
+                    recipe_id=recipe_id,
+                    position=position,
+                    added_by_user_id=user.id,
+                )
+            )
+            position += 1
+            added += 1
+
+        self._db.commit()
+        return added
 
     def remove_recipe(
         self,
@@ -245,5 +351,14 @@ class CollectionService:
         user: User,
         scope: AppScope | None = None,
     ) -> bool:
-        _ = (collection_id, recipe_id, user, scope)
-        raise NotImplementedError(self._WRITE_NOT_AVAILABLE_MSG)
+        if not self._enabled():
+            return False
+
+        row = self._collections.get(collection_id)
+        if row is None or row.is_dynamic or not self._can_write(row, user, scope):
+            return False
+
+        ok = self._links.delete_by_ids(collection_id, recipe_id)
+        if ok:
+            self._db.commit()
+        return ok
