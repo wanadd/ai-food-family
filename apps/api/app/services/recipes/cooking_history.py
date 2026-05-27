@@ -1,11 +1,4 @@
-"""Cooking history foundation (Sprint 5).
-
-Sprint 5 constraint:
-  - No DB changes.
-  - No UI.
-  - Only introduce models + service interfaces so subsequent commits
-    can wire existing cooking events and feed explainability/scoring.
-"""
+"""Cooking history service — recipe_history table."""
 
 from __future__ import annotations
 
@@ -16,8 +9,10 @@ from enum import Enum
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.models.recipe_engine import RecipeHistory
 from app.models.user import User
 from app.services.app_scope import AppScope
+from app.services.recipes.repositories.history import RecipeHistoryRepository
 
 
 class HistoryTypes(str, Enum):
@@ -34,11 +29,10 @@ class CookingEvent:
     servings: int | None = None
     source: HistoryTypes = HistoryTypes.MANUAL
     notes: str | None = None
-
-    # Scope identifiers (left optional until DB schema is introduced).
     user_id: int | None = None
     family_id: int | None = None
     family_member_id: int | None = None
+    id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -49,13 +43,52 @@ class CookingStats:
 
 
 class CookingHistoryService:
-    """Service interface for cooking history.
-
-    Sprint 5 behaviour: stub / neutral implementation.
-    """
-
     def __init__(self, db: Session) -> None:
         self._db = db
+        self._repo = RecipeHistoryRepository(db)
+
+    def _scope_ids(
+        self, user: User, scope: AppScope | None
+    ) -> tuple[int | None, int | None]:
+        user_id = user.id
+        family_id = scope.family_id if scope is not None and scope.is_family else None
+        return user_id, family_id
+
+    def mark_cooked(
+        self,
+        *,
+        event: CookingEvent,
+        user: User,
+        scope: AppScope | None = None,
+    ) -> CookingEvent:
+        if not settings.recipe_history:
+            raise NotImplementedError("recipe_history feature flag is disabled")
+
+        user_id, family_id = self._scope_ids(user, scope)
+        row = RecipeHistory(
+            recipe_id=event.recipe_id,
+            user_id=event.user_id if event.user_id is not None else user_id,
+            family_id=event.family_id if event.family_id is not None else family_id,
+            family_member_id=event.family_member_id,
+            servings=event.servings,
+            cooked_on=event.cooked_on,
+            source=event.source.value,
+            notes=event.notes,
+        )
+        self._repo.add(row)
+        self._db.commit()
+        self._db.refresh(row)
+        return CookingEvent(
+            id=row.id,
+            recipe_id=row.recipe_id,
+            cooked_on=row.cooked_on,
+            servings=row.servings,
+            source=HistoryTypes(row.source),
+            notes=row.notes,
+            user_id=row.user_id,
+            family_id=row.family_id,
+            family_member_id=row.family_member_id,
+        )
 
     def record_event(
         self,
@@ -64,14 +97,7 @@ class CookingHistoryService:
         user: User,
         scope: AppScope | None = None,
     ) -> None:
-        _ = (event, user, scope)
-        if not settings.recipe_history:
-            raise NotImplementedError(
-                "Cooking history is disabled (recipe_history feature flag)."
-            )
-        raise NotImplementedError(
-            "Cooking history write is reserved for Sprint 6+ when DB wiring is introduced."
-        )
+        self.mark_cooked(event=event, user=user, scope=scope)
 
     def get_stats(
         self,
@@ -80,8 +106,19 @@ class CookingHistoryService:
         user: User,
         scope: AppScope | None = None,
     ) -> CookingStats:
-        _ = (recipe_id, user, scope)
-        return CookingStats(recipe_id=recipe_id)
+        if not settings.recipe_history:
+            return CookingStats(recipe_id=recipe_id)
+
+        user_id, family_id = self._scope_ids(user, scope)
+        count = self._repo.count_for_recipe(
+            recipe_id, user_id=user_id, family_id=family_id
+        )
+        last = self._repo.last_cooked_on(
+            recipe_id, user_id=user_id, family_id=family_id
+        )
+        return CookingStats(
+            recipe_id=recipe_id, cooked_count=count, last_cooked_on=last
+        )
 
     def list_events(
         self,
@@ -91,6 +128,24 @@ class CookingHistoryService:
         scope: AppScope | None = None,
         limit: int = 10,
     ) -> list[CookingEvent]:
-        _ = (recipe_id, user, scope, limit)
-        return []
+        if not settings.recipe_history:
+            return []
 
+        user_id, family_id = self._scope_ids(user, scope)
+        rows = self._repo.list_for_recipe(
+            recipe_id, user_id=user_id, family_id=family_id, limit=limit
+        )
+        return [
+            CookingEvent(
+                id=r.id,
+                recipe_id=r.recipe_id,
+                cooked_on=r.cooked_on,
+                servings=r.servings,
+                source=HistoryTypes(r.source),
+                notes=r.notes,
+                user_id=r.user_id,
+                family_id=r.family_id,
+                family_member_id=r.family_member_id,
+            )
+            for r in rows
+        ]
