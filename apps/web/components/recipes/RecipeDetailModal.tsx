@@ -19,8 +19,8 @@ import {
   dietLabel,
   mealLabel,
 } from "@/lib/recipes/labels";
-import type { RecipeDetail } from "@/lib/recipes/types";
-import { addRecipeToShopping } from "@/lib/recipes/api";
+import type { RecipeDetail, RecipeWhy } from "@/lib/recipes/types";
+import { addRecipeToShopping, fetchRecipeWhy } from "@/lib/recipes/api";
 import {
   addRecipeToMenu,
   evaluateRecipe,
@@ -50,6 +50,17 @@ const FIT_STYLES = {
   not_recommended: "border-red-200 bg-red-50 text-red-900",
 };
 
+const SIMPLE_REASON_LABELS: Record<string, string> = {
+  in_pantry: "Часть ингредиентов уже есть дома",
+  kids_like: "Нравится детям",
+  goal_match: "Подходит вашей цели",
+  quick_cooking: "Готовится быстро",
+  budget_friendly: "Недорогой рецепт",
+  high_protein: "Богат белком",
+  low_calorie: "Лёгкий по калориям",
+  family_approved: "Семья оценила положительно",
+};
+
 export function RecipeDetailModal({
   recipe,
   onClose,
@@ -63,6 +74,8 @@ export function RecipeDetailModal({
   const [evaluation, setEvaluation] = useState<RecipeEvaluation | null>(null);
   const [familyFit, setFamilyFit] = useState<RecipeFamilyFit | null>(null);
   const [suggestions, setSuggestions] = useState<RecipeImproveSuggestion[]>([]);
+  const [why, setWhy] = useState<RecipeWhy | null>(null);
+  const [whyLoading, setWhyLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [addingShopping, setAddingShopping] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -94,9 +107,29 @@ export function RecipeDetailModal({
     }
   }, [initData, mode, recipe.id]);
 
+  const loadWhy = useCallback(async () => {
+    if (!initData) {
+      setWhyLoading(false);
+      return;
+    }
+    setWhyLoading(true);
+    try {
+      const result = await fetchRecipeWhy(initData, mode, recipe.id);
+      setWhy(result);
+    } catch {
+      setWhy(null);
+    } finally {
+      setWhyLoading(false);
+    }
+  }, [initData, mode, recipe.id]);
+
   useEffect(() => {
     void loadFamilyFit();
   }, [loadFamilyFit]);
+
+  useEffect(() => {
+    void loadWhy();
+  }, [loadWhy]);
 
   function requestAiAction(action: AiAction) {
     ensureSubscriptionLoaded();
@@ -321,6 +354,41 @@ export function RecipeDetailModal({
           {message ? (
             <p className="mb-3 text-sm text-emerald-800">{message}</p>
           ) : null}
+
+          <section className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-stone-900">
+                  Почему рекомендован
+                </p>
+                <p className="mt-1 text-xs text-stone-600">
+                  Без AI-магии: только понятные факты о рецепте, запасах и семье.
+                </p>
+              </div>
+              <span className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                бесплатно
+              </span>
+            </div>
+            {whyLoading ? (
+              <div className="mt-3 space-y-2">
+                <div className="h-4 w-4/5 animate-pulse rounded bg-emerald-100" />
+                <div className="h-4 w-2/3 animate-pulse rounded bg-emerald-100" />
+              </div>
+            ) : why && why.positives.length > 0 ? (
+              <ul className="mt-3 space-y-1.5 text-sm text-stone-800">
+                {why.positives.slice(0, 5).map((reason) => (
+                  <li key={reason.code} className="flex gap-2">
+                    <span className="text-emerald-600">✓</span>
+                    <span>{SIMPLE_REASON_LABELS[reason.code] ?? reason.label}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-stone-600">
+                Пока нет особых причин. Рецепт всё равно можно выбрать вручную.
+              </p>
+            )}
+          </section>
 
           <section>
             <h3 className="text-sm font-bold uppercase tracking-wide text-stone-500">

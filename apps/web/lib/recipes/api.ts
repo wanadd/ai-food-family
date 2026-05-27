@@ -1,10 +1,13 @@
 import { apiUrl } from "@/lib/api";
+import { apiGet } from "@/lib/api-client";
+import type { AppMode } from "@/lib/app-mode/types";
 
 import type {
   RecipeDetail,
   RecipeFilters,
   RecipeList,
   RecipeQuery,
+  RecipeWhy,
 } from "./types";
 
 async function recipeFetch<T>(
@@ -96,6 +99,14 @@ export async function fetchRecipe(
   recipeId: number,
 ): Promise<RecipeDetail> {
   return recipeFetch<RecipeDetail>(`/recipes/${recipeId}`, initData);
+}
+
+export async function fetchRecipeWhy(
+  initData: string,
+  mode: AppMode,
+  recipeId: number,
+): Promise<RecipeWhy | null> {
+  return apiGet<RecipeWhy>(initData, mode, `/recipes/${recipeId}/why`);
 }
 
 export async function toggleRecipeFavorite(

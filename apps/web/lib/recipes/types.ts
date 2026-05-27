@@ -76,3 +76,31 @@ export type RecipeQuery = {
   tea_coffee_only?: boolean;
   goal?: string;
 };
+
+export type RecommendationReasonCode =
+  | "in_pantry"
+  | "kids_like"
+  | "goal_match"
+  | "quick_cooking"
+  | "budget_friendly"
+  | "high_protein"
+  | "low_calorie"
+  | "family_approved";
+
+export type RecommendationReason = {
+  code: RecommendationReasonCode;
+  label: string;
+  kind: "positive" | "warning" | "hard_block";
+  weight: number;
+};
+
+export type RecipeWhy = {
+  recipe_id: number;
+  summary: string;
+  positives: RecommendationReason[];
+  warnings: RecommendationReason[];
+  hard_blocks: RecommendationReason[];
+  score_total: number;
+  uses_ai: boolean;
+  uses_ama: boolean;
+};
