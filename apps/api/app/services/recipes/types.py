@@ -20,6 +20,7 @@ Subsequent Sprint 1 commits extend this module:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 
 
 @dataclass(frozen=True)
@@ -51,3 +52,16 @@ class RecipeListFilters:
     protein_only: bool = False
     smoothie_only: bool = False
     tea_coffee_only: bool = False
+
+
+class RecipeSortOrder(str, Enum):
+    """Sort policy for future recipe search.
+
+    In Sprint 2 we only scaffold the contract; current implementation
+    still uses the legacy ordering inside ``catalog.list_recipes``.
+    """
+
+    title = "title"
+    relevance = "relevance"
+    popularity = "popularity"
+    score = "score"

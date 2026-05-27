@@ -43,6 +43,7 @@ from app.services.recipes.catalog import (
     seed_recipes_if_empty,
 )
 from app.services.recipes.recommendations import get_recommendations
+from app.services.recipes.search import SearchService
 
 __all__ = [
     "FILTER_LABELS",
@@ -56,4 +57,5 @@ __all__ = [
     "seed_recipes_if_empty",
     "toggle_favorite",
     "update_recipe",
+    "SearchService",
 ]
