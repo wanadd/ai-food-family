@@ -65,6 +65,12 @@ from app.services.recipes.family_preferences import (
     FamilyPreferenceService,
     HardExcludeReason,
 )
+from app.services.recipes.scenarios import (
+    ScenarioMatchResult,
+    ScenarioMatcher,
+    ScenarioService,
+    ScenarioType,
+)
 
 __all__ = [
     "FILTER_LABELS",
@@ -79,6 +85,10 @@ __all__ = [
     "FamilyPreferenceScore",
     "FamilyCompatibilityResult",
     "FamilyPreferenceService",
+    "ScenarioType",
+    "ScenarioMatcher",
+    "ScenarioService",
+    "ScenarioMatchResult",
     "ExplainabilityResult",
     "ExplainabilityService",
     "RecommendationReason",
