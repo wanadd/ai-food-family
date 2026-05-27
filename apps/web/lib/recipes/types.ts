@@ -156,3 +156,21 @@ export type RecipeCollectionDetail = {
   collection: RecipeCollection;
   recipe_ids: number[];
 };
+
+export type RecipeRatePayload = {
+  family_member_id: number;
+  liked?: boolean | null;
+  disliked?: boolean | null;
+  is_loved?: boolean | null;
+  rating?: "disliked" | "liked" | "loved" | null;
+  note?: string | null;
+};
+
+export type RecipeRateResult = {
+  recipe_id: number;
+  family_member_id: number;
+  liked: boolean;
+  disliked: boolean;
+  is_loved: boolean;
+  note?: string | null;
+};

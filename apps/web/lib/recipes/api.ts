@@ -12,6 +12,8 @@ import type {
   RecipeHistory,
   RecipeList,
   RecipeQuery,
+  RecipeRatePayload,
+  RecipeRateResult,
   RecipeWhy,
 } from "./types";
 
@@ -183,6 +185,19 @@ export async function addRecipeToCollection(
       body: JSON.stringify({ recipe_ids: [recipeId] }),
     },
   );
+}
+
+export async function rateRecipeForFamily(
+  initData: string,
+  mode: AppMode,
+  recipeId: number,
+  payload: RecipeRatePayload,
+): Promise<RecipeRateResult> {
+  return recipeFetch<RecipeRateResult>(`/recipes/${recipeId}/rate`, initData, {
+    method: "POST",
+    headers: { "X-App-Mode": mode },
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function toggleRecipeFavorite(

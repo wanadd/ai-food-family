@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
@@ -28,6 +28,7 @@ import {
   fetchRecipeHistory,
   fetchRecipeWhy,
   markRecipeCooked,
+  rateRecipeForFamily,
 } from "@/lib/recipes/api";
 import type { RecipeCollection } from "@/lib/recipes/types";
 import {
@@ -93,7 +94,7 @@ export function RecipeDetailModal({
   onAddedToMenu,
 }: RecipeDetailModalProps) {
   const { initData } = useTelegram();
-  const { mode } = useAppMode();
+  const { mode, context } = useAppMode();
   const [evaluation, setEvaluation] = useState<RecipeEvaluation | null>(null);
   const [familyFit, setFamilyFit] = useState<RecipeFamilyFit | null>(null);
   const [suggestions, setSuggestions] = useState<RecipeImproveSuggestion[]>([]);
@@ -110,6 +111,16 @@ export function RecipeDetailModal({
   >("personal");
   const [collectionsLoading, setCollectionsLoading] = useState(true);
   const [savingCollection, setSavingCollection] = useState(false);
+  const familyMembers = useMemo(
+    () => context?.family?.members ?? [],
+    [context?.family?.members],
+  );
+  const [rateMemberId, setRateMemberId] = useState<number | null>(null);
+  const [familyScore, setFamilyScore] = useState(0);
+  const [familyVotes, setFamilyVotes] = useState(0);
+  const [ratingBusy, setRatingBusy] = useState<"liked" | "loved" | "disliked" | null>(
+    null,
+  );
   const [adding, setAdding] = useState(false);
   const [addingShopping, setAddingShopping] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -206,6 +217,12 @@ export function RecipeDetailModal({
   useEffect(() => {
     void loadCollections();
   }, [loadCollections]);
+
+  useEffect(() => {
+    if (familyMembers.length > 0 && rateMemberId == null) {
+      setRateMemberId(familyMembers[0].id);
+    }
+  }, [familyMembers, rateMemberId]);
 
   function requestAiAction(action: AiAction) {
     ensureSubscriptionLoaded();
@@ -339,6 +356,32 @@ export function RecipeDetailModal({
     }
   }
 
+  async function handleRateRecipe(rating: "liked" | "loved" | "disliked") {
+    if (!initData || rateMemberId == null) return;
+    setRatingBusy(rating);
+    setMessage(null);
+    try {
+      await rateRecipeForFamily(initData, mode, recipe.id, {
+        family_member_id: rateMemberId,
+        rating,
+      });
+      const delta = rating === "loved" ? 3 : rating === "liked" ? 1 : -2;
+      setFamilyScore((prev) => prev + delta);
+      setFamilyVotes((prev) => prev + 1);
+      setMessage(
+        rating === "disliked"
+          ? "Оценка сохранена: не нравится"
+          : "✓ Оценка семьи сохранена",
+      );
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Не получилось сохранить оценку",
+      );
+    } finally {
+      setRatingBusy(null);
+    }
+  }
+
   const evaluateCost = amaCosts?.recipe_analyze ?? null;
 
   return (
@@ -449,6 +492,57 @@ export function RecipeDetailModal({
                   </li>
                 ))}
               </ul>
+            </section>
+          ) : null}
+
+          {mode === "family" && familyMembers.length > 0 ? (
+            <section className="mb-4 rounded-xl border border-rose-100 bg-rose-50/40 p-3">
+              <p className="text-sm font-bold text-stone-900">Нравится семье</p>
+              <p className="mt-1 text-xs text-stone-600">
+                Отметьте честную реакцию. ПланАм учитывает это как подсказку, но
+                выбор всегда за вами.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <select
+                  value={rateMemberId ?? ""}
+                  onChange={(event) => setRateMemberId(Number(event.target.value))}
+                  className="min-w-[140px] flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm"
+                >
+                  {familyMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.display_name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={ratingBusy !== null}
+                  onClick={() => void handleRateRecipe("liked")}
+                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-stone-800 ring-1 ring-stone-200 disabled:opacity-50"
+                >
+                  👍 Нравится
+                </button>
+                <button
+                  type="button"
+                  disabled={ratingBusy !== null}
+                  onClick={() => void handleRateRecipe("loved")}
+                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-rose-700 ring-1 ring-rose-200 disabled:opacity-50"
+                >
+                  ❤️ Любимое
+                </button>
+                <button
+                  type="button"
+                  disabled={ratingBusy !== null}
+                  onClick={() => void handleRateRecipe("disliked")}
+                  className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-200 disabled:opacity-50"
+                >
+                  👎 Не нравится
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-stone-600">
+                Суммарная оценка семьи: {familyScore > 0 ? "+" : ""}
+                {familyScore} · отметок: {familyVotes}
+              </p>
             </section>
           ) : null}
 
