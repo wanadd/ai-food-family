@@ -65,12 +65,14 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [searchVisible, setSearchVisible] = useState(RECIPE_SECTION_PAGE_SIZE);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   const loadRecipes = useCallback(
     async (telegramInitData: string, params: RecipeQuery) => {
       setError(null);
+      setNotice(null);
       try {
         const data = await fetchRecipes(telegramInitData, params);
         setRecipes(data.items);
@@ -251,6 +253,7 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
     if (!initData || item.missing_ingredients.length === 0) return;
     setAddingMissingFor(item.recipe_id);
     setError(null);
+    setNotice(null);
     try {
       for (const name of item.missing_ingredients) {
         await createShoppingItem(initData, mode, {
@@ -262,7 +265,7 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
           is_food: true,
         });
       }
-      setError("Недостающие ингредиенты добавлены в покупки.");
+      setNotice("Недостающие ингредиенты добавлены в покупки.");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Не удалось добавить в покупки",
@@ -298,6 +301,11 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+          </p>
+        ) : null}
+        {notice ? (
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {notice}
           </p>
         ) : null}
 
@@ -363,6 +371,9 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
           <p className="text-sm font-bold text-stone-900">Подобрать под ситуацию</p>
           <p className="mt-1 text-xs text-stone-600">
             Быстрые подсказки без AI: ПланАм фильтрует каталог, а выбираете вы.
+          </p>
+          <p className="mt-1 text-[11px] text-stone-500">
+            Это помощь с выбором, не автоматическое решение.
           </p>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
             {SCENARIO_CHIPS.map((scenario) => (
@@ -491,7 +502,14 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
             </div>
           </>
         ) : loading ? (
-          <p className="text-sm text-stone-500">Загрузка каталога…</p>
+          <div className="space-y-3 pb-8" aria-label="Загрузка каталога">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="h-28 animate-pulse rounded-2xl border border-stone-100 bg-stone-50"
+              />
+            ))}
+          </div>
         ) : (
           <RecipeCatalogSections
             initData={initData}
@@ -541,7 +559,7 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
         active
           ? "bg-emerald-600 text-white"
           : "bg-white text-stone-600 ring-1 ring-stone-200"
