@@ -175,3 +175,26 @@ export type RecipeRateResult = {
   is_loved: boolean;
   note?: string | null;
 };
+
+export type FromPantryRecipe = {
+  recipe_id: number;
+  title: string;
+  have: number;
+  total: number;
+  missing_ingredients: string[];
+  coverage_ratio: number;
+  summary?: {
+    id: number;
+    title: string;
+    meal_type: string;
+    category: string;
+    cooking_time_minutes: number;
+  } | null;
+};
+
+export type FromPantryList = {
+  items: FromPantryRecipe[];
+  total: number;
+  uses_ai: boolean;
+  uses_ama: boolean;
+};

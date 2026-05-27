@@ -5,19 +5,23 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useTelegram } from "@/components/TelegramProvider";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { RecipeCatalogSections } from "@/components/recipes/RecipeCatalogSections";
 import { RecipeDetailModal } from "@/components/recipes/RecipeDetailModal";
 import { CATALOG_MEAL_FILTERS } from "@/lib/recipes/labels";
+import { createShoppingItem } from "@/lib/shopping/api";
 import { RECIPE_SECTION_PAGE_SIZE } from "@/lib/recipes/catalog-sections";
 import {
   fetchRecipe,
   fetchRecipeFilters,
   fetchRecipes,
+  fetchRecipesFromPantry,
   toggleRecipeFavorite,
 } from "@/lib/recipes/api";
 import type {
+  FromPantryRecipe,
   RecipeDetail,
   RecipeFilters,
   RecipeQuery,
@@ -45,9 +49,14 @@ type RecipeCatalogProps = {
 export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
   const router = useRouter();
   const { initData } = useTelegram();
+  const { mode } = useAppMode();
   const [_filters, setFilters] = useState<RecipeFilters | null>(null);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [total, setTotal] = useState(0);
+  const [fromPantry, setFromPantry] = useState<FromPantryRecipe[]>([]);
+  const [fromPantryLoading, setFromPantryLoading] = useState(true);
+  const [fromPantryError, setFromPantryError] = useState<string | null>(null);
+  const [addingMissingFor, setAddingMissingFor] = useState<number | null>(null);
   const [query, setQuery] = useState<RecipeQuery>({});
   const [searchInput, setSearchInput] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -98,6 +107,29 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
 
     void init();
   }, [initData, loadRecipes]);
+
+  useEffect(() => {
+    if (!initData) {
+      setFromPantryLoading(false);
+      return;
+    }
+    async function loadFromPantry() {
+      setFromPantryLoading(true);
+      setFromPantryError(null);
+      try {
+        const data = await fetchRecipesFromPantry(initData, mode);
+        setFromPantry(data.items);
+      } catch (err) {
+        setFromPantry([]);
+        setFromPantryError(
+          err instanceof Error ? err.message : "Не удалось загрузить идеи из запасов",
+        );
+      } finally {
+        setFromPantryLoading(false);
+      }
+    }
+    void loadFromPantry();
+  }, [initData, mode]);
 
   useEffect(() => {
     if (!initData) {
@@ -215,6 +247,31 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
     }
   }
 
+  async function handleAddMissingToShopping(item: FromPantryRecipe) {
+    if (!initData || item.missing_ingredients.length === 0) return;
+    setAddingMissingFor(item.recipe_id);
+    setError(null);
+    try {
+      for (const name of item.missing_ingredients) {
+        await createShoppingItem(initData, mode, {
+          name,
+          category: "продукты",
+          quantity: "1",
+          unit: "шт",
+          note: `Для рецепта: ${item.title}`,
+          is_food: true,
+        });
+      }
+      setError("Недостающие ингредиенты добавлены в покупки.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Не удалось добавить в покупки",
+      );
+    } finally {
+      setAddingMissingFor(null);
+    }
+  }
+
   if (!initData) {
     return (
       <div className="mx-auto max-w-lg px-5 py-16 text-center">
@@ -324,6 +381,80 @@ export function RecipeCatalog({ menuMode = false }: RecipeCatalogProps) {
               />
             ))}
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-amber-100 bg-amber-50/50 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-stone-900">
+                Что приготовить из того, что есть дома
+              </p>
+              <p className="mt-1 text-xs text-stone-600">
+                Смотрим текущие запасы и показываем, чего не хватает.
+              </p>
+            </div>
+            <span className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-amber-700">
+              без AI
+            </span>
+          </div>
+          {fromPantryLoading ? (
+            <div className="mt-3 space-y-2">
+              <div className="h-16 animate-pulse rounded-xl bg-amber-100" />
+              <div className="h-16 animate-pulse rounded-xl bg-amber-100/70" />
+            </div>
+          ) : fromPantryError ? (
+            <p className="mt-3 text-sm text-amber-900">{fromPantryError}</p>
+          ) : fromPantry.length === 0 ? (
+            <p className="mt-3 text-sm text-stone-600">
+              Пока не нашли совпадений. Добавьте продукты в запасы — и идеи появятся здесь.
+            </p>
+          ) : (
+            <div className="mt-3 space-y-3">
+              {fromPantry.slice(0, 3).map((item) => (
+                <article
+                  key={item.recipe_id}
+                  className="rounded-xl border border-amber-100 bg-white p-3"
+                >
+                  <p className="font-semibold text-stone-900">{item.title}</p>
+                  <p className="mt-1 text-xs text-stone-600">
+                    Совпадает: {item.have} из {item.total} ингредиентов
+                  </p>
+                  <p className="mt-1 text-xs text-stone-600">
+                    Нужно докупить: {item.missing_ingredients.length}{" "}
+                    {item.missing_ingredients.length === 1
+                      ? "ингредиент"
+                      : "ингредиента"}
+                  </p>
+                  {item.missing_ingredients.length > 0 ? (
+                    <p className="mt-1 line-clamp-2 text-xs text-stone-500">
+                      {item.missing_ingredients.join(", ")}
+                    </p>
+                  ) : null}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openRecipe(item.recipe_id)}
+                      className="rounded-xl bg-stone-900 px-3 py-2 text-xs font-semibold text-white"
+                    >
+                      Посмотреть рецепт
+                    </button>
+                    {item.missing_ingredients.length > 0 ? (
+                      <button
+                        type="button"
+                        disabled={addingMissingFor === item.recipe_id}
+                        onClick={() => void handleAddMissingToShopping(item)}
+                        className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 disabled:opacity-50"
+                      >
+                        {addingMissingFor === item.recipe_id
+                          ? "Добавляю…"
+                          : "Добавить недостающее в покупки"}
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         {isSearchMode ? (

@@ -1,9 +1,10 @@
 import { apiUrl } from "@/lib/api";
-import { apiGet } from "@/lib/api-client";
+import { apiFetch, apiGet } from "@/lib/api-client";
 import type { AppMode } from "@/lib/app-mode/types";
 
 import type {
   CookingEvent,
+  FromPantryList,
   MarkCookedPayload,
   RecipeCollection,
   RecipeCollectionDetail,
@@ -151,6 +152,17 @@ export async function fetchRecipeCollections(
 ): Promise<RecipeCollection[]> {
   const result = await apiGet<RecipeCollection[]>(initData, mode, "/collections");
   return result ?? [];
+}
+
+export async function fetchRecipesFromPantry(
+  initData: string,
+  mode: AppMode,
+): Promise<FromPantryList> {
+  return apiFetch<FromPantryList>(
+    initData,
+    mode,
+    "/recipes/from-pantry?max_missing=3&limit=6",
+  );
 }
 
 export async function createRecipeCollection(
