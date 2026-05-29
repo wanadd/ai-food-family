@@ -146,12 +146,12 @@ export function CareSettingsPanel() {
   }
 
   if (loading) {
-    return <p className="text-sm text-stone-500">Загрузка…</p>;
+    return <p className="text-sm text-graphite-500">Загрузка…</p>;
   }
 
   if (!settings) {
     return (
-      <p className="text-sm text-stone-500">
+      <p className="text-sm text-graphite-500">
         Настройки доступны в Telegram Mini App
       </p>
     );
@@ -169,24 +169,24 @@ export function CareSettingsPanel() {
   return (
     <div className="space-y-4">
       {/* Summary line — one card showing current care state. */}
-      <section className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+      <section className="pa-card border-sage-200 bg-sage-50/40 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
           Режим заботы
         </p>
-        <p className="mt-1 text-sm font-semibold text-stone-900">
+        <p className="mt-1 text-sm font-semibold text-graphite-900">
           {activeMode?.label ?? "Не задано"}
         </p>
-        <p className="mt-0.5 text-xs text-stone-600">
+        <p className="mt-0.5 text-xs text-graphite-600">
           Активных напоминаний: {activeRemindersCount}
           {quietRange ? ` · тихие часы ${quietRange}` : ""}
         </p>
         {feedback ? (
-          <p className="mt-2 text-xs text-emerald-800">{feedback}</p>
+          <p className="mt-2 text-xs text-sage-800">{feedback}</p>
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-bold text-stone-900">Режим заботы</h2>
+      <section className="pa-card p-4">
+        <h2 className="text-sm font-bold text-graphite-900">Режим заботы</h2>
         <div className="mt-3 space-y-2">
           {CARE_MODES.map((modeOption) => (
             <button
@@ -194,20 +194,20 @@ export function CareSettingsPanel() {
               type="button"
               disabled={saving}
               onClick={() => void patch({ care_level: modeOption.value })}
-              className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+              className={`w-full rounded-control border px-4 py-3 text-left transition ${
                 settings.care_level === modeOption.value
-                  ? "border-emerald-600 bg-emerald-50"
-                  : "border-stone-200 bg-white"
+                  ? "border-sage-500 bg-sage-50"
+                  : "border-cream-border bg-cream-surface"
               }`}
             >
-              <p className="font-semibold text-stone-900">{modeOption.label}</p>
-              <p className="mt-0.5 text-xs text-stone-600">{modeOption.description}</p>
-              <p className="mt-1 text-[11px] font-medium text-emerald-700">
+              <p className="font-semibold text-graphite-900">{modeOption.label}</p>
+              <p className="mt-0.5 text-xs text-graphite-600">{modeOption.description}</p>
+              <p className="mt-1 text-[11px] font-medium text-sage-700">
                 {modeOption.frequency}
               </p>
-              <ul className="mt-2 space-y-1 border-t border-stone-100 pt-2">
+              <ul className="mt-2 space-y-1 border-t border-cream-border pt-2">
                 {modeOption.examples.map((ex) => (
-                  <li key={ex} className="text-[11px] leading-snug text-stone-500">
+                  <li key={ex} className="text-[11px] leading-snug text-graphite-500">
                     {ex}
                   </li>
                 ))}
@@ -217,19 +217,19 @@ export function CareSettingsPanel() {
         </div>
       </section>
 
-      <details className="group rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+      <details className="group pa-card p-4">
         <summary className="cursor-pointer list-none">
           <span className="flex items-center justify-between">
-            <span className="text-sm font-bold text-stone-900">Что напоминать</span>
-            <span className="text-xs text-stone-400 group-open:rotate-180 transition">
+            <span className="text-sm font-bold text-graphite-900">Что напоминать</span>
+            <span className="text-xs text-graphite-400 group-open:rotate-180 transition">
               ▼
             </span>
           </span>
-          <span className="mt-0.5 block text-xs text-stone-500">
+          <span className="mt-0.5 block text-xs text-graphite-500">
             Активных: {activeRemindersCount} из {TOGGLE_ITEMS.length}
           </span>
         </summary>
-        <p className="mt-3 text-xs text-stone-500">
+        <p className="mt-3 text-xs text-graphite-500">
           Если что-то не нужно — отключите. Можно вернуть в любой момент.
         </p>
         <ul className="mt-3 space-y-2">
@@ -246,16 +246,16 @@ export function CareSettingsPanel() {
             return (
               <li
                 key={item.key}
-                className={`flex items-center justify-between rounded-xl px-3 py-2.5 ${
+                className={`flex items-center justify-between rounded-control px-3 py-2.5 ${
                   disabledByMinimal || locked
-                    ? "bg-stone-50/60 opacity-70"
-                    : "bg-stone-50"
+                    ? "bg-cream-deep/50 opacity-70"
+                    : "bg-cream-deep/40"
                 }`}
               >
-                <span className="text-sm font-medium text-stone-800">
+                <span className="text-sm font-medium text-graphite-800">
                   {item.label}
                   {locked ? (
-                    <span className="ml-2 text-[10px] font-bold text-stone-400">
+                    <span className="ml-2 text-[10px] font-bold text-graphite-400">
                       PRO
                     </span>
                   ) : null}
@@ -270,8 +270,8 @@ export function CareSettingsPanel() {
                     }
                     className="peer sr-only"
                   />
-                  <span className="h-6 w-10 rounded-full bg-stone-200 transition peer-checked:bg-emerald-500 peer-disabled:opacity-50" />
-                  <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-4" />
+                  <span className="h-6 w-10 rounded-full bg-cream-deep transition peer-checked:bg-sage-500 peer-disabled:opacity-50" />
+                  <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-cream-surface shadow transition peer-checked:translate-x-4" />
                 </label>
               </li>
             );
@@ -279,24 +279,24 @@ export function CareSettingsPanel() {
         </ul>
       </details>
 
-      <details className="group rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+      <details className="group pa-card p-4">
         <summary className="cursor-pointer list-none">
           <span className="flex items-center justify-between">
-            <span className="text-sm font-bold text-stone-900">Тихие часы</span>
-            <span className="text-xs text-stone-400 group-open:rotate-180 transition">
+            <span className="text-sm font-bold text-graphite-900">Тихие часы</span>
+            <span className="text-xs text-graphite-400 group-open:rotate-180 transition">
               ▼
             </span>
           </span>
-          <span className="mt-0.5 block text-xs text-stone-500">
+          <span className="mt-0.5 block text-xs text-graphite-500">
             {quietRange ?? "ПланАм может писать в любое время"}
           </span>
         </summary>
-        <p className="mt-3 text-xs text-stone-500">
+        <p className="mt-3 text-xs text-graphite-500">
           В это время ПланАм ничего не присылает.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-xs font-medium text-stone-600">С</span>
+            <span className="text-xs font-medium text-graphite-600">С</span>
             <input
               type="time"
               value={settings.quiet_hours_start ?? ""}
@@ -304,11 +304,11 @@ export function CareSettingsPanel() {
               onChange={(e) =>
                 void patch({ quiet_hours_start: e.target.value || null })
               }
-              className="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base"
+              className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 text-base text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-stone-600">До</span>
+            <span className="text-xs font-medium text-graphite-600">До</span>
             <input
               type="time"
               value={settings.quiet_hours_end ?? ""}
@@ -316,12 +316,12 @@ export function CareSettingsPanel() {
               onChange={(e) =>
                 void patch({ quiet_hours_end: e.target.value || null })
               }
-              className="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base"
+              className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 text-base text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
             />
           </label>
         </div>
         {settings.quiet_hours_start && settings.quiet_hours_end ? (
-          <p className="mt-2 text-[11px] text-stone-500">
+          <p className="mt-2 text-[11px] text-graphite-500">
             С {settings.quiet_hours_start} до {settings.quiet_hours_end} ПланАм
             будет молчать.
           </p>
@@ -335,7 +335,7 @@ export function CareSettingsPanel() {
                 quiet_hours_end: "08:00",
               })
             }
-            className="mt-3 inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700"
+            className="pa-btn mt-3 inline-flex items-center justify-center px-3 py-2 text-xs"
           >
             Поставить 22:00–08:00
           </button>
@@ -346,7 +346,7 @@ export function CareSettingsPanel() {
         type="button"
         disabled={testing}
         onClick={() => void handleTest()}
-        className="w-full min-h-[48px] rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-sm font-semibold text-emerald-800"
+        className="pa-btn w-full min-h-[48px] border-sage-200 bg-sage-50 py-3 text-sm text-sage-800"
       >
         {testing ? "Отправляем…" : "Тестовое уведомление в Telegram"}
       </button>

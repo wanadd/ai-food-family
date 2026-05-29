@@ -16,12 +16,12 @@ export default function NotificationsPage() {
         title="Уведомления"
         back={{ label: "Профиль", href: "/profile" }}
       >
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-graphite-600">
           Уведомления настраиваются в Telegram Mini App после авторизации.
         </p>
         <Link
           href="/"
-          className="mt-6 inline-block text-sm font-semibold text-emerald-700"
+          className="mt-6 inline-block text-sm font-semibold text-sage-700"
         >
           На главную
         </Link>
@@ -36,7 +36,7 @@ export default function NotificationsPage() {
       back={{ label: "Профиль", href: "/profile" }}
       contentClassName="space-y-6"
     >
-      <p className="text-sm text-stone-600">
+      <p className="text-sm text-graphite-600">
         ПланАм может мягко напоминать о важном — без давления и в удобное время.
       </p>
 

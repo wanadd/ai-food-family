@@ -192,47 +192,47 @@ export function HealthTodayView() {
       contentClassName="space-y-3"
     >
       {!profileComplete ? (
-        <section className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-          <p className="font-semibold text-stone-900">Можно дополнить профиль</p>
-          <p className="mt-1 text-sm text-stone-600">
+        <section className="pa-card border-sage-200 bg-sage-50/40 p-4">
+          <p className="font-semibold text-graphite-900">Можно дополнить профиль</p>
+          <p className="mt-1 text-sm text-graphite-600">
             Если хотите — советы будут точнее. Без этого ПланАм тоже работает.
           </p>
           <Link
             href={withReturnTo("/profile/nutrition", HEALTH_RETURN)}
-            className="mt-3 inline-flex min-h-[44px] items-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white"
+            className="pa-btn-primary mt-3 inline-flex min-h-[44px] items-center px-4 text-sm"
           >
             Открыть профиль
           </Link>
         </section>
       ) : null}
 
-      <section className="rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/70 to-white p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+      <section className="pa-card border-sage-200 bg-sage-50/30 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
           Сегодня
         </p>
-        <ul className="mt-2 space-y-1 text-sm text-stone-800">
+        <ul className="mt-2 space-y-1 text-sm text-graphite-800">
           <li>{daily.plan.calories}</li>
           <li>{daily.actual.calories}</li>
           <li>{daily.plan.water}</li>
         </ul>
         {daily.todoLine ? (
-          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
+          <p className="mt-3 rounded-control bg-warm/10 px-3 py-2 text-sm font-medium text-graphite-900">
             Осталось: {daily.todoLine}
           </p>
         ) : null}
         <Link
           href="/health/chat"
-          className="mt-4 flex min-h-[44px] w-full items-center justify-center rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99]"
+          className="pa-btn-primary mt-4 flex min-h-[44px] w-full items-center justify-center py-2.5 text-sm"
         >
           Открыть чат нутрициолога
         </Link>
-        <details className="mt-3 text-sm text-stone-600">
-          <summary className="cursor-pointer text-xs font-semibold text-emerald-700">
+        <details className="mt-3 text-sm text-graphite-600">
+          <summary className="cursor-pointer text-xs font-semibold text-sage-700">
             План vs факт КБЖУ
           </summary>
           <div className="mt-2 grid grid-cols-2 gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase text-stone-500">
+              <p className="text-xs font-semibold uppercase text-graphite-500">
                 {daily.planTitle}
               </p>
               <ul className="mt-1 space-y-0.5 text-sm">
@@ -242,7 +242,7 @@ export function HealthTodayView() {
               </ul>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase text-emerald-800">
+              <p className="text-xs font-semibold uppercase text-sage-800">
                 {daily.actualTitle}
               </p>
               <ul className="mt-1 space-y-0.5 text-sm">
@@ -253,12 +253,12 @@ export function HealthTodayView() {
               </ul>
             </div>
           </div>
-          <p className="mt-2 text-xs text-stone-500">{daily.trainingLine}</p>
-          <p className="mt-1 text-xs text-stone-500">{daily.menuLine}</p>
+          <p className="mt-2 text-xs text-graphite-500">{daily.trainingLine}</p>
+          <p className="mt-1 text-xs text-graphite-500">{daily.menuLine}</p>
           {menu ? (
             <Link
               href="/menu/current"
-              className="mt-2 inline-block text-xs font-semibold text-emerald-700"
+              className="mt-2 inline-block text-xs font-semibold text-sage-700"
             >
               Отметить, где поели →
             </Link>
@@ -276,26 +276,26 @@ export function HealthTodayView() {
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+      <section className="pa-card p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-graphite-400">
           Цель
         </p>
-        <p className="mt-1 text-sm font-semibold text-stone-900">
+        <p className="mt-1 text-sm font-semibold text-graphite-900">
           {goalLabel ?? "Цель не задана"}
         </p>
         {goalCard.percent != null ? (
           <div className="mt-2">
-            <div className="flex justify-between text-xs text-stone-600">
+            <div className="flex justify-between text-xs text-graphite-600">
               <span>
                 {goalCard.currentWeight} → {goalCard.targetWeight}
               </span>
-              <span className="font-bold text-emerald-800">
+              <span className="font-bold text-sage-800">
                 {goalCard.percent}%
               </span>
             </div>
-            <div className="mt-1 h-2 overflow-hidden rounded-full bg-stone-100">
+            <div className="mt-1 h-2 overflow-hidden rounded-pill bg-cream-deep">
               <div
-                className="h-full rounded-full bg-emerald-500"
+                className="h-full rounded-pill bg-sage-500"
                 style={{ width: `${goalCard.percent}%` }}
               />
             </div>
@@ -303,7 +303,7 @@ export function HealthTodayView() {
         ) : null}
         <Link
           href={withReturnTo("/progress", HEALTH_RETURN)}
-          className="mt-3 inline-block text-xs font-semibold text-emerald-700"
+          className="mt-3 inline-block text-xs font-semibold text-sage-700"
         >
           Подробнее в прогрессе →
         </Link>
@@ -319,11 +319,11 @@ export function HealthTodayView() {
       ) : null}
 
       {profileComplete && adviceWhy.length > 0 ? (
-        <details className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm text-sm text-stone-600">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-stone-500">
+        <details className="pa-card p-4 text-sm text-graphite-600">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-graphite-500">
             Почему ПланАм советует это
           </summary>
-          <ul className="mt-2 space-y-1 text-stone-700">
+          <ul className="mt-2 space-y-1 text-graphite-700">
             {adviceWhy.map((line) => (
               <li key={line}>{line}</li>
             ))}
@@ -332,16 +332,16 @@ export function HealthTodayView() {
       ) : null}
 
       {deferredAdvice.length > 0 ? (
-        <section className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-          <p className="text-sm font-bold text-stone-900">Отложенные рекомендации</p>
+        <section className="pa-card bg-cream-deep/40 p-4">
+          <p className="text-sm font-bold text-graphite-900">Отложенные рекомендации</p>
           <ul className="mt-3 space-y-3">
             {deferredAdvice.map((item) => (
               <li
                 key={item.id}
-                className="rounded-xl border border-stone-200 bg-white p-3"
+                className="pa-card p-3"
               >
-                <p className="font-semibold text-stone-900">{item.title}</p>
-                <p className="mt-1 text-xs text-stone-600">{item.body}</p>
+                <p className="font-semibold text-graphite-900">{item.title}</p>
+                <p className="mt-1 text-xs text-graphite-600">{item.body}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -351,7 +351,7 @@ export function HealthTodayView() {
                         refreshDeferred,
                       );
                     }}
-                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+                    className="pa-btn-primary px-3 py-1.5 text-xs"
                   >
                     Выполнить
                   </button>
@@ -363,7 +363,7 @@ export function HealthTodayView() {
                         refreshDeferred,
                       );
                     }}
-                    className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700"
+                    className="pa-btn px-3 py-1.5 text-xs"
                   >
                     Вернуть
                   </button>

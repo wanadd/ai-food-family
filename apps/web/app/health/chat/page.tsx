@@ -58,7 +58,7 @@ export default function HealthChatPage() {
 
   if (!initData) {
     return (
-      <div className="px-4 py-16 text-center text-sm text-stone-600">
+      <div className="px-4 py-16 text-center text-sm text-graphite-600">
         Чат доступен в Telegram Mini App
       </div>
     );
@@ -72,7 +72,7 @@ export default function HealthChatPage() {
       contentClassName="pb-4"
     >
       {loading ? (
-        <p className="text-sm text-stone-500">Загрузка…</p>
+        <p className="text-sm text-graphite-500">Загрузка…</p>
       ) : (
         <NutritionistChat
           mode={mode}
@@ -85,8 +85,8 @@ export default function HealthChatPage() {
           }
         />
       )}
-      <p className="mt-3 text-center text-xs text-stone-500">
-        <Link href="/subscription" className="font-semibold text-emerald-700">
+      <p className="mt-3 text-center text-xs text-graphite-500">
+        <Link href="/subscription" className="font-semibold text-sage-700">
           Баланс Амов
         </Link>
         {" · "}

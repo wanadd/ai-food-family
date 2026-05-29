@@ -50,32 +50,32 @@ export function WaterIntakePanel({ onUpdated }: Props) {
     target && target > 0 ? Math.min(100, Math.round((total / target) * 100)) : null;
 
   return (
-    <div className="rounded-xl border border-sky-100 bg-sky-50/80 p-3">
+    <div className="rounded-control border border-sage-200 bg-sage-50/50 p-3">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-sky-900">
+          <p className="text-xs font-bold uppercase tracking-wide text-sage-800">
             Вода сегодня
           </p>
-          <p className="mt-0.5 text-sm font-semibold text-stone-900">
+          <p className="mt-0.5 text-sm font-semibold text-graphite-900">
             {liters} л{pct != null ? ` · ${pct}%` : ""}
           </p>
           {target != null ? (
-            <p className="text-xs text-stone-500">Цель: {targetLiters}</p>
+            <p className="text-xs text-graphite-500">Цель: {targetLiters}</p>
           ) : null}
         </div>
         <button
           type="button"
           disabled={saving}
           onClick={() => void addGlass()}
-          className="shrink-0 rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+          className="pa-btn-primary shrink-0 px-3 py-2 text-xs disabled:opacity-50"
         >
           +{GLASS_ML} мл
         </button>
       </div>
       {pct != null ? (
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sky-100">
+        <div className="mt-2 h-1.5 overflow-hidden rounded-pill bg-sage-100">
           <div
-            className="h-full rounded-full bg-sky-500"
+            className="h-full rounded-pill bg-sage-500"
             style={{ width: `${pct}%` }}
           />
         </div>
