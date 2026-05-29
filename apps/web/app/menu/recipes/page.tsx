@@ -10,7 +10,7 @@ export default function MenuRecipesPage() {
     <MenuSectionLayout subtitle="База блюд · поиск · подборки">
       <Suspense
         fallback={
-          <div className="py-12 text-center text-sm text-stone-400">Загрузка…</div>
+          <div className="py-12 text-center text-sm text-graphite-400">Загрузка…</div>
         }
       >
         <RecipesView />

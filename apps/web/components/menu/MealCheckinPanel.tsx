@@ -100,11 +100,11 @@ export function MealCheckinPanel({ menu, plannedDate, onUpdated }: Props) {
   const isToday = plannedDate === new Date().toISOString().slice(0, 10);
 
   return (
-    <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-      <p className="text-sm font-bold text-stone-900">
+    <section className="pa-card p-4">
+      <p className="text-sm font-bold text-graphite-900">
         {isToday ? "Где вы поели сегодня" : "Где вы поели"}
       </p>
-      <p className="mt-1 text-xs text-stone-500">
+      <p className="mt-1 text-xs text-graphite-500">
         Учтём калории в нутрициологе. Домашние блюда не списываем при питании вне
         дома.
       </p>
@@ -116,10 +116,10 @@ export function MealCheckinPanel({ menu, plannedDate, onUpdated }: Props) {
               key={m.id}
               type="button"
               onClick={() => setMemberId(m.id)}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+              className={`pa-chip px-2.5 py-1 text-[11px] ${
                 memberId === m.id
-                  ? "bg-emerald-600 text-white"
-                  : "bg-stone-100 text-stone-700"
+                  ? "border-sage-500 bg-sage-600 text-white"
+                  : "border-cream-border bg-cream-deep text-graphite-700"
               }`}
             >
               {m.display_name}
@@ -134,7 +134,7 @@ export function MealCheckinPanel({ menu, plannedDate, onUpdated }: Props) {
           const current = statusByMeal.get(meal.meal_type);
           return (
             <li key={meal.meal_type}>
-              <p className="text-sm font-semibold text-stone-800">
+              <p className="text-sm font-semibold text-graphite-800">
                 {MEAL_TYPE_LABELS[meal.meal_type] ?? meal.meal_type}: {meal.name}
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -151,10 +151,10 @@ export function MealCheckinPanel({ menu, plannedDate, onUpdated }: Props) {
                         meal.recipe_id,
                       )
                     }
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                    className={`pa-chip px-2.5 py-1 text-[11px] ${
                       current === opt.value
-                        ? "bg-emerald-600 text-white"
-                        : "bg-stone-100 text-stone-700"
+                        ? "border-sage-500 bg-sage-600 text-white"
+                        : "border-cream-border bg-cream-deep text-graphite-700"
                     }`}
                   >
                     {opt.label}
@@ -168,7 +168,7 @@ export function MealCheckinPanel({ menu, plannedDate, onUpdated }: Props) {
 
       <Link
         href="/shopping/leftovers"
-        className="mt-4 flex min-h-[40px] items-center justify-center rounded-xl border border-dashed border-stone-200 bg-stone-50 px-3 text-xs font-semibold text-emerald-800"
+        className="mt-4 flex min-h-[40px] items-center justify-center rounded-control border border-dashed border-cream-border bg-cream-deep/40 px-3 text-xs font-semibold text-sage-800"
       >
         Остатки блюд
       </Link>

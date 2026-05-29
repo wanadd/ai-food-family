@@ -175,11 +175,11 @@ export function MenuCurrentView() {
 
   if (!menu) {
     return (
-      <div className="min-h-screen bg-stone-50 px-4 py-16 text-center">
-        <p className="text-stone-600">Активного плана пока нет</p>
+      <div className="min-h-screen bg-cream px-4 py-16 text-center">
+        <p className="text-graphite-600">Активного плана пока нет</p>
         <Link
           href="/menu"
-          className="mt-4 inline-block text-sm font-semibold text-emerald-700"
+          className="mt-4 inline-block text-sm font-semibold text-sage-700"
         >
           Настроить план
         </Link>
@@ -216,9 +216,9 @@ export function MenuCurrentView() {
       contentClassName="space-y-4"
     >
         {justSaved ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <div className="rounded-control border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-graphite-900">
             <p className="font-semibold">Меню сохранено</p>
-            <p className="mt-1 text-emerald-800">
+            <p className="mt-1 text-sage-800">
               План активен — отмечайте приёмы пищи и смотрите другие дни ниже.
             </p>
           </div>
@@ -258,7 +258,7 @@ export function MenuCurrentView() {
 
         <Link
           href="/shopping/leftovers"
-          className="flex min-h-[44px] items-center justify-center rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-800 shadow-sm"
+          className="pa-btn flex min-h-[44px] items-center justify-center px-4 py-3 text-sm"
         >
           Остатки блюд
         </Link>
@@ -285,7 +285,7 @@ export function MenuCurrentView() {
             <span>
               ПланАм предложит альтернативу для блюда
               {" «"}
-              <span className="font-semibold text-stone-900">{meal.name}</span>
+              <span className="font-semibold text-graphite-900">{meal.name}</span>
               {"» ("}
               {MEAL_LABELS[meal.meal_type]}
               {"). "}

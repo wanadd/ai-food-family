@@ -55,17 +55,18 @@ export function MenuSettingsPage() {
       back={{ label: "Меню", href: "/menu" }}
       contentClassName="space-y-3"
     >
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-stone-900">Персон по умолчанию</p>
-        <p className="mt-1 text-sm text-stone-600">
+      <section className="pa-card p-4">
+        <p className="text-sm font-bold text-graphite-900">Персон по умолчанию</p>
+        <p className="mt-1 text-sm text-graphite-600">
           Автоматически: {defaultPersons}{" "}
           {defaultPersons === 1 ? "человек" : "человека"}
         </p>
-        <label className="mt-3 flex items-center gap-2 text-sm">
+        <label className="mt-3 flex items-center gap-2 text-sm text-graphite-800">
           <input
             type="checkbox"
             checked={useOverride}
             onChange={(e) => setUseOverride(e.target.checked)}
+            className="rounded border-cream-border text-sage-600 focus:ring-sage-400"
           />
           Временно задать другое число при генерации
         </label>
@@ -78,23 +79,23 @@ export function MenuSettingsPage() {
             onChange={(e) =>
               setPersonsOverride(parseInt(e.target.value, 10) || defaultPersons)
             }
-            className="mt-2 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm"
+            className="mt-2 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2 text-sm text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
           />
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-stone-900">Режим плана</p>
+      <section className="pa-card p-4">
+        <p className="text-sm font-bold text-graphite-900">Режим плана</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {PLAN_MODE_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => setPlanMode(option.value)}
-              className={`rounded-full border px-3 py-2 text-sm ${
+              className={`pa-chip ${
                 planMode === option.value
-                  ? "border-emerald-600 bg-emerald-50 font-semibold text-emerald-900"
-                  : "border-stone-200 text-stone-700"
+                  ? "border-sage-500 bg-sage-50 font-semibold text-sage-900"
+                  : "border-cream-border text-graphite-700"
               }`}
             >
               {option.label}
@@ -103,7 +104,7 @@ export function MenuSettingsPage() {
         </div>
       </section>
 
-      <p className="text-xs text-stone-500">
+      <p className="text-xs text-graphite-500">
         ПланАм не навязывает блюда — вы всегда можете выбрать рецепты из каталога
         или заменить блюда вручную.
       </p>
@@ -112,13 +113,13 @@ export function MenuSettingsPage() {
         <button
           type="button"
           onClick={handleSave}
-          className="w-full rounded-2xl bg-emerald-600 py-3.5 text-base font-semibold text-white"
+          className="pa-btn-primary w-full py-3.5 text-base"
         >
           Сохранить
         </button>
         <Link
           href="/menu/generate"
-          className="mt-2 block text-center text-sm font-semibold text-emerald-700"
+          className="mt-2 block text-center text-sm font-semibold text-sage-700"
         >
           Составить меню →
         </Link>

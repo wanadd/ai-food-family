@@ -177,21 +177,21 @@ export function MenuHub() {
     return (
       <ScreenLayout title="Меню" contentClassName="space-y-4 pb-24">
         <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-center">
-          <p className="font-semibold text-stone-900">Не удалось загрузить меню</p>
+          <p className="font-semibold text-graphite-900">Не удалось загрузить меню</p>
           {message ? (
-            <p className="mt-2 text-sm text-stone-600">{message}</p>
+            <p className="mt-2 text-sm text-graphite-600">{message}</p>
           ) : null}
           <div className="mt-4 flex flex-col gap-2">
             <button
               type="button"
               onClick={() => void load()}
-              className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white"
+              className="pa-btn-primary px-4 py-3 text-sm"
             >
               Повторить
             </button>
             <Link
               href="/"
-              className="rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-800"
+              className="pa-btn px-4 py-3 text-sm text-center"
             >
               На главную
             </Link>
