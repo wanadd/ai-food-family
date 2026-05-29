@@ -8,6 +8,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { MenuSubTabs } from "@/components/menu/MenuSubTabs";
+import { MenuQuickActionsSheet } from "@/components/menu/MenuQuickActionsSheet";
+import { HubTile } from "@/components/ui/HubTile";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
@@ -31,19 +33,11 @@ import {
   runMenuQuickAction,
   type QuickActionId,
 } from "@/lib/menu/overview-api";
-import {
-  QUICK_ACTIONS,
-  type QuickActionMeta,
-} from "@/lib/menu/quick-actions";
+import { type QuickActionMeta } from "@/lib/menu/quick-actions";
 import { menuHasMultipleDays } from "@/lib/menu/menu-days";
 import type { MenuOverview } from "@/lib/menu/overview-types";
 
 type LoadState = "loading" | "success" | "empty" | "error";
-
-function formatRub(value: number | null | undefined): string {
-  if (value == null) return "—";
-  return `${value.toLocaleString("ru-RU")} ₽`;
-}
 
 export function MenuHub() {
   const router = useRouter();
@@ -59,7 +53,7 @@ export function MenuHub() {
   });
   const [acting, setActing] = useState<QuickActionId | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [quickSheetOpen, setQuickSheetOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<QuickActionMeta | null>(
     null,
   );
@@ -209,237 +203,109 @@ export function MenuHub() {
 
   if (loadState === "empty" || !data) {
     return (
-      <ScreenLayout title="Меню" contentClassName="space-y-4 pb-24">
+      <ScreenLayout
+        title="Меню"
+        subtitle="Что приготовим сегодня?"
+        contentClassName="space-y-4 pb-28"
+      >
         <MenuSubTabs />
-        <section className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-          <p className="text-lg font-bold text-stone-900">План пока не создан</p>
-          <p className="mt-2 text-sm text-stone-600">
-            ПланАм предложит варианты — вы сможете выбрать или заменить
-            любое блюдо.
+        <div className="pa-card p-5">
+          <p className="text-lg font-bold text-graphite-900">
+            Давайте составим меню
           </p>
-          <Link
-            href="/menu/generate"
-            className="mt-5 flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/40"
-          >
-            Составить меню
-          </Link>
-          <p className="mt-2 text-xs text-stone-500">
-            После генерации можно выбрать вариант, заменить блюдо
-            или начать с чистого листа.
+          <p className="mt-1.5 text-sm text-graphite-500">
+            ПланАм предложит варианты — выбираете вы.
           </p>
-          <details className="mt-4 text-sm text-stone-600">
-            <summary className="cursor-pointer font-semibold text-stone-700">
-              Что будет учтено
-            </summary>
-            <ul className="mt-2 space-y-1.5">
-              {[
-                "цель и режим питания",
-                "состав семьи",
-                "что уже есть в запасах",
-                "аллергии и ограничения",
-                "бюджет",
-                "время на готовку",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-2">
-                  <span className="text-emerald-600" aria-hidden>
-                    ✓
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </details>
-        </section>
+        </div>
+        <HubTile
+          href="/menu/generate"
+          icon="🍽"
+          title="Составить меню"
+          hint="Учтём цели, семью и запасы"
+          tone="primary"
+        />
       </ScreenLayout>
     );
   }
 
-  const { plan_summary: plan, nutritionist_advice: advice } = data;
-  const needsUpdate = advice.freshness_status === "needs_update";
-  const adviceFailed = Boolean(data.nutritionist_advice_error);
+  const needsUpdate = data.nutritionist_advice.freshness_status === "needs_update";
   const activeMenu = data.selected_menu?.menu ?? null;
   const multiDayPlan = activeMenu ? menuHasMultipleDays(activeMenu) : false;
+  const hasToday = data.today_meals.length > 0;
 
   return (
     <ScreenLayout
       title="Меню"
-      subtitle="ПланАм подскажет — выбираете вы"
-      contentClassName="space-y-3 pb-32"
+      subtitle="Что приготовим сегодня?"
+      contentClassName="space-y-3 pb-28"
     >
       <MenuSubTabs />
 
       {message ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <p className="rounded-control border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-sage-700">
           {message}
         </p>
       ) : null}
 
-      {needsUpdate ? (
-        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-semibold text-amber-950">
-            Цель изменилась — ПланАм может пересобрать меню под неё
-          </p>
-          {advice.update_reason ? (
-            <p className="mt-1 text-xs text-amber-900">{advice.update_reason}</p>
-          ) : null}
-          <p className="mt-1 text-xs text-amber-900/80">
-            Можно оставить как есть — текущий план продолжит работать.
-          </p>
-          <Link
-            href="/menu/generate"
-            className="mt-3 inline-block rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
-          >
-            Пересобрать меню
-          </Link>
-        </section>
-      ) : null}
-
-      {data.today_meals.length > 0 ? (
-        <section className="rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/70 to-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            Сегодня в плане
-          </p>
-          <ul className="mt-3 space-y-2">
+      {/* Один главный ответ: что сегодня в плане. */}
+      <div className="pa-card p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
+          Сегодня в плане
+        </p>
+        {hasToday ? (
+          <ul className="mt-2.5 space-y-1.5">
             {data.today_meals.map((meal) => (
               <li
                 key={meal.meal_type}
                 className="flex justify-between gap-2 text-sm"
               >
-                <span className="text-stone-500">{meal.label}</span>
-                <span className="text-right font-semibold text-stone-900">
+                <span className="text-graphite-500">{meal.label}</span>
+                <span className="text-right font-semibold text-graphite-900">
                   {meal.name}
                 </span>
               </li>
             ))}
           </ul>
-          <Link
-            href="/menu/current"
-            className="mt-4 flex min-h-[44px] w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99]"
-          >
-            {multiDayPlan ? "Открыть все дни" : "Открыть план"}
-          </Link>
-        </section>
-      ) : null}
-
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
-          План
-        </p>
-        <p className="mt-1 text-sm font-semibold text-stone-900">
-          {plan.goal_label} · {plan.persons_label}
-        </p>
-        <p className="mt-1 text-xs text-stone-500">
-          Купить на {formatRub(plan.estimated_cost_rub)}
-          {plan.pantry_used_rub != null
-            ? ` · из запасов на ${formatRub(plan.pantry_used_rub)}`
-            : ""}
-          {plan.savings_rub != null
-            ? ` · экономия ${formatRub(plan.savings_rub)}`
-            : ""}
-        </p>
-        <details className="mt-3 text-sm text-stone-600">
-          <summary className="cursor-pointer text-xs font-semibold text-emerald-700">
-            Подробнее о плане
-          </summary>
-          <p className="mt-2">Тип плана: {plan.plan_mode_label}</p>
-          {data.home_attendance ? (
-            <ul className="mt-2 space-y-1">
-              <li>Завтрак дома: {data.home_attendance.breakfast_home} чел.</li>
-              <li>Обед дома: {data.home_attendance.lunch_home} чел.</li>
-              <li>Ужин дома: {data.home_attendance.dinner_home} чел.</li>
-            </ul>
-          ) : null}
-          {data.home_attendance ? (
-            <Link
-              href="/menu/settings"
-              className="mt-2 inline-block text-xs font-semibold text-emerald-700"
-            >
-              Изменить на сегодня →
-            </Link>
-          ) : null}
-        </details>
-      </section>
-
-      <section
-        className={`rounded-2xl border p-4 shadow-sm ${
-          needsUpdate
-            ? "border-amber-200 bg-amber-50/50"
-            : "border-violet-100 bg-violet-50/30"
-        }`}
-      >
-        <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">
-          Совет нутрициолога
-        </p>
-        {adviceFailed ? (
-          <p className="mt-2 text-sm text-stone-600">
-            Совет временно недоступен. Основное меню загружено.
-          </p>
         ) : (
-          <>
-            <p className="mt-2 font-semibold text-stone-900">{advice.title}</p>
-            <p className="mt-1 text-sm leading-relaxed text-stone-600">
-              {advice.body}
-            </p>
-          </>
+          <p className="mt-1.5 text-sm text-graphite-500">
+            Меню готово — откройте план на сегодня.
+          </p>
         )}
-      </section>
+      </div>
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-stone-900">Быстрые действия</p>
-        <p className="mt-1 text-xs text-stone-500">
-          Это предложения, а не требования — выбор за вами. Любое
-          блюдо можно заменить или оставить как есть.
-        </p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {QUICK_ACTIONS.map((action) => (
-            <button
-              key={action.id}
-              type="button"
-              disabled={Boolean(acting)}
-              onClick={() => setPendingAction(action)}
-              className="min-h-[44px] rounded-xl border border-stone-200 bg-stone-50 px-2 py-2.5 text-xs font-semibold text-stone-800 disabled:opacity-50"
-            >
-              {acting === action.id ? "…" : action.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {data.settings_summary ? (
-        <section className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/80">
-          <button
-            type="button"
-            onClick={() => setSettingsOpen((v) => !v)}
-            className="flex w-full items-center justify-between px-4 py-3.5 text-left"
-          >
-            <span className="font-semibold text-stone-800">Настройки меню</span>
-            <span className="text-stone-400">{settingsOpen ? "▲" : "▼"}</span>
-          </button>
-          {settingsOpen ? (
-            <div className="border-t border-stone-200 px-4 pb-4 pt-2 text-sm text-stone-600">
-              <p>Участников: {data.settings_summary.persons_count}</p>
-              <p>Цель: {data.settings_summary.goal_label}</p>
-              <p>Режим: {data.settings_summary.plan_mode_label}</p>
-              <p>
-                Напитки: {data.settings_summary.include_drinks ? "да" : "нет"}
-              </p>
-              <p>
-                Запасы: {data.settings_summary.use_pantry ? "использовать" : "нет"}
-              </p>
-              <Link
-                href="/menu/settings"
-                className="mt-3 inline-block font-semibold text-emerald-700"
-              >
-                Изменить →
-              </Link>
-            </div>
-          ) : null}
-        </section>
+      {needsUpdate ? (
+        <Link
+          href="/menu/generate"
+          className="block rounded-control border border-warm/40 bg-warm/10 px-4 py-2.5 text-sm font-semibold text-graphite-700"
+        >
+          Цель изменилась — пересобрать меню →
+        </Link>
       ) : null}
 
-      {/* Рецепты теперь отдельная внутренняя вкладка «Меню» (MenuSubTabs), а
-          «Остатки» переехали в раздел «Покупки» (Этап 3), поэтому
-          дублирующие плитки здесь больше не нужны. */}
+      {/* Главная кнопка + «Настроить» (быстрые действия в листе). */}
+      <HubTile
+        href="/menu/current"
+        icon="🍽"
+        title={multiDayPlan ? "Открыть все дни" : "Открыть план"}
+        hint="Блюда, замены и отметки"
+        tone="primary"
+      />
+      <HubTile
+        icon="⚙️"
+        title="Настроить меню"
+        hint="Дешевле, из запасов, больше белка…"
+        onClick={() => setQuickSheetOpen(true)}
+      />
+
+      <MenuQuickActionsSheet
+        open={quickSheetOpen}
+        busy={Boolean(acting)}
+        onClose={() => setQuickSheetOpen(false)}
+        onPick={(action) => {
+          setQuickSheetOpen(false);
+          setPendingAction(action);
+        }}
+      />
 
       <AmaConfirmDialog
         open={pendingAction !== null}

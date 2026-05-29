@@ -5,13 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useTelegram } from "@/components/TelegramProvider";
-import { FilterChip } from "@/components/recipes/FilterChip";
-import { FromPantrySection } from "@/components/recipes/FromPantrySection";
 import { RecipeCatalogSections } from "@/components/recipes/RecipeCatalogSections";
 import { RecipeFiltersSheet } from "@/components/recipes/RecipeFiltersSheet";
 import { RecipeResultsList } from "@/components/recipes/RecipeResultsList";
 import { ScenarioChips } from "@/components/recipes/ScenarioChips";
-import { CATALOG_MEAL_FILTERS } from "@/lib/recipes/labels";
 import { RECIPE_SECTION_PAGE_SIZE } from "@/lib/recipes/catalog-sections";
 import {
   fetchRecipeFilters,
@@ -27,6 +24,7 @@ import type {
 type QueryPatch = Record<string, string | undefined>;
 
 const FILTER_KEYS: (keyof RecipeQuery)[] = [
+  "meal_type",
   "category",
   "diet",
   "difficulty",
@@ -206,16 +204,16 @@ export function RecipesView() {
 
   if (!initData) {
     return (
-      <p className="py-12 text-center text-sm text-stone-600">
+      <p className="py-12 text-center text-sm text-graphite-500">
         Рецепты доступны в Telegram Mini App после авторизации.
       </p>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </p>
       ) : null}
@@ -225,35 +223,27 @@ export function RecipesView() {
           type="search"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Поиск по названию, ингредиентам…"
-          className="w-full rounded-xl border border-stone-200 bg-white py-3 pl-4 pr-10 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+          placeholder="Поиск рецепта или ингредиента…"
+          className="w-full rounded-control border border-cream-border bg-cream-surface py-3 pl-4 pr-10 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
         />
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400">
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-graphite-400">
           🔍
         </span>
       </div>
 
+      <ScenarioChips
+        active={query.scenario}
+        onSelect={(value) => updateParams({ scenario: value })}
+      />
+
       <div className="flex flex-wrap items-center gap-2">
-        {CATALOG_MEAL_FILTERS.map((meal) => (
-          <FilterChip
-            key={meal.value}
-            active={query.meal_type === meal.value}
-            label={meal.label}
-            onClick={() =>
-              updateParams({
-                meal_type:
-                  query.meal_type === meal.value ? undefined : meal.value,
-              })
-            }
-          />
-        ))}
         <button
           type="button"
           onClick={() => setFiltersOpen(true)}
-          className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+          className={`shrink-0 rounded-pill px-3.5 py-1.5 text-xs font-semibold transition ${
             activeFilterCount > 0
-              ? "bg-emerald-600 text-white"
-              : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"
+              ? "bg-sage-500 text-white"
+              : "bg-cream-surface text-graphite-700 ring-1 ring-cream-border hover:bg-sage-50"
           }`}
         >
           Фильтры{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ""}
@@ -262,23 +252,16 @@ export function RecipesView() {
           <button
             type="button"
             onClick={clearAll}
-            className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 hover:bg-stone-100"
+            className="shrink-0 rounded-pill px-3 py-1.5 text-xs font-semibold text-graphite-500 hover:bg-cream-surface"
           >
             Сбросить
           </button>
         ) : null}
       </div>
 
-      <ScenarioChips
-        active={query.scenario}
-        onSelect={(value) => updateParams({ scenario: value })}
-      />
-
-      <FromPantrySection onOpen={openRecipe} />
-
       {isSearchMode ? (
         <div className="space-y-3 pb-4">
-          <p className="text-sm text-stone-500">
+          <p className="text-sm text-graphite-500">
             {loading ? "Загрузка…" : `Найдено: ${total}`}
           </p>
           <RecipeResultsList
@@ -288,7 +271,7 @@ export function RecipesView() {
             togglingId={togglingId}
           />
           {!loading && recipes.length === 0 ? (
-            <p className="py-12 text-center text-sm text-stone-400">
+            <p className="py-12 text-center text-sm text-graphite-400">
               Ничего не найдено. Измените поиск или фильтр.
             </p>
           ) : null}
@@ -296,7 +279,7 @@ export function RecipesView() {
             <button
               type="button"
               onClick={() => setVisible((v) => v + RECIPE_SECTION_PAGE_SIZE)}
-              className="w-full rounded-xl border border-stone-200 py-2.5 text-sm font-semibold text-stone-700"
+              className="w-full rounded-control border border-cream-border py-2.5 text-sm font-semibold text-graphite-700"
             >
               Показать ещё
             </button>
@@ -307,7 +290,7 @@ export function RecipesView() {
           {[0, 1, 2].map((item) => (
             <div
               key={item}
-              className="h-28 animate-pulse rounded-2xl border border-stone-100 bg-stone-50"
+              className="h-28 animate-pulse rounded-card border border-cream-border bg-cream-surface"
             />
           ))}
         </div>
@@ -320,9 +303,9 @@ export function RecipesView() {
         />
       )}
 
-      <p className="pt-1 text-center text-xs text-stone-400">
+      <p className="pt-1 text-center text-xs text-graphite-400">
         Не нашли нужное?{" "}
-        <Link href="/menu/generate" className="font-semibold text-emerald-700">
+        <Link href="/menu/generate" className="font-semibold text-sage-700">
           Составить меню с ПланАм
         </Link>
       </p>

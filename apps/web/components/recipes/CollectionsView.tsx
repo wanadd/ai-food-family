@@ -74,32 +74,28 @@ export function CollectionsView() {
 
   if (!initData) {
     return (
-      <p className="py-12 text-center text-sm text-stone-600">
+      <p className="py-12 text-center text-sm text-graphite-500">
         Коллекции доступны в Telegram Mini App после авторизации.
       </p>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </p>
       ) : null}
 
-      <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-stone-900">Новая коллекция</p>
-        <p className="mt-1 text-xs text-stone-500">
-          Группируйте любимые рецепты. Добавлять рецепты можно из карточки
-          рецепта.
-        </p>
+      <section className="pa-card p-4">
+        <p className="text-sm font-bold text-graphite-900">Новая коллекция</p>
         <input
           type="text"
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="Например: На неделю"
-          className="mt-3 w-full rounded-xl border border-stone-200 bg-white py-2.5 px-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+          className="mt-3 w-full rounded-control border border-cream-border bg-cream-surface py-2.5 px-3 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
         />
         {mode === "family" ? (
           <div className="mt-3 flex gap-2">
@@ -108,10 +104,10 @@ export function CollectionsView() {
                 key={value}
                 type="button"
                 onClick={() => setVisibility(value)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                className={`rounded-pill px-3 py-1.5 text-xs font-semibold transition ${
                   visibility === value
-                    ? "bg-emerald-600 text-white"
-                    : "bg-white text-stone-600 ring-1 ring-stone-200"
+                    ? "bg-sage-500 text-white"
+                    : "bg-cream-surface text-graphite-700 ring-1 ring-cream-border"
                 }`}
               >
                 {value === "personal" ? "Личная" : "Семейная"}
@@ -123,7 +119,7 @@ export function CollectionsView() {
           type="button"
           disabled={!name.trim() || creating}
           onClick={() => void handleCreate()}
-          className="mt-3 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="pa-btn-primary mt-3 w-full disabled:opacity-50"
         >
           {creating ? "Создаю…" : "Создать коллекцию"}
         </button>
@@ -134,12 +130,12 @@ export function CollectionsView() {
           {[0, 1].map((item) => (
             <div
               key={item}
-              className="h-16 animate-pulse rounded-2xl border border-stone-100 bg-stone-50"
+              className="h-16 animate-pulse rounded-card border border-cream-border bg-cream-surface"
             />
           ))}
         </div>
       ) : collections.length === 0 ? (
-        <p className="py-8 text-center text-sm text-stone-500">
+        <p className="py-8 text-center text-sm text-graphite-500">
           Коллекций пока нет. Создайте первую выше.
         </p>
       ) : (
@@ -148,21 +144,21 @@ export function CollectionsView() {
             <li key={collection.id}>
               <Link
                 href={`/menu/collections/${collection.id}`}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-stone-100 bg-white px-4 py-3 shadow-sm transition hover:border-emerald-200"
+                className="flex items-center justify-between gap-3 rounded-card border border-cream-border bg-cream-surface px-4 py-3 shadow-soft transition hover:border-sage-200"
               >
                 <span className="min-w-0">
-                  <span className="block truncate font-semibold text-stone-900">
+                  <span className="block truncate font-semibold text-graphite-900">
                     {collection.emoji ? `${collection.emoji} ` : ""}
                     {collection.name}
                   </span>
-                  <span className="text-xs text-stone-500">
+                  <span className="text-xs text-graphite-500">
                     {collection.recipes_count}{" "}
                     {collection.recipes_count === 1 ? "рецепт" : "рецептов"}
                     {collection.visibility === "family" ? " · семейная" : ""}
                     {collection.is_dynamic ? " · авто" : ""}
                   </span>
                 </span>
-                <span className="text-stone-400">→</span>
+                <span className="text-graphite-400">→</span>
               </Link>
             </li>
           ))}

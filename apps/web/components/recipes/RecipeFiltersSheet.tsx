@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { FilterChip } from "@/components/recipes/FilterChip";
 import { Sheet } from "@/components/ui/Sheet";
+import { CATALOG_MEAL_FILTERS } from "@/lib/recipes/labels";
 import type { RecipeFilters, RecipeQuery } from "@/lib/recipes/types";
 
 type QueryPatch = Record<string, string | undefined>;
@@ -19,6 +20,7 @@ type RecipeFiltersSheetProps = {
 const PREP_TIME_PRESETS = [15, 30, 45, 60];
 
 const FILTER_PATCH_KEYS: QueryPatch = {
+  meal_type: undefined,
   category: undefined,
   diet: undefined,
   difficulty: undefined,
@@ -43,6 +45,22 @@ export function RecipeFiltersSheet({
   return (
     <Sheet open={open} title="Фильтры" onClose={onClose}>
       <div className="space-y-5 pb-2">
+        <FilterGroup title="Когда">
+          {CATALOG_MEAL_FILTERS.map((option) => (
+            <FilterChip
+              key={option.value}
+              label={option.label}
+              active={query.meal_type === option.value}
+              onClick={() =>
+                onChange({
+                  meal_type:
+                    query.meal_type === option.value ? undefined : option.value,
+                })
+              }
+            />
+          ))}
+        </FilterGroup>
+
         <FilterGroup title="Тип блюда" hidden={!filters?.categories.length}>
           {filters?.categories.map((option) => (
             <FilterChip
@@ -130,14 +148,14 @@ export function RecipeFiltersSheet({
           <button
             type="button"
             onClick={() => onChange(FILTER_PATCH_KEYS)}
-            className="flex-1 rounded-xl border border-stone-200 bg-white py-2.5 text-sm font-semibold text-stone-700"
+            className="flex-1 rounded-control border border-cream-border bg-cream-surface py-2.5 text-sm font-semibold text-graphite-700"
           >
             Сбросить фильтры
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white"
+            className="flex-1 rounded-control bg-sage-500 py-2.5 text-sm font-semibold text-white"
           >
             Готово
           </button>
@@ -159,7 +177,7 @@ function FilterGroup({
   if (hidden) return null;
   return (
     <div>
-      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-400">
+      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-graphite-400">
         {title}
       </p>
       <div className="flex flex-wrap gap-2">{children}</div>

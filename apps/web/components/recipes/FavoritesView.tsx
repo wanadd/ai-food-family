@@ -72,7 +72,7 @@ export function FavoritesView() {
 
   if (!initData) {
     return (
-      <p className="py-12 text-center text-sm text-stone-600">
+      <p className="py-12 text-center text-sm text-graphite-500">
         Избранное доступно в Telegram Mini App после авторизации.
       </p>
     );
@@ -84,7 +84,7 @@ export function FavoritesView() {
         {[0, 1, 2].map((item) => (
           <div
             key={item}
-            className="h-28 animate-pulse rounded-2xl border border-stone-100 bg-stone-50"
+            className="h-28 animate-pulse rounded-card border border-cream-border bg-cream-surface"
           />
         ))}
       </div>
@@ -93,7 +93,7 @@ export function FavoritesView() {
 
   if (error) {
     return (
-      <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <p className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
         {error}
       </p>
     );
@@ -101,14 +101,19 @@ export function FavoritesView() {
 
   if (recipes.length === 0) {
     return (
-      <div className="rounded-2xl border border-stone-100 bg-white p-6 text-center shadow-sm">
-        <p className="font-semibold text-stone-900">В избранном пока пусто</p>
-        <p className="mt-2 text-sm text-stone-600">
-          Откройте рецепт и нажмите ★, чтобы сохранить его сюда.
+      <div className="pa-card p-6 text-center">
+        <p className="text-2xl" aria-hidden>
+          ⭐
+        </p>
+        <p className="mt-2 font-semibold text-graphite-900">
+          Здесь будут любимые рецепты
+        </p>
+        <p className="mt-1.5 text-sm text-graphite-500">
+          Нажмите ★ на рецепте — и он сохранится сюда.
         </p>
         <Link
           href="/menu/recipes"
-          className="mt-5 inline-block rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white"
+          className="pa-btn pa-btn-primary mt-5 inline-flex"
         >
           К рецептам
         </Link>

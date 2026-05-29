@@ -1,24 +1,33 @@
 "use client";
 
+import { useState } from "react";
+
 import { FilterChip } from "@/components/recipes/FilterChip";
+import { Sheet } from "@/components/ui/Sheet";
+
+type Scenario = { label: string; value: string };
 
 /**
  * Сценарии — это фильтры/подборки внутри «Рецептов», а НЕ отдельная вкладка.
- * ПланАм фильтрует каталог под ситуацию, выбор остаётся за пользователем.
+ * ONE SCREEN UX: на первом уровне только 4 главные подборки, остальные — под
+ * кнопкой «Ещё» (bottom sheet). Значения сценариев — без изменений бэкенда.
  */
-export const SCENARIO_CHIPS = [
+export const MAIN_SCENARIOS: Scenario[] = [
   { label: "Быстро", value: "quick" },
-  { label: "15 минут", value: "ultra_quick" },
-  { label: "Дешево", value: "cheap" },
-  { label: "Для детей", value: "kids_loved" },
+  { label: "Для семьи", value: "kids_loved" },
   { label: "Из запасов", value: "from_pantry" },
-  { label: "Похудение", value: "lose_weight" },
+  { label: "Полезнее", value: "lose_weight" },
+];
+
+export const MORE_SCENARIOS: Scenario[] = [
+  { label: "15 минут", value: "ultra_quick" },
+  { label: "Дёшево", value: "cheap" },
   { label: "Набор массы", value: "gain_weight" },
   { label: "На работу", value: "work_lunch" },
   { label: "Гости", value: "guests" },
   { label: "Праздник", value: "holiday" },
   { label: "Без готовки", value: "almost_no_cooking" },
-] as const;
+];
 
 type ScenarioChipsProps = {
   active?: string;
@@ -26,24 +35,50 @@ type ScenarioChipsProps = {
 };
 
 export function ScenarioChips({ active, onSelect }: ScenarioChipsProps) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const activeMore = MORE_SCENARIOS.find((s) => s.value === active);
+
   return (
-    <section className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3">
-      <p className="text-sm font-bold text-stone-900">Подобрать под ситуацию</p>
-      <p className="mt-1 text-xs text-stone-600">
-        Быстрые подсказки: ПланАм фильтрует каталог, а выбираете вы.
-      </p>
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
-        {SCENARIO_CHIPS.map((scenario) => (
-          <FilterChip
-            key={scenario.value}
-            active={active === scenario.value}
-            label={scenario.label}
-            onClick={() =>
-              onSelect(active === scenario.value ? undefined : scenario.value)
-            }
-          />
-        ))}
-      </div>
-    </section>
+    <div className="flex flex-wrap items-center gap-2">
+      {MAIN_SCENARIOS.map((scenario) => (
+        <FilterChip
+          key={scenario.value}
+          active={active === scenario.value}
+          label={scenario.label}
+          onClick={() =>
+            onSelect(active === scenario.value ? undefined : scenario.value)
+          }
+        />
+      ))}
+
+      <button
+        type="button"
+        onClick={() => setMoreOpen(true)}
+        aria-pressed={Boolean(activeMore)}
+        className={`shrink-0 rounded-pill px-3 py-1.5 text-xs font-semibold transition ${
+          activeMore
+            ? "bg-sage-500 text-white"
+            : "bg-cream-surface text-graphite-700 ring-1 ring-cream-border hover:bg-sage-50"
+        }`}
+      >
+        {activeMore ? activeMore.label : "Ещё"}
+      </button>
+
+      <Sheet open={moreOpen} title="Ещё подборки" onClose={() => setMoreOpen(false)}>
+        <div className="flex flex-wrap gap-2 pb-2">
+          {MORE_SCENARIOS.map((scenario) => (
+            <FilterChip
+              key={scenario.value}
+              active={active === scenario.value}
+              label={scenario.label}
+              onClick={() => {
+                onSelect(active === scenario.value ? undefined : scenario.value);
+                setMoreOpen(false);
+              }}
+            />
+          ))}
+        </div>
+      </Sheet>
+    </div>
   );
 }
