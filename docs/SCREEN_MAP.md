@@ -15,14 +15,17 @@
 | `/health` | route | Раздел «Здоровье» (рендерит `NutritionistDashboard`, ребренд — Этап 5) |
 | `/health/chat` | route | Чат нутрициолога (back → `/health`) |
 | `/health/care` | redirect → `/notifications` | сохранение прежнего поведения |
-| `/menu/recipes` | redirect → `/recipes` | вкладка «Рецепты» (Этап 2) |
-| `/menu/favorites` | redirect → `/recipes` | вкладка «Избранное» (Этап 2) |
-| `/menu/collections` | redirect → `/recipes` | вкладка «Коллекции» (Этап 2) |
-| `/menu/scenarios` | redirect → `/recipes` | фильтр-подборка (не отдельная вкладка) |
+| `/menu/recipes` | route (Этап 2 ✅) | вкладка «Рецепты» → `RecipesView` (URL-state: `q`, `scenario`, фильтры) |
+| `/menu/favorites` | route (Этап 2 ✅) | вкладка «Избранное» → `FavoritesView` |
+| `/menu/collections` | route (Этап 2 ✅) | вкладка «Коллекции» → `CollectionsView` (список + создание) |
+| `/menu/collections/[id]` | route (Этап 2 ✅) | деталь коллекции → `CollectionDetailView` (recipe_ids, без N+1) |
+| `/menu/scenarios` | redirect → `/menu/recipes` | фильтр-подборка (не отдельная вкладка) |
 | `/shopping/pantry` | redirect → `/pantry` | вкладка «Запасы» (Этап 3) |
 | `/shopping/leftovers` | redirect → `/menu/leftovers` | вкладка «Остатки» (Этап 3) |
 
-**Старые маршруты:** `/nutritionist`, `/nutritionist/chat`, `/nutritionist/care` — мягкие `redirect()` на `/health*`. `/recipes`, `/pantry`, `/menu/leftovers` остаются живыми до Этапов 2–3.
+**Этап 2 (Меню + Рецепты) ✅:** каталог рецептов переехал во вкладку `/menu/recipes`; `/recipes` инвертирован (redirect → `/menu/recipes`). Деталь рецепта остаётся на `/recipes/[id]`. Из «Моё меню» убрана плитка «Рецепты» (теперь это вкладка). Backend/контракты не менялись.
+
+**Старые маршруты:** `/nutritionist`, `/nutritionist/chat`, `/nutritionist/care` — мягкие `redirect()` на `/health*`. `/pantry`, `/menu/leftovers` остаются живыми до Этапа 3.
 
 **Future Delivery Integration:** доставка продуктов в будущем — часть раздела **Покупки** (не отдельная вкладка/раздел). Цепочка: Меню → список покупок → заказ продуктов → доставка → обновление запасов. В Этапе 1 не реализуется (без API/оплаты/интеграций); место под действие «Заказать продукты» заложено в UX-архитектуре Покупок.
 

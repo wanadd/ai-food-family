@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { MenuSubTabs } from "@/components/menu/MenuSubTabs";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
@@ -214,6 +215,7 @@ export function MenuHub() {
   if (loadState === "loading") {
     return (
       <ScreenLayout title="Меню" contentClassName="space-y-3 pb-24">
+        <MenuSubTabs />
         <SkeletonList count={3} />
       </ScreenLayout>
     );
@@ -250,6 +252,7 @@ export function MenuHub() {
   if (loadState === "empty" || !data) {
     return (
       <ScreenLayout title="Меню" contentClassName="space-y-4 pb-24">
+        <MenuSubTabs />
         <section className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
           <p className="text-lg font-bold text-stone-900">План пока не создан</p>
           <p className="mt-2 text-sm text-stone-600">
@@ -305,6 +308,8 @@ export function MenuHub() {
       subtitle="ПланАм подскажет — выбираете вы"
       contentClassName="space-y-3 pb-32"
     >
+      <MenuSubTabs />
+
       {message ? (
         <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           {message}
@@ -474,26 +479,20 @@ export function MenuHub() {
         </section>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-2">
-        <Link
-          href="/shopping/leftovers"
-          className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-3 py-3 text-sm shadow-sm"
-        >
-          <span className="font-semibold text-stone-900">Остатки</span>
-          <span className="text-stone-400">
-            {data.meal_leftovers_count > 0
-              ? `${data.meal_leftovers_count} →`
-              : "→"}
-          </span>
-        </Link>
-        <Link
-          href="/menu/recipes"
-          className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-3 py-3 text-sm shadow-sm"
-        >
-          <span className="font-semibold text-stone-900">Рецепты</span>
-          <span className="text-stone-400">→</span>
-        </Link>
-      </div>
+      {/* Рецепты теперь отдельная внутренняя вкладка «Меню» (см. MenuSubTabs),
+          поэтому здесь оставляем только быстрый переход к остаткам блюд.
+          Полный перенос остатков в «Покупки» — Этап 3. */}
+      <Link
+        href="/shopping/leftovers"
+        className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-3 py-3 text-sm shadow-sm"
+      >
+        <span className="font-semibold text-stone-900">Остатки</span>
+        <span className="text-stone-400">
+          {data.meal_leftovers_count > 0
+            ? `${data.meal_leftovers_count} →`
+            : "→"}
+        </span>
+      </Link>
 
       <AmaConfirmDialog
         open={pendingAction !== null}

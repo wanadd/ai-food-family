@@ -1,7 +1,20 @@
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
-// Скелет внутренней вкладки «Рецепты». Контент переедет в Этапе 2.
-// Пока временный мягкий redirect на действующий каталог.
+import { MenuSectionLayout } from "@/components/menu/MenuSectionLayout";
+import { RecipesView } from "@/components/recipes/RecipesView";
+
+// Внутренняя вкладка «Рецепты» раздела «Меню» (Этап 2).
+// RecipesView читает состояние из URL query → нужен Suspense-границей.
 export default function MenuRecipesPage() {
-  redirect("/recipes");
+  return (
+    <MenuSectionLayout subtitle="База блюд · поиск · подборки">
+      <Suspense
+        fallback={
+          <div className="py-12 text-center text-sm text-stone-400">Загрузка…</div>
+        }
+      >
+        <RecipesView />
+      </Suspense>
+    </MenuSectionLayout>
+  );
 }

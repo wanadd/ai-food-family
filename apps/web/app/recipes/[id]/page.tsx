@@ -54,10 +54,13 @@ export default function RecipeDetailPage() {
 
   if (error) {
     return (
-      <ScreenLayout title="Рецепт" back={{ label: "Каталог", href: "/recipes" }}>
+      <ScreenLayout title="Рецепт" back={{ label: "Рецепты", href: "/menu/recipes" }}>
         <p className="text-sm text-red-600">{error}</p>
-        <Link href="/recipes" className="mt-4 text-sm font-semibold text-emerald-700">
-          ← К каталогу
+        <Link
+          href="/menu/recipes"
+          className="mt-4 text-sm font-semibold text-emerald-700"
+        >
+          ← К рецептам
         </Link>
       </ScreenLayout>
     );
@@ -65,7 +68,7 @@ export default function RecipeDetailPage() {
 
   if (!recipe) {
     return (
-      <ScreenLayout title="Рецепт" back={{ label: "Каталог", href: "/recipes" }}>
+      <ScreenLayout title="Рецепт" back={{ label: "Рецепты", href: "/menu/recipes" }}>
         <p className="text-sm text-stone-500">Загрузка…</p>
       </ScreenLayout>
     );
@@ -74,7 +77,7 @@ export default function RecipeDetailPage() {
   return (
     <RecipeDetailModal
       recipe={recipe}
-      onClose={() => router.push("/recipes")}
+      onClose={() => router.push("/menu/recipes")}
       onToggleFavorite={handleFavorite}
       togglingFavorite={toggling}
     />

@@ -1,7 +1,11 @@
-import { redirect } from "next/navigation";
+import { MenuSectionLayout } from "@/components/menu/MenuSectionLayout";
+import { FavoritesView } from "@/components/recipes/FavoritesView";
 
-// Скелет внутренней вкладки «Избранное». Контент переедет в Этапе 2.
-// Пока временный мягкий redirect на действующий каталог рецептов.
+// Внутренняя вкладка «Избранное» раздела «Меню» (Этап 2).
 export default function MenuFavoritesPage() {
-  redirect("/recipes");
+  return (
+    <MenuSectionLayout subtitle="Сохранённые рецепты">
+      <FavoritesView />
+    </MenuSectionLayout>
+  );
 }

@@ -1,8 +1,11 @@
-import { redirect } from "next/navigation";
+import { MenuSectionLayout } from "@/components/menu/MenuSectionLayout";
+import { CollectionsView } from "@/components/recipes/CollectionsView";
 
-// Скелет внутренней вкладки «Коллекции». Контент переедет в Этапе 2
-// (данные коллекций уже есть в lib/recipes/api.ts). Пока временный
-// мягкий redirect на действующий каталог рецептов.
+// Внутренняя вкладка «Коллекции» раздела «Меню» (Этап 2, минимальный UI).
 export default function MenuCollectionsPage() {
-  redirect("/recipes");
+  return (
+    <MenuSectionLayout subtitle="Ваши подборки рецептов">
+      <CollectionsView />
+    </MenuSectionLayout>
+  );
 }

@@ -154,6 +154,23 @@ export async function fetchRecipeCollections(
   return result ?? [];
 }
 
+/**
+ * Деталь коллекции через существующий GET /collections/{id}.
+ * Возвращает мету коллекции и recipe_ids (без N+1 — карточки рецептов не
+ * подгружаются). Backend в Этапе 2 не меняется.
+ */
+export async function fetchRecipeCollectionDetail(
+  initData: string,
+  mode: AppMode,
+  collectionId: number,
+): Promise<RecipeCollectionDetail | null> {
+  return apiGet<RecipeCollectionDetail>(
+    initData,
+    mode,
+    `/collections/${collectionId}`,
+  );
+}
+
 export async function fetchRecipesFromPantry(
   initData: string,
   mode: AppMode,
