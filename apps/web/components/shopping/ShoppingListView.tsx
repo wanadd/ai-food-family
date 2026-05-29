@@ -456,7 +456,7 @@ export function ShoppingListView() {
         <button
           type="button"
           onClick={openAddItem}
-          className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
+          className="shrink-0 rounded-control bg-sage-500 px-3 py-2 text-xs font-semibold text-white shadow-soft"
         >
           + Добавить
         </button>
@@ -464,15 +464,15 @@ export function ShoppingListView() {
     >
         {list ? (
           <div>
-            <div className="mb-1 flex justify-between text-[11px] font-medium text-stone-500">
+            <div className="mb-1 flex justify-between text-[11px] font-medium text-graphite-500">
               <span>
                 Куплено {list.checked_count} из {list.total_count}
               </span>
               <span>{progress}%</span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-stone-100">
+            <div className="h-1.5 overflow-hidden rounded-pill bg-cream-deep">
               <div
-                className="h-full rounded-full bg-emerald-500 transition-all"
+                className="h-full rounded-pill bg-sage-500 transition-all"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -492,31 +492,31 @@ export function ShoppingListView() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Найти товар"
-          className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"
+          className="w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
         />
 
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={expandAll}
-            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-semibold text-stone-600"
+            className="rounded-pill border border-cream-border bg-cream-surface px-2.5 py-1 text-[11px] font-semibold text-graphite-700"
           >
             Развернуть всё
           </button>
           <button
             type="button"
             onClick={collapseAll}
-            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-semibold text-stone-600"
+            className="rounded-pill border border-cream-border bg-cream-surface px-2.5 py-1 text-[11px] font-semibold text-graphite-700"
           >
             Свернуть всё
           </button>
           <button
             type="button"
             onClick={() => setHideChecked((value) => !value)}
-            className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${
+            className={`rounded-pill border px-2.5 py-1 text-[11px] font-semibold ${
               hideChecked
-                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                : "border-stone-200 bg-white text-stone-600"
+                ? "border-sage-200 bg-sage-50 text-sage-700"
+                : "border-cream-border bg-cream-surface text-graphite-700"
             }`}
           >
             Скрыть купленные
@@ -524,7 +524,7 @@ export function ShoppingListView() {
           <button
             type="button"
             onClick={() => setCategorySheetOpen(true)}
-            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-semibold text-stone-600"
+            className="rounded-pill border border-cream-border bg-cream-surface px-2.5 py-1 text-[11px] font-semibold text-graphite-700"
           >
             + Категория
           </button>
@@ -532,20 +532,20 @@ export function ShoppingListView() {
             type="button"
             onClick={handleSync}
             disabled={syncing}
-            className="rounded-md border border-emerald-200 bg-white px-2 py-1 text-[11px] font-semibold text-emerald-700 disabled:opacity-50"
+            className="rounded-pill border border-sage-200 bg-cream-surface px-2.5 py-1 text-[11px] font-semibold text-sage-700 disabled:opacity-50"
           >
             {syncing ? "…" : "Из меню"}
           </button>
         </div>
 
         {list && list.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-stone-200 bg-white px-4 py-8 text-center">
-            <p className="text-sm text-stone-600">
+          <div className="pa-card border-dashed px-4 py-8 text-center">
+            <p className="text-sm text-graphite-500">
               Список пуст. Выберите меню — ингредиенты появятся после синхронизации.
             </p>
             <Link
               href="/menu"
-              className="mt-3 inline-block text-sm font-semibold text-emerald-700"
+              className="mt-3 inline-block text-sm font-semibold text-sage-700"
             >
               Перейти к меню →
             </Link>
@@ -553,7 +553,7 @@ export function ShoppingListView() {
         ) : null}
 
         {grouped.length === 0 && list && list.items.length > 0 ? (
-          <p className="py-6 text-center text-sm text-stone-400">
+          <p className="py-6 text-center text-sm text-graphite-400">
             Ничего не найдено
           </p>
         ) : null}

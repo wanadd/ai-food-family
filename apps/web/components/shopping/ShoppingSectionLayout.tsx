@@ -19,7 +19,7 @@ type ShoppingSectionLayoutProps = {
  * Future Delivery Integration (НЕ в этом этапе): отсюда в будущем можно будет
  * заказать продукты из списка и оформить доставку. Доставка останется частью
  * Покупок, а НЕ отдельной нижней вкладкой/разделом. Большой нерабочей кнопки
- * сейчас не показываем — только задел в архитектуре (см. docs/NAVIGATION_MAP.md).
+ * сейчас не показываем — только задел в архитектуре (see docs/NAVIGATION_MAP.md).
  */
 export function ShoppingSectionLayout({
   subtitle,
@@ -28,14 +28,14 @@ export function ShoppingSectionLayout({
   contentClassName = "space-y-3 pb-24",
 }: ShoppingSectionLayoutProps) {
   return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 px-4 pb-2 pt-4 backdrop-blur-sm">
+    <div className="min-h-screen bg-cream">
+      <header className="sticky top-0 z-10 border-b border-cream-border bg-cream-surface/95 px-4 pb-2 pt-4 backdrop-blur-sm">
         <div className="mx-auto max-w-lg">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h1 className="text-xl font-bold text-stone-900">Покупки</h1>
+              <h1 className="text-xl font-bold text-graphite-900">Покупки</h1>
               {subtitle ? (
-                <p className="mt-0.5 text-xs text-stone-500">{subtitle}</p>
+                <p className="mt-0.5 text-xs text-graphite-500">{subtitle}</p>
               ) : null}
             </div>
             {action ? <div className="shrink-0">{action}</div> : null}

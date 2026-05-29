@@ -21,6 +21,9 @@ import {
   type LeftoverStatus,
 } from "@/lib/meal-leftovers/status";
 
+const INPUT_CLS =
+  "w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200";
+
 export function MealLeftoversPage() {
   const { initData } = useTelegram();
   const { mode, loading: modeLoading } = useAppMode();
@@ -95,27 +98,24 @@ export function MealLeftoversPage() {
       subtitle="Остатки блюд · влияют на меню, запасы и покупки"
       contentClassName="space-y-3 pb-32"
     >
-      <p className="text-xs text-stone-500">
+      <p className="text-xs text-graphite-500">
         Отметьте статус — ПланАм учтёт при следующем плане. «Осталось» и «Заморожено»
         попадают в генерацию меню.
       </p>
 
       <ul className="space-y-2">
         {items.length === 0 ? (
-          <li className="rounded-xl border border-dashed border-stone-200 px-4 py-6 text-center text-sm text-stone-500">
+          <li className="pa-card border-dashed px-4 py-6 text-center text-sm text-graphite-500">
             Пока нет остатков. Добавьте блюдо ниже или отметьте приём пищи в текущем
             меню.
           </li>
         ) : (
           items.map((item) => (
-            <li
-              key={item.id}
-              className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm"
-            >
+            <li key={item.id} className="pa-card p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-stone-900">{item.dish_name}</p>
-                  <p className="mt-0.5 text-sm text-stone-500">
+                  <p className="font-semibold text-graphite-900">{item.dish_name}</p>
+                  <p className="mt-0.5 text-sm text-graphite-500">
                     {item.portions_remaining} порц. ·{" "}
                     {leftoverStatusLabel(item.leftover_status ?? "active")}
                   </p>
@@ -135,10 +135,10 @@ export function MealLeftoversPage() {
                     type="button"
                     disabled={updatingId === item.id}
                     onClick={() => void setStatus(item, opt.value)}
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    className={`rounded-pill px-2.5 py-1 text-[11px] font-semibold ${
                       (item.leftover_status ?? "active") === opt.value
-                        ? "bg-emerald-600 text-white"
-                        : "bg-stone-100 text-stone-700"
+                        ? "bg-sage-500 text-white"
+                        : "bg-cream-deep text-graphite-700"
                     }`}
                   >
                     {opt.label}
@@ -152,7 +152,7 @@ export function MealLeftoversPage() {
 
       <Link
         href="/menu/current"
-        className="block text-center text-sm font-semibold text-emerald-700"
+        className="block text-center text-sm font-semibold text-sage-700"
       >
         Отметить приёмы пищи в меню →
       </Link>
@@ -160,7 +160,7 @@ export function MealLeftoversPage() {
       <StickyBottomBar>
         <form onSubmit={(e) => void handleAdd(e)} className="space-y-2">
           {saveSuccess ? (
-            <p className="text-center text-sm font-semibold text-emerald-800">
+            <p className="text-center text-sm font-semibold text-sage-700">
               {saveSuccess}
             </p>
           ) : null}
@@ -169,7 +169,7 @@ export function MealLeftoversPage() {
             value={dishName}
             onChange={(e) => setDishName(e.target.value)}
             placeholder="Название блюда, например Борщ"
-            className="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm"
+            className={INPUT_CLS}
           />
           <div className="flex gap-2">
             <input
@@ -178,13 +178,13 @@ export function MealLeftoversPage() {
               max={50}
               value={portions}
               onChange={(e) => setPortions(e.target.value)}
-              className="w-24 rounded-xl border border-stone-200 px-3 py-2.5 text-sm"
+              className={`w-24 ${INPUT_CLS}`}
               aria-label="Порций"
             />
             <button
               type="submit"
               disabled={saving || !dishName.trim()}
-              className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="pa-btn-primary flex-1 disabled:opacity-50"
             >
               {saving ? "…" : "Добавить остаток"}
             </button>

@@ -268,13 +268,13 @@ export function PantryDashboard() {
         <button
           type="button"
           onClick={openAdd}
-          className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
+          className="shrink-0 rounded-control bg-sage-500 px-3 py-2 text-xs font-semibold text-white shadow-soft"
         >
           + Добавить
         </button>
       }
     >
-        <p className="text-xs font-medium text-emerald-700">
+        <p className="text-xs font-medium text-sage-700">
           {activeCount} {activeCount === 1 ? "товар" : "товаров"} в запасах
         </p>
         <BotQuickInputHint />
@@ -292,10 +292,10 @@ export function PantryDashboard() {
               key={item.id}
               type="button"
               onClick={() => setFilter(item.id)}
-              className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+              className={`shrink-0 rounded-pill border px-2.5 py-1 text-[11px] font-semibold ${
                 filter === item.id
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                  : "border-stone-200 bg-white text-stone-600"
+                  ? "border-sage-200 bg-sage-50 text-sage-700"
+                  : "border-cream-border bg-cream-surface text-graphite-700"
               }`}
             >
               {item.label}
@@ -304,25 +304,25 @@ export function PantryDashboard() {
         </div>
 
         {items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-emerald-200 bg-emerald-50/50 px-5 py-10 text-center">
-            <p className="text-base font-semibold text-stone-800">
+          <div className="pa-card border-dashed border-sage-200 bg-sage-50/50 px-5 py-10 text-center">
+            <p className="text-base font-semibold text-graphite-900">
               Запасов пока нет
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-600">
+            <p className="mt-2 text-sm leading-relaxed text-graphite-500">
               Отметьте продукты купленными — они сразу появятся здесь.
               Или добавьте сами, если что-то уже есть дома.
             </p>
             <div className="mt-4 flex flex-col items-center gap-2">
               <Link
                 href="/shopping"
-                className="text-sm font-semibold text-emerald-700"
+                className="text-sm font-semibold text-sage-700"
               >
                 Перейти к покупкам →
               </Link>
               <button
                 type="button"
                 onClick={openAdd}
-                className="text-sm font-semibold text-emerald-700"
+                className="text-sm font-semibold text-sage-700"
               >
                 Добавить вручную
               </button>
@@ -331,7 +331,7 @@ export function PantryDashboard() {
         ) : null}
 
         {items.length > 0 && filteredItems.length === 0 ? (
-          <p className="py-8 text-center text-sm text-stone-400">
+          <p className="py-8 text-center text-sm text-graphite-400">
             Нет товаров по выбранному фильтру
           </p>
         ) : null}

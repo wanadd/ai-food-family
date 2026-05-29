@@ -21,7 +21,7 @@ type BoxProps = {
 export function SkeletonBox({ className = "" }: BoxProps) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-stone-100 ${className}`}
+      className={`animate-pulse rounded-md bg-cream-border ${className}`}
       aria-hidden
     />
   );
@@ -66,7 +66,7 @@ export function SkeletonCard({
 }: SkeletonCardProps) {
   return (
     <section
-      className={`rounded-2xl border border-stone-100 bg-white p-5 ${className}`}
+      className={`rounded-card border border-cream-border bg-cream-surface p-5 shadow-soft ${className}`}
       aria-busy="true"
       aria-live="polite"
     >

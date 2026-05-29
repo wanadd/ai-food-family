@@ -38,10 +38,10 @@ export function SegmentedTabs({
             key={tab.href}
             href={tab.href}
             aria-current={active ? "page" : undefined}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+            className={`shrink-0 rounded-pill px-3.5 py-1.5 text-sm font-semibold transition ${
               active
-                ? "bg-emerald-600 text-white"
-                : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"
+                ? "bg-sage-500 text-white"
+                : "bg-cream-surface text-graphite-700 ring-1 ring-cream-border hover:bg-sage-50"
             }`}
           >
             {tab.label}

@@ -19,6 +19,9 @@ function slugify(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, "_");
 }
 
+const INPUT_CLS =
+  "mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200";
+
 export function CategoryPicker({
   value,
   categories,
@@ -54,20 +57,20 @@ export function CategoryPicker({
 
   return (
     <div className="relative">
-      <span className="text-xs font-semibold text-stone-500">Категория</span>
+      <span className="text-xs font-semibold text-graphite-500">Категория</span>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="mt-1 flex w-full items-center justify-between rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-left text-sm text-stone-900"
+        className="mt-1 flex w-full items-center justify-between rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 text-left text-sm text-graphite-900"
       >
         <span>{selectedLabel}</span>
-        <span className="text-stone-400" aria-hidden>
+        <span className="text-graphite-400" aria-hidden>
           {open ? "▲" : "▼"}
         </span>
       </button>
 
       {open ? (
-        <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-stone-200 bg-white shadow-lg">
+        <div className="mt-2 max-h-48 overflow-y-auto rounded-card border border-cream-border bg-cream-surface shadow-lift">
           {options.map((opt) => (
             <button
               key={opt.slug}
@@ -76,8 +79,8 @@ export function CategoryPicker({
                 onChange(opt.slug);
                 setOpen(false);
               }}
-              className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-stone-50 ${
-                value === opt.slug ? "bg-emerald-50 font-semibold text-emerald-900" : ""
+              className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-sage-50 ${
+                value === opt.slug ? "bg-sage-50 font-semibold text-sage-700" : ""
               }`}
             >
               <span aria-hidden>{opt.emoji}</span>
@@ -85,23 +88,23 @@ export function CategoryPicker({
             </button>
           ))}
           {allowCreate ? (
-            <div className="border-t border-stone-100 p-3">
-              <p className="text-xs font-semibold text-stone-600">Своя категория</p>
+            <div className="border-t border-cream-border p-3">
+              <p className="text-xs font-semibold text-graphite-600">Своя категория</p>
               <input
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 placeholder="Подарки, хозтовары…"
-                className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
+                className={INPUT_CLS}
               />
               {trimmedCustom && !customExists ? (
                 <>
                   {onIsFoodChange ? (
-                    <label className="mt-2 flex items-center gap-2 text-xs text-stone-700">
+                    <label className="mt-2 flex items-center gap-2 text-xs text-graphite-700">
                       <input
                         type="checkbox"
                         checked={isFood}
                         onChange={(e) => onIsFoodChange(e.target.checked)}
-                        className="h-4 w-4 rounded"
+                        className="h-4 w-4 rounded border-cream-border text-sage-500"
                       />
                       Это продукты (попадут в запасы)
                     </label>
@@ -113,7 +116,7 @@ export function CategoryPicker({
                       setOpen(false);
                       setCustomName("");
                     }}
-                    className="mt-2 w-full rounded-lg bg-emerald-600 py-2 text-xs font-semibold text-white"
+                    className="pa-btn-primary mt-2 w-full py-2 text-xs"
                   >
                     Использовать «{trimmedCustom}»
                   </button>
