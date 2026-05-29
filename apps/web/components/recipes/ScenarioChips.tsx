@@ -14,9 +14,9 @@ type Scenario = { label: string; value: string };
  */
 export const MAIN_SCENARIOS: Scenario[] = [
   { label: "Быстро", value: "quick" },
-  { label: "Для семьи", value: "kids_loved" },
+  { label: "Любят дети", value: "kids_loved" },
   { label: "Из запасов", value: "from_pantry" },
-  { label: "Полезнее", value: "lose_weight" },
+  { label: "Для формы", value: "lose_weight" },
 ];
 
 export const MORE_SCENARIOS: Scenario[] = [

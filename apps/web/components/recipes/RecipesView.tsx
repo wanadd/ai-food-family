@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTelegram } from "@/components/TelegramProvider";
 import { RecipeCatalogSections } from "@/components/recipes/RecipeCatalogSections";
 import { RecipeFiltersSheet } from "@/components/recipes/RecipeFiltersSheet";
+import { RecipeListSkeleton } from "@/components/recipes/RecipeListSkeleton";
 import { RecipeResultsList } from "@/components/recipes/RecipeResultsList";
 import { ScenarioChips } from "@/components/recipes/ScenarioChips";
 import { RECIPE_SECTION_PAGE_SIZE } from "@/lib/recipes/catalog-sections";
@@ -85,6 +86,7 @@ export function RecipesView() {
   const [visible, setVisible] = useState(RECIPE_SECTION_PAGE_SIZE);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(query.q ?? "");
+  const [reloadKey, setReloadKey] = useState(0);
 
   const activeFilterCount = FILTER_KEYS.filter(
     (key) => query[key] !== undefined,
@@ -133,6 +135,12 @@ export function RecipesView() {
       setLoading(false);
       return;
     }
+    // В режиме каталога подборки грузит RecipeCatalogSections — не делаем
+    // лишний запрос с пустым query.
+    if (!isSearchMode) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -154,7 +162,12 @@ export function RecipesView() {
     return () => {
       cancelled = true;
     };
-  }, [initData, query]);
+  }, [initData, query, isSearchMode, reloadKey]);
+
+  const retry = useCallback(() => {
+    setError(null);
+    setReloadKey((key) => key + 1);
+  }, []);
 
   useEffect(() => {
     setVisible(RECIPE_SECTION_PAGE_SIZE);
@@ -212,12 +225,6 @@ export function RecipesView() {
 
   return (
     <div className="space-y-4">
-      {error ? (
-        <p className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-
       <div className="relative">
         <input
           type="search"
@@ -260,40 +267,49 @@ export function RecipesView() {
       </div>
 
       {isSearchMode ? (
-        <div className="space-y-3 pb-4">
-          <p className="text-sm text-graphite-500">
-            {loading ? "Загрузка…" : `Найдено: ${total}`}
-          </p>
-          <RecipeResultsList
-            recipes={recipes.slice(0, visible)}
-            onOpen={openRecipe}
-            onToggleFavorite={handleToggleFavorite}
-            togglingId={togglingId}
-          />
-          {!loading && recipes.length === 0 ? (
-            <p className="py-12 text-center text-sm text-graphite-400">
-              Ничего не найдено. Измените поиск или фильтр.
+        loading ? (
+          <RecipeListSkeleton count={4} />
+        ) : error && recipes.length === 0 ? (
+          <RecipeErrorState message={error} onRetry={retry} />
+        ) : recipes.length === 0 ? (
+          <div className="pa-card p-6 text-center">
+            <p className="text-2xl" aria-hidden>
+              🔍
             </p>
-          ) : null}
-          {recipes.length > visible ? (
+            <p className="mt-2 font-semibold text-graphite-900">
+              Ничего не нашлось
+            </p>
+            <p className="mt-1.5 text-sm text-graphite-500">
+              Измените запрос или сбросьте фильтры.
+            </p>
             <button
               type="button"
-              onClick={() => setVisible((v) => v + RECIPE_SECTION_PAGE_SIZE)}
-              className="w-full rounded-control border border-cream-border py-2.5 text-sm font-semibold text-graphite-700"
+              onClick={clearAll}
+              className="pa-btn-ghost mt-5 inline-flex"
             >
-              Показать ещё
+              Сбросить
             </button>
-          ) : null}
-        </div>
-      ) : loading ? (
-        <div className="space-y-3 pb-4" aria-label="Загрузка каталога">
-          {[0, 1, 2].map((item) => (
-            <div
-              key={item}
-              className="h-28 animate-pulse rounded-card border border-cream-border bg-cream-surface"
+          </div>
+        ) : (
+          <div className="space-y-3 pb-4">
+            <p className="text-sm text-graphite-500">Найдено: {total}</p>
+            <RecipeResultsList
+              recipes={recipes.slice(0, visible)}
+              onOpen={openRecipe}
+              onToggleFavorite={handleToggleFavorite}
+              togglingId={togglingId}
             />
-          ))}
-        </div>
+            {recipes.length > visible ? (
+              <button
+                type="button"
+                onClick={() => setVisible((v) => v + RECIPE_SECTION_PAGE_SIZE)}
+                className="w-full rounded-control border border-cream-border py-2.5 text-sm font-semibold text-graphite-700"
+              >
+                Показать ещё
+              </button>
+            ) : null}
+          </div>
+        )
       ) : (
         <RecipeCatalogSections
           initData={initData}
@@ -317,6 +333,33 @@ export function RecipesView() {
         query={query}
         onChange={updateParams}
       />
+    </div>
+  );
+}
+
+function RecipeErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="pa-card p-6 text-center">
+      <p className="text-2xl" aria-hidden>
+        🍲
+      </p>
+      <p className="mt-2 font-semibold text-graphite-900">
+        Не удалось загрузить рецепты
+      </p>
+      <p className="mt-1.5 text-sm text-graphite-500">{message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="pa-btn-primary mt-5 inline-flex"
+      >
+        Повторить
+      </button>
     </div>
   );
 }
