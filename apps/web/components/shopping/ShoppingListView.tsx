@@ -15,7 +15,7 @@ import {
   invalidate as invalidateCache,
   setCached,
 } from "@/lib/cache/session-cache";
-import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { ShoppingSectionLayout } from "@/components/shopping/ShoppingSectionLayout";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/ToastProvider";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
@@ -443,34 +443,27 @@ export function ShoppingListView() {
 
   if (loading) {
     return (
-      <ScreenLayout title="Покупки" contentClassName="space-y-3 pb-24">
+      <ShoppingSectionLayout subtitle="Список покупок семьи">
         <SkeletonList count={3} />
-      </ScreenLayout>
+      </ShoppingSectionLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 px-4 py-4 backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold text-stone-900">Покупки</h1>
-            <p className="mt-0.5 text-xs text-stone-500">
-              Отметили ✓ — товар сразу попадёт в запасы. Снимите галочку,
-              чтобы отменить.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={openAddItem}
-            className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
-          >
-            + Добавить
-          </button>
-        </div>
-
+    <ShoppingSectionLayout
+      subtitle="Отметили ✓ — товар уходит в запасы. Снимите галочку, чтобы отменить."
+      action={
+        <button
+          type="button"
+          onClick={openAddItem}
+          className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
+        >
+          + Добавить
+        </button>
+      }
+    >
         {list ? (
-          <div className="mt-3">
+          <div>
             <div className="mb-1 flex justify-between text-[11px] font-medium text-stone-500">
               <span>
                 Куплено {list.checked_count} из {list.total_count}
@@ -485,9 +478,6 @@ export function ShoppingListView() {
             </div>
           </div>
         ) : null}
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
         <BotQuickInputHint />
         <ModeBanner />
 
@@ -584,7 +574,6 @@ export function ShoppingListView() {
             />
           ))}
         </div>
-      </main>
 
       <ShoppingItemSheet
         open={itemSheetOpen}
@@ -615,6 +604,6 @@ export function ShoppingListView() {
         onSubmit={handleCreateCategory}
         loading={saving}
       />
-    </div>
+    </ShoppingSectionLayout>
   );
 }

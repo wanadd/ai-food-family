@@ -1,8 +1,6 @@
-import { redirect } from "next/navigation";
+import { MealLeftoversPage } from "@/components/menu/MealLeftoversPage";
 
-// Скелет внутренней вкладки «Остатки» внутри раздела «Покупки».
-// Контент переедет в Этапе 3. Пока временный мягкий redirect на
-// действующий экран остатков блюд.
+// Вкладка «Остатки» раздела «Покупки» (Этап 3).
 export default function ShoppingLeftoversPage() {
-  redirect("/menu/leftovers");
+  return <MealLeftoversPage />;
 }

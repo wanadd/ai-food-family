@@ -20,14 +20,19 @@
 | `/menu/collections` | route (Этап 2 ✅) | вкладка «Коллекции» → `CollectionsView` (список + создание) |
 | `/menu/collections/[id]` | route (Этап 2 ✅) | деталь коллекции → `CollectionDetailView` (recipe_ids, без N+1) |
 | `/menu/scenarios` | redirect → `/menu/recipes` | фильтр-подборка (не отдельная вкладка) |
-| `/shopping/pantry` | redirect → `/pantry` | вкладка «Запасы» (Этап 3) |
-| `/shopping/leftovers` | redirect → `/menu/leftovers` | вкладка «Остатки» (Этап 3) |
+| `/shopping` | route (Этап 3 ✅) | вкладка «Покупки» → `ShoppingListView` в `ShoppingSectionLayout` |
+| `/shopping/pantry` | route (Этап 3 ✅) | вкладка «Запасы» → `PantryDashboard` |
+| `/shopping/leftovers` | route (Этап 3 ✅) | вкладка «Остатки» → `MealLeftoversPage` |
 
 **Этап 2 (Меню + Рецепты) ✅:** каталог рецептов переехал во вкладку `/menu/recipes`; `/recipes` инвертирован (redirect → `/menu/recipes`). Деталь рецепта остаётся на `/recipes/[id]`. Из «Моё меню» убрана плитка «Рецепты» (теперь это вкладка). Backend/контракты не менялись.
 
-**Старые маршруты:** `/nutritionist`, `/nutritionist/chat`, `/nutritionist/care` — мягкие `redirect()` на `/health*`. `/pantry`, `/menu/leftovers` остаются живыми до Этапа 3.
+**Этап 3 (Покупки + Запасы + Остатки) ✅:** раздел «Покупки» стал единым центром закупок («что купить?») с внутренними вкладками **Покупки · Запасы · Остатки** (`ShoppingSectionLayout` + `ShoppingSubTabs`). Запасы и остатки переехали на `/shopping/pantry` и `/shopping/leftovers`; старые `/pantry` и `/menu/leftovers` инвертированы (redirect → новые). Из «Моё меню» убрана дублирующая плитка «Остатки». Pantry/остатки приведены к emerald-акценту. Доставка НЕ реализована (только задел в архитектуре). Backend/контракты не менялись.
 
-**Future Delivery Integration:** доставка продуктов в будущем — часть раздела **Покупки** (не отдельная вкладка/раздел). Цепочка: Меню → список покупок → заказ продуктов → доставка → обновление запасов. В Этапе 1 не реализуется (без API/оплаты/интеграций); место под действие «Заказать продукты» заложено в UX-архитектуре Покупок.
+**Старые маршруты:** `/nutritionist`, `/nutritionist/chat`, `/nutritionist/care` — мягкие `redirect()` на `/health*`. `/recipes` → `/menu/recipes`. `/pantry` → `/shopping/pantry`, `/menu/leftovers` → `/shopping/leftovers`.
+
+**Покупки = список покупок + запасы + остатки** (Этап 3). Единый раздел отвечает на вопрос «что купить?».
+
+**Future Delivery Integration:** доставка продуктов в будущем — часть раздела **Покупки** (не отдельная вкладка/раздел). Цепочка: Меню → список покупок → заказ продуктов → доставка → обновление запасов. В Этапах 1–3 не реализуется (без API/оплаты/интеграций, без большой нерабочей кнопки); место под действие «Заказать продукты» заложено в UX-архитектуре Покупок и скрытым TODO в `ShoppingSectionLayout`.
 
 ---
 

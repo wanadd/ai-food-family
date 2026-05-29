@@ -1,8 +1,6 @@
-import { redirect } from "next/navigation";
+import { PantryDashboard } from "@/components/pantry/PantryDashboard";
 
-// Скелет внутренней вкладки «Запасы» внутри раздела «Покупки».
-// Контент переедет в Этапе 3. Пока временный мягкий redirect на
-// действующий экран запасов.
+// Вкладка «Запасы» раздела «Покупки» (Этап 3).
 export default function ShoppingPantryPage() {
-  redirect("/pantry");
+  return <PantryDashboard />;
 }

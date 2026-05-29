@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { ShoppingSectionLayout } from "@/components/shopping/ShoppingSectionLayout";
 import { StickyBottomBar } from "@/components/layout/StickyBottomBar";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
@@ -84,17 +84,15 @@ export function MealLeftoversPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50">
+      <ShoppingSectionLayout subtitle="Остатки блюд · влияют на меню и запасы">
         <PageLoading message="Загрузка…" />
-      </div>
+      </ShoppingSectionLayout>
     );
   }
 
   return (
-    <ScreenLayout
-      title="Остатки блюд"
-      subtitle="Влияют на меню, запасы и покупки"
-      back={{ label: "Меню", href: "/menu" }}
+    <ShoppingSectionLayout
+      subtitle="Остатки блюд · влияют на меню, запасы и покупки"
       contentClassName="space-y-3 pb-32"
     >
       <p className="text-xs text-stone-500">
@@ -139,7 +137,7 @@ export function MealLeftoversPage() {
                     onClick={() => void setStatus(item, opt.value)}
                     className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                       (item.leftover_status ?? "active") === opt.value
-                        ? "bg-teal-600 text-white"
+                        ? "bg-emerald-600 text-white"
                         : "bg-stone-100 text-stone-700"
                     }`}
                   >
@@ -162,7 +160,7 @@ export function MealLeftoversPage() {
       <StickyBottomBar>
         <form onSubmit={(e) => void handleAdd(e)} className="space-y-2">
           {saveSuccess ? (
-            <p className="text-center text-sm font-semibold text-teal-800">
+            <p className="text-center text-sm font-semibold text-emerald-800">
               {saveSuccess}
             </p>
           ) : null}
@@ -193,6 +191,6 @@ export function MealLeftoversPage() {
           </div>
         </form>
       </StickyBottomBar>
-    </ScreenLayout>
+    </ShoppingSectionLayout>
   );
 }

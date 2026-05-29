@@ -479,20 +479,9 @@ export function MenuHub() {
         </section>
       ) : null}
 
-      {/* Рецепты теперь отдельная внутренняя вкладка «Меню» (см. MenuSubTabs),
-          поэтому здесь оставляем только быстрый переход к остаткам блюд.
-          Полный перенос остатков в «Покупки» — Этап 3. */}
-      <Link
-        href="/shopping/leftovers"
-        className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-3 py-3 text-sm shadow-sm"
-      >
-        <span className="font-semibold text-stone-900">Остатки</span>
-        <span className="text-stone-400">
-          {data.meal_leftovers_count > 0
-            ? `${data.meal_leftovers_count} →`
-            : "→"}
-        </span>
-      </Link>
+      {/* Рецепты теперь отдельная внутренняя вкладка «Меню» (MenuSubTabs), а
+          «Остатки» переехали в раздел «Покупки» (Этап 3), поэтому
+          дублирующие плитки здесь больше не нужны. */}
 
       <AmaConfirmDialog
         open={pendingAction !== null}
