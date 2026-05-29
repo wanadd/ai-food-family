@@ -1,3 +1,59 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * PlanAm design foundation (Фаза 1).
+ *
+ * Тёплая база: cream-фон, графитовый текст, Manrope. Плюс набор базовых
+ * компонентных классов .pa-* (карточка, кнопки, чип, заголовки). Логика и
+ * вёрстка экранов не меняются — классы предоставляются для последующих фаз.
+ */
+
+@layer base {
+  :root {
+    --pa-cream: #fbf7ef;
+    --pa-surface: #fffdf8;
+    --pa-border: #ece4d6;
+    --pa-sage: #5e8b57;
+    --pa-graphite: #2e2c28;
+  }
+
+  body {
+    @apply bg-cream font-sans text-graphite-900 antialiased;
+  }
+}
+
+@layer components {
+  .pa-card {
+    @apply rounded-card border border-cream-border bg-cream-surface shadow-soft;
+  }
+
+  .pa-surface {
+    @apply bg-cream-surface;
+  }
+
+  .pa-title {
+    @apply font-bold text-graphite-900;
+  }
+
+  .pa-subtle {
+    @apply text-graphite-500;
+  }
+
+  .pa-btn {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-control px-4 text-sm font-semibold transition active:scale-[0.99];
+  }
+
+  .pa-btn-primary {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-control bg-sage-500 px-4 text-sm font-semibold text-white shadow-soft transition active:scale-[0.99];
+  }
+
+  .pa-btn-ghost {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-control border border-sage-200 bg-cream-surface px-4 text-sm font-semibold text-sage-700 transition active:scale-[0.99];
+  }
+
+  .pa-chip {
+    @apply inline-flex items-center rounded-pill bg-sage-50 px-3 py-1.5 text-xs font-semibold text-sage-700;
+  }
+}
