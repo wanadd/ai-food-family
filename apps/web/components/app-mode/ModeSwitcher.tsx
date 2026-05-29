@@ -8,17 +8,17 @@ export function ModeSwitcher() {
 
   if (loading) {
     return (
-      <p className="text-sm text-stone-500">Загрузка режима…</p>
+      <p className="text-sm text-graphite-500">Загрузка режима…</p>
     );
   }
 
   if (!context?.can_use_family_mode) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-        <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
+      <div className="pa-card border-sage-200 bg-sage-50/50 px-4 py-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-sage-700">
           Личный режим
         </p>
-        <p className="mt-1 text-sm text-emerald-950">
+        <p className="mt-1 text-sm text-graphite-700">
           Все данные сохраняются для вас. Семейный режим можно включить в разделе
           «Семья».
         </p>
@@ -27,8 +27,8 @@ export function ModeSwitcher() {
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-1 shadow-sm">
-      <p className="px-3 pt-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+    <div className="pa-card p-1">
+      <p className="px-3 pt-2 text-xs font-semibold uppercase tracking-wide text-graphite-500">
         Режим работы
       </p>
       <div className="mt-2 flex gap-1 p-1">
@@ -39,12 +39,10 @@ export function ModeSwitcher() {
               key={option}
               type="button"
               onClick={() => setMode(option)}
-              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition ${
+              className={`flex-1 rounded-control py-2.5 text-sm font-semibold transition ${
                 isActive
-                  ? option === "family"
-                    ? "bg-violet-600 text-white"
-                    : "bg-emerald-600 text-white"
-                  : "text-stone-600 hover:bg-stone-50"
+                  ? "bg-sage-500 text-white shadow-soft"
+                  : "text-graphite-600 hover:bg-cream-deep"
               }`}
             >
               {option === "personal" ? "Личный" : "Семейный"}
@@ -53,7 +51,7 @@ export function ModeSwitcher() {
         })}
       </div>
       {context.family ? (
-        <p className="px-3 pb-2 text-xs text-stone-500">
+        <p className="px-3 pb-2 text-xs text-graphite-500">
           Семья: {context.family.name}
         </p>
       ) : null}

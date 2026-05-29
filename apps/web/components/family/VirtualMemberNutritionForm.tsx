@@ -101,11 +101,11 @@ export function VirtualMemberNutritionForm({
 
   return (
     <section className="space-y-3">
-      <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
-        <h3 className="text-base font-bold text-stone-900">
+      <div className="pa-card p-4">
+        <h3 className="text-base font-bold text-graphite-900">
           {linkedAccount ? linkedName ?? "Участник" : "Участник без аккаунта"}
         </h3>
-        <p className="mt-1 text-xs text-stone-500">
+        <p className="mt-1 text-xs text-graphite-500">
           {linkedAccount
             ? "Профиль с разрешения участника"
             : "Учтётся в семейном меню"}
@@ -114,7 +114,7 @@ export function VirtualMemberNutritionForm({
         {!linkedAccount ? (
           <div className="mt-4 space-y-3">
             <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-stone-700">
+              <span className="mb-1.5 block text-sm font-medium text-graphite-700">
                 Имя
               </span>
               <input
@@ -123,12 +123,12 @@ export function VirtualMemberNutritionForm({
                   onChange({ ...draft, display_name: e.target.value })
                 }
                 placeholder="Маша, бабушка…"
-                className="w-full rounded-xl border border-stone-200 px-4 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-control border border-cream-border px-4 py-3 text-base outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
               />
             </label>
 
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Кто это</p>
+              <p className="mb-2 text-sm font-medium text-graphite-700">Кто это</p>
               <div className="flex flex-wrap gap-2">
                 {VIRTUAL_KIND_OPTIONS.map((o) => (
                   <button
@@ -143,8 +143,8 @@ export function VirtualMemberNutritionForm({
                     }
                     className={`rounded-full border px-3 py-2 text-sm font-medium ${
                       draft.virtual_kind === o.value
-                        ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                        : "border-stone-200 text-stone-700"
+                        ? "border-sage-500 bg-sage-50 text-sage-700"
+                        : "border-cream-border text-graphite-700"
                     }`}
                   >
                     {o.label}
@@ -156,12 +156,12 @@ export function VirtualMemberNutritionForm({
         ) : null}
       </div>
 
-      <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="text-sm font-semibold text-stone-800">Возраст и цель</p>
+      <div className="pa-card p-4">
+        <p className="text-sm font-semibold text-graphite-800">Возраст и цель</p>
 
         <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-stone-600">
+            <span className="mb-1 block text-xs font-medium text-graphite-600">
               Возраст
             </span>
             <input
@@ -172,11 +172,11 @@ export function VirtualMemberNutritionForm({
                 const raw = e.target.value;
                 syncAgeMonths(raw === "" ? "" : Number(raw), ageUnit);
               }}
-              className="w-full rounded-xl border border-stone-200 px-4 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+              className="w-full rounded-control border border-cream-border px-4 py-3 text-base outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
             />
           </label>
           <label className="block min-w-[7.5rem]">
-            <span className="mb-1 block text-xs font-medium text-stone-600">
+            <span className="mb-1 block text-xs font-medium text-graphite-600">
               Единица
             </span>
             <select
@@ -185,7 +185,7 @@ export function VirtualMemberNutritionForm({
                 const unit = e.target.value as AgeUnit;
                 syncAgeMonths(ageAmount, unit);
               }}
-              className="w-full rounded-xl border border-stone-200 px-3 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+              className="w-full rounded-control border border-cream-border px-3 py-3 text-base outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
             >
               <option value="months">месяцев</option>
               <option value="years">лет</option>
@@ -195,7 +195,7 @@ export function VirtualMemberNutritionForm({
         {ageError ? (
           <p className="mt-1 text-xs text-red-600">{ageError}</p>
         ) : (
-          <p className="mt-1 text-xs text-stone-500">
+          <p className="mt-1 text-xs text-graphite-500">
             {isChild
               ? "До 2 лет удобнее указывать в месяцах"
               : "Возраст сохраняется точно для меню"}
@@ -203,7 +203,7 @@ export function VirtualMemberNutritionForm({
         )}
 
         <label className="mt-4 block">
-          <span className="mb-1.5 block text-sm font-medium text-stone-700">
+          <span className="mb-1.5 block text-sm font-medium text-graphite-700">
             Цель питания
           </span>
           <select
@@ -217,7 +217,7 @@ export function VirtualMemberNutritionForm({
                 },
               })
             }
-            className="w-full rounded-xl border border-stone-200 px-4 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+            className="w-full rounded-control border border-cream-border px-4 py-3 text-base outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
           >
             <option value="">Выберите цель</option>
             {NUTRITION_GOAL_OPTIONS.map((o) => (
@@ -230,7 +230,7 @@ export function VirtualMemberNutritionForm({
 
         {nutrition.nutrition_goal === "other" ? (
           <label className="mt-3 block">
-            <span className="mb-1.5 block text-sm font-medium text-stone-700">
+            <span className="mb-1.5 block text-sm font-medium text-graphite-700">
               Своя цель
             </span>
             <input
@@ -245,14 +245,14 @@ export function VirtualMemberNutritionForm({
                 })
               }
               placeholder="Опишите цель"
-              className="w-full rounded-xl border border-stone-200 px-4 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+              className="w-full rounded-control border border-cream-border px-4 py-3 text-base outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
             />
           </label>
         ) : null}
       </div>
 
-      <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="mb-3 text-sm font-semibold text-stone-800">
+      <div className="pa-card p-4">
+        <p className="mb-3 text-sm font-semibold text-graphite-800">
           Аллергии и ограничения
         </p>
 
@@ -311,13 +311,13 @@ export function VirtualMemberNutritionForm({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-        <p className="mb-3 text-sm font-semibold text-stone-800">
+      <div className="pa-card p-4">
+        <p className="mb-3 text-sm font-semibold text-graphite-800">
           Вкусы и особенности
         </p>
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-stone-700">
+          <span className="mb-1.5 block text-sm font-medium text-graphite-700">
             Любит
           </span>
           <textarea
@@ -330,12 +330,12 @@ export function VirtualMemberNutritionForm({
             }
             rows={2}
             placeholder="Например: каши, ягоды, супы"
-            className="w-full resize-y rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+            className="w-full resize-y rounded-control border border-cream-border px-4 py-3 text-sm outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
           />
         </label>
 
         <label className="mt-3 block">
-          <span className="mb-1.5 block text-sm font-medium text-stone-700">
+          <span className="mb-1.5 block text-sm font-medium text-graphite-700">
             Не любит
           </span>
           <textarea
@@ -348,12 +348,12 @@ export function VirtualMemberNutritionForm({
             }
             rows={2}
             placeholder="Например: рыбу, острое, брокколи"
-            className="w-full resize-y rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+            className="w-full resize-y rounded-control border border-cream-border px-4 py-3 text-sm outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
           />
         </label>
 
         <label className="mt-3 block">
-          <span className="mb-1.5 block text-sm font-medium text-stone-700">
+          <span className="mb-1.5 block text-sm font-medium text-graphite-700">
             Особенности питания
           </span>
           <textarea
@@ -366,15 +366,15 @@ export function VirtualMemberNutritionForm({
             }
             rows={2}
             placeholder="Например: мягкая пища, без острого, маленькие порции"
-            className="w-full resize-y rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+            className="w-full resize-y rounded-control border border-cream-border px-4 py-3 text-sm outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
           />
         </label>
       </div>
 
       {!linkedAccount ? (
-        <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
+        <div className="rounded-card border border-warm/30 bg-warm/10 p-4">
           {isChild ? (
-            <label className="flex items-start gap-3 text-sm text-stone-800">
+            <label className="flex items-start gap-3 text-sm text-graphite-800">
               <input
                 type="checkbox"
                 checked={Boolean(draft.guardian_consent)}
@@ -389,7 +389,7 @@ export function VirtualMemberNutritionForm({
               </span>
             </label>
           ) : (
-            <label className="flex items-start gap-3 text-sm text-stone-800">
+            <label className="flex items-start gap-3 text-sm text-graphite-800">
               <input
                 type="checkbox"
                 checked={Boolean(draft.data_consent)}
@@ -412,7 +412,7 @@ export function VirtualMemberNutritionForm({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-xl border border-stone-200 py-3 text-sm font-semibold text-stone-700"
+            className="pa-btn-ghost flex-1"
           >
             Отмена
           </button>
@@ -428,7 +428,7 @@ export function VirtualMemberNutritionForm({
                 (isChild ? !draft.guardian_consent : !draft.data_consent))
             }
             onClick={onSubmit}
-            className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            className="pa-btn-primary flex-1 disabled:opacity-50"
           >
             {loading ? "Сохранение…" : submitLabel}
           </button>

@@ -8,6 +8,9 @@ import {
 } from "@/lib/family/api";
 import type { FamilyInvite } from "@/lib/family/invite-types";
 
+const INPUT_CLS =
+  "w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200";
+
 type InviteSheetProps = {
   open: boolean;
   familyId: number;
@@ -80,27 +83,27 @@ export function InviteSheet({
     lastInvite && (lastInvite.is_link_invite || !lastInvite.invitee_notified);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-graphite-900/40 p-4">
       <div
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-[24px] bg-white p-6 shadow-xl"
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-card bg-cream-surface p-6 shadow-lift"
         role="dialog"
         aria-labelledby="invite-title"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 id="invite-title" className="text-lg font-bold text-stone-900">
+          <h2 id="invite-title" className="text-lg font-bold text-graphite-900">
             Пригласить в семью
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-sm font-semibold text-stone-500"
+            className="text-sm font-semibold text-graphite-500"
           >
             Закрыть
           </button>
         </div>
 
         {error ? (
-          <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="mb-4 rounded-control border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </p>
         ) : null}
@@ -111,7 +114,7 @@ export function InviteSheet({
               type="button"
               onClick={() => setStep("phone")}
               disabled={loading}
-              className="w-full rounded-2xl border border-stone-200 px-4 py-4 text-left text-sm font-semibold text-stone-900 hover:border-emerald-300 disabled:opacity-50"
+              className="pa-card w-full px-4 py-4 text-left text-sm font-semibold text-graphite-900 hover:border-sage-200 disabled:opacity-50"
             >
               Ввести номер телефона
             </button>
@@ -119,7 +122,7 @@ export function InviteSheet({
               type="button"
               onClick={handleLinkInvite}
               disabled={loading}
-              className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-left text-sm font-semibold text-emerald-900 disabled:opacity-50"
+              className="w-full rounded-card border border-sage-200 bg-sage-50 px-4 py-4 text-left text-sm font-semibold text-sage-700 disabled:opacity-50"
             >
               {loading ? "Создание ссылки…" : "Отправить ссылку-приглашение"}
             </button>
@@ -131,7 +134,7 @@ export function InviteSheet({
             <button
               type="button"
               onClick={() => setStep("menu")}
-              className="text-sm font-semibold text-emerald-700"
+              className="text-sm font-semibold text-sage-700"
             >
               ← Назад
             </button>
@@ -139,13 +142,13 @@ export function InviteSheet({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+79001234567"
-              className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              className={INPUT_CLS}
             />
             <button
               type="button"
               onClick={handlePhoneInvite}
               disabled={loading || !phone.trim()}
-              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="pa-btn-primary w-full disabled:opacity-50"
             >
               {loading ? "Отправка…" : "Пригласить по номеру"}
             </button>
@@ -153,19 +156,19 @@ export function InviteSheet({
         ) : null}
 
         {showShare && lastInvite ? (
-          <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <p className="text-xs font-bold uppercase text-amber-800">
+          <section className="mt-6 rounded-card border border-warm/30 bg-warm/10 p-4">
+            <p className="text-xs font-bold uppercase text-graphite-700">
               {lastInvite.invitee_notified
                 ? "Приглашение в боте"
                 : "Ожидает подтверждения"}
             </p>
-            <p className="mt-2 break-all text-xs text-amber-900">
+            <p className="mt-2 break-all text-xs text-graphite-700">
               {lastInvite.deep_link}
             </p>
             <button
               type="button"
               onClick={() => shareInvite(lastInvite)}
-              className="mt-3 w-full rounded-xl border border-amber-300 bg-white py-3 text-sm font-semibold text-amber-900"
+              className="pa-btn-ghost mt-3 w-full"
             >
               Отправить приглашение в Telegram
             </button>
@@ -173,7 +176,7 @@ export function InviteSheet({
         ) : null}
 
         {lastInvite?.invitee_notified && lastInvite.invited_phone_masked ? (
-          <p className="mt-4 text-center text-sm text-emerald-700">
+          <p className="mt-4 text-center text-sm text-sage-700">
             Приглашение отправлено в бот ({lastInvite.invited_phone_masked}).
             Ожидаем ответ.
           </p>

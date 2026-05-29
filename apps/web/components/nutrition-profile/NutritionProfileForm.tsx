@@ -186,7 +186,7 @@ export function NutritionProfileForm() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-5">
-        <p className="text-sm text-stone-500">Загрузка профиля…</p>
+        <p className="text-sm text-graphite-500">Загрузка профиля…</p>
       </div>
     );
   }
@@ -202,29 +202,29 @@ export function NutritionProfileForm() {
             type="button"
             disabled={saving || !initData}
             onClick={() => void handleSave()}
-            className="w-full rounded-2xl bg-emerald-600 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/50 transition hover:bg-emerald-700 disabled:opacity-50 active:scale-[0.99]"
+            className="pa-btn-primary w-full py-3.5 text-base disabled:opacity-50"
           >
             {saving ? "Сохранение…" : "Сохранить"}
           </button>
         </StickyBottomBar>
       }
     >
-      <section className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/90 to-white p-4 shadow-sm">
-        <div className="mb-2 flex items-center justify-between text-sm text-stone-700">
+      <section className="pa-card border-sage-200 bg-sage-50/40 p-4">
+        <div className="mb-2 flex items-center justify-between text-sm text-graphite-700">
           <span className="font-medium">
             Заполнено {progress.filled} из {progress.total} разделов
           </span>
-          <span className="font-bold text-emerald-800">{progress.percent}%</span>
+          <span className="font-bold text-sage-800">{progress.percent}%</span>
         </div>
         <div
-          className="h-2 overflow-hidden rounded-full bg-emerald-100"
+          className="h-2 overflow-hidden rounded-pill bg-sage-100"
           role="progressbar"
           aria-valuenow={progress.percent}
           aria-valuemin={0}
           aria-valuemax={100}
         >
           <div
-            className="h-full rounded-full bg-emerald-600 transition-all"
+            className="h-full rounded-pill bg-sage-600 transition-all"
             style={{ width: `${progress.percent}%` }}
           />
         </div>
@@ -256,17 +256,17 @@ export function NutritionProfileForm() {
                 placeholder="30"
               />
               <div>
-                <p className="mb-1.5 text-sm font-medium text-stone-700">Пол</p>
+                <p className="mb-1.5 text-sm font-medium text-graphite-700">Пол</p>
                 <div className="flex flex-wrap gap-2">
                   {GENDER_OPTIONS.map((o) => (
                     <button
                       key={o.value}
                       type="button"
                       onClick={() => patch({ gender: o.value })}
-                      className={`rounded-full border px-3 py-2 text-sm font-medium ${
+                      className={`pa-chip ${
                         data.gender === o.value
-                          ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                          : "border-stone-200 bg-white text-stone-700"
+                          ? "border-sage-500 bg-sage-50 text-sage-900"
+                          : "border-cream-border bg-cream-surface text-graphite-700"
                       }`}
                     >
                       {o.label}
@@ -309,7 +309,7 @@ export function NutritionProfileForm() {
         >
           <div className="space-y-5">
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Цель</p>
+              <p className="mb-2 text-sm font-medium text-graphite-700">Цель</p>
               <OptionCards
                 options={NUTRITION_GOAL_OPTIONS}
                 value={data.nutrition_goal}
@@ -324,7 +324,7 @@ export function NutritionProfileForm() {
               />
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Активность</p>
+              <p className="mb-2 text-sm font-medium text-graphite-700">Активность</p>
               <OptionCards
                 options={ACTIVITY_OPTIONS}
                 value={data.activity_level}
@@ -344,7 +344,7 @@ export function NutritionProfileForm() {
         >
           <div className="space-y-5">
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Аллергии</p>
+              <p className="mb-2 text-sm font-medium text-graphite-700">Аллергии</p>
               <ChipSelect
                 options={ALLERGY_OPTIONS}
                 value={data.allergies}
@@ -353,7 +353,7 @@ export function NutritionProfileForm() {
               />
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Диеты и ограничения</p>
+              <p className="mb-2 text-sm font-medium text-graphite-700">Диеты и ограничения</p>
               <ChipSelect
                 options={DIET_OPTIONS}
                 value={data.diets}
@@ -362,7 +362,7 @@ export function NutritionProfileForm() {
               />
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">
+              <p className="mb-2 text-sm font-medium text-graphite-700">
                 Медицинские ограничения
               </p>
               <TextAreaField
@@ -374,7 +374,7 @@ export function NutritionProfileForm() {
               />
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">
+              <p className="mb-2 text-sm font-medium text-graphite-700">
                 Запрещённые продукты
               </p>
               <TextAreaField
@@ -426,7 +426,7 @@ export function NutritionProfileForm() {
         >
           <div className="space-y-5">
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Бюджет</p>
+              <p className="mb-2 text-sm font-medium text-graphite-700">Бюджет</p>
               <OptionCards
                 options={BUDGET_OPTIONS}
                 value={data.budget}
@@ -434,7 +434,7 @@ export function NutritionProfileForm() {
               />
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Время готовки</p>
+              <p className="mb-2 text-sm font-medium text-graphite-700">Время готовки</p>
               <ChipSelect
                 options={COOKING_TIME_OPTIONS}
                 value={data.cooking_time ? [data.cooking_time] : []}
@@ -443,7 +443,7 @@ export function NutritionProfileForm() {
               />
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Сложность блюд</p>
+              <p className="mb-2 text-sm font-medium text-graphite-700">Сложность блюд</p>
               <OptionCards
                 options={DISH_COMPLEXITY_OPTIONS}
                 value={data.dish_complexity}
@@ -462,7 +462,7 @@ export function NutritionProfileForm() {
           onToggle={() => toggleSection("pro")}
         >
           <div className="space-y-4">
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-graphite-500">
               Расширенные настройки для спорта и контроля.
             </p>
             <ToggleRow
@@ -513,7 +513,7 @@ export function NutritionProfileForm() {
         </NutritionSection>
 
         {inFamily ? (
-          <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+          <section className="pa-card p-4">
             <ToggleRow
               label="Разрешить админу семьи помогать с профилем"
               description="Админ сможет менять цели и ограничения за вас"

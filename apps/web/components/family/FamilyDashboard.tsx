@@ -214,19 +214,19 @@ export function FamilyDashboard() {
 
   if (loading) {
     return (
-      <p className="py-20 text-center text-sm text-stone-500">Загрузка…</p>
+      <p className="py-20 text-center text-sm text-graphite-500">Загрузка…</p>
     );
   }
 
   if (!initData) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center sm:px-5">
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-graphite-600">
           Семья доступна в Telegram Mini App.
         </p>
         <Link
           href="/"
-          className="mt-6 inline-block text-sm font-semibold text-emerald-700"
+          className="mt-6 inline-block text-sm font-semibold text-sage-700"
         >
           На главную
         </Link>
@@ -253,7 +253,7 @@ export function FamilyDashboard() {
                 <button
                   type="button"
                   onClick={closeMemberForm}
-                  className="flex-1 rounded-xl border border-stone-200 py-3 text-sm font-semibold text-stone-700"
+                  className="pa-btn-ghost flex-1"
                 >
                   Отмена
                 </button>
@@ -263,7 +263,7 @@ export function FamilyDashboard() {
                     saving || !isDraftValid(virtualDraft, linkedAccount)
                   }
                   onClick={() => void handleSaveNutrition()}
-                  className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                  className="pa-btn-primary flex-1 disabled:opacity-50"
                 >
                   {saving
                     ? "Сохранение…"
@@ -276,7 +276,7 @@ export function FamilyDashboard() {
           }
         >
           {error ? (
-            <p className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <p className="mb-3 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {error}
             </p>
           ) : null}
@@ -313,29 +313,29 @@ export function FamilyDashboard() {
         back={{ label: "Профиль", href: "/profile" }}
       >
         {error ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
           </p>
         ) : null}
 
         {!family ? (
-          <section className="rounded-3xl border border-stone-100 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-stone-900">Создать семью</h2>
-            <p className="mt-2 text-sm leading-relaxed text-stone-600">
+          <section className="pa-card p-5">
+            <h2 className="text-lg font-bold text-graphite-900">Создать семью</h2>
+            <p className="mt-2 text-sm leading-relaxed text-graphite-500">
               Общее меню и покупки для близких. Личный режим останется доступен.
             </p>
             <input
               value={familyName}
               onChange={(e) => setFamilyName(e.target.value)}
               placeholder="Например: Семья Ивановых"
-              className="mt-4 w-full rounded-xl border border-stone-200 px-4 py-3 text-base outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+              className="mt-4 w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-base text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
             />
-            <label className="mt-4 flex items-start gap-3 text-sm text-stone-700">
+            <label className="mt-4 flex items-start gap-3 text-sm text-graphite-700">
               <input
                 type="checkbox"
                 checked={adminConsent}
                 onChange={(e) => setAdminConsent(e.target.checked)}
-                className="mt-1"
+                className="mt-1 rounded border-cream-border text-sage-500"
               />
               <span>Я подтверждаю право управлять семейным аккаунтом</span>
             </label>
@@ -343,30 +343,30 @@ export function FamilyDashboard() {
               type="button"
               onClick={() => void handleCreateFamily()}
               disabled={creating || !familyName.trim() || !adminConsent}
-              className="mt-4 w-full rounded-2xl bg-emerald-600 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="pa-btn-primary mt-4 w-full disabled:opacity-50"
             >
               {creating ? "Создание…" : "Создать семью"}
             </button>
           </section>
         ) : (
           <>
-            <section className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">
+            <section className="pa-card border-sage-200 bg-sage-50/40 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
                 Ваша семья
               </p>
-              <h2 className="mt-1 text-xl font-bold text-stone-900">{family.name}</h2>
+              <h2 className="mt-1 text-xl font-bold text-graphite-900">{family.name}</h2>
               <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                <span className="rounded-full bg-white/80 px-3 py-1 font-medium text-stone-700 ring-1 ring-stone-100">
+                <span className="pa-chip">
                   {memberCountLabel(family.members_count)}
                 </span>
-                <span className="rounded-full bg-white/80 px-3 py-1 font-medium text-stone-700 ring-1 ring-stone-100">
+                <span className="pa-chip">
                   Тариф: {family.plan_label}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowManage(true)}
-                className="mt-4 w-full rounded-xl border border-stone-200 bg-white py-2.5 text-sm font-semibold text-stone-800"
+                className="pa-btn-ghost mt-4 w-full"
               >
                 Управление семьёй
               </button>
@@ -376,20 +376,20 @@ export function FamilyDashboard() {
               <button
                 type="button"
                 onClick={() => setShowAddPerson(true)}
-                className="w-full rounded-2xl bg-emerald-600 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/40 active:scale-[0.99]"
+                className="pa-btn-primary w-full active:scale-[0.99]"
               >
                 + Добавить человека
               </button>
             ) : null}
 
             {lastInvite ? (
-              <p className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+              <p className="rounded-control border border-warm/30 bg-warm/10 px-4 py-3 text-sm text-graphite-900">
                 Приглашение отправлено — ожидаем ответ в Telegram
               </p>
             ) : null}
 
             <section className="space-y-3">
-              <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-stone-400">
+              <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-graphite-400">
                 Участники
               </h3>
               {family.members.map((member) => (
@@ -407,11 +407,11 @@ export function FamilyDashboard() {
               ))}
             </section>
 
-            <section className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+            <section className="pa-card border-sage-200 bg-sage-50/50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
                 Следующий шаг
               </p>
-              <p className="mt-1 text-sm text-stone-700">
+              <p className="mt-1 text-sm text-graphite-700">
                 {family.members_count <= 1
                   ? "Добавьте ещё участника или соберите семейное меню — оба шага не обязательны."
                   : "Соберите меню для семьи — ПланАм учтёт всех участников и их ограничения."}
@@ -419,7 +419,7 @@ export function FamilyDashboard() {
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link
                   href="/menu/generate"
-                  className="inline-flex min-h-[40px] items-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm active:scale-[0.99]"
+                  className="pa-btn-primary inline-flex min-h-[40px] items-center px-4 active:scale-[0.99]"
                 >
                   Составить семейное меню
                 </Link>
@@ -427,7 +427,7 @@ export function FamilyDashboard() {
                   <button
                     type="button"
                     onClick={() => setShowAddPerson(true)}
-                    className="inline-flex min-h-[40px] items-center rounded-xl border border-emerald-200 bg-white px-4 text-sm font-semibold text-emerald-800"
+                    className="pa-btn-ghost inline-flex min-h-[40px] items-center px-4"
                   >
                     + Добавить участника
                   </button>

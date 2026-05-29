@@ -5,6 +5,9 @@ import { GOAL_OPTIONS } from "@/lib/onboarding/options";
 import { MEMBER_RESTRICTION_OPTIONS } from "@/lib/family/options";
 import type { FamilyRole, MemberDraft } from "@/lib/family/types";
 
+const INPUT_CLS =
+  "mt-2 w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200";
+
 type MemberFormProps = {
   draft: MemberDraft;
   onChange: (draft: MemberDraft) => void;
@@ -30,9 +33,9 @@ export function MemberForm({
   loading = false,
 }: MemberFormProps) {
   return (
-    <div className="space-y-5 rounded-2xl border border-stone-200 bg-white p-5">
+    <div className="pa-card space-y-5 p-5">
       <div>
-        <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+        <label className="text-xs font-semibold uppercase tracking-wide text-graphite-500">
           Имя
         </label>
         <input
@@ -41,13 +44,13 @@ export function MemberForm({
             onChange({ ...draft, display_name: event.target.value })
           }
           placeholder="Например: Маша"
-          className="mt-2 w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none ring-emerald-500 focus:border-emerald-500 focus:ring-2"
+          className={INPUT_CLS}
         />
       </div>
 
       {allowRoleSelect ? (
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+          <label className="text-xs font-semibold uppercase tracking-wide text-graphite-500">
             Роль
           </label>
           <div className="mt-2 flex gap-2">
@@ -56,10 +59,10 @@ export function MemberForm({
                 key={option.value}
                 type="button"
                 onClick={() => onChange({ ...draft, role: option.value })}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                className={`rounded-pill border px-4 py-2 text-sm font-medium transition ${
                   draft.role === option.value
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                    : "border-stone-200 text-stone-600"
+                    ? "border-sage-500 bg-sage-50 text-sage-700"
+                    : "border-cream-border text-graphite-600"
                 }`}
               >
                 {option.label}
@@ -70,7 +73,7 @@ export function MemberForm({
       ) : null}
 
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+        <p className="text-xs font-semibold uppercase tracking-wide text-graphite-500">
           Цели
         </p>
         <div className="mt-2">
@@ -83,7 +86,7 @@ export function MemberForm({
       </div>
 
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+        <p className="text-xs font-semibold uppercase tracking-wide text-graphite-500">
           Ограничения и аллергии
         </p>
         <div className="mt-2">
@@ -102,7 +105,7 @@ export function MemberForm({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 rounded-xl border border-stone-200 py-3 text-sm font-semibold text-stone-700"
+            className="pa-btn-ghost flex-1"
           >
             Отмена
           </button>
@@ -111,7 +114,7 @@ export function MemberForm({
           type="button"
           onClick={onSubmit}
           disabled={loading || !draft.display_name.trim()}
-          className="flex-[1.4] rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="pa-btn-primary flex-[1.4] disabled:opacity-50"
         >
           {loading ? "Сохранение…" : submitLabel}
         </button>

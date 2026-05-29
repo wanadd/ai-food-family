@@ -22,30 +22,30 @@ export function NutritionSection({
   children,
 }: NutritionSectionProps) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-stone-100 bg-white shadow-sm">
+    <section className="pa-card overflow-hidden">
       <button
         type="button"
         id={`${id}-header`}
         aria-expanded={open}
         aria-controls={`${id}-panel`}
         onClick={onToggle}
-        className="flex w-full min-h-[56px] items-center gap-3 px-4 py-3.5 text-left transition active:bg-stone-50"
+        className="flex w-full min-h-[56px] items-center gap-3 px-4 py-3.5 text-left transition active:bg-cream-deep/60"
       >
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 font-semibold text-stone-900">
+          <p className="flex items-center gap-2 font-semibold text-graphite-900">
             {title}
             {complete ? (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
+              <span className="rounded-pill bg-sage-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sage-800">
                 ✓
               </span>
             ) : null}
           </p>
           {!open ? (
-            <p className="mt-0.5 truncate text-sm text-stone-500">{summary}</p>
+            <p className="mt-0.5 truncate text-sm text-graphite-500">{summary}</p>
           ) : null}
         </div>
         <span
-          className={`shrink-0 text-stone-400 transition ${open ? "rotate-90" : ""}`}
+          className={`shrink-0 text-graphite-400 transition ${open ? "rotate-90" : ""}`}
           aria-hidden
         >
           ›
@@ -56,7 +56,7 @@ export function NutritionSection({
           id={`${id}-panel`}
           role="region"
           aria-labelledby={`${id}-header`}
-          className="border-t border-stone-100 px-4 pb-4 pt-3"
+          className="border-t border-cream-border px-4 pb-4 pt-3"
         >
           {children}
         </div>

@@ -27,15 +27,15 @@ export function ScreenLayout({
   contentClassName = "",
 }: ScreenLayoutProps) {
   return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="border-b border-stone-100 bg-white px-4 pb-3 pt-7 sm:px-5">
+    <div className="min-h-screen bg-cream">
+      <header className="border-b border-cream-border bg-cream-surface px-4 pb-3 pt-7 sm:px-5">
         <div className="mx-auto max-w-lg">
           {back ? <ScreenBackNav back={back} className="mb-2" /> : null}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-stone-900">{title}</h1>
+              <h1 className="text-2xl font-bold text-graphite-900">{title}</h1>
               {subtitle ? (
-                <p className="mt-1 text-sm text-stone-500">{subtitle}</p>
+                <p className="mt-1 text-sm text-graphite-500">{subtitle}</p>
               ) : null}
             </div>
             {headerExtra}
