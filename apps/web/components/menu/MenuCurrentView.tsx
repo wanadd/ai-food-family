@@ -257,7 +257,7 @@ export function MenuCurrentView() {
         ) : null}
 
         <Link
-          href="/menu/leftovers"
+          href="/shopping/leftovers"
           className="flex min-h-[44px] items-center justify-center rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-800 shadow-sm"
         >
           Остатки блюд

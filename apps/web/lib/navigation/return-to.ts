@@ -1,11 +1,10 @@
 export const RETURN_TO_PARAM = "returnTo";
 
 const TAB_ROOTS = [
-  "/nutritionist",
   "/menu",
   "/shopping",
-  "/pantry",
   "/",
+  "/health",
   "/profile",
 ];
 
@@ -27,10 +26,13 @@ export function sanitizeReturnTo(
 }
 
 export function backLabelForReturnTo(returnTo: string): string {
-  if (returnTo.startsWith("/nutritionist")) return "Нутрициолог";
+  // /nutritionist оставлен для совместимости со старыми returnTo-значениями.
+  if (returnTo.startsWith("/health") || returnTo.startsWith("/nutritionist"))
+    return "Здоровье";
   if (returnTo.startsWith("/menu")) return "Меню";
-  if (returnTo.startsWith("/shopping")) return "Покупки";
-  if (returnTo.startsWith("/pantry")) return "Запасы";
+  // Запасы и остатки теперь часть раздела «Покупки».
+  if (returnTo.startsWith("/shopping") || returnTo.startsWith("/pantry"))
+    return "Покупки";
   if (returnTo.startsWith("/profile")) return "Профиль";
   if (returnTo === "/") return "ПланАм";
   return "Назад";

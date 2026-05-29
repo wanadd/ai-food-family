@@ -32,7 +32,7 @@ export function NutritionistAdviceCard({
   const [snoozed, setSnoozed] = useState(false);
   const [deferring, setDeferring] = useState(false);
   const hint = extractFoodHint(advice.body);
-  const returnTo = "/nutritionist";
+  const returnTo = "/health";
 
   if (snoozed) return null;
 

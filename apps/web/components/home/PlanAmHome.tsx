@@ -33,7 +33,7 @@ import {
 import { fetchShoppingList } from "@/lib/shopping/api";
 import type { ShoppingList } from "@/lib/shopping/types";
 
-const PREFETCH_TABS = ["/menu", "/shopping", "/pantry", "/nutritionist"];
+const PREFETCH_TABS = ["/menu", "/shopping", "/health", "/profile"];
 
 function ProfileIcon() {
   return (
@@ -405,7 +405,7 @@ export function PlanAmHome() {
                 </p>
               </div>
               <Link
-                href="/pantry"
+                href="/shopping/pantry"
                 className="shrink-0 rounded-xl bg-stone-100 px-3 py-2 text-xs font-semibold text-stone-700 transition hover:bg-emerald-50 hover:text-emerald-800"
               >
                 Открыть

@@ -476,7 +476,7 @@ export function MenuHub() {
 
       <div className="grid grid-cols-2 gap-2">
         <Link
-          href="/menu/leftovers"
+          href="/shopping/leftovers"
           className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-3 py-3 text-sm shadow-sm"
         >
           <span className="font-semibold text-stone-900">Остатки</span>
@@ -487,7 +487,7 @@ export function MenuHub() {
           </span>
         </Link>
         <Link
-          href="/recipes"
+          href="/menu/recipes"
           className="flex items-center justify-between rounded-2xl border border-stone-100 bg-white px-3 py-3 text-sm shadow-sm"
         >
           <span className="font-semibold text-stone-900">Рецепты</span>

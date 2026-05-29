@@ -46,7 +46,7 @@ import { withReturnTo } from "@/lib/navigation/return-to";
 import { fetchProgressOverview } from "@/lib/progress/api";
 import type { ProgressOverview } from "@/lib/progress/types";
 
-const NUTRI_RETURN = "/nutritionist";
+const NUTRI_RETURN = "/health";
 
 const QUICK_ACTIONS = [
   {
@@ -242,7 +242,7 @@ export function NutritionistDashboard() {
           </p>
         ) : null}
         <Link
-          href="/nutritionist/chat"
+          href="/health/chat"
           className="mt-4 flex min-h-[44px] w-full items-center justify-center rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99]"
         >
           Открыть чат нутрициолога

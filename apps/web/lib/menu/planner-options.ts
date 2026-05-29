@@ -99,8 +99,8 @@ export const CHECKLIST_ITEMS = [
 
 export const CHECKLIST_ADD_LINKS: Record<string, string> = {
   profile: "/profile/nutrition",
-  pantry: "/pantry",
-  leftovers: "/menu/leftovers",
+  pantry: "/shopping/pantry",
+  leftovers: "/shopping/leftovers",
   allergies: "/profile/nutrition",
   budget: "/profile/nutrition",
   cooking_time: "/profile/nutrition",
