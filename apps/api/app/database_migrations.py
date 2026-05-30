@@ -749,6 +749,67 @@ def _schema_statements() -> list[str]:
             """,
         ),
         "CREATE INDEX IF NOT EXISTS ix_recipe_explanations_recipe ON recipe_explanations (recipe_id);",
+        # shopping_categories: remove duplicate system/user rows (HTTP 500 on menu select)
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = TRUE
+          AND a.user_id IS NOT NULL
+          AND b.is_system = TRUE
+          AND b.user_id = a.user_id
+          AND b.slug = a.slug
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = TRUE
+          AND a.family_id IS NOT NULL
+          AND b.is_system = TRUE
+          AND b.family_id = a.family_id
+          AND b.slug = a.slug
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = FALSE
+          AND a.user_id IS NOT NULL
+          AND b.is_system = FALSE
+          AND b.user_id = a.user_id
+          AND b.slug = a.slug
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = FALSE
+          AND a.family_id IS NOT NULL
+          AND b.is_system = FALSE
+          AND b.family_id = a.family_id
+          AND b.slug = a.slug
+          AND a.id > b.id;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_system_user_slug
+        ON shopping_categories (user_id, slug)
+        WHERE is_system = TRUE AND user_id IS NOT NULL;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_system_family_slug
+        ON shopping_categories (family_id, slug)
+        WHERE is_system = TRUE AND family_id IS NOT NULL;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_user_slug
+        ON shopping_categories (user_id, slug)
+        WHERE is_system = FALSE AND user_id IS NOT NULL;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_family_slug
+        ON shopping_categories (family_id, slug)
+        WHERE is_system = FALSE AND family_id IS NOT NULL;
+        """,
     ]
 
 

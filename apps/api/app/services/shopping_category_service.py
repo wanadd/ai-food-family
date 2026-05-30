@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import logging
 import re
 
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from app.models.shopping_category import ShoppingCategory
 from app.schemas.shopping_category import ShoppingCategoryCreateRequest
 from app.services.app_scope import AppScope
 from app.services.shopping_categories import NON_FOOD_CATEGORIES, is_food_category, normalize_category
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_CATEGORIES: list[tuple[str, str, str | None, bool]] = [
     ("продукты", "Продукты", "🛒", True),
@@ -52,6 +55,25 @@ def _scope_filters(scope: AppScope):
     return ShoppingCategory.user_id == scope.user_id
 
 
+def _one_category_or_first(
+    query: Query[ShoppingCategory],
+    *,
+    context: str,
+) -> ShoppingCategory | None:
+    """Return the oldest row; log and tolerate duplicate legacy rows."""
+    rows = query.order_by(ShoppingCategory.id.asc()).all()
+    if not rows:
+        return None
+    if len(rows) > 1:
+        logger.warning(
+            "Duplicate shopping categories for %s (ids=%s), using id=%s",
+            context,
+            [row.id for row in rows],
+            rows[0].id,
+        )
+    return rows[0]
+
+
 def ensure_system_categories(db: Session, scope: AppScope) -> None:
     for slug, name, icon, is_food in SYSTEM_CATEGORIES:
         query = db.query(ShoppingCategory).filter(
@@ -59,7 +81,10 @@ def ensure_system_categories(db: Session, scope: AppScope) -> None:
             ShoppingCategory.slug == slug,
             ShoppingCategory.is_system.is_(True),
         )
-        existing = query.one_or_none()
+        existing = _one_category_or_first(
+            query,
+            context=f"system slug={slug} scope={scope.mode} user={scope.user_id} family={scope.family_id}",
+        )
         if existing is None:
             db.add(
                 ShoppingCategory(
@@ -90,18 +115,20 @@ def get_category_by_slug(
 ) -> ShoppingCategory | None:
     ensure_system_categories(db, scope)
     normalized = normalize_category(slug)
-    cat = (
-        db.query(ShoppingCategory)
-        .filter(_scope_filters(scope), ShoppingCategory.slug == normalized)
-        .one_or_none()
+    cat = _one_category_or_first(
+        db.query(ShoppingCategory).filter(
+            _scope_filters(scope), ShoppingCategory.slug == normalized
+        ),
+        context=f"slug={normalized} scope={scope.mode}",
     )
     if cat is not None:
         return cat
     by_name = slug_from_display_name(slug)
-    return (
-        db.query(ShoppingCategory)
-        .filter(_scope_filters(scope), ShoppingCategory.slug == by_name)
-        .one_or_none()
+    return _one_category_or_first(
+        db.query(ShoppingCategory).filter(
+            _scope_filters(scope), ShoppingCategory.slug == by_name
+        ),
+        context=f"slug={by_name} scope={scope.mode}",
     )
 
 
