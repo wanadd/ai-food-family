@@ -62,13 +62,25 @@ async def replace_meal(
                 system="Ты повар ПланАм. Только JSON. Каждый ингредиент отдельной строкой.",
                 user=prompt,
             )
-            updated = menu.model_copy(deep=True)
-            updated.meals[meal_index] = MenuMeal.model_validate(data["meal"])
-            from app.services.ai import _ingredients_from_ai_rows
+            from app.services.menu_ai_parsing import parse_replace_meal_response
 
-            updated.ingredients = _ingredients_from_ai_rows(data.get("ingredients", []))
-            updated.total_prep_minutes = sum(m.prep_time_minutes for m in updated.meals)
-            return _apply_leftovers([updated], context.leftovers)[0]
+            parsed_meal = parse_replace_meal_response(data, fallback_meal=meal)
+            if parsed_meal is None:
+                logger.warning(
+                    "OpenAI dish replace returned unrecognized format; using fallback"
+                )
+            else:
+                updated = menu.model_copy(deep=True)
+                updated.meals[meal_index] = parsed_meal
+                from app.services.ai import _ingredients_from_ai_rows
+
+                updated.ingredients = _ingredients_from_ai_rows(
+                    data.get("ingredients", [])
+                )
+                updated.total_prep_minutes = sum(
+                    m.prep_time_minutes for m in updated.meals
+                )
+                return _apply_leftovers([updated], context.leftovers)[0]
         except Exception:
             logger.exception("OpenAI dish replace failed")
 
