@@ -39,3 +39,8 @@ yarn-error.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Generated recipe datasets
+exports/*.jsonl
+exports/*.json
+reports/*.md
