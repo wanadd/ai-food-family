@@ -47,7 +47,7 @@ export default function RecipeDetailPage() {
   if (!initData) {
     return (
       <ScreenLayout title="Рецепт" back={{ label: "Меню", href: "/menu" }}>
-        <p className="text-sm text-stone-600">Откройте в Telegram Mini App.</p>
+        <p className="text-sm text-graphite-600">Откройте в Telegram Mini App.</p>
       </ScreenLayout>
     );
   }
@@ -69,7 +69,7 @@ export default function RecipeDetailPage() {
   if (!recipe) {
     return (
       <ScreenLayout title="Рецепт" back={{ label: "Рецепты", href: "/menu/recipes" }}>
-        <p className="text-sm text-stone-500">Загрузка…</p>
+        <p className="text-sm text-graphite-500">Загрузка…</p>
       </ScreenLayout>
     );
   }

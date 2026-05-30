@@ -6,20 +6,11 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { MenuDayOverview } from "@/components/menu/MenuDayOverview";
+import { MenuDayPicker } from "@/components/menu/MenuDayPicker";
+import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
-
-const AmaConfirmDialog = dynamic(
-  () =>
-    import("@/components/subscription/AmaConfirmDialog").then(
-      (m) => m.AmaConfirmDialog,
-    ),
-  { ssr: false },
-);
-import { MealCheckinPanel } from "@/components/menu/MealCheckinPanel";
-import { MenuDayPicker } from "@/components/menu/MenuDayPicker";
-import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
-import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
 import { SkeletonCard, SkeletonList } from "@/components/ui/Skeleton";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
@@ -42,6 +33,14 @@ import {
 import type { MenuVariant } from "@/lib/menu/types";
 import { MEAL_LABELS } from "@/lib/menu/labels";
 
+const AmaConfirmDialog = dynamic(
+  () =>
+    import("@/components/subscription/AmaConfirmDialog").then(
+      (m) => m.AmaConfirmDialog,
+    ),
+  { ssr: false },
+);
+
 type CachedSelected = { menu: MenuVariant | null; selected_at: string | null };
 
 export function MenuCurrentView() {
@@ -54,9 +53,6 @@ export function MenuCurrentView() {
     : null;
   const [menu, setMenu] = useState<MenuVariant | null>(
     cachedSelected?.menu ?? null,
-  );
-  const [selectedAt, setSelectedAt] = useState<string | null>(
-    cachedSelected?.selected_at ?? null,
   );
   const [loading, setLoading] = useState(cachedSelected == null);
   const [replacing, setReplacing] = useState(false);
@@ -86,7 +82,6 @@ export function MenuCurrentView() {
       const loaded = primed.menu;
       setMenu(loaded);
       if (loaded) setDayIndex(defaultDayIndex(loaded));
-      setSelectedAt(primed.selected_at);
       setLoading(false);
     } else {
       setLoading(true);
@@ -100,7 +95,6 @@ export function MenuCurrentView() {
       });
       setMenu(loaded);
       if (loaded) setDayIndex(defaultDayIndex(loaded));
-      setSelectedAt(selected?.selected_at ?? null);
     } catch {
       setError("Не удалось загрузить план");
     } finally {
@@ -115,9 +109,9 @@ export function MenuCurrentView() {
 
   useEffect(() => {
     if (searchParams.get("replace") === "1" && menu) {
-      setReplaceTarget(menu);
+      setReplaceTarget(menuViewForDay(menu, dayIndex));
     }
-  }, [searchParams, menu]);
+  }, [searchParams, menu, dayIndex]);
 
   useEffect(() => {
     if (!initData) return;
@@ -136,7 +130,6 @@ export function MenuCurrentView() {
         pendingMealIndex,
       );
       await selectMenu(initData, mode, updated);
-      // Plan changed → drop overview, selected and downstream caches.
       invalidateCache("selected-menu");
       invalidateCache("menu-overview");
       invalidateCache("shopping-list");
@@ -187,9 +180,9 @@ export function MenuCurrentView() {
     );
   }
 
-  const plannedDate = menu ? dateIsoForDayIndex(menu, dayIndex) : "";
-  const dayMenu = menu ? menuViewForDay(menu, dayIndex) : null;
-  const multiDay = menu ? menuHasMultipleDays(menu) : false;
+  const plannedDate = dateIsoForDayIndex(menu, dayIndex);
+  const dayMenu = menuViewForDay(menu, dayIndex);
+  const multiDay = menuHasMultipleDays(menu);
 
   const dateLabel = multiDay
     ? new Date(plannedDate).toLocaleDateString("ru-RU", {
@@ -197,71 +190,58 @@ export function MenuCurrentView() {
         day: "numeric",
         month: "short",
       })
-    : selectedAt
-      ? new Date(selectedAt).toLocaleDateString("ru-RU", {
-          day: "numeric",
-          month: "long",
-        })
-      : "Сегодня";
+    : "Сегодня";
 
   return (
     <ScreenLayout
-      title={menu.title}
+      title="Текущий план"
       subtitle={
         multiDay
           ? `${dateLabel} · день ${dayIndex}${menu.plan_days ? ` из ${menu.plan_days}` : ""}`
-          : `${dateLabel} · активен`
+          : dateLabel
       }
       back={{ label: "Меню", href: "/menu" }}
-      contentClassName="space-y-4"
+      contentClassName="space-y-3"
     >
-        {justSaved ? (
-          <div className="rounded-control border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-graphite-900">
-            <p className="font-semibold">Меню сохранено</p>
-            <p className="mt-1 text-sage-800">
-              План активен — отмечайте приёмы пищи и смотрите другие дни ниже.
-            </p>
-          </div>
-        ) : null}
+      {justSaved ? (
+        <div className="rounded-control border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-graphite-900">
+          <p className="font-semibold">Меню сохранено</p>
+          <p className="mt-1 text-sage-800">Отмечайте приёмы пищи ниже.</p>
+        </div>
+      ) : null}
 
-        {error ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
-        ) : null}
+      {error ? (
+        <p className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </p>
+      ) : null}
 
-        {multiDay ? (
-          <MenuDayPicker
-            menu={menu}
-            dayIndex={dayIndex}
-            onDayIndexChange={setDayIndex}
-          />
-        ) : null}
+      {multiDay ? (
+        <MenuDayPicker
+          menu={menu}
+          dayIndex={dayIndex}
+          onDayIndexChange={setDayIndex}
+        />
+      ) : null}
 
-        {dayMenu ? (
-          <MenuVariantCard
-            menu={dayMenu}
-            selected
-            onSelect={() => {}}
-            onReplace={() => setReplaceTarget(dayMenu)}
-            selecting={false}
-          />
-        ) : null}
+      {dayMenu ? (
+        <MenuDayOverview
+          menu={dayMenu}
+          plannedDate={plannedDate}
+          onReplaceMeal={(index) => {
+            setReplaceTarget(dayMenu);
+            setPendingMealIndex(index);
+          }}
+          onUpdated={() => void load()}
+        />
+      ) : null}
 
-        {dayMenu ? (
-          <MealCheckinPanel
-            menu={dayMenu}
-            plannedDate={plannedDate}
-            onUpdated={() => void load()}
-          />
-        ) : null}
-
-        <Link
-          href="/shopping/leftovers"
-          className="pa-btn flex min-h-[44px] items-center justify-center px-4 py-3 text-sm"
-        >
-          Остатки блюд
-        </Link>
+      <Link
+        href="/shopping/leftovers"
+        className="pa-btn-ghost block text-center text-sm text-graphite-600"
+      >
+        Остатки блюд →
+      </Link>
 
       {replaceTarget && pendingMealIndex === null ? (
         <ReplaceDishModal
@@ -283,14 +263,9 @@ export function MenuCurrentView() {
           if (!meal) return null;
           return (
             <span>
-              ПланАм предложит альтернативу для блюда
-              {" «"}
+              ПланАм предложит альтернативу для «
               <span className="font-semibold text-graphite-900">{meal.name}</span>
-              {"» ("}
-              {MEAL_LABELS[meal.meal_type]}
-              {"). "}
-              Активный план обновится, список покупок пересчитается. Если новое
-              блюдо не подойдёт — можно заменить ещё раз.
+              » ({MEAL_LABELS[meal.meal_type]}).
             </span>
           );
         })()}
@@ -300,7 +275,10 @@ export function MenuCurrentView() {
         busy={replacing}
         confirmLabel="Подтвердить замену"
         onCancel={() => {
-          if (!replacing) setPendingMealIndex(null);
+          if (!replacing) {
+            setPendingMealIndex(null);
+            setReplaceTarget(null);
+          }
         }}
         onConfirm={() => void handleConfirmReplace()}
       />

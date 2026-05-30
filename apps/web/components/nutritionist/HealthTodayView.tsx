@@ -15,7 +15,6 @@ import {
   invalidate as invalidateCache,
 } from "@/lib/cache/session-cache";
 import {
-  getNutritionGoalLabel,
   isNutritionProfileComplete,
 } from "@/lib/profile/nutrition-summary";
 import { fetchNutritionProfile } from "@/lib/nutrition-profile/api";
@@ -45,13 +44,6 @@ import type { ProgressOverview } from "@/lib/progress/types";
 
 const HEALTH_RETURN = "/health/today";
 
-/**
- * Подэкран «Сегодня» раздела «Здоровье» (ONE SCREEN UX).
- *
- * Сюда переехало тяжёлое «коучинговое» содержимое бывшего dashboard: КБЖУ
- * план/факт, вода, прогресс к цели, совет ПланАм и отложенные рекомендации.
- * Хаб /health остаётся лёгким навигационным центром. Логика и API не менялись.
- */
 export function HealthTodayView() {
   const { initData, state: authState } = useProtectedScreen();
   const { mode, loading: modeLoading } = useAppMode();
@@ -99,9 +91,7 @@ export function HealthTodayView() {
   }, [initData, mode]);
 
   const load = useCallback(async () => {
-    if (!initData) {
-      return;
-    }
+    if (!initData) return;
     const hasAny =
       getCached(cacheKey.nutritionProfile()) != null ||
       getCached(cacheKey.selectedMenu(mode)) != null ||
@@ -145,12 +135,9 @@ export function HealthTodayView() {
     })();
   }, [initData, mode, authState, refreshDeferred]);
 
-  const goalLabel = getNutritionGoalLabel(profile);
   const profileComplete = isNutritionProfileComplete(profile);
-
   const daily = buildDailyStatus({ progress, menu, mode });
   const goalCard = buildGoalProgressCard(profile, progress);
-
   const advice = pickMainAdvice({
     profile,
     menu,
@@ -161,6 +148,12 @@ export function HealthTodayView() {
   const adviceHiddenByDefer =
     deferredAdvice.some((d) => d.title === advice.title) ||
     suppressedTitles.includes(advice.title);
+
+  const hasMoreContent =
+    goalCard.percent != null ||
+    (initData && !adviceHiddenByDefer) ||
+    (profileComplete && adviceWhy.length > 0) ||
+    deferredAdvice.length > 0;
 
   if (authState !== "ready") {
     return (
@@ -179,7 +172,7 @@ export function HealthTodayView() {
         contentClassName="space-y-3 pb-24"
       >
         <SkeletonCard titleWidth="w-1/2" lines={3} withButton />
-        <SkeletonList count={2} />
+        <SkeletonList count={1} />
       </ScreenLayout>
     );
   }
@@ -192,43 +185,44 @@ export function HealthTodayView() {
       contentClassName="space-y-3"
     >
       {!profileComplete ? (
-        <section className="pa-card border-sage-200 bg-sage-50/40 p-4">
-          <p className="font-semibold text-graphite-900">Можно дополнить профиль</p>
-          <p className="mt-1 text-sm text-graphite-600">
-            Если хотите — советы будут точнее. Без этого ПланАм тоже работает.
-          </p>
-          <Link
-            href={withReturnTo("/profile/nutrition", HEALTH_RETURN)}
-            className="pa-btn-primary mt-3 inline-flex min-h-[44px] items-center px-4 text-sm"
-          >
-            Открыть профиль
-          </Link>
-        </section>
+        <Link
+          href={withReturnTo("/profile/nutrition", HEALTH_RETURN)}
+          className="block text-sm text-sage-700"
+        >
+          Дополнить профиль питания →
+        </Link>
       ) : null}
 
       <section className="pa-card border-sage-200 bg-sage-50/30 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
           Сегодня
         </p>
-        <ul className="mt-2 space-y-1 text-sm text-graphite-800">
-          <li>{daily.plan.calories}</li>
-          <li>{daily.actual.calories}</li>
-          <li>{daily.plan.water}</li>
-        </ul>
         {daily.todoLine ? (
-          <p className="mt-3 rounded-control bg-warm/10 px-3 py-2 text-sm font-medium text-graphite-900">
+          <p className="mt-2 text-lg font-bold text-graphite-900">
             Осталось: {daily.todoLine}
           </p>
+        ) : (
+          <p className="mt-2 text-lg font-bold text-graphite-900">
+            На сегодня всё учтено
+          </p>
+        )}
+        <p className="mt-2 text-sm text-graphite-600">{daily.actual.calories}</p>
+        <p className="text-sm text-graphite-500">{daily.plan.calories}</p>
+
+        {initData ? (
+          <div className="mt-4">
+            <WaterIntakePanel
+              onUpdated={() => {
+                invalidateCache("progress-overview");
+                void load();
+              }}
+            />
+          </div>
         ) : null}
-        <Link
-          href="/health/chat"
-          className="pa-btn-primary mt-4 flex min-h-[44px] w-full items-center justify-center py-2.5 text-sm"
-        >
-          Открыть чат нутрициолога
-        </Link>
-        <details className="mt-3 text-sm text-graphite-600">
+
+        <details className="mt-4 text-sm text-graphite-600">
           <summary className="cursor-pointer text-xs font-semibold text-sage-700">
-            План vs факт КБЖУ
+            КБЖУ подробнее
           </summary>
           <div className="mt-2 grid grid-cols-2 gap-3">
             <div>
@@ -253,8 +247,6 @@ export function HealthTodayView() {
               </ul>
             </div>
           </div>
-          <p className="mt-2 text-xs text-graphite-500">{daily.trainingLine}</p>
-          <p className="mt-1 text-xs text-graphite-500">{daily.menuLine}</p>
           {menu ? (
             <Link
               href="/menu/current"
@@ -264,128 +256,126 @@ export function HealthTodayView() {
             </Link>
           ) : null}
         </details>
-        {initData ? (
-          <div className="mt-3">
-            <WaterIntakePanel
-              onUpdated={() => {
-                invalidateCache("progress-overview");
-                void load();
-              }}
-            />
-          </div>
-        ) : null}
-      </section>
 
-      <section className="pa-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-graphite-400">
-          Цель
-        </p>
-        <p className="mt-1 text-sm font-semibold text-graphite-900">
-          {goalLabel ?? "Цель не задана"}
-        </p>
-        {goalCard.percent != null ? (
-          <div className="mt-2">
-            <div className="flex justify-between text-xs text-graphite-600">
-              <span>
-                {goalCard.currentWeight} → {goalCard.targetWeight}
-              </span>
-              <span className="font-bold text-sage-800">
-                {goalCard.percent}%
-              </span>
-            </div>
-            <div className="mt-1 h-2 overflow-hidden rounded-pill bg-cream-deep">
-              <div
-                className="h-full rounded-pill bg-sage-500"
-                style={{ width: `${goalCard.percent}%` }}
-              />
-            </div>
-          </div>
-        ) : null}
         <Link
-          href={withReturnTo("/progress", HEALTH_RETURN)}
-          className="mt-3 inline-block text-xs font-semibold text-sage-700"
+          href="/health/chat"
+          className="pa-btn-primary mt-4 flex min-h-[48px] w-full items-center justify-center py-3 text-sm"
         >
-          Подробнее в прогрессе →
+          Спросить ПланАм
         </Link>
       </section>
 
-      {initData && !adviceHiddenByDefer ? (
-        <NutritionistAdviceCard
-          advice={advice}
-          initData={initData}
-          mode={mode}
-          onDeferred={refreshDeferred}
-        />
-      ) : null}
-
-      {profileComplete && adviceWhy.length > 0 ? (
-        <details className="pa-card p-4 text-sm text-graphite-600">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-graphite-500">
-            Почему ПланАм советует это
+      {hasMoreContent ? (
+        <details className="pa-card p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-graphite-900">
+            Ещё — цель, советы, отложенное
           </summary>
-          <ul className="mt-2 space-y-1 text-graphite-700">
-            {adviceWhy.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-
-      {deferredAdvice.length > 0 ? (
-        <section className="pa-card bg-cream-deep/40 p-4">
-          <p className="text-sm font-bold text-graphite-900">Отложенные рекомендации</p>
-          <ul className="mt-3 space-y-3">
-            {deferredAdvice.map((item) => (
-              <li
-                key={item.id}
-                className="pa-card p-3"
-              >
-                <p className="font-semibold text-graphite-900">{item.title}</p>
-                <p className="mt-1 text-xs text-graphite-600">{item.body}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!initData) return;
-                      void completeDeferredAdvice(initData, mode, item.id).then(
-                        refreshDeferred,
-                      );
-                    }}
-                    className="pa-btn-primary px-3 py-1.5 text-xs"
-                  >
-                    Выполнить
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!initData) return;
-                      void returnDeferredAdvice(initData, mode, item.id).then(
-                        refreshDeferred,
-                      );
-                    }}
-                    className="pa-btn px-3 py-1.5 text-xs"
-                  >
-                    Вернуть
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!initData) return;
-                      void dismissDeferredAdvicePermanently(
-                        initData,
-                        mode,
-                        item.id,
-                      ).then(refreshDeferred);
-                    }}
-                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600"
-                  >
-                    Удалить
-                  </button>
+          <div className="mt-4 space-y-4">
+            {goalCard.percent != null ? (
+              <div>
+                <p className="text-xs font-semibold uppercase text-graphite-400">
+                  Цель
+                </p>
+                <div className="mt-2 flex justify-between text-xs text-graphite-600">
+                  <span>
+                    {goalCard.currentWeight} → {goalCard.targetWeight}
+                  </span>
+                  <span className="font-bold text-sage-800">{goalCard.percent}%</span>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+                <div className="mt-1 h-2 overflow-hidden rounded-pill bg-cream-deep">
+                  <div
+                    className="h-full rounded-pill bg-sage-500"
+                    style={{ width: `${goalCard.percent}%` }}
+                  />
+                </div>
+                <Link
+                  href={withReturnTo("/progress", HEALTH_RETURN)}
+                  className="mt-2 inline-block text-xs font-semibold text-sage-700"
+                >
+                  Подробнее в прогрессе →
+                </Link>
+              </div>
+            ) : null}
+
+            {initData && !adviceHiddenByDefer ? (
+              <NutritionistAdviceCard
+                advice={advice}
+                initData={initData}
+                mode={mode}
+                onDeferred={refreshDeferred}
+              />
+            ) : null}
+
+            {profileComplete && adviceWhy.length > 0 ? (
+              <div>
+                <p className="text-xs font-semibold uppercase text-graphite-500">
+                  Почему ПланАм советует это
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-graphite-700">
+                  {adviceWhy.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {deferredAdvice.length > 0 ? (
+              <div>
+                <p className="text-sm font-bold text-graphite-900">
+                  Отложенные рекомендации
+                </p>
+                <ul className="mt-3 space-y-3">
+                  {deferredAdvice.map((item) => (
+                    <li key={item.id} className="rounded-control bg-cream-deep/40 p-3">
+                      <p className="font-semibold text-graphite-900">{item.title}</p>
+                      <p className="mt-1 text-xs text-graphite-600">{item.body}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!initData) return;
+                            void completeDeferredAdvice(initData, mode, item.id).then(
+                              refreshDeferred,
+                            );
+                          }}
+                          className="pa-btn-primary px-3 py-1.5 text-xs"
+                        >
+                          Выполнить
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!initData) return;
+                            void returnDeferredAdvice(initData, mode, item.id).then(
+                              refreshDeferred,
+                            );
+                          }}
+                          className="pa-btn px-3 py-1.5 text-xs"
+                        >
+                          Вернуть
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!initData) return;
+                            void dismissDeferredAdvicePermanently(
+                              initData,
+                              mode,
+                              item.id,
+                            ).then(refreshDeferred);
+                          }}
+                          className="text-xs font-semibold text-red-600"
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </details>
       ) : null}
     </ScreenLayout>
   );
