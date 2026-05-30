@@ -21,15 +21,14 @@ class Settings(BaseSettings):
     backup_root: str = "backups"
     environment: str = "development"
 
-    # Recipe Engine feature flags (off by default).
-    # These flags gate new domain wiring without changing existing API
-    # contracts or database schema in an uncontrolled way.
+    # Recipe Engine feature flags — enabled by default after Phase 1 activation.
+    # Set individual flags to false via env to disable without redeploying code.
     recipe_engine_v1: bool = False
-    recipe_collections: bool = False
-    recipe_history: bool = False
-    recipe_scenarios: bool = False
-    recipe_explainability: bool = False
-    family_recipe_preferences: bool = False
+    recipe_collections: bool = True
+    recipe_history: bool = True
+    recipe_scenarios: bool = True
+    recipe_explainability: bool = True
+    family_recipe_preferences: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

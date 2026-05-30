@@ -186,14 +186,24 @@ def list_recipes(
 
     if scenario:
         scenario_type = ScenarioType(scenario)
-        matcher = ScenarioMatcher()
-        recipes = [
-            recipe
-            for recipe in recipes
-            if matcher.match_recipe(recipe, scenario_type).matched
-        ]
+        if scenario_type == ScenarioType.FROM_PANTRY:
+            if scope:
+                pantry = {
+                    p.name.lower()
+                    for p in get_active_items_for_scope(db, scope)
+                }
+                recipes = [r for r in recipes if _matches_pantry(r, pantry)]
+            else:
+                recipes = []
+        else:
+            matcher = ScenarioMatcher()
+            recipes = [
+                recipe
+                for recipe in recipes
+                if matcher.match_recipe(recipe, scenario_type).matched
+            ]
 
-    if from_pantry and scope:
+    if from_pantry and scope and scenario != ScenarioType.FROM_PANTRY.value:
         pantry = {p.name.lower() for p in get_active_items_for_scope(db, scope)}
         recipes = [r for r in recipes if _matches_pantry(r, pantry)]
 
