@@ -757,6 +757,26 @@ def _schema_statements() -> list[str]:
           AND a.user_id IS NOT NULL
           AND b.is_system = TRUE
           AND b.user_id = a.user_id
+          AND b.name = a.name
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = TRUE
+          AND a.family_id IS NOT NULL
+          AND b.is_system = TRUE
+          AND b.family_id = a.family_id
+          AND b.name = a.name
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = TRUE
+          AND a.user_id IS NOT NULL
+          AND b.is_system = TRUE
+          AND b.user_id = a.user_id
           AND b.slug = a.slug
           AND a.id > b.id;
         """,
@@ -796,8 +816,18 @@ def _schema_statements() -> list[str]:
         WHERE is_system = TRUE AND user_id IS NOT NULL;
         """,
         """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_system_user_name
+        ON shopping_categories (user_id, name)
+        WHERE is_system = TRUE AND user_id IS NOT NULL;
+        """,
+        """
         CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_system_family_slug
         ON shopping_categories (family_id, slug)
+        WHERE is_system = TRUE AND family_id IS NOT NULL;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_system_family_name
+        ON shopping_categories (family_id, name)
         WHERE is_system = TRUE AND family_id IS NOT NULL;
         """,
         """

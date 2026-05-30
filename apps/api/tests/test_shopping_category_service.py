@@ -117,3 +117,49 @@ def test_get_category_by_slug_picks_first_when_duplicates(db_session):
         .filter(ShoppingCategory.user_id == 7, ShoppingCategory.slug == "овощи")
         .all()
     )
+
+
+def test_find_system_category_by_name_when_slug_differs(db_session):
+    scope = AppScope(mode="personal", user_id=99, family_id=None)
+    db_session.add(
+        ShoppingCategory(
+            slug="legacy_slug",
+            name="Напитки",
+            icon="🥤",
+            is_food=True,
+            is_system=True,
+            user_id=99,
+        )
+    )
+    db_session.commit()
+
+    ensure_system_categories(db_session, scope)
+
+    rows = (
+        db_session.query(ShoppingCategory)
+        .filter(
+            ShoppingCategory.user_id == 99,
+            ShoppingCategory.name == "Напитки",
+            ShoppingCategory.is_system.is_(True),
+        )
+        .all()
+    )
+    assert len(rows) == 1
+
+
+def test_ensure_system_categories_is_idempotent(db_session):
+    scope = AppScope(mode="personal", user_id=55, family_id=None)
+    ensure_system_categories(db_session, scope)
+    count_after_first = (
+        db_session.query(ShoppingCategory)
+        .filter(ShoppingCategory.user_id == 55, ShoppingCategory.is_system.is_(True))
+        .count()
+    )
+    ensure_system_categories(db_session, scope)
+    count_after_second = (
+        db_session.query(ShoppingCategory)
+        .filter(ShoppingCategory.user_id == 55, ShoppingCategory.is_system.is_(True))
+        .count()
+    )
+    assert count_after_first == count_after_second
+    assert count_after_second == len(category_service.SYSTEM_CATEGORIES)

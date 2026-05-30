@@ -6,6 +6,7 @@ import logging
 import re
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, Session
 
 from app.models.shopping_category import ShoppingCategory
@@ -74,17 +75,34 @@ def _one_category_or_first(
     return rows[0]
 
 
+def _find_system_category(
+    db: Session,
+    scope: AppScope,
+    *,
+    slug: str,
+    name: str,
+) -> ShoppingCategory | None:
+    """Find an existing system category for this scope by slug, then by display name."""
+    base = db.query(ShoppingCategory).filter(
+        _scope_filters(scope),
+        ShoppingCategory.is_system.is_(True),
+    )
+    scope_label = f"{scope.mode} user={scope.user_id} family={scope.family_id}"
+    by_slug = _one_category_or_first(
+        base.filter(ShoppingCategory.slug == slug),
+        context=f"system slug={slug} {scope_label}",
+    )
+    if by_slug is not None:
+        return by_slug
+    return _one_category_or_first(
+        base.filter(ShoppingCategory.name == name),
+        context=f"system name={name!r} {scope_label}",
+    )
+
+
 def ensure_system_categories(db: Session, scope: AppScope) -> None:
     for slug, name, icon, is_food in SYSTEM_CATEGORIES:
-        query = db.query(ShoppingCategory).filter(
-            _scope_filters(scope),
-            ShoppingCategory.slug == slug,
-            ShoppingCategory.is_system.is_(True),
-        )
-        existing = _one_category_or_first(
-            query,
-            context=f"system slug={slug} scope={scope.mode} user={scope.user_id} family={scope.family_id}",
-        )
+        existing = _find_system_category(db, scope, slug=slug, name=name)
         if existing is None:
             db.add(
                 ShoppingCategory(
@@ -97,7 +115,17 @@ def ensure_system_categories(db: Session, scope: AppScope) -> None:
                     family_id=scope.family_id if scope.is_family else None,
                 )
             )
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        logger.warning(
+            "Concurrent system category seed for scope=%s user=%s family=%s; "
+            "unique constraint prevented duplicate insert",
+            scope.mode,
+            scope.user_id,
+            scope.family_id,
+        )
 
 
 def list_categories(db: Session, scope: AppScope) -> list[ShoppingCategory]:
