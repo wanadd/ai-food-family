@@ -1,5 +1,7 @@
 from datetime import date
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -58,6 +60,7 @@ from app.services.recipes.family_preferences import FamilyPreferenceService
 from app.services.recipes.scenarios import ScenarioService, ScenarioType
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
+logger = logging.getLogger(__name__)
 
 
 def _to_why_response(result) -> RecipeWhyResponse:
@@ -154,6 +157,7 @@ def create_recipe(
 @router.get("", response_model=RecipeListResponse)
 def list_recipes(
     q: str | None = Query(default=None, max_length=120),
+    search: str | None = Query(default=None, max_length=120),
     meal_type: str | None = Query(default=None),
     category: str | None = Query(default=None),
     diet: str | None = Query(default=None),
@@ -177,6 +181,15 @@ def list_recipes(
     scope: AppScope = Depends(get_app_scope),
     db: Session = Depends(get_db),
 ) -> RecipeListResponse:
+    query_text = (q or search or "").strip() or None
+    logger.info(
+        "GET /recipes q=%r search=%r meal_type=%r scenario=%r user=%s",
+        q,
+        search,
+        meal_type,
+        scenario,
+        user.id,
+    )
     if scenario:
         require_feature(settings.recipe_scenarios, "RECIPE_SCENARIOS")
         try:
@@ -187,10 +200,10 @@ def list_recipes(
                 detail="Unknown recipe scenario",
             ) from exc
 
-    return recipes_service.list_recipes(
+    result = recipes_service.list_recipes(
         db,
         user,
-        q=q,
+        q=query_text,
         meal_type=meal_type or None,
         category=category or None,
         diet=diet or None,
@@ -212,6 +225,8 @@ def list_recipes(
         scenario=scenario,
         scope=scope,
     )
+    logger.info("GET /recipes -> total=%d", result.total)
+    return result
 
 
 @router.get("/history", response_model=RecipeHistoryListResponse)

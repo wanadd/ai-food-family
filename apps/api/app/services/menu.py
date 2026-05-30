@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+import logging
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -27,6 +29,8 @@ from app.services.menu_context_fingerprint import (
 )
 from app.services.meal_leftovers import list_active_leftovers
 from app.services.pantry import get_active_items_for_scope
+
+logger = logging.getLogger(__name__)
 
 
 async def generate_menus_for_scope(
@@ -126,6 +130,19 @@ async def replace_dish(
         )
 
     context = build_menu_context(db, user, scope)
+    meal_name = (
+        payload.menu.meals[payload.meal_index].name
+        if payload.meal_index < len(payload.menu.meals)
+        else "?"
+    )
+    logger.info(
+        "menu.replace_dish user=%s variant=%s meal_index=%s day_index=%s meal=%r",
+        user.id,
+        payload.menu.variant,
+        payload.meal_index,
+        payload.day_index,
+        meal_name,
+    )
     try:
         updated = await replace_meal(
             context,
@@ -135,6 +152,7 @@ async def replace_dish(
             db=db,
             user=user,
             scope=scope,
+            day_index=payload.day_index,
         )
     except ValueError as exc:
         raise HTTPException(
@@ -159,6 +177,14 @@ async def replace_dish(
         ams_spent=0,
         model=settings.openai_model,
         metadata={"variant": updated.variant},
+    )
+
+    logger.info(
+        "menu.replace_dish ok user=%s new_meal=%r",
+        user.id,
+        updated.meals[payload.meal_index].name
+        if payload.meal_index < len(updated.meals)
+        else "?",
     )
 
     return updated

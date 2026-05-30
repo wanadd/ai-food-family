@@ -38,6 +38,7 @@ async def replace_meal(
     db=None,
     user=None,
     scope=None,
+    day_index: int | None = None,
 ) -> MenuVariant:
     if meal_index < 0 or meal_index >= len(menu.meals):
         raise ValueError("Invalid meal index")
@@ -70,8 +71,9 @@ async def replace_meal(
                     "OpenAI dish replace returned unrecognized format; using fallback"
                 )
             else:
-                updated = menu.model_copy(deep=True)
-                updated.meals[meal_index] = parsed_meal
+                updated = _apply_replaced_meal(
+                    menu, meal_index, parsed_meal, day_index=day_index
+                )
                 from app.services.ai import _ingredients_from_ai_rows
 
                 new_ingredients = _ingredients_from_ai_rows(
@@ -79,14 +81,35 @@ async def replace_meal(
                 )
                 if new_ingredients:
                     updated.ingredients = new_ingredients
-                updated.total_prep_minutes = sum(
-                    m.prep_time_minutes for m in updated.meals
-                )
                 return _apply_leftovers([updated], context.leftovers)[0]
         except Exception:
             logger.exception("OpenAI dish replace failed")
 
-    return _replace_fallback(menu, meal_index, hint)
+    return _replace_fallback(menu, meal_index, hint, day_index=day_index)
+
+
+def _apply_replaced_meal(
+    menu: MenuVariant,
+    meal_index: int,
+    new_meal: MenuMeal,
+    *,
+    day_index: int | None = None,
+) -> MenuVariant:
+    updated = menu.model_copy(deep=True)
+    updated.meals[meal_index] = new_meal
+    if updated.days:
+        target_day = day_index
+        if target_day is None and len(updated.days) == 1:
+            target_day = updated.days[0].day_index
+        if target_day is not None:
+            for day in updated.days:
+                if day.day_index == target_day:
+                    day.meals[meal_index] = new_meal
+                    break
+            if target_day == 1 and updated.days:
+                updated.meals = list(updated.days[0].meals)
+    updated.total_prep_minutes = sum(m.prep_time_minutes for m in updated.meals)
+    return updated
 
 
 def _apply_leftovers(menus: list[MenuVariant], leftovers: list) -> list[MenuVariant]:
@@ -219,7 +242,7 @@ def _generate_fallback(context: MenuGenerationContext) -> list[MenuVariant]:
 
 
 def _replace_fallback(
-    menu: MenuVariant, meal_index: int, hint: str | None
+    menu: MenuVariant, meal_index: int, hint: str | None, *, day_index: int | None = None
 ) -> MenuVariant:
     alternatives = {
         "breakfast": ("Тост с авокадо и яйцом", "Питательный завтрак за 10 минут", 10),
@@ -229,14 +252,17 @@ def _replace_fallback(
     }
     meal = menu.meals[meal_index]
     alt = alternatives.get(meal.meal_type, ("Суп-пюре из овощей", "Универсальная замена", 20))
-    updated = menu.model_copy(deep=True)
-    updated.meals[meal_index] = MenuMeal(
-        meal_type=meal.meal_type,
-        name=alt[0],
-        description=alt[1] + (f" ({hint})" if hint else ""),
-        prep_time_minutes=alt[2],
+    updated = _apply_replaced_meal(
+        menu,
+        meal_index,
+        MenuMeal(
+            meal_type=meal.meal_type,
+            name=alt[0],
+            description=alt[1] + (f" ({hint})" if hint else ""),
+            prep_time_minutes=alt[2],
+        ),
+        day_index=day_index,
     )
-    updated.total_prep_minutes = sum(m.prep_time_minutes for m in updated.meals)
     if hint:
         updated.explanation = f"{menu.explanation} Блюдо заменено: {hint}."
     return updated

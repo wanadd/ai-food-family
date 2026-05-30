@@ -79,6 +79,7 @@ async def replace_meal(
     db: Session | None = None,
     user: User | None = None,
     scope: AppScope | None = None,
+    day_index: int | None = None,
 ) -> MenuVariant:
     if meal_index < 0 or meal_index >= len(menu.meals):
         raise ValueError("Invalid meal index")
@@ -86,5 +87,12 @@ async def replace_meal(
     from app.services.menu_ai_legacy import replace_meal as legacy_replace
 
     return await legacy_replace(
-        context, menu, meal_index, hint, db=db, user=user, scope=scope
+        context,
+        menu,
+        meal_index,
+        hint,
+        db=db,
+        user=user,
+        scope=scope,
+        day_index=day_index,
     )

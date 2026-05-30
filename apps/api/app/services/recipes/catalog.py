@@ -6,6 +6,8 @@ this module is a structural refactor, not a functional change.
 
 from __future__ import annotations
 
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.data.recipe_seed import SEED_RECIPES
@@ -26,6 +28,8 @@ from . import repository
 from app.services.recipes.mapper import to_detail, to_summary
 from app.services.recipes.scenarios import ScenarioMatcher, ScenarioType
 from app.services.recipes.types import RecipeListFilters
+
+logger = logging.getLogger(__name__)
 
 FILTER_LABELS: dict[str, list[dict[str, str]]] = {
     "meal_types": [
@@ -183,6 +187,13 @@ def list_recipes(
     )
 
     recipes = repository.query_recipes(db, filters)
+    logger.info(
+        "recipes.list query=%r meal_type=%r scenario=%r matched=%d",
+        q,
+        meal_type,
+        scenario,
+        len(recipes),
+    )
 
     if scenario:
         scenario_type = ScenarioType(scenario)
@@ -224,8 +235,13 @@ def list_recipes(
 
     items = []
     for recipe in recipes:
-        fit = quick_recipe_fit_level(db, user, scope) if scope is not None else None
+        fit = (
+            quick_recipe_fit_level(db, user, scope, recipe)
+            if scope is not None
+            else None
+        )
         items.append(to_summary(recipe, favorite_ids, fit_level=fit))
+    logger.info("recipes.list response items=%d", len(items))
     return RecipeListResponse(items=items, total=len(items))
 
 

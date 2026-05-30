@@ -54,6 +54,7 @@ class MenuGenerateResponse(BaseModel):
 class ReplaceDishRequest(BaseModel):
     menu: MenuVariant
     meal_index: int = Field(ge=0)
+    day_index: int | None = Field(default=None, ge=1, le=30)
     hint: str | None = Field(default=None, max_length=300)
 
 

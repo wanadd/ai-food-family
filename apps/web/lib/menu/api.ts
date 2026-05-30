@@ -81,10 +81,16 @@ export async function replaceDish(
   menu: MenuVariant,
   mealIndex: number,
   hint?: string,
+  dayIndex?: number,
 ): Promise<MenuVariant> {
   return apiFetch<MenuVariant>(initData, mode, "/menus/replace-dish", {
     method: "POST",
-    body: JSON.stringify({ menu, meal_index: mealIndex, hint: hint || null }),
+    body: JSON.stringify({
+      menu,
+      meal_index: mealIndex,
+      day_index: dayIndex ?? null,
+      hint: hint || null,
+    }),
   });
 }
 

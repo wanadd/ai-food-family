@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MenuDayOverview } from "@/components/menu/MenuDayOverview";
@@ -71,6 +71,7 @@ export function MenuCurrentView() {
     cachedSelected?.menu ? defaultDayIndex(cachedSelected.menu) : 1,
   );
   const justSaved = searchParams.get("saved") === "1";
+  const replaceFlowKeyRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -109,10 +110,17 @@ export function MenuCurrentView() {
   }, [load, modeLoading]);
 
   useEffect(() => {
-    if (searchParams.get("replace") === "1" && menu) {
-      setReplaceTarget(menuViewForDay(menu, dayIndex));
-      setPendingMealIndex(null);
+    const replaceParam = searchParams.get("replace");
+    if (replaceParam !== "1") {
+      replaceFlowKeyRef.current = null;
+      return;
     }
+    if (!menu) return;
+    const flowKey = `${dayIndex}`;
+    if (replaceFlowKeyRef.current === flowKey) return;
+    replaceFlowKeyRef.current = flowKey;
+    setReplaceTarget(menuViewForDay(menu, dayIndex));
+    setPendingMealIndex(null);
   }, [searchParams, menu, dayIndex]);
 
   useEffect(() => {
@@ -131,6 +139,8 @@ export function MenuCurrentView() {
         mode,
         dayMenuPayload,
         pendingMealIndex,
+        undefined,
+        dayIndex,
       );
       const merged = mergeReplaceResult(menu, updated, dayIndex);
       await selectMenu(initData, mode, merged);
@@ -233,7 +243,8 @@ export function MenuCurrentView() {
           menu={dayMenu}
           plannedDate={plannedDate}
           onReplaceMeal={(index) => {
-            setReplaceTarget(dayMenu);
+            setError(null);
+            setReplaceTarget(menuViewForDay(menu, dayIndex));
             setPendingMealIndex(index);
           }}
           onUpdated={() => void load()}

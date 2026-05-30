@@ -14,7 +14,7 @@ for the FTS migration planned in ``docs/RECIPE_ENGINE_V1.md`` § 2.4.
 
 from __future__ import annotations
 
-from sqlalchemy import String, cast, or_
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.recipe import Recipe, RecipeFavorite
@@ -123,8 +123,6 @@ def query_recipes(db: Session, filters: RecipeListFilters) -> list[Recipe]:
             or_(
                 Recipe.title.ilike(term),
                 Recipe.description.ilike(term),
-                cast(Recipe.tags, String).ilike(term),
-                cast(Recipe.ingredients, String).ilike(term),
             )
         )
 

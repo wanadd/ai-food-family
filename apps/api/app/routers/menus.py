@@ -60,6 +60,12 @@ async def replace_dish(
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> MenuVariant:
+    logger.info(
+        "POST /menus/replace-dish user=%s meal_index=%s day_index=%s",
+        user.id,
+        payload.meal_index,
+        payload.day_index,
+    )
     return await menu_service.replace_dish(db, user, scope, payload)
 
 

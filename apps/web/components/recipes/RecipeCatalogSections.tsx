@@ -56,7 +56,10 @@ export function RecipeCatalogSections({
             loading: false,
           },
         }));
-      } catch {
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[RecipeCatalogSections] load failed", id, query, err);
+        }
         setSections((prev) => ({
           ...prev,
           [id]: {
