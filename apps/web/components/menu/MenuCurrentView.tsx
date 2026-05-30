@@ -27,6 +27,7 @@ import {
 import {
   dateIsoForDayIndex,
   defaultDayIndex,
+  mergeReplaceResult,
   menuHasMultipleDays,
   menuViewForDay,
 } from "@/lib/menu/menu-days";
@@ -110,6 +111,7 @@ export function MenuCurrentView() {
   useEffect(() => {
     if (searchParams.get("replace") === "1" && menu) {
       setReplaceTarget(menuViewForDay(menu, dayIndex));
+      setPendingMealIndex(null);
     }
   }, [searchParams, menu, dayIndex]);
 
@@ -123,22 +125,24 @@ export function MenuCurrentView() {
     setReplacing(true);
     setError(null);
     try {
+      const dayMenuPayload = menuViewForDay(menu, dayIndex);
       const updated = await replaceDish(
         initData,
         mode,
-        replaceTarget,
+        dayMenuPayload,
         pendingMealIndex,
       );
-      await selectMenu(initData, mode, updated);
+      const merged = mergeReplaceResult(menu, updated, dayIndex);
+      await selectMenu(initData, mode, merged);
       invalidateCache("selected-menu");
       invalidateCache("menu-overview");
       invalidateCache("shopping-list");
       invalidateCache("pantry");
       setCached(cacheKey.selectedMenu(mode), {
-        menu: updated,
+        menu: merged,
         selected_at: new Date().toISOString(),
       });
-      setMenu(updated);
+      setMenu(merged);
       setReplaceTarget(null);
       setPendingMealIndex(null);
       void refreshSubscription();

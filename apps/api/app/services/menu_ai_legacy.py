@@ -74,9 +74,11 @@ async def replace_meal(
                 updated.meals[meal_index] = parsed_meal
                 from app.services.ai import _ingredients_from_ai_rows
 
-                updated.ingredients = _ingredients_from_ai_rows(
+                new_ingredients = _ingredients_from_ai_rows(
                     data.get("ingredients", [])
                 )
+                if new_ingredients:
+                    updated.ingredients = new_ingredients
                 updated.total_prep_minutes = sum(
                     m.prep_time_minutes for m in updated.meals
                 )

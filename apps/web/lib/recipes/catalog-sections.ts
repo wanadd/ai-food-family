@@ -22,8 +22,8 @@ export const RECIPE_CATALOG_SECTIONS: RecipeCatalogSection[] = [
  * только самые полезные следующие шаги.
  */
 export const RECIPE_HOME_SECTIONS: RecipeCatalogSection[] = [
+  { id: "catalog", title: "В каталоге", query: {} },
   { id: "quick_dinner", title: "Быстрые ужины", query: { meal_type: "dinner", max_prep_time: 30 } },
-  { id: "pantry", title: "Из запасов", query: { from_pantry: true } },
   { id: "family", title: "Для семьи", query: { for_children: true } },
 ];
 
