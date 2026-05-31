@@ -32,6 +32,7 @@ UPDATE_FIELDS = (
     "carbs_g",
     "alcohol_percent",
 )
+ALLOWED_SOURCES = {"ingredient_engine_v2", "simple_beverage_rules_v1"}
 
 
 @dataclass(frozen=True)
@@ -121,7 +122,7 @@ def parse_update_record(raw: Any, index: int) -> UpdateRecord:
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("invalid_id") from exc
     source = str(raw.get("source") or "").strip()
-    if source != "ingredient_engine_v2":
+    if source not in ALLOWED_SOURCES:
         raise ValueError("invalid_source")
     return UpdateRecord(
         id=recipe_id,
