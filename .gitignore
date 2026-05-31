@@ -44,3 +44,7 @@ Thumbs.db
 exports/*.jsonl
 exports/*.json
 reports/*.md
+
+# Local database backups
+backup_*.sql
+*.sql
