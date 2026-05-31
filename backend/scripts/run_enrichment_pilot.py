@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,19 @@ DEFAULT_OUTPUT_PATH = ROOT / "exports" / "povarenok_enriched_10.jsonl"
 DEFAULT_FAILED_PATH = ROOT / "exports" / "povarenok_enrichment_failed_10.jsonl"
 DEFAULT_REPORT_PATH = ROOT / "reports" / "enrichment_pilot_report.md"
 DEFAULT_MODEL = "gpt-4.1-mini"
+ALLOWED_MEAL_TYPES = {"breakfast", "lunch", "dinner", "snack"}
+ALLOWED_CATEGORIES = {
+    "soup",
+    "main",
+    "salad",
+    "dessert",
+    "quick",
+    "kids",
+    "drink",
+    "event",
+    "bbq",
+}
+ALLOWED_DIFFICULTIES = {"easy", "medium", "hard"}
 
 REQUIRED_FIELDS = [
     "title",
@@ -141,6 +155,65 @@ def strip_json_fence(text: str) -> str:
     return text.strip()
 
 
+def flatten_to_strings(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+    if isinstance(value, list):
+        items: list[str] = []
+        for item in value:
+            items.extend(flatten_to_strings(item))
+        return items
+    text = str(value).strip()
+    return [text] if text else []
+
+
+def normalize_list_fields(data: Any) -> None:
+    if not isinstance(data, dict):
+        return
+    for field in ("tags", "allergens", "restrictions", "steps"):
+        values = flatten_to_strings(data.get(field))
+        data[field] = list(dict.fromkeys(values))
+
+
+def normalize_scalar_field(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+        return text if text else None
+    if isinstance(value, list):
+        for item in value:
+            normalized = normalize_scalar_field(item)
+            if normalized:
+                return normalized
+        return None
+    text = str(value).strip()
+    return text if text else None
+
+
+def normalize_scalar_fields(data: Any) -> None:
+    if not isinstance(data, dict):
+        return
+
+    for field in ("meal_type", "category", "difficulty", "cuisine", "title", "description"):
+        data[field] = normalize_scalar_field(data.get(field))
+
+    if data.get("meal_type") not in ALLOWED_MEAL_TYPES:
+        data["meal_type"] = "lunch"
+    if data.get("category") not in ALLOWED_CATEGORIES:
+        data["category"] = "main"
+    if data.get("difficulty") not in ALLOWED_DIFFICULTIES:
+        data["difficulty"] = "easy"
+
+
+def normalize_enriched_response(data: Any) -> None:
+    normalize_list_fields(data)
+    normalize_scalar_fields(data)
+
+
 def validate_enriched(data: Any) -> list[str]:
     errors: list[str] = []
     if not isinstance(data, dict):
@@ -148,21 +221,11 @@ def validate_enriched(data: Any) -> list[str]:
     for field in REQUIRED_FIELDS:
         if field not in data:
             errors.append(f"missing_{field}")
-    if data.get("meal_type") not in {"breakfast", "lunch", "dinner", "snack"}:
+    if data.get("meal_type") not in ALLOWED_MEAL_TYPES:
         errors.append("invalid_meal_type")
-    if data.get("category") not in {
-        "soup",
-        "main",
-        "salad",
-        "dessert",
-        "quick",
-        "kids",
-        "drink",
-        "event",
-        "bbq",
-    }:
+    if data.get("category") not in ALLOWED_CATEGORIES:
         errors.append("invalid_category")
-    if data.get("difficulty") not in {"easy", "medium", "hard"}:
+    if data.get("difficulty") not in ALLOWED_DIFFICULTIES:
         errors.append("invalid_difficulty")
     if not isinstance(data.get("steps"), list) or not data.get("steps"):
         errors.append("empty_steps")
@@ -190,6 +253,7 @@ def enrich_recipe(
     )
     raw = response.choices[0].message.content or ""
     data = json.loads(strip_json_fence(raw))
+    normalize_enriched_response(data)
     errors = validate_enriched(data)
     if errors:
         raise ValueError(", ".join(errors))
@@ -240,6 +304,12 @@ def build_report(
             lines.append(
                 f"- {recipe.get('id')}: {recipe.get('title')} — {item.get('error')}"
             )
+            if item.get("traceback"):
+                lines.append("")
+                lines.append("```text")
+                lines.append(str(item["traceback"]).rstrip())
+                lines.append("```")
+                lines.append("")
     else:
         lines.append("- `n/a`")
     return "\n".join(lines).rstrip() + "\n"
@@ -301,6 +371,7 @@ def run_pilot(args: argparse.Namespace) -> tuple[int, int]:
                 failed_record = {
                     "recipe": recipe,
                     "error": f"{type(exc).__name__}: {exc}",
+                    "traceback": traceback.format_exc(),
                 }
                 failed_file.write(json.dumps(failed_record, ensure_ascii=False) + "\n")
                 failures.append(failed_record)
