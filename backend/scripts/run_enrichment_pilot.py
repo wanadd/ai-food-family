@@ -327,6 +327,29 @@ def print_dry_run(batch: dict[str, Any], model: str) -> None:
     print(build_user_prompt(recipes[0], schema))
 
 
+def read_existing_enriched_ids(output_path: Path) -> set[str]:
+    if not output_path.exists():
+        return set()
+
+    processed_ids: set[str] = set()
+    with output_path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                print(
+                    f"Warning: ignoring invalid JSONL line {line_number} in {output_path}",
+                    file=sys.stderr,
+                )
+                continue
+            recipe_id = record.get("id") if isinstance(record, dict) else None
+            if isinstance(recipe_id, str) and recipe_id:
+                processed_ids.add(recipe_id)
+    return processed_ids
+
+
 def run_pilot(args: argparse.Namespace) -> tuple[int, int]:
     input_path = Path(args.input).expanduser().resolve()
     output_path = Path(args.output).expanduser().resolve()
@@ -355,17 +378,27 @@ def run_pilot(args: argparse.Namespace) -> tuple[int, int]:
     schema = batch.get("expected_output_schema") or {}
     output_path.parent.mkdir(parents=True, exist_ok=True)
     failed_path.parent.mkdir(parents=True, exist_ok=True)
+    processed_ids = read_existing_enriched_ids(output_path)
 
     succeeded = 0
     failed = 0
     failures: list[dict[str, Any]] = []
-    with output_path.open("w", encoding="utf-8", newline="\n") as ok_file, failed_path.open(
-        "w", encoding="utf-8", newline="\n"
+    with output_path.open("a", encoding="utf-8", newline="\n") as ok_file, failed_path.open(
+        "a", encoding="utf-8", newline="\n"
     ) as failed_file:
-        for recipe in recipes:
+        for index, recipe in enumerate(recipes, start=1):
+            recipe_id = recipe.get("id")
+            if isinstance(recipe_id, str) and recipe_id in processed_ids:
+                print(f"SKIP {recipe_id}")
+                print(f"Processed {index}/{len(recipes)}")
+                continue
+
+            print(f"PROCESS {recipe_id}")
             try:
                 enriched = enrich_recipe(client, model, recipe, schema)
                 ok_file.write(json.dumps(enriched, ensure_ascii=False) + "\n")
+                if isinstance(recipe_id, str) and recipe_id:
+                    processed_ids.add(recipe_id)
                 succeeded += 1
             except Exception as exc:
                 failed_record = {
@@ -380,6 +413,7 @@ def run_pilot(args: argparse.Namespace) -> tuple[int, int]:
                     f"Failed {recipe.get('id')}: {type(exc).__name__}",
                     file=sys.stderr,
                 )
+            print(f"Processed {index}/{len(recipes)}")
 
     report = build_report(
         input_path=input_path,
