@@ -45,6 +45,8 @@ def to_summary(
         is_alcoholic=bool(recipe.is_alcoholic),
         calories_per_serving=recipe.calories_per_serving,
         protein_g=recipe.protein_g,
+        fat_g=recipe.fat_g,
+        carbs_g=recipe.carbs_g,
         suitable_for_children=recipe.suitable_for_children,
         suitable_for_sport=recipe.suitable_for_sport,
         suitable_for_event=recipe.suitable_for_event,

@@ -58,6 +58,8 @@ class RecipeSummary(BaseModel):
     is_alcoholic: bool = False
     calories_per_serving: float | None = None
     protein_g: float | None = None
+    fat_g: float | None = None
+    carbs_g: float | None = None
     suitable_for_children: bool = True
     suitable_for_sport: bool = False
     suitable_for_event: bool = False
