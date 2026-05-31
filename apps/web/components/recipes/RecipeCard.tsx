@@ -19,6 +19,15 @@ type RecipeCardProps = {
   togglingFavorite: boolean;
 };
 
+function hasNutrition(recipe: RecipeSummary): boolean {
+  return [
+    recipe.calories_per_serving,
+    recipe.protein_g,
+    recipe.fat_g,
+    recipe.carbs_g,
+  ].some((value) => value != null);
+}
+
 export function RecipeCard({
   recipe,
   onOpen,
@@ -73,6 +82,17 @@ export function RecipeCard({
           <span className="rounded-pill bg-cream-deep px-2.5 py-1 text-xs font-medium text-graphite-400">
             {difficultyLabel(recipe.difficulty)}
           </span>
+          {hasNutrition(recipe) ? (
+            <span className="rounded-pill bg-cream-deep px-2.5 py-1 text-xs font-medium text-graphite-600">
+              {recipe.calories_per_serving != null
+                ? `${Math.round(recipe.calories_per_serving)} ккал`
+                : "ккал —"}{" "}
+              · Б/Ж/У{" "}
+              {recipe.protein_g != null ? Math.round(recipe.protein_g) : "—"}/
+              {recipe.fat_g != null ? Math.round(recipe.fat_g) : "—"}/
+              {recipe.carbs_g != null ? Math.round(recipe.carbs_g) : "—"}
+            </span>
+          ) : null}
         </div>
       </button>
     </article>

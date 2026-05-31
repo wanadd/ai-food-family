@@ -56,6 +56,19 @@ type RecipeDetailModalProps = {
 
 type AiAction = "evaluate" | "improve";
 
+function hasNutrition(recipe: RecipeDetail): boolean {
+  return [
+    recipe.calories_per_serving,
+    recipe.protein_g,
+    recipe.fat_g,
+    recipe.carbs_g,
+  ].some((value) => value != null);
+}
+
+function nutritionValue(value: number | null | undefined, suffix: string): string {
+  return value != null ? `${Math.round(value)} ${suffix}` : "—";
+}
+
 export function RecipeDetailModal({
   recipe,
   onClose,
@@ -377,19 +390,47 @@ export function RecipeDetailModal({
             <span>{categoryLabel(recipe.category)}</span>
             <span className="text-graphite-300">·</span>
             <span>{recipe.prep_time_minutes} мин</span>
-            {recipe.calories_per_serving ? (
+            {recipe.calories_per_serving != null ? (
               <>
                 <span className="text-graphite-300">·</span>
                 <span>{Math.round(recipe.calories_per_serving)} ккал</span>
               </>
             ) : null}
-            {recipe.protein_g ? (
+            {recipe.protein_g != null ? (
               <>
                 <span className="text-graphite-300">·</span>
                 <span>Б {Math.round(recipe.protein_g)} г</span>
               </>
             ) : null}
           </div>
+          {hasNutrition(recipe) ? (
+            <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs">
+              <div className="rounded-control bg-cream-deep px-2 py-2">
+                <div className="font-semibold text-graphite-900">
+                  {nutritionValue(recipe.calories_per_serving, "ккал")}
+                </div>
+                <div className="mt-0.5 text-graphite-500">Калории</div>
+              </div>
+              <div className="rounded-control bg-cream-deep px-2 py-2">
+                <div className="font-semibold text-graphite-900">
+                  {nutritionValue(recipe.protein_g, "г")}
+                </div>
+                <div className="mt-0.5 text-graphite-500">Белки</div>
+              </div>
+              <div className="rounded-control bg-cream-deep px-2 py-2">
+                <div className="font-semibold text-graphite-900">
+                  {nutritionValue(recipe.fat_g, "г")}
+                </div>
+                <div className="mt-0.5 text-graphite-500">Жиры</div>
+              </div>
+              <div className="rounded-control bg-cream-deep px-2 py-2">
+                <div className="font-semibold text-graphite-900">
+                  {nutritionValue(recipe.carbs_g, "г")}
+                </div>
+                <div className="mt-0.5 text-graphite-500">Углеводы</div>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 pb-28">

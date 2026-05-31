@@ -20,6 +20,8 @@ export type RecipeSummary = {
   is_alcoholic?: boolean;
   calories_per_serving?: number | null;
   protein_g?: number | null;
+  fat_g?: number | null;
+  carbs_g?: number | null;
   suitable_for_children?: boolean;
   suitable_for_sport?: boolean;
   suitable_for_event?: boolean;
