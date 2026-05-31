@@ -116,6 +116,22 @@ UNIT_ALIASES = {
     "порция": ("serving", 1.0),
     "порции": ("serving", 1.0),
     "порций": ("serving", 1.0),
+    "упак": ("package", 1.0),
+    "упак.": ("package", 1.0),
+    "упаковка": ("package", 1.0),
+    "упаковки": ("package", 1.0),
+    "пакет": ("package", 1.0),
+    "пакет.": ("package", 1.0),
+    "пакета": ("package", 1.0),
+    "пакетов": ("package", 1.0),
+    "вилок": ("head", 1.0),
+    "кочан": ("head", 1.0),
+    "кочана": ("head", 1.0),
+    "ломт": ("slice", 1.0),
+    "ломт.": ("slice", 1.0),
+    "ломтик": ("slice", 1.0),
+    "ломтика": ("slice", 1.0),
+    "ломтиков": ("slice", 1.0),
 }
 
 
@@ -287,7 +303,7 @@ def normalize_amount(amount: Any) -> NormalizedAmount:
         return NormalizedAmount(None, None, True, "to_taste", "to_taste")
 
     range_match = re.match(
-        rf"^\s*(?P<left>{NUMBER_PATTERN})\s*[-–—]\s*(?P<right>{NUMBER_PATTERN})\s*(?P<unit>.*)$",
+        rf"^\s*(?P<left>{NUMBER_PATTERN})\s*(?:[-–—]|\.\.\.)\s*(?P<right>{NUMBER_PATTERN})\s*(?P<unit>.*)$",
         raw,
     )
     if range_match:
@@ -328,7 +344,18 @@ def normalize_amount(amount: Any) -> NormalizedAmount:
         target_unit, multiplier = converted
         amount_type = (
             "approximate"
-            if target_unit in {"bunch", "can", "pinch", "handful", "sprig", "serving"}
+            if target_unit
+            in {
+                "bunch",
+                "can",
+                "pinch",
+                "handful",
+                "sprig",
+                "serving",
+                "package",
+                "head",
+                "slice",
+            }
             else "exact"
         )
         return NormalizedAmount(number * multiplier, target_unit, True, "parsed", amount_type)

@@ -1,0 +1,1105 @@
+[
+  {
+    "canonical_name": "соль",
+    "aliases": ["соль"],
+    "calories_per_100g": 0,
+    "protein_g_per_100g": 0,
+    "fat_g_per_100g": 0,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "tsp": 6,
+      "tbsp": 18,
+      "pinch": 0.5
+    }
+  },
+  {
+    "canonical_name": "вода",
+    "aliases": ["вода", "бульон", "вода или бульон"],
+    "calories_per_100g": 0,
+    "protein_g_per_100g": 0,
+    "fat_g_per_100g": 0,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "ml": 1,
+      "cup": 240,
+      "tbsp": 15,
+      "tsp": 5
+    }
+  },
+  {
+    "canonical_name": "лук репчатый",
+    "aliases": ["лук репчатый", "лук", "лук красный"],
+    "calories_per_100g": 40,
+    "protein_g_per_100g": 1.1,
+    "fat_g_per_100g": 0.1,
+    "carbs_g_per_100g": 9.3,
+    "default_unit_grams": {
+      "pcs": 80,
+      "cup": 160,
+      "tbsp": 10
+    }
+  },
+  {
+    "canonical_name": "морковь",
+    "aliases": ["морковь"],
+    "calories_per_100g": 41,
+    "protein_g_per_100g": 0.9,
+    "fat_g_per_100g": 0.2,
+    "carbs_g_per_100g": 9.6,
+    "default_unit_grams": {
+      "pcs": 80,
+      "cup": 130
+    }
+  },
+  {
+    "canonical_name": "картофель",
+    "aliases": ["картофель", "картошка"],
+    "calories_per_100g": 77,
+    "protein_g_per_100g": 2,
+    "fat_g_per_100g": 0.1,
+    "carbs_g_per_100g": 17,
+    "default_unit_grams": {
+      "pcs": 120,
+      "cup": 150
+    }
+  },
+  {
+    "canonical_name": "масло растительное",
+    "aliases": ["масло растительное", "масло подсолнечное"],
+    "calories_per_100g": 899,
+    "protein_g_per_100g": 0,
+    "fat_g_per_100g": 99.9,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "tbsp": 14,
+      "tsp": 5,
+      "ml": 0.92,
+      "cup": 220
+    }
+  },
+  {
+    "canonical_name": "яйцо куриное",
+    "aliases": ["яйцо куриное", "яйца", "яйцо"],
+    "calories_per_100g": 143,
+    "protein_g_per_100g": 12.6,
+    "fat_g_per_100g": 9.5,
+    "carbs_g_per_100g": 0.7,
+    "default_unit_grams": {
+      "pcs": 55
+    }
+  },
+  {
+    "canonical_name": "чеснок",
+    "aliases": ["чеснок"],
+    "calories_per_100g": 149,
+    "protein_g_per_100g": 6.4,
+    "fat_g_per_100g": 0.5,
+    "carbs_g_per_100g": 33.1,
+    "default_unit_grams": {
+      "pcs": 5,
+      "tsp": 3
+    }
+  },
+  {
+    "canonical_name": "майонез",
+    "aliases": ["майонез"],
+    "calories_per_100g": 680,
+    "protein_g_per_100g": 1,
+    "fat_g_per_100g": 67,
+    "carbs_g_per_100g": 3,
+    "default_unit_grams": {
+      "tbsp": 15,
+      "tsp": 5,
+      "cup": 230
+    }
+  },
+  {
+    "canonical_name": "основа напитка",
+    "aliases": ["основа напитка"],
+    "calories_per_100g": 0,
+    "protein_g_per_100g": 0,
+    "fat_g_per_100g": 0,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "serving": 250
+    }
+  },
+  {
+    "canonical_name": "специи",
+    "aliases": ["специи", "приправа", "перец черный", "перец красный жгучий", "перец чили", "лист лавровый"],
+    "calories_per_100g": 250,
+    "protein_g_per_100g": 10,
+    "fat_g_per_100g": 5,
+    "carbs_g_per_100g": 45,
+    "default_unit_grams": {
+      "tsp": 2,
+      "tbsp": 6,
+      "pinch": 0.5,
+      "pcs": 0.2
+    }
+  },
+  {
+    "canonical_name": "соевый соус",
+    "aliases": ["соевый соус"],
+    "calories_per_100g": 53,
+    "protein_g_per_100g": 8,
+    "fat_g_per_100g": 0.6,
+    "carbs_g_per_100g": 4.9,
+    "default_unit_grams": {
+      "tbsp": 16,
+      "tsp": 5,
+      "ml": 1.1,
+      "cup": 255
+    }
+  },
+  {
+    "canonical_name": "перец болгарский",
+    "aliases": ["перец болгарский", "перец сладкий красный"],
+    "calories_per_100g": 27,
+    "protein_g_per_100g": 1,
+    "fat_g_per_100g": 0.2,
+    "carbs_g_per_100g": 6,
+    "default_unit_grams": {
+      "pcs": 140,
+      "cup": 150
+    }
+  },
+  {
+    "canonical_name": "основной продукт",
+    "aliases": ["основной продукт"],
+    "calories_per_100g": 0,
+    "protein_g_per_100g": 0,
+    "fat_g_per_100g": 0,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "g": 1,
+      "pcs": 100
+    }
+  },
+  {
+    "canonical_name": "помидор",
+    "aliases": ["помидор", "помидоры", "помидоры черри"],
+    "calories_per_100g": 18,
+    "protein_g_per_100g": 0.9,
+    "fat_g_per_100g": 0.2,
+    "carbs_g_per_100g": 3.9,
+    "default_unit_grams": {
+      "pcs": 100,
+      "cup": 150
+    }
+  },
+  {
+    "canonical_name": "огурец",
+    "aliases": ["огурец"],
+    "calories_per_100g": 15,
+    "protein_g_per_100g": 0.7,
+    "fat_g_per_100g": 0.1,
+    "carbs_g_per_100g": 3.6,
+    "default_unit_grams": {
+      "pcs": 100,
+      "cup": 120
+    }
+  },
+  {
+    "canonical_name": "сыр твердый",
+    "aliases": ["сыр твердый", "сыр голландский"],
+    "calories_per_100g": 350,
+    "protein_g_per_100g": 25,
+    "fat_g_per_100g": 27,
+    "carbs_g_per_100g": 2,
+    "default_unit_grams": {
+      "pcs": 20,
+      "tbsp": 7,
+      "cup": 110,
+      "slice": 20
+    }
+  },
+  {
+    "canonical_name": "масло оливковое",
+    "aliases": ["масло оливковое", "оливковое масло"],
+    "calories_per_100g": 884,
+    "protein_g_per_100g": 0,
+    "fat_g_per_100g": 100,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "tbsp": 14,
+      "tsp": 5,
+      "ml": 0.92,
+      "cup": 220
+    }
+  },
+  {
+    "canonical_name": "масло сливочное",
+    "aliases": ["масло сливочное"],
+    "calories_per_100g": 748,
+    "protein_g_per_100g": 0.5,
+    "fat_g_per_100g": 82.5,
+    "carbs_g_per_100g": 0.8,
+    "default_unit_grams": {
+      "tbsp": 14,
+      "tsp": 5,
+      "cup": 227
+    }
+  },
+  {
+    "canonical_name": "рис",
+    "aliases": ["рис"],
+    "calories_per_100g": 360,
+    "protein_g_per_100g": 7,
+    "fat_g_per_100g": 0.7,
+    "carbs_g_per_100g": 79,
+    "default_unit_grams": {
+      "cup": 180,
+      "tbsp": 12,
+      "handful": 40
+    }
+  },
+  {
+    "canonical_name": "молоко",
+    "aliases": ["молоко"],
+    "calories_per_100g": 60,
+    "protein_g_per_100g": 3.2,
+    "fat_g_per_100g": 3.2,
+    "carbs_g_per_100g": 4.8,
+    "default_unit_grams": {
+      "ml": 1.03,
+      "cup": 245,
+      "tbsp": 15,
+      "tsp": 5
+    }
+  },
+  {
+    "canonical_name": "зелень",
+    "aliases": ["зелень", "петрушка"],
+    "calories_per_100g": 36,
+    "protein_g_per_100g": 3,
+    "fat_g_per_100g": 0.8,
+    "carbs_g_per_100g": 6,
+    "default_unit_grams": {
+      "bunch": 40,
+      "tbsp": 4,
+      "sprig": 2,
+      "pcs": 3
+    }
+  },
+  {
+    "canonical_name": "сметана",
+    "aliases": ["сметана"],
+    "calories_per_100g": 206,
+    "protein_g_per_100g": 2.5,
+    "fat_g_per_100g": 20,
+    "carbs_g_per_100g": 3.4,
+    "default_unit_grams": {
+      "tbsp": 20,
+      "tsp": 7,
+      "cup": 240
+    }
+  },
+  {
+    "canonical_name": "шампиньоны",
+    "aliases": ["шампиньоны", "грибы", "опята"],
+    "calories_per_100g": 27,
+    "protein_g_per_100g": 4.3,
+    "fat_g_per_100g": 1,
+    "carbs_g_per_100g": 1,
+    "default_unit_grams": {
+      "pcs": 20,
+      "cup": 70,
+      "can": 250,
+      "handful": 40
+    }
+  },
+  {
+    "canonical_name": "мед",
+    "aliases": ["мед", "мёд"],
+    "calories_per_100g": 304,
+    "protein_g_per_100g": 0.3,
+    "fat_g_per_100g": 0,
+    "carbs_g_per_100g": 82,
+    "default_unit_grams": {
+      "tbsp": 21,
+      "tsp": 7,
+      "cup": 340
+    }
+  },
+  {
+    "canonical_name": "сахар",
+    "aliases": ["сахар"],
+    "calories_per_100g": 387,
+    "protein_g_per_100g": 0,
+    "fat_g_per_100g": 0,
+    "carbs_g_per_100g": 100,
+    "default_unit_grams": {
+      "tbsp": 12,
+      "tsp": 4,
+      "cup": 200
+    }
+  },
+  {
+    "canonical_name": "мука пшеничная",
+    "aliases": ["мука пшеничная", "мука"],
+    "calories_per_100g": 334,
+    "protein_g_per_100g": 10.3,
+    "fat_g_per_100g": 1.1,
+    "carbs_g_per_100g": 69.9,
+    "default_unit_grams": {
+      "cup": 130,
+      "tbsp": 8,
+      "tsp": 3
+    }
+  },
+  {
+    "canonical_name": "курица",
+    "aliases": ["курица"],
+    "calories_per_100g": 190,
+    "protein_g_per_100g": 18,
+    "fat_g_per_100g": 12,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "pcs": 100
+    }
+  },
+  {
+    "canonical_name": "фасоль",
+    "aliases": ["фасоль"],
+    "calories_per_100g": 298,
+    "protein_g_per_100g": 21,
+    "fat_g_per_100g": 2,
+    "carbs_g_per_100g": 47,
+    "default_unit_grams": {
+      "cup": 180,
+      "tbsp": 12,
+      "can": 240
+    }
+  },
+  {
+    "canonical_name": "лимон",
+    "aliases": ["лимон"],
+    "calories_per_100g": 29,
+    "protein_g_per_100g": 1.1,
+    "fat_g_per_100g": 0.3,
+    "carbs_g_per_100g": 9.3,
+    "default_unit_grams": {
+      "pcs": 80,
+      "tbsp": 15,
+      "tsp": 5
+    }
+  },
+  {
+    "canonical_name": "горчица",
+    "aliases": ["горчица"],
+    "calories_per_100g": 162,
+    "protein_g_per_100g": 5.7,
+    "fat_g_per_100g": 6.4,
+    "carbs_g_per_100g": 22,
+    "default_unit_grams": {
+      "tbsp": 15,
+      "tsp": 5
+    }
+  },
+  {
+    "canonical_name": "сок лимонный",
+    "aliases": ["сок лимонный"],
+    "calories_per_100g": 22,
+    "protein_g_per_100g": 0.4,
+    "fat_g_per_100g": 0.2,
+    "carbs_g_per_100g": 6.9,
+    "default_unit_grams": {
+      "ml": 1,
+      "tbsp": 15,
+      "tsp": 5,
+      "pcs": 15
+    }
+  },
+  {
+    "canonical_name": "листья салата",
+    "aliases": ["листья салата"],
+    "calories_per_100g": 15,
+    "protein_g_per_100g": 1.4,
+    "fat_g_per_100g": 0.2,
+    "carbs_g_per_100g": 2.9,
+    "default_unit_grams": {
+      "bunch": 80,
+      "cup": 35,
+      "pcs": 5,
+      "head": 300
+    }
+  },
+  {
+    "canonical_name": "горошек зеленый",
+    "aliases": ["горошек зеленый"],
+    "calories_per_100g": 81,
+    "protein_g_per_100g": 5.4,
+    "fat_g_per_100g": 0.4,
+    "carbs_g_per_100g": 14.5,
+    "default_unit_grams": {
+      "cup": 145,
+      "tbsp": 10,
+      "can": 240
+    }
+  },
+  {
+    "canonical_name": "уксус",
+    "aliases": ["уксус"],
+    "calories_per_100g": 18,
+    "protein_g_per_100g": 0,
+    "fat_g_per_100g": 0,
+    "carbs_g_per_100g": 0.9,
+    "default_unit_grams": {
+      "ml": 1,
+      "tbsp": 15,
+      "tsp": 5
+    }
+  },
+  {
+    "canonical_name": "творог",
+    "aliases": ["творог"],
+    "calories_per_100g": 121,
+    "protein_g_per_100g": 17,
+    "fat_g_per_100g": 5,
+    "carbs_g_per_100g": 2,
+    "default_unit_grams": {
+      "tbsp": 18,
+      "cup": 225
+    }
+  },
+  {
+    "canonical_name": "баклажан",
+    "aliases": ["баклажан"],
+    "calories_per_100g": 25,
+    "protein_g_per_100g": 1,
+    "fat_g_per_100g": 0.2,
+    "carbs_g_per_100g": 5.9,
+    "default_unit_grams": {
+      "pcs": 250,
+      "cup": 100
+    }
+  },
+  {
+    "canonical_name": "кукуруза",
+    "aliases": ["кукуруза"],
+    "calories_per_100g": 96,
+    "protein_g_per_100g": 3.4,
+    "fat_g_per_100g": 1.5,
+    "carbs_g_per_100g": 21,
+    "default_unit_grams": {
+      "cup": 165,
+      "tbsp": 10,
+      "can": 240,
+      "pcs": 150
+    }
+  },
+  {
+    "canonical_name": "филе куриное",
+    "aliases": ["филе куриное", "куриное филе", "грудка куриная", "фарш куриный"],
+    "calories_per_100g": 120,
+    "protein_g_per_100g": 23,
+    "fat_g_per_100g": 2,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "pcs": 180
+    }
+  },
+  {
+    "canonical_name": "кунжут",
+    "aliases": ["кунжут"],
+    "calories_per_100g": 573,
+    "protein_g_per_100g": 17.7,
+    "fat_g_per_100g": 49.7,
+    "carbs_g_per_100g": 23.5,
+    "default_unit_grams": {
+      "tbsp": 9,
+      "tsp": 3,
+      "pinch": 0.5
+    }
+  },
+  {
+    "canonical_name": "яблоко",
+    "aliases": ["яблоко", "яблоки"],
+    "calories_per_100g": 52,
+    "protein_g_per_100g": 0.3,
+    "fat_g_per_100g": 0.2,
+    "carbs_g_per_100g": 14,
+    "default_unit_grams": {
+      "pcs": 180,
+      "cup": 125
+    }
+  },
+  {
+    "canonical_name": "чернослив",
+    "aliases": ["чернослив"],
+    "calories_per_100g": 240,
+    "protein_g_per_100g": 2.2,
+    "fat_g_per_100g": 0.4,
+    "carbs_g_per_100g": 64,
+    "default_unit_grams": {
+      "pcs": 10,
+      "cup": 170,
+      "handful": 35
+    }
+  },
+  {
+    "canonical_name": "кориандр",
+    "aliases": ["кориандр"],
+    "calories_per_100g": 298,
+    "protein_g_per_100g": 12.4,
+    "fat_g_per_100g": 17.8,
+    "carbs_g_per_100g": 55,
+    "default_unit_grams": {
+      "tsp": 2,
+      "tbsp": 6,
+      "pinch": 0.5
+    }
+  },
+  {
+    "canonical_name": "орехи грецкие",
+    "aliases": ["орехи грецкие", "грецкие орехи", "орех грецкий"],
+    "calories_per_100g": 654,
+    "protein_g_per_100g": 15.2,
+    "fat_g_per_100g": 65.2,
+    "carbs_g_per_100g": 13.7,
+    "default_unit_grams": {
+      "pcs": 5,
+      "cup": 120,
+      "tbsp": 8,
+      "handful": 30
+    }
+  },
+  {
+    "canonical_name": "фарш мясной",
+    "aliases": ["фарш мясной", "фарш"],
+    "calories_per_100g": 250,
+    "protein_g_per_100g": 17,
+    "fat_g_per_100g": 20,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "pcs": 100
+    }
+  },
+  {
+    "canonical_name": "томатная паста",
+    "aliases": ["томатная паста"],
+    "calories_per_100g": 82,
+    "protein_g_per_100g": 4.3,
+    "fat_g_per_100g": 0.5,
+    "carbs_g_per_100g": 19,
+    "default_unit_grams": {
+      "tbsp": 16,
+      "tsp": 5,
+      "cup": 260
+    }
+  },
+  {
+    "canonical_name": "брокколи",
+    "aliases": ["брокколи"],
+    "calories_per_100g": 34,
+    "protein_g_per_100g": 2.8,
+    "fat_g_per_100g": 0.4,
+    "carbs_g_per_100g": 6.6,
+    "default_unit_grams": {
+      "pcs": 300,
+      "cup": 90
+    }
+  },
+  {
+    "canonical_name": "йогурт",
+    "aliases": ["йогурт"],
+    "calories_per_100g": 61,
+    "protein_g_per_100g": 3.5,
+    "fat_g_per_100g": 3.3,
+    "carbs_g_per_100g": 4.7,
+    "default_unit_grams": {
+      "ml": 1.03,
+      "tbsp": 15,
+      "cup": 245
+    }
+  },
+  {
+    "canonical_name": "рыба",
+    "aliases": ["рыба"],
+    "calories_per_100g": 120,
+    "protein_g_per_100g": 20,
+    "fat_g_per_100g": 4,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "pcs": 150
+    }
+  },
+  {
+    "canonical_name": "нут",
+    "aliases": ["нут"],
+    "calories_per_100g": 364,
+    "protein_g_per_100g": 19,
+    "fat_g_per_100g": 6,
+    "carbs_g_per_100g": 61,
+    "default_unit_grams": {
+      "cup": 180,
+      "tbsp": 12
+    }
+  },
+  {
+    "canonical_name": "бедро куриное",
+    "aliases": ["бедро куриное", "куриное бедро", "курица бедро"],
+    "calories_per_100g": 185,
+    "protein_g_per_100g": 18,
+    "fat_g_per_100g": 12,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "pcs": 150
+    }
+  },
+  {
+    "canonical_name": "лук порей",
+    "aliases": ["лук порей", "лук-порей"],
+    "calories_per_100g": 61,
+    "protein_g_per_100g": 1.5,
+    "fat_g_per_100g": 0.3,
+    "carbs_g_per_100g": 14,
+    "default_unit_grams": {
+      "pcs": 90,
+      "cup": 90
+    }
+  },
+  {
+    "canonical_name": "капуста морская",
+    "aliases": ["капуста морская", "морская капуста"],
+    "calories_per_100g": 49,
+    "protein_g_per_100g": 0.8,
+    "fat_g_per_100g": 5.1,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "cup": 80,
+      "tbsp": 10
+    }
+  },
+  {
+    "canonical_name": "масло кунжутное",
+    "aliases": ["масло кунжутное", "кунжутное масло"],
+    "calories_per_100g": 884,
+    "protein_g_per_100g": 0,
+    "fat_g_per_100g": 100,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "tbsp": 14,
+      "tsp": 5,
+      "ml": 0.92,
+      "cup": 220
+    }
+  },
+  {
+    "canonical_name": "свинина",
+    "aliases": ["свинина", "свинина мякоть"],
+    "calories_per_100g": 242,
+    "protein_g_per_100g": 16,
+    "fat_g_per_100g": 20,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "pcs": 100
+    }
+  },
+  {
+    "canonical_name": "ветчина",
+    "aliases": ["ветчина"],
+    "calories_per_100g": 145,
+    "protein_g_per_100g": 21,
+    "fat_g_per_100g": 6,
+    "carbs_g_per_100g": 1.5,
+    "default_unit_grams": {
+      "pcs": 25,
+      "tbsp": 12
+    }
+  },
+  {
+    "canonical_name": "лук зеленый",
+    "aliases": ["лук зеленый", "зеленый лук"],
+    "calories_per_100g": 32,
+    "protein_g_per_100g": 1.8,
+    "fat_g_per_100g": 0.2,
+    "carbs_g_per_100g": 7.3,
+    "default_unit_grams": {
+      "bunch": 50,
+      "tbsp": 5,
+      "sprig": 2
+    }
+  },
+  {
+    "canonical_name": "изюм",
+    "aliases": ["изюм"],
+    "calories_per_100g": 299,
+    "protein_g_per_100g": 3.1,
+    "fat_g_per_100g": 0.5,
+    "carbs_g_per_100g": 79,
+    "default_unit_grams": {
+      "cup": 145,
+      "tbsp": 10,
+      "handful": 35
+    }
+  },
+  {
+    "canonical_name": "лапша",
+    "aliases": ["лапша", "вермишель"],
+    "calories_per_100g": 350,
+    "protein_g_per_100g": 12,
+    "fat_g_per_100g": 1.5,
+    "carbs_g_per_100g": 72,
+    "default_unit_grams": {
+      "cup": 100,
+      "handful": 40
+    }
+  },
+  {
+    "canonical_name": "гречка",
+    "aliases": ["гречка", "крупа гречневая"],
+    "calories_per_100g": 343,
+    "protein_g_per_100g": 13.3,
+    "fat_g_per_100g": 3.4,
+    "carbs_g_per_100g": 72,
+    "default_unit_grams": {
+      "cup": 170,
+      "tbsp": 12,
+      "package": 80
+    }
+  },
+  {
+    "canonical_name": "филе белой рыбы",
+    "aliases": ["филе белой рыбы", "белая рыба"],
+    "calories_per_100g": 82,
+    "protein_g_per_100g": 18,
+    "fat_g_per_100g": 1,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "pcs": 150
+    }
+  },
+  {
+    "canonical_name": "баранина",
+    "aliases": ["баранина"],
+    "calories_per_100g": 260,
+    "protein_g_per_100g": 17,
+    "fat_g_per_100g": 21,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "pcs": 100
+    }
+  },
+  {
+    "canonical_name": "кабачок",
+    "aliases": ["кабачок", "кабачки"],
+    "calories_per_100g": 24,
+    "protein_g_per_100g": 0.6,
+    "fat_g_per_100g": 0.3,
+    "carbs_g_per_100g": 4.6,
+    "default_unit_grams": {
+      "pcs": 250,
+      "cup": 125
+    }
+  },
+  {
+    "canonical_name": "сливки",
+    "aliases": ["сливки"],
+    "calories_per_100g": 205,
+    "protein_g_per_100g": 2.8,
+    "fat_g_per_100g": 20,
+    "carbs_g_per_100g": 3.7,
+    "default_unit_grams": {
+      "ml": 1.02,
+      "tbsp": 15,
+      "cup": 240
+    }
+  },
+  {
+    "canonical_name": "свекла",
+    "aliases": ["свекла", "свёкла"],
+    "calories_per_100g": 43,
+    "protein_g_per_100g": 1.6,
+    "fat_g_per_100g": 0.2,
+    "carbs_g_per_100g": 10,
+    "default_unit_grams": {
+      "pcs": 120,
+      "cup": 136
+    }
+  },
+  {
+    "canonical_name": "тимьян",
+    "aliases": ["тимьян"],
+    "calories_per_100g": 276,
+    "protein_g_per_100g": 9.1,
+    "fat_g_per_100g": 7.4,
+    "carbs_g_per_100g": 64,
+    "default_unit_grams": {
+      "tsp": 1,
+      "tbsp": 3,
+      "pinch": 0.3,
+      "sprig": 1,
+      "pcs": 1
+    }
+  },
+  {
+    "canonical_name": "смесь перцев",
+    "aliases": ["смесь перцев"],
+    "calories_per_100g": 255,
+    "protein_g_per_100g": 10,
+    "fat_g_per_100g": 3.3,
+    "carbs_g_per_100g": 64,
+    "default_unit_grams": {
+      "tsp": 2,
+      "tbsp": 6,
+      "pinch": 0.5
+    }
+  },
+  {
+    "canonical_name": "овощи и зелень",
+    "aliases": [
+      "авокадо",
+      "базилик",
+      "горох замороженный",
+      "горошек замороженный",
+      "капуста",
+      "капуста белокочанная",
+      "капуста кольраби",
+      "капуста пекинская",
+      "капуста цветная",
+      "лук белый",
+      "мята",
+      "овощи",
+      "огурец соленый",
+      "огурцы",
+      "оливки",
+      "оливки зеленые",
+      "маслины",
+      "перец сладкий",
+      "перец сладкий желтый",
+      "репа",
+      "романо",
+      "руккола",
+      "салат романо",
+      "томаты в собственном соку",
+      "томатная пассата",
+      "тыква",
+      "укроп",
+      "фасоль стручковая",
+      "цукини",
+      "шпинат",
+      "эстрагон",
+      "сельдерей черешковый"
+    ],
+    "calories_per_100g": 35,
+    "protein_g_per_100g": 1.5,
+    "fat_g_per_100g": 0.3,
+    "carbs_g_per_100g": 7,
+    "default_unit_grams": {
+      "pcs": 120,
+      "cup": 120,
+      "tsp": 1,
+      "tbsp": 8,
+      "bunch": 50,
+      "sprig": 2,
+      "head": 700,
+      "can": 240,
+      "package": 400
+    }
+  },
+  {
+    "canonical_name": "фрукты и ягоды",
+    "aliases": [
+      "абрикос",
+      "ананас",
+      "апельсин",
+      "банан",
+      "бананы",
+      "виноград",
+      "груша",
+      "киви",
+      "клубника",
+      "малина",
+      "пюре фруктовое",
+      "финик",
+      "цедра лимона",
+      "ягоды"
+    ],
+    "calories_per_100g": 65,
+    "protein_g_per_100g": 0.8,
+    "fat_g_per_100g": 0.3,
+    "carbs_g_per_100g": 16,
+    "default_unit_grams": {
+      "pcs": 120,
+      "cup": 140,
+      "tsp": 2,
+      "tbsp": 12,
+      "can": 250,
+      "handful": 35
+    }
+  },
+  {
+    "canonical_name": "рыба и морепродукты",
+    "aliases": [
+      "анчоусы",
+      "горбуша",
+      "зубатка",
+      "кальмар",
+      "килька",
+      "крабовые палочки",
+      "креветки",
+      "сельдь",
+      "семга",
+      "треска",
+      "тунец",
+      "угорь",
+      "филе рыбное"
+    ],
+    "calories_per_100g": 120,
+    "protein_g_per_100g": 19,
+    "fat_g_per_100g": 5,
+    "carbs_g_per_100g": 0,
+    "default_unit_grams": {
+      "pcs": 120,
+      "can": 185,
+      "package": 200,
+      "cup": 140
+    }
+  },
+  {
+    "canonical_name": "мясо и птица",
+    "aliases": [
+      "бекон",
+      "говядина",
+      "голень куриная",
+      "колбаса",
+      "окорочок куриный",
+      "печень говяжья",
+      "печень куриная",
+      "ребра свиные",
+      "сало",
+      "сосиска",
+      "фарш говяжий",
+      "фарш индейки",
+      "филе индейки",
+      "шпиг"
+    ],
+    "calories_per_100g": 240,
+    "protein_g_per_100g": 17,
+    "fat_g_per_100g": 18,
+    "carbs_g_per_100g": 1,
+    "default_unit_grams": {
+      "pcs": 100,
+      "slice": 20,
+      "package": 250
+    }
+  },
+  {
+    "canonical_name": "крупы и макароны",
+    "aliases": [
+      "киноа",
+      "красная чечевица",
+      "крупа манная",
+      "крупа перловая",
+      "листы лазаньи",
+      "макаронные изделия",
+      "манка",
+      "маца",
+      "овсяные хлопья",
+      "отруби",
+      "паста",
+      "пшено",
+      "хлопья гречневые",
+      "хлопья овсяные"
+    ],
+    "calories_per_100g": 350,
+    "protein_g_per_100g": 11,
+    "fat_g_per_100g": 2.5,
+    "carbs_g_per_100g": 70,
+    "default_unit_grams": {
+      "cup": 160,
+      "tbsp": 12,
+      "package": 80,
+      "handful": 40
+    }
+  },
+  {
+    "canonical_name": "молочные продукты и сыр",
+    "aliases": [
+      "кефир",
+      "пармезан",
+      "сыр",
+      "сыр колбасный",
+      "сыр плавленый",
+      "сыр полутвердый",
+      "сыр творожный",
+      "сыр фета"
+    ],
+    "calories_per_100g": 260,
+    "protein_g_per_100g": 16,
+    "fat_g_per_100g": 20,
+    "carbs_g_per_100g": 3,
+    "default_unit_grams": {
+      "pcs": 25,
+      "tbsp": 15,
+      "cup": 220,
+      "slice": 20,
+      "ml": 1.03
+    }
+  },
+  {
+    "canonical_name": "пряности и добавки",
+    "aliases": [
+      "бальзамик",
+      "ванилин",
+      "кардамон",
+      "карри",
+      "кетчуп",
+      "кумин",
+      "куркума",
+      "майоран",
+      "мак",
+      "орегано",
+      "паприка сладкая",
+      "сахар коричневый",
+      "сода",
+      "ткемали",
+      "уцхо сунели",
+      "хмели сунели",
+      "шафран"
+    ],
+    "calories_per_100g": 250,
+    "protein_g_per_100g": 7,
+    "fat_g_per_100g": 6,
+    "carbs_g_per_100g": 45,
+    "default_unit_grams": {
+      "tsp": 2,
+      "tbsp": 8,
+      "pinch": 0.5,
+      "pcs": 1
+    }
+  },
+  {
+    "canonical_name": "прочие продукты",
+    "aliases": [
+      "белок яичный",
+      "желток яичный",
+      "какао порошок",
+      "корж",
+      "орехи",
+      "пюре картофельное",
+      "сок томатный",
+      "сухари панировочные",
+      "тофу",
+      "халва",
+      "хлеб",
+      "яйцо перепелиное",
+      "ассорти овощное"
+    ],
+    "calories_per_100g": 180,
+    "protein_g_per_100g": 6,
+    "fat_g_per_100g": 7,
+    "carbs_g_per_100g": 22,
+    "default_unit_grams": {
+      "pcs": 50,
+      "cup": 100,
+      "tsp": 3,
+      "tbsp": 10,
+      "slice": 30,
+      "package": 250,
+      "ml": 1
+    }
+  }
+]
