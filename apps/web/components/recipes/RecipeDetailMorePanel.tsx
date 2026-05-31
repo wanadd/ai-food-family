@@ -118,6 +118,16 @@ export function RecipeDetailMorePanel({
   onCreateCollection,
 }: Props) {
   const { mode } = useAppMode();
+  const evaluationReasons = Array.isArray(evaluation?.reasons)
+    ? evaluation.reasons
+    : [];
+  const familyFitMembers = Array.isArray(familyFit?.members)
+    ? familyFit.members
+    : [];
+  const safeFamilyMembers = Array.isArray(familyMembers) ? familyMembers : [];
+  const safeSuggestions = Array.isArray(suggestions) ? suggestions : [];
+  const safeCollections = Array.isArray(collections) ? collections : [];
+  const positiveReasons = Array.isArray(why?.positives) ? why.positives : [];
 
   return (
     <div className="space-y-3 pb-2">
@@ -127,7 +137,7 @@ export function RecipeDetailMorePanel({
         >
           <p className="text-sm font-bold">{evaluation.title}</p>
           <ul className="mt-2 space-y-1 text-xs">
-            {evaluation.reasons.map((r) => (
+            {evaluationReasons.map((r) => (
               <li key={r.code}>· {r.label}</li>
             ))}
           </ul>
@@ -149,10 +159,10 @@ export function RecipeDetailMorePanel({
         </Block>
       )}
 
-      {familyFit && familyFit.members.length > 0 ? (
+      {familyFit && familyFitMembers.length > 0 ? (
         <Block title="Совместимость семьи">
           <ul className="space-y-1.5 text-sm">
-            {familyFit.members.map((m) => (
+            {familyFitMembers.map((m) => (
               <li key={m.name} className="flex gap-2">
                 <span>{m.status === "ok" ? "✓" : "⚠"}</span>
                 <span>
@@ -165,7 +175,7 @@ export function RecipeDetailMorePanel({
         </Block>
       ) : null}
 
-      {mode === "family" && familyMembers.length > 0 ? (
+      {mode === "family" && safeFamilyMembers.length > 0 ? (
         <Block title="Нравится семье">
           <div className="flex flex-wrap items-center gap-2">
             <select
@@ -173,7 +183,7 @@ export function RecipeDetailMorePanel({
               onChange={(e) => setRateMemberId(Number(e.target.value))}
               className="min-w-[140px] flex-1 rounded-control border border-cream-border bg-cream-surface px-3 py-2 text-sm"
             >
-              {familyMembers.map((member) => (
+              {safeFamilyMembers.map((member) => (
                 <option key={member.id} value={member.id}>
                   {member.display_name}
                 </option>
@@ -211,10 +221,10 @@ export function RecipeDetailMorePanel({
         </Block>
       ) : null}
 
-      {suggestions.length > 0 ? (
+      {safeSuggestions.length > 0 ? (
         <Block title="Улучшить рецепт">
           <ul className="space-y-2 text-xs text-graphite-600">
-            {suggestions.slice(0, 4).map((s) => (
+            {safeSuggestions.slice(0, 4).map((s) => (
               <li key={s.id}>
                 <span className="font-semibold text-graphite-800">{s.label}:</span>{" "}
                 {s.description}
@@ -263,14 +273,14 @@ export function RecipeDetailMorePanel({
       <Block title="Коллекции">
         {collectionsLoading ? (
           <p className="text-xs text-graphite-500">Загружаю…</p>
-        ) : collections.length > 0 ? (
+        ) : safeCollections.length > 0 ? (
           <div className="flex gap-2">
             <select
               value={collectionId ?? ""}
               onChange={(e) => setCollectionId(Number(e.target.value))}
               className="min-w-0 flex-1 rounded-control border border-cream-border bg-cream-surface px-3 py-2 text-sm"
             >
-              {collections.map((c) => (
+              {safeCollections.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.visibility === "family" ? "Семья · " : "Моя · "}
                   {c.name}
@@ -322,9 +332,9 @@ export function RecipeDetailMorePanel({
       <Block title="Почему рекомендован">
         {whyLoading ? (
           <p className="text-xs text-graphite-500">Загружаю…</p>
-        ) : why && why.positives.length > 0 ? (
+        ) : why && positiveReasons.length > 0 ? (
           <ul className="space-y-1.5 text-sm text-graphite-800">
-            {why.positives.slice(0, 5).map((reason) => (
+            {positiveReasons.slice(0, 5).map((reason) => (
               <li key={reason.code} className="flex gap-2">
                 <span className="text-sage-600">✓</span>
                 <span>{SIMPLE_REASON_LABELS[reason.code] ?? reason.label}</span>

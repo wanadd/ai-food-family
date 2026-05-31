@@ -118,6 +118,9 @@ export function RecipeDetailModal({
   } = useSubscriptionOverview();
   const amaBalance = subscription?.ama_balance ?? null;
   const amaCosts = subscription?.ama_costs ?? null;
+  const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+  const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
+  const diets = Array.isArray(recipe.diets) ? recipe.diets : [];
 
   const loadFamilyFit = useCallback(async () => {
     if (!initData) return;
@@ -450,7 +453,7 @@ export function RecipeDetailModal({
               Ингредиенты
             </h3>
             <ul className="mt-3 space-y-2">
-              {recipe.ingredients.map((item) => (
+              {ingredients.map((item) => (
                 <li
                   key={`${item.name}-${item.amount}`}
                   className="flex justify-between gap-2 text-sm"
@@ -467,15 +470,15 @@ export function RecipeDetailModal({
               Шаги
             </h3>
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-graphite-700">
-              {recipe.steps.map((step) => (
+              {steps.map((step) => (
                 <li key={step}>{step}</li>
               ))}
             </ol>
           </section>
 
-          {recipe.diets.length > 0 ? (
+          {diets.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {recipe.diets.map((diet) => (
+              {diets.map((diet) => (
                 <span key={diet} className="pa-chip text-[10px]">
                   {dietLabel(diet)}
                 </span>
