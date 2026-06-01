@@ -190,6 +190,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Run ingredient validation self-checks without calling OpenAI",
     )
+    parser.add_argument(
+        "--self-test-confidence",
+        action="store_true",
+        help="Run confidence normalization self-checks without calling OpenAI",
+    )
+    parser.add_argument(
+        "--self-test-step-length",
+        action="store_true",
+        help="Run step length validation self-checks without calling OpenAI",
+    )
     return parser.parse_args()
 
 
@@ -353,6 +363,14 @@ def normalize_steps(value: Any) -> list[str]:
     return steps
 
 
+def normalize_confidence(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip().lower()
+    if isinstance(value, list) and len(value) == 1 and isinstance(value[0], str):
+        return value[0].strip().lower()
+    return ""
+
+
 def normalize_response(data: Any, recipe: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError("response_is_not_object")
@@ -360,7 +378,7 @@ def normalize_response(data: Any, recipe: dict[str, Any]) -> dict[str, Any]:
         "id": data.get("id"),
         "title": str(data.get("title") or "").strip(),
         "steps": normalize_steps(data.get("steps")),
-        "confidence": str(data.get("confidence") or "").strip().lower(),
+        "confidence": normalize_confidence(data.get("confidence")),
         "notes": str(data.get("notes") or "").strip(),
         "_input_id": recipe.get("id"),
     }
@@ -427,6 +445,25 @@ def steps_mention_meaningful_ingredient(recipe: dict[str, Any], steps: list[str]
     return bool(terms) and any(term in normalized_steps for term in terms)
 
 
+def step_has_meaningful_ingredient(recipe: dict[str, Any], step: str) -> bool:
+    normalized_step = normalize_text(step)
+    terms = ingredient_tokens(recipe)
+    return bool(terms) and any(term in normalized_step for term in terms)
+
+
+def step_has_cooking_verb(step: str) -> bool:
+    normalized_step = normalize_text(step)
+    return any(action in normalized_step for action in ACTION_WORDS)
+
+
+def step_length_is_acceptable(recipe: dict[str, Any], step: str) -> bool:
+    if len(step) >= 20:
+        return True
+    if len(step) < 15:
+        return False
+    return step_has_cooking_verb(step) and step_has_meaningful_ingredient(recipe, step)
+
+
 def validate_enriched(data: dict[str, Any], recipe: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     try:
@@ -449,7 +486,7 @@ def validate_enriched(data: dict[str, Any], recipe: dict[str, Any]) -> list[str]
         errors.append("steps_count_not_5_to_9")
 
     for index, step in enumerate(steps, start=1):
-        if len(step) < 20:
+        if not step_length_is_acceptable(recipe, step):
             errors.append(f"step_{index}_too_short")
         if step_has_forbidden_phrase(step):
             errors.append(f"step_{index}_forbidden_phrase")
@@ -626,6 +663,66 @@ def self_test_validation() -> int:
         print(f"Validation self-test failed: {failed}")
         return 1
     print("Validation self-test passed")
+    return 0
+
+
+def self_test_confidence() -> int:
+    cases = [
+        ("high", True, "high"),
+        (" High ", True, "high"),
+        (["high"], True, "high"),
+        (["medium"], True, "medium"),
+        ([], False, ""),
+        (["high", "medium"], False, ""),
+        ("very_high", False, "very_high"),
+    ]
+    failed = 0
+    for index, (value, should_pass, expected) in enumerate(cases, start=1):
+        normalized = normalize_confidence(value)
+        passed = normalized in ALLOWED_CONFIDENCE
+        if passed == should_pass and normalized == expected:
+            print(f"PASS confidence case {index}: {value!r} -> {normalized!r}")
+            continue
+        failed += 1
+        print(
+            f"FAIL confidence case {index}: value={value!r} "
+            f"normalized={normalized!r} expected={expected!r} pass={passed}"
+        )
+    if failed:
+        print(f"Confidence self-test failed: {failed}")
+        return 1
+    print("Confidence self-test passed")
+    return 0
+
+
+def self_test_step_length() -> int:
+    cases = [
+        ("Мелко нарежьте лук.", [{"name": "Лук", "amount": "1 шт"}], True),
+        ("Подавайте.", [{"name": "Лук", "amount": "1 шт"}], False),
+        ("Нарежьте.", [{"name": "Лук", "amount": "1 шт"}], False),
+        ("Лук.", [{"name": "Лук", "amount": "1 шт"}], False),
+        (
+            "Нарежьте лук мелкими кубиками и переложите в миску.",
+            [{"name": "Лук", "amount": "1 шт"}],
+            True,
+        ),
+    ]
+    failed = 0
+    for index, (step, ingredients, should_pass) in enumerate(cases, start=1):
+        recipe = {"id": index, "title": f"Test {index}", "ingredients": ingredients}
+        passed = step_length_is_acceptable(recipe, step)
+        if passed == should_pass:
+            print(f"PASS step length case {index}: {step!r}")
+            continue
+        failed += 1
+        print(
+            f"FAIL step length case {index}: step={step!r} "
+            f"length={len(step)} pass={passed} expected={should_pass}"
+        )
+    if failed:
+        print(f"Step length self-test failed: {failed}")
+        return 1
+    print("Step length self-test passed")
     return 0
 
 
@@ -853,6 +950,10 @@ def main() -> int:
         return self_test_parser()
     if args.self_test_validation:
         return self_test_validation()
+    if args.self_test_confidence:
+        return self_test_confidence()
+    if args.self_test_step_length:
+        return self_test_step_length()
     succeeded, failed = run_enrichment(args)
     if not args.dry_run:
         print(f"Succeeded: {succeeded}")

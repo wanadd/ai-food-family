@@ -26,7 +26,10 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATABASE_URL = "postgresql://aifood:aifood@localhost:5432/aifood"
 DEFAULT_INPUT_PATH = ROOT / "exports" / "placeholder_recipe_steps_update_16.json"
 DEFAULT_REPORT_PATH = ROOT / "reports" / "recipe_steps_apply_report.md"
-ALLOWED_SOURCE = "steps_enrichment_v1"
+ALLOWED_SOURCES = {
+    "steps_enrichment_v1",
+    "steps_enrichment_holiday_kids_v1",
+}
 
 
 @dataclass(frozen=True)
@@ -92,7 +95,7 @@ def parse_update_record(raw: Any, index: int) -> StepsUpdate:
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("invalid_id") from exc
     source = str(raw.get("source") or "").strip()
-    if source != ALLOWED_SOURCE:
+    if source not in ALLOWED_SOURCES:
         raise ValueError("invalid_source")
     return StepsUpdate(
         id=recipe_id,
