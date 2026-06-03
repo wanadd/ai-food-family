@@ -1,9 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import {
+  LeftoversSheet2026,
+  MealOutcomeSheet2026,
+} from "@/components/dom-2026";
 import { AIInsight2026 } from "@/components/home-2026/AIInsight2026";
 import { HomeHero2026 } from "@/components/home-2026/HomeHero2026";
 import { NextActionCard2026 } from "@/components/home-2026/NextActionCard2026";
@@ -34,6 +38,7 @@ type LoadState = "loading" | "ready" | "error";
 
 export function Home2026() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { initData, user, isNewUser } = useTelegram();
   const { mode, loading: modeLoading, context } = useAppMode();
   const use2026 = isPlanamUi2026Enabled();
@@ -46,6 +51,8 @@ export function Home2026() {
     primed ? "ready" : "loading",
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [leftoversOpen, setLeftoversOpen] = useState(false);
+  const [mealOutcomeOpen, setMealOutcomeOpen] = useState(false);
 
   const load = useCallback(
     async (force = false) => {
@@ -79,6 +86,13 @@ export function Home2026() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (searchParams.get("meal_outcome") === "1") {
+      setMealOutcomeOpen(true);
+      router.replace("/", { scroll: false });
+    }
+  }, [searchParams, router]);
+
   const hasMenu = Boolean(overview?.plan_summary.has_selected_menu);
   const meals = useMemo(
     () => (overview ? enrichTodayMeals(overview) : []),
@@ -108,8 +122,26 @@ export function Home2026() {
 
   const handleCreateMenu = useCallback(() => {
     const path = nextAction?.redirect_path ?? "/menu/generate";
-    router.push(resolveHomeRedirectPath(path, use2026));
+    router.push(resolveHomeRedirectPath(path, use2026, nextAction?.id));
   }, [nextAction, router, use2026]);
+
+  const handleSnapshotClick = useCallback(
+    (id: string) => {
+      if (id === "shopping") {
+        router.push("/home/shopping");
+      } else if (id === "pantry") {
+        router.push("/home/pantry");
+      } else if (id === "leftovers") {
+        setLeftoversOpen(true);
+      }
+    },
+    [router],
+  );
+
+  const handleMealOutcomeSuccess = useCallback(() => {
+    invalidateCache(cacheK);
+    void load(true);
+  }, [cacheK, load]);
 
   const handleRetry = () => {
     invalidateCache(cacheK);
@@ -159,7 +191,26 @@ export function Home2026() {
 
       {!loading ? <NextActionCard2026 action={nextAction} /> : null}
 
-      <PlanSnapshot2026 items={snapshot} loading={loading} />
+      <PlanSnapshot2026
+        items={snapshot}
+        loading={loading}
+        onItemClick={handleSnapshotClick}
+      />
+
+      {!loading && (overview?.meal_leftovers_count ?? 0) > 0 ? (
+        <div className="px-4 pt-3">
+          <button
+            type="button"
+            onClick={() => setLeftoversOpen(true)}
+            className="w-full rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left shadow-soft transition active:scale-[0.98] dark:shadow-none"
+          >
+            <span className="pa26-card-title">Остатки дома</span>
+            <span className="pa26-caption mt-0.5 block text-pa-muted">
+              {overview!.meal_leftovers_count} — что съесть или приготовить
+            </span>
+          </button>
+        </div>
+      ) : null}
 
       <AIInsight2026
         text={insight}
@@ -173,6 +224,16 @@ export function Home2026() {
         hasMenu={hasMenu}
         isNewUser={isNewUser}
         onCreateMenu={handleCreateMenu}
+      />
+
+      <LeftoversSheet2026
+        open={leftoversOpen}
+        onClose={() => setLeftoversOpen(false)}
+      />
+      <MealOutcomeSheet2026
+        open={mealOutcomeOpen}
+        onClose={() => setMealOutcomeOpen(false)}
+        onSuccess={handleMealOutcomeSuccess}
       />
     </div>
   );

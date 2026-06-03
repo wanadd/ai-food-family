@@ -46,7 +46,9 @@ export function NextActionCard2026({ action }: NextActionCard2026Props) {
           </span>
         }
         onClick={() =>
-          router.push(resolveHomeRedirectPath(action.redirect_path, use2026))
+          router.push(
+            resolveHomeRedirectPath(action.redirect_path, use2026, action.id),
+          )
         }
       />
     </section>

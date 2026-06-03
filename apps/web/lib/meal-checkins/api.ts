@@ -34,11 +34,13 @@ export async function createMealCheckin(
   mode: AppMode,
   payload: {
     meal_type: string;
-    actual_status: MealCheckinStatus;
+    actual_status: MealCheckinStatus | "saved_as_leftover";
     planned_date?: string;
     family_member_id?: number | null;
     actual_description?: string | null;
     recipe_id?: number;
+    leftover_servings_delta?: number | null;
+    leftover_status?: string | null;
   },
 ): Promise<MealCheckin> {
   return apiFetch(initData, mode, "/meal-checkins", {

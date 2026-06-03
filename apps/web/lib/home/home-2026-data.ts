@@ -94,6 +94,15 @@ export function buildPlanSnapshot(overview: MenuOverview): PlanSnapshotItem[] {
     });
   }
 
+  const leftovers = overview.meal_leftovers_count ?? 0;
+  if (leftovers > 0) {
+    items.push({
+      id: "leftovers",
+      emoji: "🍲",
+      label: `Остатки: ${leftovers}`,
+    });
+  }
+
   if (overview.is_pro && overview.pro_coverage) {
     const { protein_percent, fiber_percent, calories_percent, water_percent } =
       overview.pro_coverage;

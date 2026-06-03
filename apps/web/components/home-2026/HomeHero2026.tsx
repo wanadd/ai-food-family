@@ -39,7 +39,9 @@ export function HomeHero2026({
     if (!nextAction?.redirect_path) {
       return;
     }
-    router.push(resolveHomeRedirectPath(nextAction.redirect_path, use2026));
+    router.push(
+      resolveHomeRedirectPath(nextAction.redirect_path, use2026, nextAction.id),
+    );
   };
 
   if (loading) {
