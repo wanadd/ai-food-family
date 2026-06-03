@@ -10,6 +10,12 @@ const LEGACY_TO_2026: Record<string, string> = {
   "/shopping": "/home/shopping",
   "/shopping/pantry": "/home/pantry",
   "/profile/nutrition": "/profile/nutrition",
+  "/health": "/wellness",
+  "/health/today": "/wellness",
+  "/health/chat": "/wellness/chat",
+  "/nutritionist": "/wellness/chat",
+  "/progress": "/wellness",
+  "/subscription": "/account/subscription",
 };
 
 export function resolveHomeRedirectPath(
@@ -28,6 +34,9 @@ export function resolveHomeRedirectPath(
   }
   if (actionId === "generate_menu") {
     return "/plan/generate";
+  }
+  if (actionId === "complete_nutrition") {
+    return "/profile/nutrition";
   }
   return LEGACY_TO_2026[legacyPath] ?? legacyPath;
 }

@@ -25,6 +25,8 @@ from app.services.recipe_storage import (
     scale_ingredients,
 )
 from . import repository as repository_module
+from app.deps import is_admin_user
+from app.services.recipes.access import DRAFT_OWNER_PREFIX, DRAFT_SOURCE_TYPE
 from app.services.recipes.mapper import to_detail
 
 
@@ -48,7 +50,21 @@ def toggle_favorite(
     return FavoriteToggleResponse(recipe_id=recipe_id, is_favorited=True)
 
 
-def create_recipe(db: Session, payload: RecipeCreateRequest) -> RecipeDetail:
+def create_recipe(
+    db: Session,
+    payload: RecipeCreateRequest,
+    *,
+    user: User,
+) -> RecipeDetail:
+    as_admin = is_admin_user(user)
+    source_type = payload.source_type
+    is_active = True
+    source_url: str | None = None
+    if not as_admin:
+        source_type = DRAFT_SOURCE_TYPE
+        is_active = False
+        source_url = f"{DRAFT_OWNER_PREFIX}{user.id}"
+
     recipe = Recipe(
         title=payload.title,
         description=payload.description,
@@ -60,7 +76,9 @@ def create_recipe(db: Session, payload: RecipeCreateRequest) -> RecipeDetail:
         difficulty=payload.difficulty,
         is_drink=payload.is_drink,
         is_alcoholic=payload.is_alcoholic,
-        source_type=payload.source_type,
+        source_type=source_type,
+        source_url=source_url,
+        is_active=is_active,
     )
     db.add(recipe)
     db.flush()

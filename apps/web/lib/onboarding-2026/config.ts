@@ -1,7 +1,9 @@
 import type { MenuGoalId, PlanModeId } from "@/lib/menu/planner-options";
 
-export const ONBOARDING_TRIAL_DAYS = 3;
-export const ONBOARDING_TRIAL_AMS = 50;
+export {
+  PLANAM_TRIAL_DAYS as ONBOARDING_TRIAL_DAYS,
+  PLANAM_TRIAL_AMS as ONBOARDING_TRIAL_AMS,
+} from "@/lib/monetization/trial-config";
 
 export type OnboardingWhoId = "solo" | "couple" | "family" | "sport";
 export type OnboardingGoalId =

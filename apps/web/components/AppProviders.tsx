@@ -8,6 +8,7 @@ import { AppGate } from "@/components/auth/AppGate";
 import { captureAdminSessionFromUrl } from "@/lib/admin/session";
 import { Onboarding2026Redirect } from "@/components/onboarding-2026/Onboarding2026Redirect";
 import { AppShellBridge } from "@/components/layout/AppShellBridge";
+import { PaywallProvider } from "@/components/monetization-2026/PaywallProvider";
 import { SubscriptionProvider } from "@/components/subscription/SubscriptionProvider";
 import { TelegramProvider } from "@/components/TelegramProvider";
 
@@ -26,7 +27,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <Onboarding2026Redirect>
           <AppModeProvider>
             <SubscriptionProvider>
-              <AppShellBridge>{children}</AppShellBridge>
+              <PaywallProvider>
+                <AppShellBridge>{children}</AppShellBridge>
+              </PaywallProvider>
             </SubscriptionProvider>
           </AppModeProvider>
         </Onboarding2026Redirect>

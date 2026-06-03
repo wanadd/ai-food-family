@@ -97,11 +97,9 @@ export const HOME_SUBTABS_2026: Nav2026SubTab[] = [
   { href: "/home/pantry", label: "Запасы", icon: "pantry" },
 ];
 
-/** Подраздел «Забота» (будущие маршруты). */
+/** Подраздел «Забота» — единый scroll на /wellness; чат — кнопка на экране. */
 export const WELLNESS_SUBTABS_2026: Nav2026SubTab[] = [
-  { href: "/wellness", label: "Забота", icon: "wellness" },
-  { href: "/wellness/chat", label: "Чат", icon: "wellness", planned: true },
-  { href: "/wellness/progress", label: "Прогресс", icon: "wellness", planned: true },
+  { href: "/wellness", label: "Сегодня", icon: "wellness" },
 ];
 
 /** Центр управления — Account Hub (Sprint 2: ссылки на legacy). */
@@ -133,8 +131,15 @@ export const ACCOUNT_HUB_ITEMS_2026: AccountHubItem[] = [
   {
     id: "subscription",
     label: "Подписка",
-    caption: "Тариф и Амы",
-    href: "/subscription",
+    caption: "Тариф и срок",
+    href: "/account/subscription",
+    icon: "subscription",
+  },
+  {
+    id: "ams",
+    label: "Амы",
+    caption: "Баланс и история",
+    href: "/account/ams",
     icon: "subscription",
   },
   {
@@ -172,6 +177,13 @@ export const ROUTES_2026: Nav2026RouteMeta[] = [
   { href: "/plan/recipes", title: "Рецепты", tabId: "plan", sectionId: "recipes" },
   { href: "/wellness", title: "Забота", tabId: "wellness", sectionId: "wellness" },
   { href: "/account", title: "Профиль", tabId: "account", sectionId: "account" },
+  {
+    href: "/account/subscription",
+    title: "Подписка",
+    tabId: "account",
+    sectionId: "subscription",
+  },
+  { href: "/account/ams", title: "Амы", tabId: "account", sectionId: "ams" },
 ];
 
 /** Legacy маршруты, активирующие вкладку «Профиль». */
@@ -203,6 +215,9 @@ export const LEGACY_FALLBACK_BY_2026_PATH: Record<string, string> = {
   "/plan/recipes": "/menu/recipes",
   "/wellness": "/health",
   "/account": "/profile",
+  "/account/subscription": "/subscription",
+  "/account/ams": "/subscription",
+  "/account/subscription/checkout": "/subscription",
 };
 
 export function getActiveTabId2026(pathname: string): Nav2026TabId | null {

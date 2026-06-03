@@ -57,6 +57,7 @@ from app.services.recipes.cooking_history import (
 )
 from app.services.recipes.explainability import ExplainabilityService
 from app.services.recipes.family_preferences import FamilyPreferenceService
+from app.services.recipes.access import assert_can_create_recipe, assert_can_update_recipe
 from app.services.recipes.scenarios import ScenarioService, ScenarioType
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
@@ -150,8 +151,8 @@ def create_recipe(
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> RecipeDetail:
-    _ = user
-    return recipes_service.create_recipe(db, payload)
+    assert_can_create_recipe(user, payload)
+    return recipes_service.create_recipe(db, payload, user=user)
 
 
 @router.get("", response_model=RecipeListResponse)
@@ -336,7 +337,12 @@ def patch_recipe(
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> RecipeDetail:
-    _ = user
+    from app.services.recipes import repository as recipe_repository
+
+    recipe = recipe_repository.get_recipe_by_id(db, recipe_id)
+    if recipe is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
+    assert_can_update_recipe(user, recipe, payload)
     result = recipes_service.update_recipe(db, recipe_id, payload)
     if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")

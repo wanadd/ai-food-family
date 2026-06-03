@@ -1,7 +1,11 @@
-import { NutritionistDashboard } from "@/components/nutritionist/NutritionistDashboard";
+import { redirect } from "next/navigation";
 
-// Раздел «Здоровье» (бывш. «Нутрициолог»). В Этапе 1 контент остаётся
-// прежним — полный ребренд и упрощение запланированы на Этап 5.
+import { NutritionistDashboard } from "@/components/nutritionist/NutritionistDashboard";
+import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
+
 export default function HealthPage() {
+  if (isPlanamUi2026Enabled()) {
+    redirect("/wellness");
+  }
   return <NutritionistDashboard />;
 }

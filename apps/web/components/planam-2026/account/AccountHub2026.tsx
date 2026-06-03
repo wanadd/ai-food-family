@@ -13,8 +13,7 @@ export function AccountHub2026() {
     <div className="mx-auto max-w-lg space-y-4 px-4 py-6">
       <Card2026>
         <p className="pa26-body text-pa-muted">
-          Центр управления аккаунтом. Ссылки ведут на текущие экраны до полной миграции в
-          /account/*.
+          Профиль, подписка и настройки — в одном месте.
         </p>
       </Card2026>
 

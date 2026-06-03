@@ -1,6 +1,11 @@
-import { HealthTodayView } from "@/components/nutritionist/HealthTodayView";
+import { redirect } from "next/navigation";
 
-// Подэкран «Сегодня» раздела «Здоровье» (ONE SCREEN UX): КБЖУ, вода, совет дня.
+import { HealthTodayView } from "@/components/nutritionist/HealthTodayView";
+import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
+
 export default function HealthTodayPage() {
+  if (isPlanamUi2026Enabled()) {
+    redirect("/wellness");
+  }
   return <HealthTodayView />;
 }

@@ -26,6 +26,7 @@ export const ROUTE_MIGRATION_2026: RouteMigrationEntry[] = [
   { from: "/menu/favorites", to: "/plan/favorites", exact: true, note: "Sprint 5+" },
   { from: "/menu/collections", to: "/plan/collections", exact: true, note: "Sprint 5+" },
   { from: "/recipes", to: "/plan/recipes", note: "Legacy recipes list" },
+  { from: "/subscription", to: "/account/subscription", exact: true },
   { from: "/shopping", to: "/home/shopping", exact: true },
   { from: "/shopping/pantry", to: "/home/pantry", exact: true },
   { from: "/pantry", to: "/home/pantry", exact: true },

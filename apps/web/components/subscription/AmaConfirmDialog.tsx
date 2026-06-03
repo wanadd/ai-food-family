@@ -3,6 +3,9 @@
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { usePaywall2026Optional } from "@/components/monetization-2026/PaywallProvider";
+import { MONETIZATION_PATHS } from "@/lib/monetization/paths";
+import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
 import { formatAmaCost } from "@/lib/subscription/ama";
 
 type AmaConfirmDialogProps = {
@@ -33,7 +36,18 @@ export function AmaConfirmDialog({
   onCancel,
 }: AmaConfirmDialogProps) {
   const router = useRouter();
+  const paywall = usePaywall2026Optional();
+  const use2026 = isPlanamUi2026Enabled();
   if (!open) return null;
+
+  function openBilling() {
+    onCancel();
+    if (use2026 && paywall) {
+      paywall.openPaywall({ reason: "no_amas" });
+      return;
+    }
+    router.push(use2026 ? MONETIZATION_PATHS.subscription : "/subscription");
+  }
 
   const knownCost = typeof costAma === "number" && costAma > 0;
   const unknownCost = costAma === null;
@@ -106,10 +120,7 @@ export function AmaConfirmDialog({
             <button
               type="button"
               disabled={busy}
-              onClick={() => {
-                onCancel();
-                router.push("/subscription");
-              }}
+              onClick={openBilling}
               className="pa-btn-primary min-h-[44px] flex-1 disabled:opacity-50"
             >
               Посмотреть тариф

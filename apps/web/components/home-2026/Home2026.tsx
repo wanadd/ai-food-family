@@ -13,6 +13,10 @@ import { HomeHero2026 } from "@/components/home-2026/HomeHero2026";
 import { NextActionCard2026 } from "@/components/home-2026/NextActionCard2026";
 import { PlanSnapshot2026 } from "@/components/home-2026/PlanSnapshot2026";
 import { RecipeRail2026 } from "@/components/home-2026/RecipeRail2026";
+import { HomeMonetizationBanner2026 } from "@/components/monetization-2026/HomeMonetizationBanner2026";
+import { WellnessChip2026 } from "@/components/wellness-2026/WellnessChip2026";
+import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
+import { buildHomeMonetizationBanner } from "@/lib/monetization/billing-status";
 import { useTelegram } from "@/components/TelegramProvider";
 import { EmptyState2026 } from "@/components/planam-2026/ui/EmptyState2026";
 import {
@@ -30,9 +34,18 @@ import {
   pickHeroMeal,
 } from "@/lib/home/home-2026-data";
 import { resolveHomeRedirectPath } from "@/lib/home/redirect-path-2026";
+import { fetchTodayMealCheckins } from "@/lib/meal-checkins/api";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import type { MenuOverview } from "@/lib/menu/overview-types";
+import { fetchNutritionProfile } from "@/lib/nutrition-profile/api";
+import { fetchProgressOverview } from "@/lib/progress/api";
+import type { ProgressOverview } from "@/lib/progress/types";
+import { isNutritionProfileComplete } from "@/lib/profile/nutrition-summary";
 import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
+import { buildHomeWellnessChip } from "@/lib/wellness/home-wellness";
+import { countCompletedMeals } from "@/lib/wellness/wellness-status";
+import { fetchWaterToday } from "@/lib/water-intake/api";
+import type { WaterToday } from "@/lib/water-intake/api";
 
 type LoadState = "loading" | "ready" | "error";
 
@@ -42,11 +55,19 @@ export function Home2026() {
   const { initData, user, isNewUser } = useTelegram();
   const { mode, loading: modeLoading, context } = useAppMode();
   const use2026 = isPlanamUi2026Enabled();
+  const { overview: subscription, ensureLoaded: ensureSubscriptionLoaded } =
+    useSubscriptionOverview();
 
   const cacheK = cacheKey.menuOverview(mode);
   const primed = initData ? getCached<MenuOverview>(cacheK) : null;
 
   const [overview, setOverview] = useState<MenuOverview | null>(primed);
+  const [progress, setProgress] = useState<ProgressOverview | null>(() =>
+    initData ? getCached<ProgressOverview>(cacheKey.progressOverview(mode)) : null,
+  );
+  const [water, setWater] = useState<WaterToday | null>(null);
+  const [mealsCompleted, setMealsCompleted] = useState(0);
+  const [profileComplete, setProfileComplete] = useState(false);
   const [loadState, setLoadState] = useState<LoadState>(() =>
     primed ? "ready" : "loading",
   );
@@ -68,9 +89,27 @@ export function Home2026() {
       setLoadState("loading");
       setErrorMessage(null);
       try {
-        const data = await fetchMenuOverview(initData, mode);
+        const progKey = cacheKey.progressOverview(mode);
+        const [data, progressData, waterData, checkins, profile] =
+          await Promise.all([
+            fetchMenuOverview(initData, mode),
+            fetchProgressOverview(initData, mode).catch(() => null),
+            fetchWaterToday(initData, mode).catch(() => ({
+              total_ml: 0,
+              target_ml: null,
+            })),
+            fetchTodayMealCheckins(initData, mode).catch(() => []),
+            fetchNutritionProfile(initData).catch(() => null),
+          ]);
         setCached(cacheK, data);
+        if (progressData) {
+          setCached(progKey, progressData);
+        }
         setOverview(data);
+        setProgress(progressData);
+        setWater(waterData);
+        setMealsCompleted(countCompletedMeals(checkins));
+        setProfileComplete(isNutritionProfileComplete(profile));
         setLoadState("ready");
       } catch (err) {
         setLoadState("error");
@@ -85,6 +124,12 @@ export function Home2026() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (initData && use2026) {
+      ensureSubscriptionLoaded();
+    }
+  }, [initData, use2026, ensureSubscriptionLoaded]);
 
   useEffect(() => {
     if (searchParams.get("meal_outcome") === "1") {
@@ -106,6 +151,22 @@ export function Home2026() {
   const insight = useMemo(
     () => (overview ? buildAiInsight(overview) : null),
     [overview],
+  );
+  const monetizationBanner = useMemo(
+    () => (use2026 ? buildHomeMonetizationBanner(subscription) : null),
+    [use2026, subscription],
+  );
+
+  const wellnessChip = useMemo(
+    () =>
+      buildHomeWellnessChip({
+        overview,
+        progress,
+        water,
+        profileComplete,
+        mealsCompleted,
+      }),
+    [overview, progress, water, profileComplete, mealsCompleted],
   );
   const nextAction = overview?.next_action ?? null;
   const urgent =
@@ -191,6 +252,11 @@ export function Home2026() {
 
       {!loading ? <NextActionCard2026 action={nextAction} /> : null}
 
+      <HomeMonetizationBanner2026
+        banner={monetizationBanner}
+        loading={loading}
+      />
+
       <PlanSnapshot2026
         items={snapshot}
         loading={loading}
@@ -211,6 +277,8 @@ export function Home2026() {
           </button>
         </div>
       ) : null}
+
+      <WellnessChip2026 data={wellnessChip} loading={loading} />
 
       <AIInsight2026
         text={insight}

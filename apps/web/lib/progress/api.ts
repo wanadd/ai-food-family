@@ -16,6 +16,14 @@ export async function fetchProgressOverview(
   return apiGet<ProgressOverview>(initData, mode, "/progress/me");
 }
 
+export async function fetchProgressHistory(
+  initData: string,
+  mode: AppMode,
+): Promise<ProgressEntry[]> {
+  const data = await apiGet<ProgressEntry[]>(initData, mode, "/progress/history");
+  return data ?? [];
+}
+
 export async function createProgressEntry(
   initData: string,
   mode: AppMode,

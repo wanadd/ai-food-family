@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { MONETIZATION_PATHS } from "@/lib/monetization/paths";
+import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
+
 type ProgressProLockedProps = {
   goalLabel: string | null;
 };
@@ -34,7 +37,14 @@ export function ProgressProLocked({ goalLabel }: ProgressProLockedProps) {
             </p>
           </div>
         </div>
-        <Link href="/subscription" className="pa-btn-primary mt-4 w-full">
+        <Link
+          href={
+            isPlanamUi2026Enabled()
+              ? `${MONETIZATION_PATHS.subscription}?highlight=pro`
+              : "/subscription"
+          }
+          className="pa-btn-primary mt-4 w-full"
+        >
           Узнать о PRO
         </Link>
       </section>
