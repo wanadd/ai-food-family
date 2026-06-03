@@ -18,6 +18,12 @@ type MealOutcomeSheet2026Props = {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  /** When set, uses this day from multi-day menu (defaults to today). */
+  dayIndex?: number | null;
+  /** ISO date for checkin (defaults to today). */
+  plannedDate?: string | null;
+  /** Skip meal picker and open portions for this meal index. */
+  preselectedMealIndex?: number | null;
 };
 
 type Step = "meal" | "portions" | "done";
@@ -28,6 +34,9 @@ export function MealOutcomeSheet2026({
   open,
   onClose,
   onSuccess,
+  dayIndex: dayIndexProp = null,
+  plannedDate: plannedDateProp = null,
+  preselectedMealIndex = null,
 }: MealOutcomeSheet2026Props) {
   const { initData } = useTelegram();
   const { mode } = useAppMode();
@@ -40,6 +49,7 @@ export function MealOutcomeSheet2026({
   const [portions, setPortions] = useState(0);
 
   const todayIso = new Date().toISOString().slice(0, 10);
+  const plannedDate = plannedDateProp ?? todayIso;
 
   const loadMeals = useCallback(async () => {
     if (!initData) {
@@ -55,11 +65,18 @@ export function MealOutcomeSheet2026({
         return;
       }
       const days = getMenuDays(menu);
-      const today =
-        days.find((d) => d.date_iso === todayIso) ?? days[0];
-      const dayMeals = today
-        ? mealsForDayIndex(menu, today.day_index)
-        : menu.meals ?? [];
+      const todayDay = days.find((d) => d.date_iso === todayIso) ?? days[0];
+      const activeDayIndex =
+        dayIndexProp ?? todayDay?.day_index ?? 1;
+      const dayMeals = mealsForDayIndex(menu, activeDayIndex);
+      if (
+        preselectedMealIndex != null &&
+        preselectedMealIndex >= 0 &&
+        preselectedMealIndex < dayMeals.length
+      ) {
+        setSelected(dayMeals[preselectedMealIndex]);
+        setStep("portions");
+      }
       setMeals(
         dayMeals.filter((m) =>
           ["breakfast", "lunch", "dinner", "snack"].includes(m.meal_type),
@@ -71,17 +88,19 @@ export function MealOutcomeSheet2026({
     } finally {
       setLoading(false);
     }
-  }, [initData, mode, todayIso]);
+  }, [initData, mode, todayIso, dayIndexProp, preselectedMealIndex]);
 
   useEffect(() => {
     if (open) {
-      setStep("meal");
-      setSelected(null);
+      if (preselectedMealIndex == null) {
+        setStep("meal");
+        setSelected(null);
+      }
       setPortions(0);
       setError(null);
       void loadMeals();
     }
-  }, [open, loadMeals]);
+  }, [open, loadMeals, preselectedMealIndex]);
 
   async function handleSubmit() {
     if (!initData || !selected) {
@@ -94,7 +113,7 @@ export function MealOutcomeSheet2026({
       await createMealCheckin(initData, mode, {
         meal_type: selected.meal_type,
         actual_status: hasLeftovers ? "saved_as_leftover" : "ate_home",
-        planned_date: todayIso,
+        planned_date: plannedDate,
         actual_description: selected.name,
         recipe_id: selected.recipe_id ?? undefined,
         leftover_servings_delta: hasLeftovers ? portions : null,

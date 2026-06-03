@@ -100,7 +100,8 @@ async def handle_menu_text(
             "Меню и рацион — в приложении:",
             reply_markup={
                 "inline_keyboard": [
-                    [{"text": "Открыть меню", "web_app": {"url": _webapp_url("/menu")}}],
+                    [{"text": "Моё меню", "web_app": {"url": _webapp_url("/plan/today")}}],
+                    [{"text": "Создать меню", "web_app": {"url": _webapp_url("/plan/generate")}}],
                 ],
             },
         )

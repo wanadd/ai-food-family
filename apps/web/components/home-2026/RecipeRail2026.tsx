@@ -9,7 +9,7 @@ import {
   formatMealMeta,
   type Home2026TodayMeal,
 } from "@/lib/home/home-2026-data";
-import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
+import { PLAN_PATHS, recipeDetailPath } from "@/lib/plan/plan-paths";
 
 type RecipeRail2026Props = {
   meals: Home2026TodayMeal[];
@@ -27,7 +27,6 @@ export function RecipeRail2026({
   onCreateMenu,
 }: RecipeRail2026Props) {
   const router = useRouter();
-  const use2026 = isPlanamUi2026Enabled();
 
   if (loading) {
     return (
@@ -59,7 +58,7 @@ export function RecipeRail2026({
               : "Сгенерируйте меню на неделю, чтобы увидеть блюда дня в ленте."
           }
           actionLabel="Создать меню"
-          onAction={onCreateMenu ?? (() => router.push("/menu/generate"))}
+          onAction={onCreateMenu ?? (() => router.push(PLAN_PATHS.generate))}
         />
       </section>
     );
@@ -81,10 +80,8 @@ export function RecipeRail2026({
             onClick={() =>
               router.push(
                 meal.recipe_id
-                  ? `/recipes/${meal.recipe_id}`
-                  : use2026
-                    ? "/plan/today"
-                    : "/menu/current",
+                  ? recipeDetailPath(meal.recipe_id)
+                  : PLAN_PATHS.today,
               )
             }
           />

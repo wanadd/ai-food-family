@@ -5,7 +5,7 @@
 import type { HomeNextActionId } from "@/lib/menu/overview-types";
 
 const LEGACY_TO_2026: Record<string, string> = {
-  "/menu/generate": "/menu/generate",
+  "/menu/generate": "/plan/generate",
   "/menu/current": "/plan/today",
   "/shopping": "/home/shopping",
   "/shopping/pantry": "/home/pantry",
@@ -21,7 +21,13 @@ export function resolveHomeRedirectPath(
     return legacyPath;
   }
   if (actionId === "meal_outcome") {
-    return "/?meal_outcome=1";
+    return "/plan/today?outcome=1";
+  }
+  if (actionId === "open_today") {
+    return "/plan/today";
+  }
+  if (actionId === "generate_menu") {
+    return "/plan/generate";
   }
   return LEGACY_TO_2026[legacyPath] ?? legacyPath;
 }

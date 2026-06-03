@@ -5,13 +5,24 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { MenuSlotSheet2026 } from "@/components/recipes-2026/MenuSlotSheet2026";
+import { ReplaceDishSheet2026 } from "@/components/plan-2026/ReplaceDishSheet2026";
+import { useToast } from "@/components/ui/ToastProvider";
+import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { fetchSelectedMenu } from "@/lib/menu/api";
+import { defaultDayIndex } from "@/lib/menu/menu-days";
+import type { MenuVariant } from "@/lib/menu/types";
+import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
 import { RecipeImage2026 } from "@/components/recipes-2026/RecipeImage2026";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { Card2026 } from "@/components/planam-2026/ui/Card2026";
 import { EmptyState2026 } from "@/components/planam-2026/ui/EmptyState2026";
 import { Skeleton2026 } from "@/components/planam-2026/ui/Skeleton2026";
 import { useTelegram } from "@/components/TelegramProvider";
-import { fetchRecipe, toggleRecipeFavorite } from "@/lib/recipes/api";
+import {
+  addRecipeToShopping,
+  fetchRecipe,
+  toggleRecipeFavorite,
+} from "@/lib/recipes/api";
 import {
   categoryLabel,
   difficultyLabel,
@@ -43,7 +54,11 @@ function nutritionLine(recipe: RecipeDetail): string {
 export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const router = useRouter();
   const { initData } = useTelegram();
+  const { mode } = useAppMode();
+  const { showToast } = useToast();
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
+  const [menu, setMenu] = useState<MenuVariant | null>(null);
+  const [shoppingBusy, setShoppingBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
@@ -70,6 +85,30 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!initData || !replaceOpen) {
+      return;
+    }
+    void fetchSelectedMenu(initData, mode).then((s) => setMenu(s?.menu ?? null));
+  }, [initData, mode, replaceOpen]);
+
+  async function handleAddShopping() {
+    if (!initData || !recipe) {
+      return;
+    }
+    setShoppingBusy(true);
+    try {
+      await addRecipeToShopping(initData, recipe.id);
+      invalidateCache("shopping-list");
+      invalidateCache("menu-overview");
+      showToast(`✓ «${recipe.title}» добавлено в покупки`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Не удалось добавить");
+    } finally {
+      setShoppingBusy(false);
+    }
+  }
 
   async function handleFavorite() {
     if (!initData || !recipe) return;
@@ -161,16 +200,23 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
           ))}
         </div>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button2026
             variant="primary"
-            className="flex-1"
+            className="flex-1 min-w-[120px]"
             onClick={() => setAddOpen(true)}
           >
             В меню
           </Button2026>
           <Button2026 variant="secondary" onClick={() => setReplaceOpen(true)}>
             Заменить
+          </Button2026>
+          <Button2026
+            variant="ghost"
+            loading={shoppingBusy}
+            onClick={() => void handleAddShopping()}
+          >
+            В покупки
           </Button2026>
           <Button2026
             variant="ghost"
@@ -220,10 +266,10 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
         onClose={() => setAddOpen(false)}
         onSuccess={() => router.push("/plan/today")}
       />
-      <MenuSlotSheet2026
+      <ReplaceDishSheet2026
         open={replaceOpen}
-        recipe={recipe}
-        mode="replace"
+        menu={menu}
+        dayIndex={menu ? defaultDayIndex(menu) : 1}
         onClose={() => setReplaceOpen(false)}
         onSuccess={() => router.push("/plan/today")}
       />

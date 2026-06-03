@@ -14,6 +14,7 @@ import {
 } from "@/lib/recipes/api";
 import { CATALOG_MEAL_FILTERS } from "@/lib/recipes/labels";
 import type { RecipeFilters, RecipeQuery, RecipeSummary } from "@/lib/recipes/types";
+import { PLAN_PATHS } from "@/lib/plan/plan-paths";
 import { cn } from "@/lib/planam/cn";
 
 function queryFromParams(sp: URLSearchParams): RecipeQuery {
@@ -161,7 +162,7 @@ export function RecipeCatalog2026() {
           title="Каталог пока пуст"
           description="Рецепты появятся после наполнения базы. Создайте меню — ПланАм подберёт блюда."
           actionLabel="Создать меню"
-          onAction={() => router.push("/menu/generate")}
+          onAction={() => router.push(PLAN_PATHS.generate)}
         />
       );
     }

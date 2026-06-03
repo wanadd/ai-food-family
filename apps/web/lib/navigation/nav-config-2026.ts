@@ -53,7 +53,7 @@ export type Nav2026RouteMeta = {
 export const NAV_TABS_2026: Nav2026Tab[] = [
   {
     id: "plan",
-    href: "/plan",
+    href: "/plan/today",
     label: "План",
     icon: "plan",
     matchPrefixes: ["/plan"],
@@ -199,6 +199,7 @@ export const LEGACY_FALLBACK_BY_2026_PATH: Record<string, string> = {
   "/home/pantry": "/shopping/pantry",
   "/plan": "/menu",
   "/plan/today": "/menu/current",
+  "/plan/generate": "/menu/generate",
   "/plan/recipes": "/menu/recipes",
   "/wellness": "/health",
   "/account": "/profile",
