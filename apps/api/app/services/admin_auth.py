@@ -33,7 +33,7 @@ def panel_enabled() -> bool:
 
 
 def admin_webapp_url(session_token: str) -> str:
-    base = (settings.telegram_webapp_url or "").rstrip("/")
+    base = (settings.telegram_webapp_url or "https://planam.ru").rstrip("/")
     return f"{base}/admin?admin_session={session_token}"
 
 
