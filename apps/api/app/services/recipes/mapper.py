@@ -51,6 +51,7 @@ def to_summary(
         suitable_for_sport=recipe.suitable_for_sport,
         suitable_for_event=recipe.suitable_for_event,
         fit_level=fit_level,  # type: ignore[arg-type]
+        image_url=recipe.image_url,
     )
 
 

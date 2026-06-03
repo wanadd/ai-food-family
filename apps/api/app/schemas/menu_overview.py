@@ -48,6 +48,33 @@ class MenuTodayMeal(BaseModel):
     meal_type: str
     label: str
     name: str | None = None
+    recipe_id: int | None = None
+    image_url: str | None = None
+
+
+HomeNextActionId = Literal[
+    "complete_nutrition",
+    "generate_menu",
+    "shopping",
+    "use_pantry_item",
+    "meal_outcome",
+    "open_today",
+]
+
+
+class HomeNextAction(BaseModel):
+    """Primary CTA for Home 2026 (rule engine P0–P5)."""
+
+    id: HomeNextActionId
+    cta_label: str
+    redirect_path: str
+    subtitle: str | None = None
+    metadata: dict = Field(default_factory=dict)
+
+
+class PantryExpiringPreview(BaseModel):
+    name: str
+    days_until_expiry: int
 
 
 class MenuHomeAttendance(BaseModel):
@@ -79,6 +106,9 @@ class MenuOverviewResponse(BaseModel):
     home_attendance: MenuHomeAttendance | None = None
     settings_summary: MenuSettingsSummary | None = None
     nutritionist_advice_error: str | None = None
+    next_action: HomeNextAction | None = None
+    shopping_unchecked_count: int = 0
+    pantry_expiring_preview: PantryExpiringPreview | None = None
 
 
 class MenuQuickActionRequest(BaseModel):

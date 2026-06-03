@@ -64,6 +64,7 @@ class RecipeSummary(BaseModel):
     suitable_for_sport: bool = False
     suitable_for_event: bool = False
     fit_level: Literal["good", "partial", "not_recommended"] | None = None
+    image_url: str | None = None
 
 
 class RecipeDetail(RecipeSummary):

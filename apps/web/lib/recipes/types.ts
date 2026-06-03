@@ -26,6 +26,7 @@ export type RecipeSummary = {
   suitable_for_sport?: boolean;
   suitable_for_event?: boolean;
   fit_level?: "good" | "partial" | "not_recommended" | null;
+  image_url?: string | null;
 };
 
 export type RecipeDetail = RecipeSummary & {

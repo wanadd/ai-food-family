@@ -3,11 +3,8 @@
 @tailwind utilities;
 
 /**
- * PlanAm design foundation (Фаза 1).
- *
- * Тёплая база: cream-фон, графитовый текст, Manrope. Плюс набор базовых
- * компонентных классов .pa-* (карточка, кнопки, чип, заголовки). Логика и
- * вёрстка экранов не меняются — классы предоставляются для последующих фаз.
+ * PlanAm design foundation (legacy .pa-* + PLANAM 2026 semantic tokens).
+ * @see docs/PLANAM_DESIGN_SYSTEM_2026.md
  */
 
 @layer base {
@@ -17,10 +14,43 @@
     --pa-border: #ece4d6;
     --pa-sage: #5e8b57;
     --pa-graphite: #2e2c28;
+
+    /* PLANAM 2026 — Light */
+    --pa-bg-canvas: #fbf7ef;
+    --pa-bg-surface: #fffdf8;
+    --pa-bg-elevated: #ffffff;
+    --pa-text-primary: #2e2c28;
+    --pa-text-secondary: #726c61;
+    --pa-brand-primary: #5e8b57;
+    --pa-brand-secondary: #4c7347;
+    --pa-accent: #d98e5a;
+    --pa-success: #4c7347;
+    --pa-warning: #d98e5a;
+    --pa-error: #b85c5c;
+    --pa-border: #ece4d6;
+  }
+
+  .dark {
+    --pa-bg-canvas: #1a1917;
+    --pa-bg-surface: #252320;
+    --pa-bg-elevated: #2e2c28;
+    --pa-text-primary: #fffdf8;
+    --pa-text-secondary: #c9c3b8;
+    --pa-brand-primary: #7da870;
+    --pa-brand-secondary: #9cbe90;
+    --pa-accent: #e8b87e;
+    --pa-success: #7da870;
+    --pa-warning: #e8b87e;
+    --pa-error: #d47878;
+    --pa-border: #3a3834;
   }
 
   body {
     @apply bg-cream font-sans text-graphite-900 antialiased;
+  }
+
+  html.dark body {
+    @apply bg-pa-canvas text-pa-foreground;
   }
 }
 
@@ -55,5 +85,34 @@
 
   .pa-chip {
     @apply inline-flex items-center rounded-pill bg-sage-50 px-3 py-1.5 text-xs font-semibold text-sage-700;
+  }
+
+  /* PLANAM 2026 typography tokens */
+  .pa26-hero {
+    @apply text-[28px] font-semibold leading-[34px] tracking-[-0.02em] text-pa-foreground;
+  }
+
+  .pa26-page-title {
+    @apply text-[22px] font-semibold leading-[28px] tracking-[-0.01em] text-pa-foreground;
+  }
+
+  .pa26-section-title {
+    @apply text-[17px] font-semibold leading-[24px] text-pa-foreground;
+  }
+
+  .pa26-card-title {
+    @apply text-[17px] font-medium leading-[22px] text-pa-foreground;
+  }
+
+  .pa26-body {
+    @apply text-[15px] font-normal leading-[22px] text-pa-foreground;
+  }
+
+  .pa26-caption {
+    @apply text-[13px] font-normal leading-[18px] text-pa-muted;
+  }
+
+  .pa26-micro {
+    @apply text-[11px] font-medium leading-[14px] tracking-[0.02em] text-pa-muted;
   }
 }

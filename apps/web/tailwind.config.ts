@@ -9,9 +9,11 @@ import type { Config } from "tailwindcss";
  * экраны идёт в последующих фазах, а не здесь.
  */
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
@@ -53,6 +55,21 @@ const config: Config = {
         warm: {
           DEFAULT: "#D98E5A",
           soft: "#E8B87E",
+        },
+        /** PLANAM 2026 semantic roles (CSS variables in globals.css). */
+        pa: {
+          canvas: "var(--pa-bg-canvas)",
+          surface: "var(--pa-bg-surface)",
+          elevated: "var(--pa-bg-elevated)",
+          foreground: "var(--pa-text-primary)",
+          muted: "var(--pa-text-secondary)",
+          brand: "var(--pa-brand-primary)",
+          "brand-strong": "var(--pa-brand-secondary)",
+          accent: "var(--pa-accent)",
+          success: "var(--pa-success)",
+          warning: "var(--pa-warning)",
+          error: "var(--pa-error)",
+          border: "var(--pa-border)",
         },
       },
       fontFamily: {

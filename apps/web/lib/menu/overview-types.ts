@@ -30,7 +30,16 @@ export type MenuOverview = {
   persons_count: number;
   plan_mode: string | null;
   meal_leftovers_count: number;
-  today_meals: { meal_type: string; label: string; name: string | null }[];
+  today_meals: {
+    meal_type: string;
+    label: string;
+    name: string | null;
+    recipe_id?: number | null;
+    image_url?: string | null;
+  }[];
+  next_action?: HomeNextAction | null;
+  shopping_unchecked_count?: number;
+  pantry_expiring_preview?: PantryExpiringPreview | null;
   home_attendance: {
     breakfast_home: number;
     lunch_home: number;
@@ -45,6 +54,27 @@ export type MenuOverview = {
     use_pantry: boolean;
   } | null;
   nutritionist_advice_error?: string | null;
+};
+
+export type HomeNextActionId =
+  | "complete_nutrition"
+  | "generate_menu"
+  | "shopping"
+  | "use_pantry_item"
+  | "meal_outcome"
+  | "open_today";
+
+export type HomeNextAction = {
+  id: HomeNextActionId;
+  cta_label: string;
+  redirect_path: string;
+  subtitle?: string | null;
+  metadata?: Record<string, unknown>;
+};
+
+export type PantryExpiringPreview = {
+  name: string;
+  days_until_expiry: number;
 };
 
 export type RecipeEvaluation = {

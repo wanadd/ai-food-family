@@ -21,7 +21,12 @@ from app.services.menu_context_fingerprint import (
     compute_context_fingerprint,
     get_stored_fingerprint,
 )
-from app.services.meal_attendance import build_home_attendance_summary, extract_today_meals
+from app.services.home_next_action import compute_home_next_action
+from app.services.meal_attendance import (
+    build_home_attendance_summary,
+    enrich_today_meals_images,
+    extract_today_meals,
+)
 from app.services.menu_labels import GOAL_LABELS, PLAN_MODE_PROMPT_HINTS
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import get_active_items_for_scope
@@ -357,6 +362,15 @@ def get_menu_overview(db: Session, user: User, scope: AppScope) -> MenuOverviewR
             for m in selected.menu.meals
         ]
         today_meals = extract_today_meals({"meals": meals_raw})
+    today_meals = enrich_today_meals_images(db, today_meals)
+
+    next_action, shopping_unchecked, pantry_preview = compute_home_next_action(
+        db,
+        user,
+        scope,
+        has_menu=has_menu,
+        today_meal_count=len(today_meals),
+    )
 
     home_attendance = build_home_attendance_summary(db, user, scope)
     settings_summary = MenuSettingsSummary(
@@ -382,4 +396,7 @@ def get_menu_overview(db: Session, user: User, scope: AppScope) -> MenuOverviewR
         home_attendance=home_attendance,
         settings_summary=settings_summary,
         nutritionist_advice_error=advice_error,
+        next_action=next_action,
+        shopping_unchecked_count=shopping_unchecked,
+        pantry_expiring_preview=pantry_preview,
     )
