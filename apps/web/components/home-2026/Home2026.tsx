@@ -10,11 +10,9 @@ import {
 } from "@/components/dom-2026";
 import { AIInsight2026 } from "@/components/home-2026/AIInsight2026";
 import { HomeHero2026 } from "@/components/home-2026/HomeHero2026";
-import { NextActionCard2026 } from "@/components/home-2026/NextActionCard2026";
-import { PlanSnapshot2026 } from "@/components/home-2026/PlanSnapshot2026";
-import { RecipeRail2026 } from "@/components/home-2026/RecipeRail2026";
+import { HomeQuickActions2026 } from "@/components/home-2026/HomeQuickActions2026";
 import { HomeMonetizationBanner2026 } from "@/components/monetization-2026/HomeMonetizationBanner2026";
-import { WellnessChip2026 } from "@/components/wellness-2026/WellnessChip2026";
+import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
 import { buildHomeMonetizationBanner } from "@/lib/monetization/billing-status";
 import { useTelegram } from "@/components/TelegramProvider";
@@ -27,25 +25,14 @@ import {
 } from "@/lib/cache/session-cache";
 import {
   buildAiInsight,
-  buildPlanSnapshot,
   enrichTodayMeals,
   formatHomeDate,
   greetingFor,
   pickHeroMeal,
 } from "@/lib/home/home-2026-data";
-import { resolveHomeRedirectPath } from "@/lib/home/redirect-path-2026";
-import { fetchTodayMealCheckins } from "@/lib/meal-checkins/api";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import type { MenuOverview } from "@/lib/menu/overview-types";
-import { fetchNutritionProfile } from "@/lib/nutrition-profile/api";
-import { fetchProgressOverview } from "@/lib/progress/api";
-import type { ProgressOverview } from "@/lib/progress/types";
-import { isNutritionProfileComplete } from "@/lib/profile/nutrition-summary";
 import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
-import { buildHomeWellnessChip } from "@/lib/wellness/home-wellness";
-import { countCompletedMeals } from "@/lib/wellness/wellness-status";
-import { fetchWaterToday } from "@/lib/water-intake/api";
-import type { WaterToday } from "@/lib/water-intake/api";
 
 type LoadState = "loading" | "ready" | "error";
 
@@ -62,12 +49,6 @@ export function Home2026() {
   const primed = initData ? getCached<MenuOverview>(cacheK) : null;
 
   const [overview, setOverview] = useState<MenuOverview | null>(primed);
-  const [progress, setProgress] = useState<ProgressOverview | null>(() =>
-    initData ? getCached<ProgressOverview>(cacheKey.progressOverview(mode)) : null,
-  );
-  const [water, setWater] = useState<WaterToday | null>(null);
-  const [mealsCompleted, setMealsCompleted] = useState(0);
-  const [profileComplete, setProfileComplete] = useState(false);
   const [loadState, setLoadState] = useState<LoadState>(() =>
     primed ? "ready" : "loading",
   );
@@ -89,27 +70,9 @@ export function Home2026() {
       setLoadState("loading");
       setErrorMessage(null);
       try {
-        const progKey = cacheKey.progressOverview(mode);
-        const [data, progressData, waterData, checkins, profile] =
-          await Promise.all([
-            fetchMenuOverview(initData, mode),
-            fetchProgressOverview(initData, mode).catch(() => null),
-            fetchWaterToday(initData, mode).catch(() => ({
-              total_ml: 0,
-              target_ml: null,
-            })),
-            fetchTodayMealCheckins(initData, mode).catch(() => []),
-            fetchNutritionProfile(initData).catch(() => null),
-          ]);
+        const data = await fetchMenuOverview(initData, mode);
         setCached(cacheK, data);
-        if (progressData) {
-          setCached(progKey, progressData);
-        }
         setOverview(data);
-        setProgress(progressData);
-        setWater(waterData);
-        setMealsCompleted(countCompletedMeals(checkins));
-        setProfileComplete(isNutritionProfileComplete(profile));
         setLoadState("ready");
       } catch (err) {
         setLoadState("error");
@@ -144,10 +107,6 @@ export function Home2026() {
     [overview],
   );
   const heroMeal = useMemo(() => pickHeroMeal(meals), [meals]);
-  const snapshot = useMemo(
-    () => (overview ? buildPlanSnapshot(overview) : []),
-    [overview],
-  );
   const insight = useMemo(
     () => (overview ? buildAiInsight(overview) : null),
     [overview],
@@ -157,17 +116,6 @@ export function Home2026() {
     [use2026, subscription],
   );
 
-  const wellnessChip = useMemo(
-    () =>
-      buildHomeWellnessChip({
-        overview,
-        progress,
-        water,
-        profileComplete,
-        mealsCompleted,
-      }),
-    [overview, progress, water, profileComplete, mealsCompleted],
-  );
   const nextAction = overview?.next_action ?? null;
   const urgent =
     nextAction?.id === "use_pantry_item" ||
@@ -180,24 +128,6 @@ export function Home2026() {
     mode === "family" && context?.family?.name
       ? context.family.name
       : "Личный";
-
-  const handleCreateMenu = useCallback(() => {
-    const path = nextAction?.redirect_path ?? "/menu/generate";
-    router.push(resolveHomeRedirectPath(path, use2026, nextAction?.id));
-  }, [nextAction, router, use2026]);
-
-  const handleSnapshotClick = useCallback(
-    (id: string) => {
-      if (id === "shopping") {
-        router.push("/home/shopping");
-      } else if (id === "pantry") {
-        router.push("/home/pantry");
-      } else if (id === "leftovers") {
-        setLeftoversOpen(true);
-      }
-    },
-    [router],
-  );
 
   const handleMealOutcomeSuccess = useCallback(() => {
     invalidateCache(cacheK);
@@ -233,7 +163,7 @@ export function Home2026() {
   }
 
   return (
-    <div className="pb-6">
+    <div className="pb-2">
       <HomeHeader
         greeting={greeting}
         dateLabel={dateLabel}
@@ -250,48 +180,38 @@ export function Home2026() {
         urgent={urgent}
       />
 
-      {!loading ? <NextActionCard2026 action={nextAction} /> : null}
+      {!loading ? (
+        <HomeQuickActions2026 onLeftovers={() => setLeftoversOpen(true)} />
+      ) : null}
+
+      {!loading ? (
+        <div className="flex gap-2 px-4 pt-3">
+          <Button2026
+            variant="primary"
+            className="flex-1"
+            onClick={() => router.push("/plan/today")}
+          >
+            Открыть меню
+          </Button2026>
+          <Button2026
+            variant="secondary"
+            className="flex-1"
+            onClick={() => router.push("/home/shopping")}
+          >
+            Список покупок
+          </Button2026>
+        </div>
+      ) : null}
 
       <HomeMonetizationBanner2026
         banner={monetizationBanner}
         loading={loading}
       />
 
-      <PlanSnapshot2026
-        items={snapshot}
-        loading={loading}
-        onItemClick={handleSnapshotClick}
-      />
-
-      {!loading && (overview?.meal_leftovers_count ?? 0) > 0 ? (
-        <div className="px-4 pt-3">
-          <button
-            type="button"
-            onClick={() => setLeftoversOpen(true)}
-            className="w-full rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left shadow-soft transition active:scale-[0.98] dark:shadow-none"
-          >
-            <span className="pa26-card-title">Остатки дома</span>
-            <span className="pa26-caption mt-0.5 block text-pa-muted">
-              {overview!.meal_leftovers_count} — что съесть или приготовить
-            </span>
-          </button>
-        </div>
-      ) : null}
-
-      <WellnessChip2026 data={wellnessChip} loading={loading} />
-
       <AIInsight2026
         text={insight}
         loading={loading}
         healthRelated={healthInsight}
-      />
-
-      <RecipeRail2026
-        meals={meals}
-        loading={loading}
-        hasMenu={hasMenu}
-        isNewUser={isNewUser}
-        onCreateMenu={handleCreateMenu}
       />
 
       <LeftoversSheet2026
@@ -325,7 +245,7 @@ function HomeHeader({
           <p className="pa26-caption capitalize text-pa-muted">{dateLabel}</p>
           <h1 className="pa26-page-title mt-0.5 truncate">
             {greeting}
-            {displayName ? `, ${displayName}` : ""}
+            {displayName ? `, ${displayName}` : ""} 👋
           </h1>
         </div>
         <span className="shrink-0 rounded-pill border border-pa-border bg-pa-surface px-3 py-1.5 pa26-micro font-semibold text-sage-700 dark:text-sage-300">

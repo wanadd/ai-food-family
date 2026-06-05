@@ -37,8 +37,10 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:-}
         NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME: ${NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME:-}
+        NEXT_PUBLIC_PLANAM_UI_2026: ${NEXT_PUBLIC_PLANAM_UI_2026:-true}
     environment:
       NODE_ENV: production
+      NEXT_PUBLIC_PLANAM_UI_2026: ${NEXT_PUBLIC_PLANAM_UI_2026:-true}
     depends_on:
       api:
         condition: service_healthy

@@ -211,7 +211,11 @@ export function WellnessHome2026() {
     overview?.plan_summary.has_selected_menu;
 
   return (
-    <div className="space-y-4 px-4 pb-8 pt-2">
+    <div className="space-y-3 px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <header className="pb-1">
+        <h1 className="pa26-page-title">Здоровье</h1>
+        <p className="pa26-caption text-pa-muted">Калории, цели и ограничения</p>
+      </header>
       {loading ? (
         <>
           <Skeleton2026 variant="rect" className="h-28 w-full" />

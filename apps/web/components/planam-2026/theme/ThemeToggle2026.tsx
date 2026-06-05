@@ -7,7 +7,7 @@ import type { ThemePreference } from "@/lib/planam/theme";
 const OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: "light", label: "Светлая" },
   { value: "dark", label: "Тёмная" },
-  { value: "system", label: "Система" },
+  { value: "system", label: "Как в системе" },
 ];
 
 type ThemeToggle2026Props = {

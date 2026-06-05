@@ -4,7 +4,7 @@
  * @see docs/SPRINT_1_COMPLETION_REPORT.md
  */
 
-export type Nav2026TabId = "plan" | "home" | "wellness" | "account";
+export type Nav2026TabId = "plan" | "shopping" | "home" | "account";
 
 export type Nav2026IconId =
   | "plan"
@@ -49,29 +49,29 @@ export type Nav2026RouteMeta = {
   planned?: boolean;
 };
 
-/** Нижняя навигация: План · Дом (центр) · Забота · Профиль */
+/** Нижняя навигация: Сегодня · Покупки · Главная (центр) · Профиль */
 export const NAV_TABS_2026: Nav2026Tab[] = [
   {
     id: "plan",
     href: "/plan/today",
-    label: "План",
-    icon: "plan",
+    label: "Сегодня",
+    icon: "today",
     matchPrefixes: ["/plan"],
+  },
+  {
+    id: "shopping",
+    href: "/home/shopping",
+    label: "Покупки",
+    icon: "shopping",
+    matchPrefixes: ["/home/shopping", "/shopping"],
   },
   {
     id: "home",
     href: "/",
-    label: "Дом",
+    label: "Главная",
     icon: "home",
     isCenter: true,
     matchPrefixes: ["/", "/home"],
-  },
-  {
-    id: "wellness",
-    href: "/wellness",
-    label: "Забота",
-    icon: "wellness",
-    matchPrefixes: ["/wellness"],
   },
   {
     id: "account",
@@ -89,11 +89,8 @@ export const PLAN_SUBTABS_2026: Nav2026SubTab[] = [
   { href: "/plan/recipes", label: "Рецепты", icon: "recipes" },
 ];
 
-/** Подраздел «Дом». */
+/** Подраздел «Дом» — покупки в нижней навигации. */
 export const HOME_SUBTABS_2026: Nav2026SubTab[] = [
-  { href: "/", label: "Сводка", icon: "home" },
-  { href: "/home", label: "Дом", icon: "home" },
-  { href: "/home/shopping", label: "Покупки", icon: "shopping" },
   { href: "/home/pantry", label: "Запасы", icon: "pantry" },
 ];
 
@@ -114,6 +111,14 @@ export type AccountHubItem = {
 };
 
 export const ACCOUNT_HUB_ITEMS_2026: AccountHubItem[] = [
+  {
+    id: "theme",
+    label: "Тема приложения",
+    caption: "Светлая / Тёмная / Как в системе",
+    href: "/account",
+    icon: "theme",
+    inline: "theme",
+  },
   {
     id: "profile",
     label: "Профиль",
@@ -156,26 +161,19 @@ export const ACCOUNT_HUB_ITEMS_2026: AccountHubItem[] = [
     href: "/settings",
     icon: "settings",
   },
-  {
-    id: "theme",
-    label: "Оформление",
-    caption: "Светлая · тёмная · система",
-    href: "/account",
-    icon: "theme",
-    inline: "theme",
-  },
 ];
 
 /** Все зарегистрированные маршруты 2026 (заголовки экранов). */
 export const ROUTES_2026: Nav2026RouteMeta[] = [
   { href: "/", title: "Дом", tabId: "home", sectionId: "home" },
   { href: "/home", title: "Дом", tabId: "home", sectionId: "home" },
-  { href: "/home/shopping", title: "Список покупок", tabId: "home", sectionId: "shopping" },
+  { href: "/home/shopping", title: "Список покупок", tabId: "shopping", sectionId: "shopping" },
   { href: "/home/pantry", title: "Запасы", tabId: "home", sectionId: "pantry" },
   { href: "/plan", title: "План на неделю", tabId: "plan", sectionId: "plan" },
   { href: "/plan/today", title: "Сегодня", tabId: "plan", sectionId: "today" },
   { href: "/plan/recipes", title: "Рецепты", tabId: "plan", sectionId: "recipes" },
-  { href: "/wellness", title: "Забота", tabId: "wellness", sectionId: "wellness" },
+  { href: "/wellness", title: "Здоровье", sectionId: "wellness" },
+  { href: "/wellness/chat", title: "AI помощник", sectionId: "wellness-chat" },
   { href: "/account", title: "Профиль", tabId: "account", sectionId: "account" },
   {
     href: "/account/subscription",
@@ -221,6 +219,9 @@ export const LEGACY_FALLBACK_BY_2026_PATH: Record<string, string> = {
 };
 
 export function getActiveTabId2026(pathname: string): Nav2026TabId | null {
+  if (pathname === "/home/shopping" || pathname === "/shopping") {
+    return "shopping";
+  }
   if (pathname === "/") {
     return "home";
   }
@@ -229,9 +230,6 @@ export function getActiveTabId2026(pathname: string): Nav2026TabId | null {
   }
   if (pathname === "/plan" || pathname.startsWith("/plan/")) {
     return "plan";
-  }
-  if (pathname === "/wellness" || pathname.startsWith("/wellness/")) {
-    return "wellness";
   }
   if (pathname === "/account" || pathname.startsWith("/account/")) {
     return "account";
@@ -290,8 +288,8 @@ export function getSubTabsForTab2026(tabId: Nav2026TabId): Nav2026SubTab[] {
       return PLAN_SUBTABS_2026;
     case "home":
       return HOME_SUBTABS_2026;
-    case "wellness":
-      return WELLNESS_SUBTABS_2026;
+    case "shopping":
+      return [];
     default:
       return [];
   }
