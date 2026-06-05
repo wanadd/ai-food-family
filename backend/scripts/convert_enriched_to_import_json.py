@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Convert enriched Povarenok JSONL to import_recipes.py JSON input.
+"""Convert Povarenok JSONL (enriched or raw candidates) to import_recipes.py JSON.
 
 Run from the repository root:
     python backend/scripts/convert_enriched_to_import_json.py --input exports/povarenok_enriched_10.jsonl --output exports/povarenok_import_10.json
+    python backend/scripts/convert_enriched_to_import_json.py --input exports/povarenok_candidates_100.jsonl --output exports/povarenok_import_100.json
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +32,56 @@ ALLOWED_CATEGORIES = {
     "bbq",
 }
 ALLOWED_DIFFICULTIES = {"easy", "medium", "hard"}
+
+BREAKFAST_PATTERNS = (
+    r"\bзавтрак",
+    r"\bомлет",
+    r"\bкаша",
+    r"\bсырник",
+    r"\bтворог",
+    r"\bгранол",
+)
+SOUP_PATTERNS = (r"\bсуп", r"\bщи\b", r"\bборщ", r"\bсолянк")
+SALAD_PATTERNS = (r"\bсалат",)
+DESSERT_PATTERNS = (
+    r"\bторт",
+    r"\bпирог",
+    r"\bдесерт",
+    r"\bкекс",
+    r"\bпечень",
+)
+SNACK_PATTERNS = (r"\bперекус", r"\bсэндвич", r"\bбутерброд")
+KIDS_PATTERNS = (r"\bдет", r"\bмалыш")
+
+
+def normalize_title_text(value: Any) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip().lower())
+
+
+def infer_meal_type(title: str) -> str:
+    text = normalize_title_text(title)
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in BREAKFAST_PATTERNS):
+        return "breakfast"
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in DESSERT_PATTERNS):
+        return "dessert"
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in SNACK_PATTERNS):
+        return "snack"
+    return "lunch"
+
+
+def infer_category(title: str) -> str:
+    text = normalize_title_text(title)
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in SOUP_PATTERNS):
+        return "soup"
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in SALAD_PATTERNS):
+        return "salad"
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in DESSERT_PATTERNS):
+        return "dessert"
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in KIDS_PATTERNS):
+        return "kids"
+    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in BREAKFAST_PATTERNS):
+        return "quick"
+    return "main"
 
 
 def parse_args() -> argparse.Namespace:
@@ -168,31 +220,49 @@ def convert_record(record: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(enriched, dict):
         enriched = {}
 
-    meal_type = str(scalar(enriched.get("meal_type"), "lunch")).strip()
-    if meal_type not in ALLOWED_MEAL_TYPES:
-        meal_type = "lunch"
+    title = (
+        text_or_none(enriched.get("title"))
+        or text_or_none(record.get("title"))
+        or text_or_none(record.get("raw_title"))
+    )
+    if not title:
+        title = "Без названия"
 
-    category = str(scalar(enriched.get("category"), "main")).strip()
+    meal_type = str(scalar(enriched.get("meal_type"), "")).strip()
+    if meal_type not in ALLOWED_MEAL_TYPES:
+        meal_type = infer_meal_type(title)
+
+    category = str(scalar(enriched.get("category"), "")).strip()
     if category not in ALLOWED_CATEGORIES:
-        category = "main"
+        category = infer_category(title)
 
     difficulty = str(scalar(enriched.get("difficulty"), "easy")).strip()
     if difficulty not in ALLOWED_DIFFICULTIES:
         difficulty = "easy"
 
-    title = text_or_none(enriched.get("title")) or text_or_none(record.get("raw_title"))
-    if not title:
-        title = "Без названия"
-
     cooking_time = int_or_default(enriched.get("cooking_time_minutes"), 30)
     prep_time = int_or_default(enriched.get("prep_time_minutes"), cooking_time or 30)
+
+    raw_steps = enriched.get("steps")
+    if is_empty(raw_steps):
+        raw_steps = record.get("steps")
+    steps = normalize_steps(raw_steps)
+
+    tags = string_list(enriched.get("tags"))
+    source = text_or_none(record.get("source"))
+    if source and source not in tags:
+        tags.append(source)
+
+    ingredients = normalize_ingredients(record.get("ingredients"))
+    if not ingredients:
+        raise ValueError(f"recipe has no ingredients: {title}")
 
     return {
         "title": title,
         "description": str(enriched.get("description") or "").strip(),
         "meal_type": meal_type,
         "category": category,
-        "cuisine": text_or_none(enriched.get("cuisine")),
+        "cuisine": text_or_none(enriched.get("cuisine")) or "russian",
         "difficulty": difficulty,
         "cooking_time_minutes": cooking_time,
         "prep_time_minutes": prep_time,
@@ -211,11 +281,11 @@ def convert_record(record: dict[str, Any]) -> dict[str, Any]:
         "suitable_for_sport": bool_or_default(enriched.get("suitable_for_sport"), False),
         "suitable_for_event": bool_or_default(enriched.get("suitable_for_event"), False),
         "diets": [],
-        "tags": string_list(enriched.get("tags")),
+        "tags": tags,
         "allergens": string_list(enriched.get("allergens")),
         "restrictions": string_list(enriched.get("restrictions")),
-        "ingredients": normalize_ingredients(record.get("ingredients")),
-        "steps": normalize_steps(enriched.get("steps")),
+        "ingredients": ingredients,
+        "steps": steps,
     }
 
 
@@ -231,7 +301,10 @@ def convert_file(input_path: Path, output_path: Path) -> int:
                 raise SystemExit(f"Invalid JSONL at line {line_number}: {exc}") from exc
             if not isinstance(record, dict):
                 raise SystemExit(f"JSONL line {line_number} must be an object")
-            recipes.append(convert_record(record))
+            try:
+                recipes.append(convert_record(record))
+            except ValueError as exc:
+                raise SystemExit(f"JSONL line {line_number}: {exc}") from exc
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(

@@ -102,9 +102,9 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
       await addRecipeToShopping(initData, recipe.id, undefined, mode);
       invalidateCache("shopping-list");
       invalidateCache("menu-overview");
-      showToast(`✓ «${recipe.title}» добавлено в покупки`);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Не удалось добавить");
+      showToast("Ингредиенты добавлены в список покупок");
+    } catch {
+      showToast("Не удалось добавить ингредиенты. Попробуйте ещё раз.");
     } finally {
       setShoppingBusy(false);
     }
@@ -270,7 +270,10 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
         recipe={recipe}
         mode="add"
         onClose={() => setAddOpen(false)}
-        onSuccess={() => router.push("/plan/today")}
+        onSuccess={() => {
+          showToast("Рецепт добавлен в меню");
+          router.push("/plan/today");
+        }}
       />
       <ReplaceDishSheet2026
         open={replaceOpen}

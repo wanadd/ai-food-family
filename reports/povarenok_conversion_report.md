@@ -5,137 +5,137 @@
 - Input: `C:\Users\boss\Desktop\рецепты\povarenok_recipes_2021_06_16.csv`
 - Output: `C:\Projects\ai-food-family\exports\povarenok_planam_raw.jsonl`
 - Report: `C:\Projects\ai-food-family\reports\povarenok_conversion_report.md`
-- Dry run: `True`
+- Dry run: `False`
 - Detected encoding: `utf-8`
 - Encoding candidates: `utf-8, utf-8-sig, cp1251, windows-1251, latin1`
 
 ## Summary
 
-- Total rows: `100`
-- Converted: `100`
-- Skipped: `0`
-- Duplicates: `0`
-- Ingredients parsed: `708`
-- Ingredients unparsed: `160`
+- Total rows: `146582`
+- Converted: `128196`
+- Skipped: `18386`
+- Duplicates: `18368`
+- Ingredients parsed: `941402`
+- Ingredients unparsed: `187787`
 
 ## JSONL Examples
 
 ### Example 1
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/80338/", "title": "Рулет мясной с крабовыми палочками", "ingredients": [{"name": "Фарш мясной", "quantity": "700", "unit": "г", "raw": "700 г"}, {"name": "Лук репчатый", "quantity": "2", "unit": "шт", "raw": "2 шт"}, {"name": "Чеснок", "quantity": "1", "unit": "зуб.", "raw": "1 зуб."}, {"name": "Специи", "quantity": "0.5", "unit": "ч. л.", "raw": "0,5 ч. л."}, {"name": "Крабовые палочки", "quantity": "250", "unit": "...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/94373/", "title": "Домашний абсент, по рецепту из Понтарлье, Франция (1855)", "ingredients": [{"name": "Цветки", "quantity": "25", "unit": "г", "raw": "25 г"}, {"name": "Анис", "quantity": "50", "unit": "г", "raw": "50 г"}, {"name": "Фенхель", "quantity": "50", "unit": "г", "raw": "50 г"}, {"name": "Спирт", "quantity": "950", "unit": "мл", "raw": "950 мл"}, {"name": "Мята", "quantity": "1", "unit": "г", "raw": "1 г"}...
 ```
 
 ### Example 2
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/157553/", "title": "Постная дрожжевая лепёшка", "ingredients": [{"name": "Мука пшеничная", "quantity": "1", "unit": "стак.", "raw": "1 стак."}, {"name": "Сахар", "quantity": "05", "unit": "ч. л.", "raw": "05 ч. л."}, {"name": "Соль", "quantity": "05", "unit": "ч. л.", "raw": "05 ч. л."}, {"name": "Дрожжи", "quantity": "05", "unit": "ч. л.", "raw": "05 ч. л."}, {"name": "Вода", "quantity": "100", "unit": "мл", "raw": ...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/88486/", "title": "Мороженое ананасовое", "ingredients": [{"name": "Ананас", "quantity": "400", "unit": "г", "raw": "400 г"}, {"name": "Молоко", "quantity": "50", "unit": "мл", "raw": "50 мл"}, {"name": "Сахар", "quantity": "2", "unit": "ст. л.", "raw": "2 ст. л."}], "steps": []}
 ```
 
 ### Example 3
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/66825/", "title": "Черничный пирог", "ingredients": [{"name": "Мука пшеничная", "quantity": "250", "unit": "мл", "raw": "250 мл"}, {"name": "Желток яичный", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Сахар", "quantity": "100", "unit": "г", "raw": "100 г"}, {"name": "Масло сливочное", "quantity": "100", "unit": "г", "raw": "100 г"}, {"name": "Вода", "quantity": "2", "unit": "ст. л.", "raw": "2 ст. л."}, ...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/157022/", "title": "Ягодные конфеты \"Невесомые\"", "ingredients": [{"name": "Ягода", "quantity": "200", "unit": "г", "raw": "200 г"}, {"name": "Сахар", "quantity": "90", "unit": "г", "raw": "90 г"}, {"name": "Сок лимонный", "quantity": "1", "unit": "ст. л.", "raw": "1 ст. л."}, {"name": "Желатин", "quantity": "2", "unit": "пач.", "raw": "2 пач."}], "steps": []}
 ```
 
 ### Example 4
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/157466/", "title": "Жареные пирожки с мясом", "ingredients": [{"name": "Вода", "quantity": "625", "unit": "мл", "raw": "625 мл"}, {"name": "Мука пшеничная", "quantity": "600", "unit": "г", "raw": "600 г"}, {"name": "Соль", "quantity": "2", "unit": "ч. л.", "raw": "2 ч. л."}, {"name": "Сахар", "quantity": "1", "unit": "ст. л.", "raw": "1 ст. л."}, {"name": "Масло растительное", "quantity": "2", "unit": "ст. л.", "raw"...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/172026/", "title": "Салат из печёных овощей", "ingredients": [{"name": "Свекла", "quantity": "100", "unit": "г", "raw": "100 г"}, {"name": "Морковь", "quantity": "70", "unit": "г", "raw": "70 г"}, {"name": "Яблоко", "quantity": "50", "unit": "г", "raw": "50 г"}, {"name": "Лук красный", "quantity": "25", "unit": "г", "raw": "25 г"}, {"name": "Огурец", "quantity": "70", "unit": "г", "raw": "70 г"}, {"name": "Оливки зел...
 ```
 
 ### Example 5
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/150260/", "title": "Картофельный салат по-американски", "ingredients": [{"name": "Картофель", "quantity": "3", "unit": "шт", "raw": "3 шт"}, {"name": "Яблоко", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Сельдерей черешковый", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Тунец", "quantity": "1", "unit": "бан.", "raw": "1 бан."}, {"name": "Майонез", "quantity": null, "unit": null, "raw": "по в...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/147528/", "title": "Коктейль из авокадо с креветками", "ingredients": [{"name": "Авокадо", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Чеснок", "quantity": "1", "unit": "зуб.", "raw": "1 зуб."}, {"name": "Сок апельсиновый", "quantity": "100", "unit": "мл", "raw": "100 мл"}, {"name": "Креветки", "quantity": "14", "unit": "шт", "raw": "14 шт"}, {"name": "Кинза", "quantity": "5", "unit": "веточ.", "raw": "5...
 ```
 
 ### Example 6
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/123901/", "title": "Суп \"Грибное лукошко\"", "ingredients": [{"name": "Масло растительное", "quantity": "3", "unit": "ст. л.", "raw": "3 ст. л."}, {"name": "Грибы", "quantity": "200", "unit": "г", "raw": "200 г"}, {"name": "Шампиньоны", "quantity": "150", "unit": "г", "raw": "150 г"}, {"name": "Картофель", "quantity": "2", "unit": "шт", "raw": "2 шт"}, {"name": "Морковь", "quantity": "1", "unit": "шт", "raw": "1 шт"...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/122118/", "title": "Трубочки творожные, запеченные с сыром", "ingredients": [{"name": "Блин", "quantity": "9", "unit": "шт", "raw": "9 шт"}, {"name": "Творог", "quantity": "350", "unit": "г", "raw": "350 г"}, {"name": "Яйцо куриное", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Мука пшеничная", "quantity": "35", "unit": "г", "raw": "35 г"}, {"name": "Соль", "quantity": null, "unit": null, "raw": null}, {"...
 ```
 
 ### Example 7
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/140280/", "title": "Пасхальный кулич с творогом", "ingredients": [{"name": "Молоко", "quantity": "125", "unit": "мл", "raw": "125 мл"}, {"name": "Дрожжи", "quantity": "21", "unit": "г", "raw": "21 г"}, {"name": "Сахар", "quantity": "160", "unit": "г", "raw": "160 г"}, {"name": "Мука пшеничная", "quantity": "1/2", "unit": "ст. л.", "raw": "1/2 ст. л."}, {"name": "Яйцо куриное", "quantity": "1", "unit": "шт", "raw": "1...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/140700/", "title": "Экспресс-маринад для свиных ребер", "ingredients": [{"name": "Ребра свиные", "quantity": "1", "unit": "кг", "raw": "1 кг"}, {"name": "Горчица", "quantity": "3", "unit": "ч. л.", "raw": "3 ч. л."}, {"name": "Соевый соус", "quantity": "3", "unit": "ст. л.", "raw": "3 ст. л."}, {"name": "Хмели-сунели", "quantity": "1", "unit": "ч. л.", "raw": "1 ч. л."}, {"name": "Перец черный", "quantity": "2", "uni...
 ```
 
 ### Example 8
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/171463/", "title": "Салат с морской капустой", "ingredients": [{"name": "Перец болгарский", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Тыква", "quantity": "200", "unit": "г", "raw": "200 г"}, {"name": "Капуста морская", "quantity": "200", "unit": "г", "raw": "200 г"}, {"name": "Зелень", "quantity": "1", "unit": "пуч.", "raw": "1 пуч."}, {"name": "Хлебцы", "quantity": null, "unit": null, "raw": null}], "...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/29511/", "title": "Мясо без забот", "ingredients": [{"name": "Говядина", "quantity": null, "unit": null, "raw": null}, {"name": "Лук репчатый", "quantity": null, "unit": null, "raw": null}, {"name": "Специи", "quantity": null, "unit": null, "raw": null}, {"name": "Соль", "quantity": null, "unit": null, "raw": null}, {"name": "Масло растительное", "quantity": null, "unit": null, "raw": null}], "steps": []}
 ```
 
 ### Example 9
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/135926/", "title": "Гренки по-новому", "ingredients": [{"name": "Сливки", "quantity": "200", "unit": "мл", "raw": "200 мл"}, {"name": "Хлеб", "quantity": null, "unit": null, "raw": "по вкусу"}, {"name": "Яйцо куриное", "quantity": "3", "unit": "шт", "raw": "3 шт"}, {"name": "Сыр сливочный", "quantity": "150", "unit": "г", "raw": "150 г"}, {"name": "Сироп фруктовый", "quantity": "3", "unit": "ст. л.", "raw": "3 ст. л....
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/93357/", "title": "Соус с крыжовником на зиму", "ingredients": [{"name": "Крыжовник", "quantity": "500", "unit": "г", "raw": "500 г"}, {"name": "Помидор", "quantity": "3", "unit": "шт", "raw": "3 шт"}, {"name": "Перец болгарский", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Лук репчатый", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Чеснок", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"na...
 ```
 
 ### Example 10
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/115122/", "title": "Кекс \"Воздушный шоколад\"", "ingredients": [{"name": "Белок яичный", "quantity": "5", "unit": "шт", "raw": "5 шт"}, {"name": "Сахарная пудра", "quantity": "75", "unit": "г", "raw": "75 г"}, {"name": "Сахар", "quantity": "50", "unit": "г", "raw": "50 г"}, {"name": "Мука пшеничная", "quantity": "50", "unit": "г", "raw": "50 г"}, {"name": "Какао-порошок", "quantity": "10", "unit": "г", "raw": "10 г"...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/115851/", "title": "Тарталетки с апельсиновым кремом", "ingredients": [{"name": "Мука пшеничная", "quantity": "175", "unit": "г", "raw": "175 г"}, {"name": "Масло сливочное", "quantity": "60", "unit": "г", "raw": "60 г"}, {"name": "Желток яичный", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Сахар", "quantity": "5", "unit": "ст. л.", "raw": "5 ст. л."}, {"name": "Соль", "quantity": "1", "unit": "щепот.", ...
 ```
 
 ### Example 11
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/33306/", "title": "Утка в пиве", "ingredients": [{"name": "Утка", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Пиво светлое", "quantity": "0.5", "unit": "л", "raw": "0,5  л"}, {"name": "Лук репчатый", "quantity": "1-2", "unit": "шт", "raw": "1-2  шт"}, {"name": "Маргарин", "quantity": null, "unit": null, "raw": null}], "steps": []}
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/25633/", "title": "Закуска \"Дыхание дракона\"", "ingredients": [{"name": "Крабовые палочки", "quantity": "1", "unit": "упак.", "raw": "1 упак."}, {"name": "Сыр плавленый", "quantity": "1", "unit": "упак.", "raw": "1 упак."}, {"name": "Яйцо куриное", "quantity": "3", "unit": "шт", "raw": "3 шт"}, {"name": "Соус", "quantity": "1", "unit": "упак.", "raw": "1 упак."}, {"name": "Чеснок", "quantity": "1", "unit": "зуб.", ...
 ```
 
 ### Example 12
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/23115/", "title": "Индийские лепешки \"Чапати\"", "ingredients": [{"name": "Мука пшеничная", "quantity": "1", "unit": "стак.", "raw": "1 стак."}, {"name": "Вода", "quantity": "1/2", "unit": "стак.", "raw": "1/2 стак."}, {"name": "Соль", "quantity": "1/2", "unit": "ч. л.", "raw": "1/2 ч. л."}, {"name": "Масло сливочное", "quantity": null, "unit": null, "raw": null}], "steps": []}
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/158405/", "title": "Сладкие треугольники с начинкой \"Моментальные\"", "ingredients": [{"name": "Тесто слоеное дрожжевое", "quantity": "450", "unit": "г", "raw": "450 г"}, {"name": "Молоко сгущенное", "quantity": "3", "unit": "ст. л.", "raw": "3 ст. л."}, {"name": "Яйцо куриное", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Стружка кокосовая", "quantity": "2", "unit": "ст. л.", "raw": "2 ст. л."}], "steps...
 ```
 
 ### Example 13
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/114130/", "title": "Суп из баранины с нутом", "ingredients": [{"name": "Баранина", "quantity": "1", "unit": "кг", "raw": "1 кг"}, {"name": "Нут", "quantity": "1/2", "unit": "стак.", "raw": "1\\2 стак."}, {"name": "Перец болгарский", "quantity": "2", "unit": "шт", "raw": "2 шт"}, {"name": "Лук репчатый", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Чеснок", "quantity": "1", "unit": "зуб.", "raw": "1 зуб."}...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/162754/", "title": "Лаваш в электрогриле", "ingredients": [{"name": "Мука пшеничная", "quantity": "50", "unit": "г", "raw": "50 г"}, {"name": "Вода", "quantity": "335", "unit": "мл", "raw": "335 мл"}, {"name": "Сахар", "quantity": "1", "unit": "ч. л.", "raw": "1 ч. л."}, {"name": "Соль", "quantity": null, "unit": null, "raw": "по вкусу"}, {"name": "Масло растительное", "quantity": "3", "unit": "ст. л.", "raw": "3 ст....
 ```
 
 ### Example 14
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/157733/", "title": "Макрурус на гриле", "ingredients": [{"name": "Рыба", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Соль", "quantity": null, "unit": null, "raw": "по вкусу"}, {"name": "Перец черный", "quantity": null, "unit": null, "raw": "по вкусу"}, {"name": "Масло растительное", "quantity": null, "unit": null, "raw": null}], "steps": []}
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/41444/", "title": "Маффины из сметаны, белого шоколада и ягод", "ingredients": [{"name": "Сметана", "quantity": "200", "unit": "г", "raw": "200 г"}, {"name": "Яйцо куриное", "quantity": "2", "unit": "шт", "raw": "2 шт"}, {"name": "Масло сливочное", "quantity": "100", "unit": "г", "raw": "100 г"}, {"name": "Масло растительное", "quantity": "2", "unit": "ст. л.", "raw": "2 ст. л."}, {"name": "Мука пшеничная", "quantity...
 ```
 
 ### Example 15
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/73450/", "title": "Суп пюре из фасоли и моркови с красным перцем", "ingredients": [{"name": "Фасоль", "quantity": "1", "unit": "стак.", "raw": "1 стак."}, {"name": "Морковь", "quantity": "3", "unit": "шт", "raw": "3 шт"}, {"name": "Лук красный", "quantity": "2", "unit": "шт", "raw": "2 шт"}, {"name": "Масло растительное", "quantity": "3", "unit": "ст. л.", "raw": "3 ст. л."}, {"name": "Помидор", "quantity": "3", "uni...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/81536/", "title": "Курица наивкуснейшая в карамели", "ingredients": [{"name": "Бедро куриное", "quantity": "1", "unit": "кг", "raw": "1 кг"}, {"name": "Вода", "quantity": "0.5", "unit": "стак.", "raw": "0.5 стак."}, {"name": "Сахар", "quantity": "4", "unit": "ст. л.", "raw": "4 ст. л."}, {"name": "Соль", "quantity": "1", "unit": "ч. л.", "raw": "1 ч. л."}, {"name": "Паприка сладкая", "quantity": "1", "unit": "ч. л.",...
 ```
 
 ### Example 16
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/8956/", "title": "Чашка каппучино \"Сладкая причина\"", "ingredients": [{"name": "Кофе натуральный", "quantity": null, "unit": null, "raw": null}, {"name": "Молоко", "quantity": null, "unit": null, "raw": null}, {"name": "Сливки", "quantity": null, "unit": null, "raw": null}, {"name": "Ванилин", "quantity": null, "unit": null, "raw": null}, {"name": "Сахар", "quantity": null, "unit": null, "raw": null}], "steps": []}
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/97198/", "title": "Омлет с кальмарами, рыбой и зеленью", "ingredients": [{"name": "Рыба", "quantity": "150", "unit": "г", "raw": "150 г"}, {"name": "Кальмар", "quantity": "2", "unit": "шт", "raw": "2 шт"}, {"name": "Яйцо куриное", "quantity": "4", "unit": "шт", "raw": "4 шт"}, {"name": "Сливки", "quantity": "140", "unit": "мл", "raw": "140 мл"}, {"name": "Лук репчатый", "quantity": "1", "unit": "шт", "raw": "1 шт"}, ...
 ```
 
 ### Example 17
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/16188/", "title": "Салат \"Рыбацкий\"", "ingredients": [{"name": "Рыба", "quantity": "400", "unit": "г", "raw": "400 г"}, {"name": "Лук репчатый", "quantity": "3", "unit": "шт", "raw": "3 шт"}, {"name": "Огурец", "quantity": "2-3", "unit": "шт", "raw": "2-3 шт"}, {"name": "Майонез", "quantity": "100-150", "unit": "г", "raw": "100-150 г"}, {"name": "Кетчуп", "quantity": "100", "unit": null, "raw": "100"}], "steps": []}
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/149267/", "title": "Суп с потрошками индейки «Уютный»", "ingredients": [{"name": "Желудок индюшачий", "quantity": "450", "unit": "г", "raw": "450 г"}, {"name": "Рис", "quantity": "1", "unit": "стак.", "raw": "1 стак."}, {"name": "Вода", "quantity": "1.5", "unit": "л", "raw": "1,5 л"}, {"name": "Лук-порей", "quantity": "1/2", "unit": "шт", "raw": "1/2 шт"}, {"name": "Морковь", "quantity": "1/2", "unit": "шт", "raw": "...
 ```
 
 ### Example 18
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/124175/", "title": "Пирожки \"Малышки\"", "ingredients": [{"name": "Картофель", "quantity": "1", "unit": "кг", "raw": "1 кг"}, {"name": "Лук репчатый", "quantity": "3", "unit": "шт", "raw": "3 шт"}, {"name": "Масло сливочное", "quantity": "265", "unit": "г", "raw": "265 г"}, {"name": "Масло растительное", "quantity": "5", "unit": "ст. л.", "raw": "5 ст. л."}, {"name": "Соль", "quantity": "1", "unit": "ч. л.", "raw": ...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/24312/", "title": "Фаршированные помидоры \"Коктейль\"", "ingredients": [{"name": "Коктейль морской", "quantity": "250-300", "unit": "г", "raw": "250-300 г"}, {"name": "Лук репчатый", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "Майонез", "quantity": "100", "unit": "г", "raw": "100 г"}, {"name": "Помидор", "quantity": "4", "unit": "шт", "raw": "4 шт"}, {"name": "Соль", "quantity": null, "unit": null, "raw...
 ```
 
 ### Example 19
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/161389/", "title": "Индюшиный рулет с сухофруктами", "ingredients": [{"name": "Фарш индюшачий", "quantity": "800", "unit": "г", "raw": "800 г"}, {"name": "Изюм", "quantity": "50", "unit": "г", "raw": "50 г"}, {"name": "Курага", "quantity": "50", "unit": "г", "raw": "50 г"}, {"name": "Чернослив", "quantity": "50", "unit": "г", "raw": "50 г"}, {"name": "Яблоко", "quantity": "1", "unit": "шт", "raw": "1 шт"}, {"name": "...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/54142/", "title": "Пирог \"Шоколадная зебра с вишней\"", "ingredients": [{"name": "Яйцо куриное", "quantity": "3", "unit": "шт", "raw": "3 шт"}, {"name": "Сахар", "quantity": "200", "unit": "г", "raw": "200 г"}, {"name": "Мука пшеничная", "quantity": "200", "unit": "г", "raw": "200 г"}, {"name": "Молоко", "quantity": "200", "unit": "мл", "raw": "200 мл"}, {"name": "Масло подсолнечное", "quantity": "130", "unit": "мл"...
 ```
 
 ### Example 20
 
 ```json
-{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/16766/", "title": "Трюфеля шоколадные", "ingredients": [{"name": "Шоколад молочный", "quantity": "200", "unit": "г", "raw": "200 г"}, {"name": "Сливки", "quantity": "200", "unit": "мл", "raw": "200 мл"}, {"name": "Масло сливочное", "quantity": "100", "unit": "г", "raw": "100 г"}, {"name": "Какао-порошок", "quantity": "20", "unit": "г", "raw": "20 г"}, {"name": "Миндаль", "quantity": "30", "unit": "г", "raw": "30 г"}]...
+{"source": "povarenok", "source_url": "https://www.povarenok.ru/recipes/show/60741/", "title": "Улитки шоколадно-ореховые и маковые", "ingredients": [{"name": "Молоко", "quantity": "200", "unit": "мл", "raw": "200 мл"}, {"name": "Дрожжи", "quantity": "6", "unit": "г", "raw": "6 г"}, {"name": "Мука пшеничная", "quantity": "2.5-3", "unit": "стак.", "raw": "2,5-3 стак."}, {"name": "Яйцо куриное", "quantity": "2", "unit": "шт", "raw": "2 шт"}, {"name": "Сахар", "quantity": "15", "unit": "ст. л.",...
 ```

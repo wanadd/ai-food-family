@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models.recipe import Recipe, RecipeFavorite
 from app.models.user import User
-from app.schemas.menu import MenuIngredient, MenuVariant
+from app.schemas.menu import MenuIngredient, MenuMeal, MenuVariant
 from app.schemas.recipe import (
     FavoriteToggleResponse,
     RecipeCreateRequest,
@@ -119,6 +119,13 @@ def update_recipe(
     return to_detail(recipe, set())
 
 
+def _menu_meal_type_for_recipe(recipe: Recipe) -> str:
+    meal_type = recipe.meal_type or "lunch"
+    if meal_type in {"breakfast", "lunch", "dinner", "snack"}:
+        return meal_type
+    return "snack"
+
+
 def add_recipe_to_shopping(
     db: Session,
     user: User,
@@ -146,7 +153,20 @@ def add_recipe_to_shopping(
         title=recipe.title,
         explanation="Ингредиенты из рецепта",
         total_prep_minutes=recipe.cooking_time_minutes or 30,
-        meals=[],
+        meals=[
+            MenuMeal(
+                meal_type=_menu_meal_type_for_recipe(recipe),
+                name=recipe.title,
+                description=recipe.description or "",
+                prep_time_minutes=recipe.cooking_time_minutes or 30,
+                calories_estimate=(
+                    int(recipe.calories_per_serving)
+                    if recipe.calories_per_serving is not None
+                    else None
+                ),
+                recipe_id=recipe.id,
+            )
+        ],
         ingredients=ingredients,
     )
     shopping_list_service.sync_from_menu(db, scope, menu, None)
