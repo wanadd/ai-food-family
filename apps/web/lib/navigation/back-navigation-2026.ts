@@ -1,9 +1,11 @@
 /** Back navigation for nested UI 2026 screens (Telegram + browser). */
 
+import { readReturnTo, RETURN_TO_PARAM } from "@/lib/navigation/return-to";
+
 const MAIN_TAB_PATHS = new Set([
-  "/",
   "/plan/today",
   "/home/shopping",
+  "/wellness",
   "/account",
 ]);
 
@@ -23,6 +25,9 @@ export function shouldShowBack2026(pathname: string): boolean {
   if (isMainTabPath2026(pathname)) {
     return false;
   }
+  if (pathname === "/" || pathname === "/account") {
+    return false;
+  }
   if (pathname.startsWith("/onboarding") || pathname.startsWith("/admin")) {
     return false;
   }
@@ -37,7 +42,7 @@ export function getBackFallback2026(pathname: string): string {
     return "/plan/today";
   }
   if (pathname.startsWith("/wellness")) {
-    return "/";
+    return "/wellness";
   }
   if (
     pathname.startsWith("/account") ||
@@ -53,4 +58,15 @@ export function getBackFallback2026(pathname: string): string {
     return "/";
   }
   return "/";
+}
+
+export function resolveBackTarget2026(
+  pathname: string,
+  searchParams?: URLSearchParams | null,
+): string {
+  const explicit = searchParams?.get(RETURN_TO_PARAM);
+  if (explicit) {
+    return readReturnTo(searchParams, getBackFallback2026(pathname));
+  }
+  return getBackFallback2026(pathname);
 }

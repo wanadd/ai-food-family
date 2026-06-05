@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 
-// Каталог рецептов переехал во внутреннюю вкладку раздела «Меню» (Этап 2).
-// Старый маршрут /recipes мягко ведёт на новую вкладку «Рецепты».
+import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
+
+// Каталог рецептов: UI 2026 → /plan/recipes, legacy → /menu/recipes.
 export default function RecipesPage() {
-  redirect("/menu/recipes");
+  redirect(isPlanamUi2026Enabled() ? "/plan/recipes" : "/menu/recipes");
 }

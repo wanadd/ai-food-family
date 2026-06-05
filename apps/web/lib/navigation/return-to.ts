@@ -1,6 +1,14 @@
 export const RETURN_TO_PARAM = "returnTo";
 
-const TAB_ROOTS = [
+const TAB_ROOTS_2026 = [
+  "/plan/today",
+  "/home/shopping",
+  "/wellness",
+  "/account",
+  "/",
+];
+
+const TAB_ROOTS_LEGACY = [
   "/menu",
   "/shopping",
   "/",
@@ -9,15 +17,16 @@ const TAB_ROOTS = [
 ];
 
 export function withReturnTo(path: string, returnTo: string): string {
-  const base = path.split("?")[0] ?? path;
-  const params = new URLSearchParams(path.includes("?") ? path.split("?")[1] : "");
+  const [base, query = ""] = path.split("?");
+  const params = new URLSearchParams(query);
   params.set(RETURN_TO_PARAM, returnTo);
-  return `${base}?${params.toString()}`;
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
 }
 
 export function sanitizeReturnTo(
   value: string | null | undefined,
-  fallback = "/profile",
+  fallback = "/account",
 ): string {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
     return fallback;
@@ -25,21 +34,48 @@ export function sanitizeReturnTo(
   return value;
 }
 
+export function readReturnTo(
+  searchParams: URLSearchParams | null | undefined,
+  fallback: string,
+): string {
+  if (!searchParams) {
+    return fallback;
+  }
+  return sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM), fallback);
+}
+
 export function backLabelForReturnTo(returnTo: string): string {
-  // /nutritionist оставлен для совместимости со старыми returnTo-значениями.
-  if (returnTo.startsWith("/health") || returnTo.startsWith("/nutritionist"))
+  if (returnTo.startsWith("/wellness") || returnTo.startsWith("/health")) {
     return "Здоровье";
-  if (returnTo.startsWith("/menu")) return "Меню";
-  // Запасы и остатки теперь часть раздела «Покупки».
-  if (returnTo.startsWith("/shopping") || returnTo.startsWith("/pantry"))
+  }
+  if (returnTo.startsWith("/plan/today") || returnTo.startsWith("/menu/current")) {
+    return "Сегодня";
+  }
+  if (returnTo.startsWith("/plan/recipes") || returnTo.startsWith("/menu/recipes")) {
+    return "Рецепты";
+  }
+  if (returnTo.startsWith("/plan")) {
+    return "План";
+  }
+  if (
+    returnTo.startsWith("/home/shopping") ||
+    returnTo.startsWith("/shopping") ||
+    returnTo.startsWith("/pantry")
+  ) {
     return "Покупки";
-  if (returnTo.startsWith("/profile")) return "Профиль";
-  if (returnTo === "/") return "ПланАм";
+  }
+  if (returnTo.startsWith("/account") || returnTo.startsWith("/profile")) {
+    return "Профиль";
+  }
+  if (returnTo === "/") {
+    return "Главная";
+  }
   return "Назад";
 }
 
 export function isTabRoute(pathname: string): boolean {
-  return TAB_ROOTS.some(
+  const roots = [...TAB_ROOTS_2026, ...TAB_ROOTS_LEGACY];
+  return roots.some(
     (root) => pathname === root || (root !== "/" && pathname.startsWith(`${root}/`)),
   );
 }

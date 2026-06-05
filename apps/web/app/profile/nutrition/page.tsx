@@ -3,8 +3,10 @@ import { Suspense } from "react";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { NutritionProfileForm } from "@/components/nutrition-profile/NutritionProfileForm";
 import { SkeletonList } from "@/components/ui/Skeleton";
+import { redirectLegacyToPlanam2026 } from "@/lib/planam/planam-2026-page";
 
 export default function NutritionProfilePage() {
+  redirectLegacyToPlanam2026("/account/nutrition");
   return (
     <Suspense
       fallback={

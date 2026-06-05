@@ -35,8 +35,10 @@ export const ROUTE_MIGRATION_2026: RouteMigrationEntry[] = [
   { from: "/health/chat", to: "/wellness/chat", exact: true, note: "Sprint 7+" },
   { from: "/nutritionist", to: "/wellness/chat", note: "Legacy nutritionist" },
   { from: "/progress", to: "/wellness/progress", exact: true, note: "Sprint 7+" },
-  { from: "/profile", to: "/account", exact: true },
-  { from: "/settings", to: "/account", exact: true, note: "Settings hub → account" },
+  { from: "/profile", to: "/account", note: "Profile → account hub" },
+  { from: "/family", to: "/account/family", exact: true },
+  { from: "/notifications", to: "/account/notifications", exact: true },
+  { from: "/settings", to: "/account/settings", note: "Settings → account settings" },
 ];
 
 export function resolveMigrationTarget(pathname: string): string | null {

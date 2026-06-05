@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
+import { withReturnTo } from "@/lib/navigation/return-to";
 import { cn } from "@/lib/planam/cn";
 
 type QuickAction = {
@@ -51,7 +52,7 @@ export function HomeQuickActions2026({
       label: "Здоровье",
       caption: "Калории и цели",
       emoji: "❤️",
-      href: "/wellness",
+      href: withReturnTo("/wellness", "/"),
     },
   ];
 

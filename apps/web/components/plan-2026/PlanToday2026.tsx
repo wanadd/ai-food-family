@@ -252,7 +252,13 @@ export function PlanToday2026() {
               if (!slotId) {
                 return;
               }
-              router.push(buildReplaceCatalogUrl(slotId, recipeId ?? undefined));
+              router.push(
+                buildReplaceCatalogUrl(
+                  slotId,
+                  recipeId ?? undefined,
+                  "/plan/today",
+                ),
+              );
             }}
             onRemove={async (slotId) => {
               if (!initData) {

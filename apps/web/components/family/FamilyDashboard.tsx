@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useTelegram } from "@/components/TelegramProvider";
@@ -11,6 +11,9 @@ import { MemberCard } from "@/components/family/MemberCard";
 import { FamilyManageSheet } from "@/components/family/FamilyManageSheet";
 import { VirtualMemberNutritionForm } from "@/components/family/VirtualMemberNutritionForm";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { usePlanam2026Embedded } from "@/lib/planam/embedded-2026";
+import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
+import { PLAN_PATHS } from "@/lib/plan/plan-paths";
 import { StickyBottomBar } from "@/components/layout/StickyBottomBar";
 import { useToast } from "@/components/ui/ToastProvider";
 import {
@@ -83,7 +86,44 @@ function isDraftValid(
   );
 }
 
+type FamilyLayoutProps = {
+  title: string;
+  subtitle?: string;
+  back?: { label: string; href?: string; onClick?: () => void };
+  footer?: ReactNode;
+  children: ReactNode;
+};
+
 export function FamilyDashboard() {
+  const embedded = usePlanam2026Embedded("/account/family");
+  const profileBack = embedded ? "/account" : "/profile";
+  const generateHref = isPlanamUi2026Enabled()
+    ? PLAN_PATHS.generate
+    : "/menu/generate";
+
+  function FamilyLayout({
+    title,
+    subtitle,
+    back,
+    footer,
+    children,
+  }: FamilyLayoutProps) {
+    if (embedded) {
+      return (
+        <>
+          <div className="mx-auto max-w-lg px-4 pb-6">{children}</div>
+          {footer}
+        </>
+      );
+    }
+
+    return (
+      <ScreenLayout title={title} subtitle={subtitle} back={back} footer={footer}>
+        {children}
+      </ScreenLayout>
+    );
+  }
+
   const { refreshContext } = useAppMode();
   const { initData } = useTelegram();
   const { showToast } = useToast();
@@ -243,7 +283,7 @@ export function FamilyDashboard() {
 
     return (
       <>
-        <ScreenLayout
+        <FamilyLayout
           title={formTitle}
           subtitle="Профиль учтётся в семейном меню"
           back={{ label: "Семья", onClick: closeMemberForm }}
@@ -293,7 +333,7 @@ export function FamilyDashboard() {
             loading={saving}
             hideFooter
           />
-        </ScreenLayout>
+        </FamilyLayout>
 
         <AddPersonSheet
           open={showAddPerson}
@@ -307,10 +347,10 @@ export function FamilyDashboard() {
 
   return (
     <>
-      <ScreenLayout
+      <FamilyLayout
         title="Семья и участники"
         subtitle="Необязательно — можно пользоваться ПланАм одному"
-        back={{ label: "Профиль", href: "/profile" }}
+        back={{ label: "Профиль", href: profileBack }}
       >
         {error ? (
           <p className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -418,7 +458,7 @@ export function FamilyDashboard() {
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link
-                  href="/menu/generate"
+                  href={generateHref}
                   className="pa-btn-primary inline-flex min-h-[40px] items-center px-4 active:scale-[0.99]"
                 >
                   Составить семейное меню
@@ -436,7 +476,7 @@ export function FamilyDashboard() {
             </section>
           </>
         )}
-      </ScreenLayout>
+      </FamilyLayout>
 
       <AddPersonSheet
         open={showAddPerson}

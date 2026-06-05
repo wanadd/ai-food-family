@@ -4,7 +4,7 @@
  * @see docs/SPRINT_1_COMPLETION_REPORT.md
  */
 
-export type Nav2026TabId = "plan" | "shopping" | "home" | "account";
+export type Nav2026TabId = "plan" | "shopping" | "wellness" | "account";
 
 export type Nav2026IconId =
   | "plan"
@@ -28,8 +28,6 @@ export type Nav2026Tab = {
   href: string;
   label: string;
   icon: Nav2026IconId;
-  /** Центральная вкладка «Дом». */
-  isCenter?: boolean;
   matchPrefixes: string[];
 };
 
@@ -49,7 +47,7 @@ export type Nav2026RouteMeta = {
   planned?: boolean;
 };
 
-/** Нижняя навигация: Сегодня · Покупки · Главная (центр) · Профиль */
+/** Нижняя навигация: Сегодня · Покупки · Здоровье · Профиль */
 export const NAV_TABS_2026: Nav2026Tab[] = [
   {
     id: "plan",
@@ -66,12 +64,11 @@ export const NAV_TABS_2026: Nav2026Tab[] = [
     matchPrefixes: ["/home/shopping", "/shopping"],
   },
   {
-    id: "home",
-    href: "/",
-    label: "Главная",
-    icon: "home",
-    isCenter: true,
-    matchPrefixes: ["/", "/home"],
+    id: "wellness",
+    href: "/wellness",
+    label: "Здоровье",
+    icon: "wellness",
+    matchPrefixes: ["/wellness"],
   },
   {
     id: "account",
@@ -89,7 +86,7 @@ export const PLAN_SUBTABS_2026: Nav2026SubTab[] = [
   { href: "/plan/recipes", label: "Рецепты", icon: "recipes" },
 ];
 
-/** Подраздел «Дом» — покупки в нижней навигации. */
+/** Подраздел «Дом» — доступ через главную, не через нижнюю навигацию. */
 export const HOME_SUBTABS_2026: Nav2026SubTab[] = [
   { href: "/home/pantry", label: "Запасы", icon: "pantry" },
 ];
@@ -99,7 +96,7 @@ export const WELLNESS_SUBTABS_2026: Nav2026SubTab[] = [
   { href: "/wellness", label: "Сегодня", icon: "wellness" },
 ];
 
-/** Центр управления — Account Hub (Sprint 2: ссылки на legacy). */
+/** Центр управления — Account Hub. */
 export type AccountHubItem = {
   id: string;
   label: string;
@@ -120,17 +117,17 @@ export const ACCOUNT_HUB_ITEMS_2026: AccountHubItem[] = [
     inline: "theme",
   },
   {
-    id: "profile",
-    label: "Профиль",
-    caption: "Имя, телефон, аватар",
-    href: "/profile",
+    id: "nutrition",
+    label: "Питание",
+    caption: "Цели и ограничения",
+    href: "/account/nutrition",
     icon: "profile",
   },
   {
     id: "family",
     label: "Семья",
     caption: "Участники и роли",
-    href: "/family",
+    href: "/account/family",
     icon: "family",
   },
   {
@@ -151,28 +148,28 @@ export const ACCOUNT_HUB_ITEMS_2026: AccountHubItem[] = [
     id: "notifications",
     label: "Уведомления",
     caption: "Напоминания и каналы",
-    href: "/notifications",
+    href: "/account/notifications",
     icon: "notifications",
   },
   {
     id: "settings",
     label: "Настройки",
     caption: "Аккаунт и приложение",
-    href: "/settings",
+    href: "/account/settings",
     icon: "settings",
   },
 ];
 
 /** Все зарегистрированные маршруты 2026 (заголовки экранов). */
 export const ROUTES_2026: Nav2026RouteMeta[] = [
-  { href: "/", title: "Дом", tabId: "home", sectionId: "home" },
-  { href: "/home", title: "Дом", tabId: "home", sectionId: "home" },
+  { href: "/", title: "Дом", sectionId: "home" },
+  { href: "/home", title: "Дом", sectionId: "home" },
   { href: "/home/shopping", title: "Список покупок", tabId: "shopping", sectionId: "shopping" },
-  { href: "/home/pantry", title: "Запасы", tabId: "home", sectionId: "pantry" },
+  { href: "/home/pantry", title: "Запасы", sectionId: "pantry" },
   { href: "/plan", title: "План на неделю", tabId: "plan", sectionId: "plan" },
   { href: "/plan/today", title: "Сегодня", tabId: "plan", sectionId: "today" },
   { href: "/plan/recipes", title: "Рецепты", tabId: "plan", sectionId: "recipes" },
-  { href: "/wellness", title: "Здоровье", sectionId: "wellness" },
+  { href: "/wellness", title: "Здоровье", tabId: "wellness", sectionId: "wellness" },
   { href: "/wellness/chat", title: "AI помощник", sectionId: "wellness-chat" },
   { href: "/account", title: "Профиль", tabId: "account", sectionId: "account" },
   {
@@ -182,6 +179,24 @@ export const ROUTES_2026: Nav2026RouteMeta[] = [
     sectionId: "subscription",
   },
   { href: "/account/ams", title: "Амы", tabId: "account", sectionId: "ams" },
+  { href: "/account/family", title: "Семья", tabId: "account", sectionId: "family" },
+  {
+    href: "/account/notifications",
+    title: "Уведомления",
+    tabId: "account",
+    sectionId: "notifications",
+  },
+  { href: "/account/settings", title: "Настройки", tabId: "account", sectionId: "settings" },
+  { href: "/account/nutrition", title: "Питание", tabId: "account", sectionId: "nutrition" },
+  { href: "/account/settings/account", title: "Аккаунт", tabId: "account" },
+  { href: "/account/settings/documents", title: "Документы", tabId: "account" },
+  {
+    href: "/account/settings/delete-data",
+    title: "Удалить данные",
+    tabId: "account",
+  },
+  { href: "/account/settings/support", title: "Поддержка", tabId: "account" },
+  { href: "/account/settings/about", title: "О приложении", tabId: "account" },
 ];
 
 /** Legacy маршруты, активирующие вкладку «Профиль». */
@@ -201,6 +216,19 @@ export function isImmersiveRecipeDetailPath(pathname: string): boolean {
   return /^\/plan\/recipes\/\d+/.test(pathname);
 }
 
+export function isShellHeaderHidden2026(pathname: string): boolean {
+  if (isImmersiveRecipeDetailPath(pathname)) {
+    return true;
+  }
+  return (
+    pathname === "/" ||
+    pathname === "/wellness" ||
+    pathname === "/account" ||
+    pathname === "/plan/today" ||
+    pathname === "/plan/recipes"
+  );
+}
+
 /** Legacy fallback при выключенном UI 2026 (для guard на новых URL). */
 export const LEGACY_FALLBACK_BY_2026_PATH: Record<string, string> = {
   "/": "/",
@@ -216,17 +244,23 @@ export const LEGACY_FALLBACK_BY_2026_PATH: Record<string, string> = {
   "/account/subscription": "/subscription",
   "/account/ams": "/subscription",
   "/account/subscription/checkout": "/subscription",
+  "/account/family": "/family",
+  "/account/notifications": "/notifications",
+  "/account/settings": "/settings",
+  "/account/nutrition": "/profile/nutrition",
+  "/account/settings/account": "/settings/account",
+  "/account/settings/documents": "/settings/documents",
+  "/account/settings/delete-data": "/settings/delete-data",
+  "/account/settings/support": "/settings/support",
+  "/account/settings/about": "/settings/about",
 };
 
 export function getActiveTabId2026(pathname: string): Nav2026TabId | null {
   if (pathname === "/home/shopping" || pathname === "/shopping") {
     return "shopping";
   }
-  if (pathname === "/") {
-    return "home";
-  }
-  if (pathname === "/home" || pathname.startsWith("/home/")) {
-    return "home";
+  if (pathname === "/wellness" || pathname.startsWith("/wellness/")) {
+    return "wellness";
   }
   if (pathname === "/plan" || pathname.startsWith("/plan/")) {
     return "plan";
@@ -286,8 +320,6 @@ export function getSubTabsForTab2026(tabId: Nav2026TabId): Nav2026SubTab[] {
   switch (tabId) {
     case "plan":
       return PLAN_SUBTABS_2026;
-    case "home":
-      return HOME_SUBTABS_2026;
     case "shopping":
       return [];
     default:

@@ -14,6 +14,7 @@ import {
   parseCurrentRecipeId,
   parseReplaceSlot,
 } from "@/lib/menu/replace-slot";
+import { readReturnTo } from "@/lib/navigation/return-to";
 import { defaultDayIndex } from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
 import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
@@ -64,6 +65,10 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const { showToast } = useToast();
   const replaceSlot = parseReplaceSlot(searchParams.get("replaceSlot"));
   const replaceMode = replaceSlot != null;
+  const returnTo = readReturnTo(
+    searchParams,
+    replaceSlot ? "/plan/recipes" : "/plan/recipes",
+  );
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
   const [menu, setMenu] = useState<MenuVariant | null>(null);
   const [shoppingBusy, setShoppingBusy] = useState(false);
@@ -134,7 +139,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
         recipe.servings ?? 2,
       );
       showToast("Блюдо заменено");
-      router.push("/plan/today?saved=1");
+      router.push(readReturnTo(searchParams, "/plan/today"));
     } catch {
       showToast("Не удалось заменить блюдо");
     } finally {
@@ -202,8 +207,9 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
               ? buildReplaceCatalogUrl(
                   replaceSlot,
                   parseCurrentRecipeId(searchParams.get("currentRecipeId")),
+                  returnTo,
                 )
-              : "/plan/recipes"
+              : returnTo
           }
           className="absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] rounded-control bg-pa-surface/90 px-3 py-1.5 pa26-micro font-semibold shadow-soft backdrop-blur-sm"
         >

@@ -1,9 +1,13 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { useTelegramBackButton2026 } from "@/components/planam-2026/navigation/useTelegramBackButton2026";
-import { shouldShowBack2026 } from "@/lib/navigation/back-navigation-2026";
+import {
+  resolveBackTarget2026,
+  shouldShowBack2026,
+} from "@/lib/navigation/back-navigation-2026";
+import { RETURN_TO_PARAM, backLabelForReturnTo } from "@/lib/navigation/return-to";
 
 type ScreenBack2026Props = {
   className?: string;
@@ -11,11 +15,16 @@ type ScreenBack2026Props = {
 
 export function ScreenBack2026({ className }: ScreenBack2026Props) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { goBack, useTelegramBack } = useTelegramBackButton2026(pathname);
 
   if (!shouldShowBack2026(pathname) || useTelegramBack) {
     return null;
   }
+
+  const label = searchParams.get(RETURN_TO_PARAM)
+    ? backLabelForReturnTo(resolveBackTarget2026(pathname, searchParams))
+    : "Назад";
 
   return (
     <button
@@ -27,7 +36,7 @@ export function ScreenBack2026({ className }: ScreenBack2026Props) {
       }
       aria-label="Назад"
     >
-      ← Назад
+      ← {label}
     </button>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
 import {
-  getBackFallback2026,
+  resolveBackTarget2026,
   shouldShowBack2026,
 } from "@/lib/navigation/back-navigation-2026";
+import { RETURN_TO_PARAM } from "@/lib/navigation/return-to";
 import { readTelegramWebApp } from "@/lib/telegram-webapp";
 
 type TelegramBackButton = {
@@ -28,14 +29,21 @@ function getBackButton(): TelegramBackButton | null {
 
 export function useTelegramBackButton2026(pathname: string) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const hasReturnTo = Boolean(searchParams.get(RETURN_TO_PARAM));
 
   const goBack = useCallback(() => {
+    const target = resolveBackTarget2026(pathname, searchParams);
+    if (hasReturnTo) {
+      router.push(target);
+      return;
+    }
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
       return;
     }
-    router.push(getBackFallback2026(pathname));
-  }, [pathname, router]);
+    router.push(target);
+  }, [pathname, searchParams, hasReturnTo, router]);
 
   useEffect(() => {
     const back = getBackButton();

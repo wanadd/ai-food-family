@@ -228,7 +228,7 @@ export function WellnessHome2026() {
           title="Забота пока не настроена"
           description="Добавьте цель, ограничения и предпочтения — ПланАм будет подсказывать меню мягче и точнее."
           actionLabel="Настроить заботу"
-          onAction={() => router.push("/profile/nutrition")}
+          onAction={() => router.push("/account/nutrition?returnTo=/wellness")}
         />
       ) : (
         <>

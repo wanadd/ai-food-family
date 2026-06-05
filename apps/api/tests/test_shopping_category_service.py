@@ -82,14 +82,14 @@ def test_get_category_by_slug_picks_first_when_duplicates(db_session):
     db_session.add_all(
         [
             ShoppingCategory(
-                slug="овощи",
+                slug="овощи_зелень",
                 name="Овощи A",
                 is_food=True,
                 is_system=False,
                 user_id=7,
             ),
             ShoppingCategory(
-                slug="овощи",
+                slug="овощи_зелень",
                 name="Овощи B",
                 is_food=True,
                 is_system=False,
@@ -104,7 +104,7 @@ def test_get_category_by_slug_picks_first_when_duplicates(db_session):
     assert cat.id == min(
         row.id
         for row in db_session.query(ShoppingCategory)
-        .filter(ShoppingCategory.user_id == 7, ShoppingCategory.slug == "овощи")
+        .filter(ShoppingCategory.user_id == 7, ShoppingCategory.slug == "овощи_зелень")
         .all()
     )
 

@@ -12,6 +12,7 @@ import { addMealIngredientsToShopping } from "@/lib/plan/add-to-shopping";
 import type { PlanTodayMeal } from "@/lib/plan/plan-today";
 import { mealTypeLabel } from "@/lib/plan/plan-today";
 import { buildReplaceCatalogUrl } from "@/lib/menu/replace-slot";
+import { withReturnTo } from "@/lib/navigation/return-to";
 import { recipeDetailPath } from "@/lib/plan/plan-paths";
 import { cn } from "@/lib/planam/cn";
 
@@ -105,7 +106,11 @@ export function PlanMealCard2026({
               }
               if (item.slotId) {
                 router.push(
-                  buildReplaceCatalogUrl(item.slotId, item.meal.recipe_id ?? undefined),
+                  buildReplaceCatalogUrl(
+                    item.slotId,
+                    item.meal.recipe_id ?? undefined,
+                    "/plan/today",
+                  ),
                 );
               }
             }}
@@ -127,7 +132,11 @@ export function PlanMealCard2026({
           {meal.recipe_id ? (
             <Button2026
               variant="ghost"
-              onClick={() => router.push(recipeDetailPath(meal.recipe_id!))}
+              onClick={() =>
+                router.push(
+                  withReturnTo(recipeDetailPath(meal.recipe_id!), "/plan/today"),
+                )
+              }
             >
               Рецепт
             </Button2026>

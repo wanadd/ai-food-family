@@ -15,6 +15,7 @@ import {
   parseCurrentRecipeId,
   parseReplaceSlot,
 } from "@/lib/menu/replace-slot";
+import { readReturnTo } from "@/lib/navigation/return-to";
 import { PLAN_PATHS } from "@/lib/plan/plan-paths";
 import {
   fetchRecipeFilters,
@@ -57,6 +58,7 @@ export function RecipeCatalog2026() {
     [searchParams],
   );
   const replaceMode = replaceSlot != null;
+  const returnTo = readReturnTo(searchParams, "/plan/today");
 
   const [filters, setFilters] = useState<RecipeFilters | null>(null);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
@@ -312,7 +314,12 @@ export function RecipeCatalog2026() {
                   recipe={recipe}
                   href={
                     replaceSlot
-                      ? buildReplaceDetailUrl(recipe.id, replaceSlot, currentRecipeId)
+                      ? buildReplaceDetailUrl(
+                          recipe.id,
+                          replaceSlot,
+                          currentRecipeId,
+                          returnTo,
+                        )
                       : `/plan/recipes/${recipe.id}`
                   }
                   onToggleFavorite={

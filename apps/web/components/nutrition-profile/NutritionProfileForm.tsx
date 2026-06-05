@@ -19,8 +19,9 @@ import { fetchMyFamily, setAllowAdminProfileEdit } from "@/lib/family/api";
 import {
   RETURN_TO_PARAM,
   backLabelForReturnTo,
-  sanitizeReturnTo,
+  readReturnTo,
 } from "@/lib/navigation/return-to";
+import { usePlanam2026Embedded } from "@/lib/planam/embedded-2026";
 import {
   fetchNutritionProfile,
   saveNutritionProfile,
@@ -88,7 +89,11 @@ function proSummary(data: NutritionProfileData): string {
 export function NutritionProfileForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM), "/profile");
+  const embedded = usePlanam2026Embedded("/account/nutrition");
+  const returnTo = readReturnTo(
+    searchParams,
+    embedded ? "/account" : "/profile",
+  );
   const { showToast } = useToast();
   const { initData } = useTelegram();
   const [data, setData] = useState<NutritionProfileData>(INITIAL_NUTRITION_PROFILE);
@@ -191,24 +196,21 @@ export function NutritionProfileForm() {
     );
   }
 
-  return (
-    <ScreenLayout
-      title="Профиль питания"
-      subtitle="Откройте раздел и сохраните изменения"
-      back={{ label: backLabelForReturnTo(returnTo), href: returnTo }}
-      footer={
-        <StickyBottomBar>
-          <button
-            type="button"
-            disabled={saving || !initData}
-            onClick={() => void handleSave()}
-            className="pa-btn-primary w-full py-3.5 text-base disabled:opacity-50"
-          >
-            {saving ? "Сохранение…" : "Сохранить"}
-          </button>
-        </StickyBottomBar>
-      }
-    >
+  const saveBar = (
+    <StickyBottomBar>
+      <button
+        type="button"
+        disabled={saving || !initData}
+        onClick={() => void handleSave()}
+        className="pa-btn-primary w-full py-3.5 text-base disabled:opacity-50"
+      >
+        {saving ? "Сохранение…" : "Сохранить"}
+      </button>
+    </StickyBottomBar>
+  );
+
+  const content = (
+    <>
       <section className="pa-card border-sage-200 bg-sage-50/40 p-4">
         <div className="mb-2 flex items-center justify-between text-sm text-graphite-700">
           <span className="font-medium">
@@ -530,6 +532,26 @@ export function NutritionProfileForm() {
           </section>
         ) : null}
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className="mx-auto max-w-lg px-4 pb-24">
+        {content}
+        {saveBar}
+      </div>
+    );
+  }
+
+  return (
+    <ScreenLayout
+      title="Профиль питания"
+      subtitle="Откройте раздел и сохраните изменения"
+      back={{ label: backLabelForReturnTo(returnTo), href: returnTo }}
+      footer={saveBar}
+    >
+      {content}
     </ScreenLayout>
   );
 }

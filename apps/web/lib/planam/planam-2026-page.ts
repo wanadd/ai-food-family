@@ -10,3 +10,10 @@ export function requirePlanamUi2026OrRedirect(path2026: string): void {
     redirect(fallback);
   }
 }
+
+/** Redirect legacy routes to their 2026 counterparts when the flag is on. */
+export function redirectLegacyToPlanam2026(path2026: string): void {
+  if (isPlanamUi2026Enabled()) {
+    redirect(path2026);
+  }
+}

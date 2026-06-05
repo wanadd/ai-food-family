@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { usePlanam2026Embedded } from "@/lib/planam/embedded-2026";
 
 type SettingsScaffoldProps = {
   title: string;
@@ -11,18 +13,8 @@ type SettingsScaffoldProps = {
   children: ReactNode;
 };
 
-function ChevronLeftIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
-      <path
-        d="M15 18l-6-6 6-6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+function SettingsFrame({ children }: { children: ReactNode }) {
+  return <div className="mx-auto max-w-lg space-y-4 px-4 pb-6">{children}</div>;
 }
 
 export function SettingsScaffold({
@@ -30,6 +22,12 @@ export function SettingsScaffold({
   subtitle,
   children,
 }: SettingsScaffoldProps) {
+  const embedded = usePlanam2026Embedded("/account/settings");
+
+  if (embedded) {
+    return <SettingsFrame>{children}</SettingsFrame>;
+  }
+
   return (
     <ScreenLayout
       title={title}
@@ -46,6 +44,12 @@ type SettingsHubProps = {
 };
 
 export function SettingsHub({ children }: SettingsHubProps) {
+  const embedded = usePlanam2026Embedded("/account/settings");
+
+  if (embedded) {
+    return <SettingsFrame>{children}</SettingsFrame>;
+  }
+
   return (
     <ScreenLayout
       title="Настройки"
@@ -71,15 +75,21 @@ export function SettingsMenuItem({
   description,
   external,
 }: SettingsMenuItemProps) {
+  const pathname = usePathname();
+  const resolvedHref =
+    pathname.startsWith("/account/settings") && href.startsWith("/settings")
+      ? href.replace("/settings", "/account/settings")
+      : href;
+
   const className =
-    "flex min-h-[56px] items-center gap-3 rounded-2xl border border-stone-100 bg-white px-4 py-3.5 shadow-sm transition active:scale-[0.99] hover:border-emerald-200";
+    "flex min-h-[56px] items-center gap-3 rounded-2xl border border-stone-100 bg-white px-4 py-3.5 shadow-sm transition active:scale-[0.99] hover:border-emerald-200 dark:border-pa-border dark:bg-pa-surface";
 
   const content = (
     <>
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-stone-900">{label}</p>
+        <p className="font-semibold text-stone-900 dark:text-pa-foreground">{label}</p>
         {description ? (
-          <p className="mt-0.5 text-sm text-stone-500">{description}</p>
+          <p className="mt-0.5 text-sm text-stone-500 dark:text-pa-muted">{description}</p>
         ) : null}
       </div>
       <span className="shrink-0 text-stone-400" aria-hidden>
@@ -90,14 +100,19 @@ export function SettingsMenuItem({
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      <a
+        href={resolvedHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+      >
         {content}
       </a>
     );
   }
 
   return (
-    <Link href={href} className={className}>
+    <Link href={resolvedHref} className={className}>
       {content}
     </Link>
   );

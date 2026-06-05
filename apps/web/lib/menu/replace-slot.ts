@@ -20,11 +20,15 @@ export function parseCurrentRecipeId(raw: string | null | undefined): number | n
 export function buildReplaceCatalogUrl(
   slotId: string,
   currentRecipeId?: number | null,
+  returnTo?: string,
 ): string {
   const params = new URLSearchParams();
   params.set("replaceSlot", slotId);
   if (currentRecipeId != null && currentRecipeId > 0) {
     params.set("currentRecipeId", String(currentRecipeId));
+  }
+  if (returnTo) {
+    params.set("returnTo", returnTo);
   }
   return `/plan/recipes?${params.toString()}`;
 }
@@ -33,11 +37,15 @@ export function buildReplaceDetailUrl(
   recipeId: number,
   slotId: string,
   currentRecipeId?: number | null,
+  returnTo?: string,
 ): string {
   const params = new URLSearchParams();
   params.set("replaceSlot", slotId);
   if (currentRecipeId != null && currentRecipeId > 0) {
     params.set("currentRecipeId", String(currentRecipeId));
+  }
+  if (returnTo) {
+    params.set("returnTo", returnTo);
   }
   const qs = params.toString();
   return `/plan/recipes/${recipeId}${qs ? `?${qs}` : ""}`;

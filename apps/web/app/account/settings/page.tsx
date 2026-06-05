@@ -2,34 +2,35 @@ import {
   SettingsHub,
   SettingsMenuItem,
 } from "@/components/settings/SettingsScaffold";
-import { redirectLegacyToPlanam2026 } from "@/lib/planam/planam-2026-page";
+import { requirePlanamUi2026OrRedirect } from "@/lib/planam/planam-2026-page";
 
-export default function SettingsPage() {
-  redirectLegacyToPlanam2026("/account/settings");
+export default function AccountSettingsPage() {
+  requirePlanamUi2026OrRedirect("/account/settings");
+
   return (
     <SettingsHub>
       <SettingsMenuItem
-        href="/settings/account"
+        href="/account/settings/account"
         label="Аккаунт"
         description="Telegram, телефон, идентификатор"
       />
       <SettingsMenuItem
-        href="/settings/documents"
+        href="/account/settings/documents"
         label="Документы"
         description="Соглашение, конфиденциальность, персональные данные"
       />
       <SettingsMenuItem
-        href="/settings/delete-data"
+        href="/account/settings/delete-data"
         label="Удалить мои данные"
         description="Запрос на удаление"
       />
       <SettingsMenuItem
-        href="/settings/support"
+        href="/account/settings/support"
         label="Поддержка"
         description="Чат с ботом ПланАм"
       />
       <SettingsMenuItem
-        href="/settings/about"
+        href="/account/settings/about"
         label="О приложении"
         description="Версия и информация"
       />
