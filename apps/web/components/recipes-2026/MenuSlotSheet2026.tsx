@@ -87,11 +87,15 @@ export function MenuSlotSheet2026({
       onSuccess?.();
       onClose();
     } catch (err) {
-      setError(
+      const message =
         err instanceof Error
           ? err.message
-          : "Не удалось обновить меню. Сначала создайте план.",
-      );
+          : "Не удалось обновить меню. Сначала создайте план.";
+      if (/500|Internal|not found|404/i.test(message)) {
+        setError("Добавление в меню скоро будет доступно");
+      } else {
+        setError(message);
+      }
     } finally {
       setBusy(false);
     }

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { PlanCard2026 } from "@/components/monetization-2026/PlanCard2026";
+import { SubscriptionOffline2026 } from "@/components/monetization-2026/SubscriptionOffline2026";
 import { TrialStatus2026 } from "@/components/monetization-2026/TrialStatus2026";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { Card2026 } from "@/components/planam-2026/ui/Card2026";
@@ -37,7 +38,13 @@ export function SubscriptionHub2026() {
   const highlight = searchParams.get("highlight");
   const { initData, isTelegram } = useTelegram();
   const { mode } = useAppMode();
-  const { overview: data, loading, ensureLoaded } = useSubscriptionOverview();
+  const {
+    overview: data,
+    loading,
+    error,
+    ensureLoaded,
+    refresh,
+  } = useSubscriptionOverview();
   const [selecting, setSelecting] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,15 +64,16 @@ export function SubscriptionHub2026() {
     router.push(subscriptionCheckoutPath(planCode));
   }
 
-  if (!initData && !isTelegram && !loading) {
-    return (
-      <p className="px-4 py-16 text-center pa26-body text-pa-muted">
-        Подписка доступна в Telegram Mini App
-      </p>
-    );
+  if (!initData) {
+    return <SubscriptionOffline2026 />;
   }
 
-  if (loading || !data) {
+  if ((loading && !data) || (error && !data)) {
+    if (error && !loading) {
+      return (
+        <SubscriptionOffline2026 onRetry={() => void refresh()} />
+      );
+    }
     return (
       <div className="space-y-3 px-4 py-6">
         <Skeleton2026 variant="rect" className="h-28 w-full" />
@@ -73,6 +81,10 @@ export function SubscriptionHub2026() {
         <Skeleton2026 variant="rect" className="h-48 w-full" />
       </div>
     );
+  }
+
+  if (!data) {
+    return <SubscriptionOffline2026 onRetry={() => void refresh()} />;
   }
 
   const menuLimitLabel =

@@ -245,9 +245,11 @@ export async function addRecipeToShopping(
   initData: string,
   recipeId: number,
   servings?: number,
+  mode: AppMode = "personal",
 ): Promise<void> {
   await recipeFetch(`/recipes/${recipeId}/add-to-shopping`, initData, {
     method: "POST",
+    headers: { "X-App-Mode": mode },
     body: JSON.stringify({ servings: servings ?? null }),
   });
 }

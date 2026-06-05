@@ -99,7 +99,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
     }
     setShoppingBusy(true);
     try {
-      await addRecipeToShopping(initData, recipe.id);
+      await addRecipeToShopping(initData, recipe.id, undefined, mode);
       invalidateCache("shopping-list");
       invalidateCache("menu-overview");
       showToast(`✓ «${recipe.title}» добавлено в покупки`);
@@ -204,7 +204,13 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
           <Button2026
             variant="primary"
             className="flex-1 min-w-[120px]"
-            onClick={() => setAddOpen(true)}
+            onClick={() => {
+              if (!initData) {
+                void showToast("Добавление в меню доступно в Telegram Mini App");
+                return;
+              }
+              setAddOpen(true);
+            }}
           >
             В меню
           </Button2026>

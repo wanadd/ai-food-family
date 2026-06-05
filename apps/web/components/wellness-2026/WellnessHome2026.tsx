@@ -66,7 +66,7 @@ export function WellnessHome2026() {
 
   const reload = useCallback(
     async (force = false) => {
-      if (!initData || modeLoading) {
+      if (!initData) {
         return;
       }
       const progKey = cacheKey.progressOverview(mode);
@@ -120,12 +120,19 @@ export function WellnessHome2026() {
         );
       }
     },
-    [initData, mode, modeLoading],
+    [initData, mode],
   );
 
   useEffect(() => {
+    if (modeLoading) {
+      return;
+    }
+    if (!initData) {
+      setLoadState("ready");
+      return;
+    }
     void reload();
-  }, [reload]);
+  }, [reload, initData, modeLoading]);
 
   const profileComplete = isNutritionProfileComplete(profile);
   const mealsCompleted = countCompletedMeals(checkins ?? []);
@@ -180,7 +187,8 @@ export function WellnessHome2026() {
     void reload(true);
   }, [mode, reload]);
 
-  const loading = loadState === "loading" || modeLoading;
+  const loading =
+    modeLoading || (Boolean(initData) && loadState === "loading");
 
   if (loadState === "error") {
     return (
@@ -211,22 +219,13 @@ export function WellnessHome2026() {
           <Skeleton2026 variant="rect" className="h-24 w-full" />
         </>
       ) : !hasAnyData ? (
-        <div className="space-y-3">
-          <EmptyState2026
-            icon={<span aria-hidden>🌿</span>}
-            title="Начните с цели и плана"
-            description="Задайте цель питания и составьте меню — здесь появится прогресс дня, вода и советы."
-            actionLabel="Настроить питание"
-            onAction={() => router.push("/profile/nutrition")}
-          />
-          <Button2026
-            variant="secondary"
-            size="wide"
-            onClick={() => router.push(PLAN_PATHS.generate)}
-          >
-            Создать меню
-          </Button2026>
-        </div>
+        <EmptyState2026
+          icon={<span aria-hidden>🌿</span>}
+          title="Забота пока не настроена"
+          description="Добавьте цель, ограничения и предпочтения — ПланАм будет подсказывать меню мягче и точнее."
+          actionLabel="Настроить заботу"
+          onAction={() => router.push("/profile/nutrition")}
+        />
       ) : (
         <>
           <WellnessDayRing2026 progress={dayProgress} />

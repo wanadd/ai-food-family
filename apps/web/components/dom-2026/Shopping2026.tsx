@@ -199,6 +199,20 @@ export function Shopping2026() {
     );
   }
 
+  if (!initData) {
+    return (
+      <div className="px-4 py-8">
+        <EmptyState2026
+          icon={<span aria-hidden>🛒</span>}
+          title="Список покупок"
+          description="Откройте ПланАм в Telegram — список появится после меню или синхронизации."
+          actionLabel="На главную"
+          onAction={() => router.push("/")}
+        />
+      </div>
+    );
+  }
+
   const emptyList = list && list.total_count === 0;
   const noResults = list && list.total_count > 0 && filtered.length === 0;
 

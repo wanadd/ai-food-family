@@ -83,6 +83,20 @@ export function Pantry2026() {
     }
   }
 
+  if (!initData) {
+    return (
+      <div className="px-4 py-8">
+        <EmptyState2026
+          icon={<span aria-hidden>🫙</span>}
+          title="Запасы дома"
+          description="Откройте ПланАм в Telegram — здесь появятся продукты из списка покупок и остатки."
+          actionLabel="К покупкам"
+          onAction={() => router.push("/home/shopping")}
+        />
+      </div>
+    );
+  }
+
   if (loading && items.length === 0) {
     return (
       <div className="space-y-3 px-4 pb-6 pt-4">
