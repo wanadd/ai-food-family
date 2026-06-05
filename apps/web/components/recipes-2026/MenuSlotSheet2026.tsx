@@ -133,7 +133,7 @@ export function MenuSlotSheet2026({
                 setDayIndex(day.day_index);
                 setStep("meal");
               }}
-              className="flex w-full items-center justify-between rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left transition hover:bg-sage-50 dark:hover:bg-white/5"
+              className="flex w-full items-center justify-between rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left transition hover:bg-sage-50 pa26-hover-row"
             >
               <span className="pa26-card-title">{day.label}</span>
               <span className="pa26-caption text-pa-muted">
@@ -158,7 +158,7 @@ export function MenuSlotSheet2026({
                   setMealIndex(index);
                   setStep("confirm");
                 }}
-                className="flex w-full flex-col rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left transition hover:bg-sage-50 dark:hover:bg-white/5"
+                className="flex w-full flex-col rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left transition hover:bg-sage-50 pa26-hover-row"
               >
                 <span className="pa26-micro text-pa-muted">
                   {mealLabel(meal.meal_type)}

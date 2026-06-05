@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
+
 type ToastState = {
   message: string;
   visible: boolean;
@@ -21,6 +23,7 @@ type ToastContextValue = {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const ui2026 = isPlanamUi2026Enabled();
   const [toast, setToast] = useState<ToastState>({ message: "", visible: false });
 
   const showToast = useCallback((message: string, durationMs = 1800) => {
@@ -44,7 +47,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           role="status"
           aria-live="polite"
         >
-          <p className="rounded-2xl bg-stone-900/95 px-5 py-3 text-sm font-semibold text-white shadow-lg">
+          <p
+            className={
+              ui2026
+                ? "rounded-2xl bg-graphite-900/95 px-5 py-3 text-sm font-semibold text-cream-surface shadow-lift"
+                : "rounded-2xl bg-stone-900/95 px-5 py-3 text-sm font-semibold text-white shadow-lg"
+            }
+          >
             {toast.message}
           </p>
         </div>

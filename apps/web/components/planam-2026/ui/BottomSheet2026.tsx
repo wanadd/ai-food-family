@@ -44,7 +44,7 @@ export function BottomSheet2026({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-control px-2 py-1 text-[13px] font-semibold text-pa-muted hover:bg-sage-50 dark:hover:bg-white/5"
+              className="rounded-control px-2 py-1 text-[13px] font-semibold text-pa-muted hover:bg-sage-50 dark:hover:bg-pa-elevated/40"
             >
               Закрыть
             </button>

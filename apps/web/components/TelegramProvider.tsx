@@ -17,6 +17,7 @@ import {
 } from "@/lib/api";
 import { prefetchAppContext } from "@/lib/app-mode/api";
 import { isClientDevMode, storeDevInitData } from "@/lib/dev-auth";
+import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
 import { loadTelegramWebApp } from "@/lib/telegram-webapp";
 
 type TelegramContextValue = {
@@ -102,9 +103,10 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       setPlatform(webApp.platform || "unknown");
       setColorScheme(webApp.colorScheme || "light");
       if (typeof document !== "undefined") {
+        const fallbackBg = isPlanamUi2026Enabled() ? "#fbf7ef" : "#f8fafc";
         document.documentElement.style.setProperty(
           "--tg-theme-bg-color",
-          webApp.themeParams?.bg_color ?? "#f8fafc",
+          webApp.themeParams?.bg_color ?? fallbackBg,
         );
       }
     }

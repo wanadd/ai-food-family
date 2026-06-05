@@ -64,7 +64,7 @@ export function ActionCard2026({
 
   const shell = cn(
     "flex min-h-[64px] w-full items-center gap-3 rounded-card border border-pa-border bg-pa-surface px-4 py-3 shadow-soft transition dark:shadow-none",
-    onClick && "cursor-pointer hover:bg-sage-50 active:bg-sage-50 dark:hover:bg-white/5 dark:active:bg-white/5",
+    onClick && "cursor-pointer hover:bg-sage-50 active:bg-sage-50 dark:hover:bg-pa-elevated/40 dark:active:bg-pa-elevated/40",
     className,
   );
 

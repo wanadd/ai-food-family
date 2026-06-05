@@ -146,7 +146,7 @@ export function ReplaceDishSheet2026({
                 key={`${meal.meal_type}-${index}`}
                 type="button"
                 onClick={() => setMealIndex(index)}
-                className="flex w-full flex-col rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left transition hover:bg-sage-50 dark:hover:bg-white/5"
+                className="flex w-full flex-col rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left transition hover:bg-sage-50 pa26-hover-row"
               >
                 <span className="pa26-micro text-pa-muted">
                   {MEAL_LABELS[meal.meal_type] ?? meal.meal_type}

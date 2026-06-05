@@ -39,7 +39,7 @@ export function OnboardingChipGrid2026<T extends string>({
               "rounded-card border px-4 py-3 text-left transition active:scale-[0.99]",
               selected
                 ? "border-sage-500 bg-sage-50 shadow-soft dark:border-sage-400 dark:bg-sage-700/25"
-                : "border-pa-border bg-pa-surface hover:bg-sage-50/80 dark:hover:bg-white/5",
+                : "border-pa-border bg-pa-surface hover:bg-sage-50/80 dark:hover:bg-pa-elevated/40",
             )}
             aria-pressed={selected}
           >

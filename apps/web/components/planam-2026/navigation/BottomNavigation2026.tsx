@@ -63,8 +63,8 @@ export function BottomNavigation2026() {
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center rounded-control px-1 py-2 text-center transition",
                 isActive
-                  ? "bg-sage-50 text-sage-800 dark:bg-white/5 dark:text-sage-300"
-                  : "text-pa-muted hover:bg-sage-50/80 dark:hover:bg-white/5",
+                  ? "bg-sage-50 text-sage-800 dark:bg-pa-elevated/40 dark:text-sage-300"
+                  : "text-pa-muted hover:bg-sage-50/80 dark:hover:bg-pa-elevated/40",
               )}
             >
               <NavIcon2026 id={item.icon} className="size-5" />

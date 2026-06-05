@@ -45,11 +45,11 @@
     --pa-border: #3a3834;
   }
 
-  body {
-    @apply bg-cream font-sans text-graphite-900 antialiased;
+  html:not([data-planam-ui="2026"]) body {
+    @apply bg-cream text-graphite-900;
   }
 
-  html.dark body {
+  html[data-planam-ui="2026"] body {
     @apply bg-pa-canvas text-pa-foreground;
   }
 }
@@ -114,5 +114,40 @@
 
   .pa26-micro {
     @apply text-[11px] font-medium leading-[14px] tracking-[0.02em] text-pa-muted;
+  }
+
+  /* Legacy .pa-* helpers embedded in 2026 screens → semantic tokens */
+  html[data-planam-ui="2026"] .pa-card {
+    @apply border-pa-border bg-pa-surface shadow-soft dark:shadow-none;
+  }
+
+  html[data-planam-ui="2026"] .pa-surface {
+    @apply bg-pa-surface;
+  }
+
+  html[data-planam-ui="2026"] .pa-title {
+    @apply text-pa-foreground;
+  }
+
+  html[data-planam-ui="2026"] .pa-subtle {
+    @apply text-pa-muted;
+  }
+
+  html[data-planam-ui="2026"] .pa-btn-ghost {
+    @apply border-pa-border bg-pa-surface text-sage-700 dark:text-sage-300;
+  }
+
+  html[data-planam-ui="2026"] .pa-chip {
+    @apply bg-sage-50 text-sage-700 dark:bg-sage-700/30 dark:text-sage-300;
+  }
+}
+
+@layer utilities {
+  .pa26-hover-row {
+    @apply hover:bg-sage-50;
+  }
+
+  html.dark .pa26-hover-row:hover {
+    background-color: color-mix(in srgb, var(--pa-bg-elevated) 40%, transparent);
   }
 }

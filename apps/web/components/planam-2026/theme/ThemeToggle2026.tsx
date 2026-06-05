@@ -37,7 +37,7 @@ export function ThemeToggle2026({ className }: ThemeToggle2026Props) {
               "min-h-[36px] rounded-control px-3 text-[13px] font-medium leading-[18px] transition",
               selected
                 ? "bg-sage-500 text-white shadow-soft dark:bg-sage-400"
-                : "text-pa-muted hover:bg-sage-50 dark:hover:bg-white/5",
+                : "text-pa-muted hover:bg-sage-50 dark:hover:bg-pa-elevated/40",
             )}
             aria-pressed={selected}
           >

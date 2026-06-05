@@ -19,7 +19,7 @@ export function AppShellBridge({ children }: { children: ReactNode }) {
   if (isDevPreview || isOnboarding) {
     return (
       <ToastProvider>
-        <ThemeProvider active>
+        <ThemeProvider active scope2026>
           <div className="min-h-screen bg-pa-canvas text-pa-foreground">{children}</div>
         </ThemeProvider>
       </ToastProvider>
@@ -29,7 +29,7 @@ export function AppShellBridge({ children }: { children: ReactNode }) {
   if (use2026Shell) {
     return (
       <ToastProvider>
-        <ThemeProvider active>
+        <ThemeProvider active scope2026>
           <AppShell2026>{children}</AppShell2026>
         </ThemeProvider>
       </ToastProvider>
