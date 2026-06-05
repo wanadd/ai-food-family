@@ -20,6 +20,7 @@ import {
 } from "@/lib/cache/session-cache";
 import { fetchTodayMealCheckins } from "@/lib/meal-checkins/api";
 import { deleteMenuItem, fetchSelectedMenu } from "@/lib/menu/api";
+import { buildReplaceCatalogUrl } from "@/lib/menu/replace-slot";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import {
   defaultDayIndex,
@@ -247,9 +248,11 @@ export function PlanToday2026() {
               setOutcomeMealIndex(index);
               setOutcomeOpen(true);
             }}
-            onReplace={(index) => {
-              setReplaceMealIndex(index);
-              setReplaceOpen(true);
+            onReplace={(slotId, recipeId) => {
+              if (!slotId) {
+                return;
+              }
+              router.push(buildReplaceCatalogUrl(slotId, recipeId ?? undefined));
             }}
             onRemove={async (slotId) => {
               if (!initData) {

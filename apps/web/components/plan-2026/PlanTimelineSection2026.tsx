@@ -4,7 +4,7 @@ import type { PlanTodayTimelineGroup } from "@/lib/plan/plan-today";
 type PlanTimelineSection2026Props = {
   groups: PlanTodayTimelineGroup[];
   onCook: (mealIndex: number) => void;
-  onReplace: (mealIndex: number) => void;
+  onReplace: (slotId: string, currentRecipeId: number | null) => void;
   onRemove?: (slotId: string) => void;
 };
 
@@ -28,7 +28,9 @@ export function PlanTimelineSection2026({
                 key={`${item.meal.meal_type}-${item.mealIndex}`}
                 item={item}
                 onCook={() => onCook(item.mealIndex)}
-                onReplace={() => onReplace(item.mealIndex)}
+                onReplace={() =>
+                  onReplace(item.slotId ?? "", item.meal.recipe_id ?? null)
+                }
                 onRemove={
                   item.slotId && onRemove
                     ? () => onRemove(item.slotId!)

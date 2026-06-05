@@ -158,6 +158,16 @@ class MenuTodayResponse(BaseModel):
     menu: MenuVariant | None = None
 
 
+class ReplaceMenuSlotRequest(BaseModel):
+    recipe_id: int = Field(ge=1)
+    servings: int | None = Field(default=None, ge=1, le=50)
+
+
+class ReplaceMenuSlotResponse(BaseModel):
+    item: MenuPlanItem
+    menu: MenuVariant
+
+
 RecipeFitLevel = Literal["good", "partial", "not_recommended"]
 
 

@@ -89,6 +89,17 @@ def _normalize_meal_type(meal_type: str) -> str:
     return normalized
 
 
+def parse_slot_id(slot_id: str) -> tuple[str, str]:
+    """Return (date_iso, meal_type) from slot id like 2026-06-05:dinner."""
+    normalized = slot_id.strip()
+    if ":" not in normalized:
+        raise ValueError("Invalid menu item id")
+    date_iso, meal_type = normalized.split(":", 1)
+    parse_plan_date(date_iso)
+    meal_type_norm = _normalize_meal_type(meal_type)
+    return date_iso, meal_type_norm
+
+
 def _ensure_day(menu: MenuVariant, target_date: date) -> tuple[MenuVariant, MenuDayPlan]:
     date_iso = target_date.isoformat()
     days = list(menu.days or [])
@@ -356,3 +367,72 @@ def remove_menu_item(
 
     select_menu(db, user, scope, SelectMenuRequest(menu=updated))
     return updated
+
+
+def replace_recipe_in_slot(
+    db: Session,
+    user: User,
+    scope: AppScope,
+    recipe: Recipe,
+    *,
+    slot_id: str,
+    servings: int | None = None,
+) -> tuple[dict, MenuVariant]:
+    """Replace (or fill) a meal slot with the given recipe."""
+    date_iso, meal_type_norm = parse_slot_id(slot_id)
+    target = parse_plan_date(date_iso)
+    slot = make_slot_id(date_iso, meal_type_norm)
+    target_servings = servings or recipe.servings or DEFAULT_SERVINGS
+
+    selected = get_selected_menu(db, scope)
+    menu = selected.menu if selected is not None else create_scaffold_menu(target)
+    menu, day = _ensure_day(menu, target)
+    meals = _slots_for_day(day, date_iso)
+
+    new_meal = recipe_to_menu_meal(
+        recipe,
+        meal_type=meal_type_norm,
+        date_iso=date_iso,
+        servings=target_servings,
+    )
+
+    replaced = False
+    for index, meal in enumerate(meals):
+        meal_slot = meal.slot_id or make_slot_id(date_iso, meal.meal_type)
+        if meal_slot != slot and meal.meal_type != meal_type_norm:
+            continue
+        meals[index] = new_meal
+        replaced = True
+        break
+
+    if not replaced:
+        meals.append(new_meal)
+
+    updated_days = [
+        day_plan.model_copy(update={"meals": meals})
+        if day_plan.date_iso == date_iso
+        else day_plan
+        for day_plan in (menu.days or [])
+    ]
+    ingredients = _merge_ingredients(menu, recipe, target_servings)
+    updated = menu.model_copy(
+        update={
+            "days": updated_days,
+            "meals": _sync_flat_meals(
+                menu.model_copy(update={"days": updated_days}), target
+            ),
+            "ingredients": ingredients,
+            "total_prep_minutes": sum(m.prep_time_minutes for m in meals),
+        }
+    )
+
+    from app.services.menu import select_menu
+
+    select_menu(db, user, scope, SelectMenuRequest(menu=updated))
+    logger.info(
+        "menu.replace_slot user=%s slot=%s recipe_id=%s",
+        user.id,
+        slot,
+        recipe.id,
+    )
+    return menu_item_dict(new_meal, date_iso), updated

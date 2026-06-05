@@ -18,9 +18,12 @@ from app.schemas.menu import (
 )
 from app.schemas.menu_overview import (
     MenuOverviewResponse,
+    MenuPlanItem,
     MenuQuickActionRequest,
     MenuQuickActionResponse,
     MenuTodayResponse,
+    ReplaceMenuSlotRequest,
+    ReplaceMenuSlotResponse,
 )
 from app.services import menu as menu_service
 from app.services import menu_overview as menu_overview_service
@@ -106,6 +109,40 @@ def get_menu_today(
         items=[MenuPlanItem(**item) for item in items],
         menu=menu,
     )
+
+
+@router.post("/items/{slot_id}/replace", response_model=ReplaceMenuSlotResponse)
+def replace_menu_item(
+    slot_id: str,
+    payload: ReplaceMenuSlotRequest,
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> ReplaceMenuSlotResponse:
+    from app.services import recipes as recipes_service
+    from app.services.menu_recipe_plan import replace_recipe_in_slot
+
+    recipe = recipes_service.get_recipe_model(db, payload.recipe_id)
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recipe not found",
+        )
+    try:
+        item_dict, menu = replace_recipe_in_slot(
+            db,
+            user,
+            scope,
+            recipe,
+            slot_id=slot_id,
+            servings=payload.servings,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    return ReplaceMenuSlotResponse(item=MenuPlanItem(**item_dict), menu=menu)
 
 
 @router.delete("/items/{slot_id}", response_model=SelectedMenuResponse)

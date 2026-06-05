@@ -16,6 +16,10 @@ type RecipeGridCard2026Props = {
   href: string;
   onToggleFavorite?: () => void;
   togglingFavorite?: boolean;
+  replaceMode?: boolean;
+  isCurrentRecipe?: boolean;
+  onReplace?: () => void;
+  replacing?: boolean;
 };
 
 function formatKcal(recipe: RecipeSummary): string | null {
@@ -30,6 +34,10 @@ export function RecipeGridCard2026({
   href,
   onToggleFavorite,
   togglingFavorite = false,
+  replaceMode = false,
+  isCurrentRecipe = false,
+  onReplace,
+  replacing = false,
 }: RecipeGridCard2026Props) {
   const time = recipe.prep_time_minutes ?? recipe.cooking_time_minutes;
   const heading = recipe.display_title ?? recipe.title;
@@ -62,7 +70,26 @@ export function RecipeGridCard2026({
           </div>
         </div>
       </Link>
-      {onToggleFavorite ? (
+      {replaceMode ? (
+        <div className="border-t border-pa-border px-3 py-2">
+          <button
+            type="button"
+            disabled={isCurrentRecipe || replacing}
+            onClick={(e) => {
+              e.preventDefault();
+              onReplace?.();
+            }}
+            className={cn(
+              "w-full rounded-control py-2 pa26-micro font-semibold",
+              isCurrentRecipe
+                ? "text-pa-muted"
+                : "bg-sage-500 text-white dark:bg-sage-400",
+            )}
+          >
+            {isCurrentRecipe ? "Уже выбрано" : replacing ? "Замена…" : "Заменить"}
+          </button>
+        </div>
+      ) : onToggleFavorite ? (
         <div className="border-t border-pa-border px-3 py-2">
           <button
             type="button"

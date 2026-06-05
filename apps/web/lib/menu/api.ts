@@ -159,3 +159,34 @@ export async function deleteMenuItem(
   }
   return data;
 }
+
+export type ReplaceMenuSlotResponse = {
+  item: MenuPlanItem;
+  menu: MenuVariant;
+};
+
+export async function replaceMenuSlot(
+  initData: string,
+  mode: AppMode,
+  slotId: string,
+  recipeId: number,
+  servings?: number,
+): Promise<ReplaceMenuSlotResponse> {
+  const encoded = encodeURIComponent(slotId);
+  const data = await apiFetch<ReplaceMenuSlotResponse>(
+    initData,
+    mode,
+    `/menus/items/${encoded}/replace`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        recipe_id: recipeId,
+        servings: servings ?? null,
+      }),
+    },
+  );
+  if (!data) {
+    throw new Error("Не удалось заменить блюдо");
+  }
+  return data;
+}

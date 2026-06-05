@@ -6,7 +6,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RecipeGridCard2026 } from "@/components/recipes-2026/RecipeGridCard2026";
 import { Skeleton2026 } from "@/components/planam-2026/ui/Skeleton2026";
 import { EmptyState2026 } from "@/components/planam-2026/ui/EmptyState2026";
+import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { useToast } from "@/components/ui/ToastProvider";
 import { useTelegram } from "@/components/TelegramProvider";
+import { replaceMenuSlot } from "@/lib/menu/api";
+import {
+  buildReplaceDetailUrl,
+  parseCurrentRecipeId,
+  parseReplaceSlot,
+} from "@/lib/menu/replace-slot";
+import { PLAN_PATHS } from "@/lib/plan/plan-paths";
 import {
   fetchRecipeFilters,
   fetchRecipes,
@@ -14,7 +23,6 @@ import {
 } from "@/lib/recipes/api";
 import { CATALOG_MEAL_FILTERS } from "@/lib/recipes/labels";
 import type { RecipeFilters, RecipeQuery, RecipeSummary } from "@/lib/recipes/types";
-import { PLAN_PATHS } from "@/lib/plan/plan-paths";
 import { cn } from "@/lib/planam/cn";
 
 function queryFromParams(sp: URLSearchParams): RecipeQuery {
@@ -32,11 +40,23 @@ export function RecipeCatalog2026() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { initData } = useTelegram();
+  const { mode } = useAppMode();
+  const { showToast } = useToast();
   const paramString = searchParams.toString();
   const query = useMemo(
     () => queryFromParams(new URLSearchParams(paramString)),
     [paramString],
   );
+
+  const replaceSlot = useMemo(
+    () => parseReplaceSlot(searchParams.get("replaceSlot")),
+    [searchParams],
+  );
+  const currentRecipeId = useMemo(
+    () => parseCurrentRecipeId(searchParams.get("currentRecipeId")),
+    [searchParams],
+  );
+  const replaceMode = replaceSlot != null;
 
   const [filters, setFilters] = useState<RecipeFilters | null>(null);
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
@@ -45,9 +65,21 @@ export function RecipeCatalog2026() {
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(query.q ?? "");
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [replacingId, setReplacingId] = useState<number | null>(null);
 
   const isFavorites = Boolean(query.favorites_only);
   const hasFilters = Boolean(query.q || query.meal_type || isFavorites);
+
+  const displayRecipes = useMemo(() => {
+    if (!currentRecipeId) {
+      return recipes;
+    }
+    return [...recipes].sort((a, b) => {
+      if (a.id === currentRecipeId) return 1;
+      if (b.id === currentRecipeId) return -1;
+      return 0;
+    });
+  }, [recipes, currentRecipeId]);
 
   const updateParams = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -119,6 +151,23 @@ export function RecipeCatalog2026() {
     }
   }
 
+  async function handleReplace(recipeId: number) {
+    if (!initData || !replaceSlot) {
+      showToast("Не удалось заменить блюдо");
+      return;
+    }
+    setReplacingId(recipeId);
+    try {
+      await replaceMenuSlot(initData, mode, replaceSlot, recipeId, 2);
+      showToast("Блюдо заменено");
+      router.push("/plan/today?saved=1");
+    } catch {
+      showToast("Не удалось заменить блюдо");
+    } finally {
+      setReplacingId(null);
+    }
+  }
+
   function handleSearchSubmit() {
     updateParams({ q: searchInput.trim() || undefined });
   }
@@ -170,6 +219,13 @@ export function RecipeCatalog2026() {
 
   return (
     <div className="pb-6">
+      {replaceMode ? (
+        <div className="border-b border-sage-200 bg-sage-50 px-4 py-3 dark:border-sage-700/40 dark:bg-sage-700/20">
+          <p className="pa26-caption font-semibold text-sage-800 dark:text-sage-300">
+            Выберите новое блюдо для замены
+          </p>
+        </div>
+      ) : null}
       <div className="sticky top-0 z-20 border-b border-pa-border bg-pa-canvas/95 px-4 py-3 backdrop-blur-md">
         <div className="flex gap-2">
           <input
@@ -250,13 +306,23 @@ export function RecipeCatalog2026() {
               {filters ? "" : ""}
             </p>
             <div className="grid grid-cols-2 gap-3">
-              {recipes.map((recipe) => (
+              {displayRecipes.map((recipe) => (
                 <RecipeGridCard2026
                   key={recipe.id}
                   recipe={recipe}
-                  href={`/plan/recipes/${recipe.id}`}
-                  onToggleFavorite={() => void handleFavorite(recipe.id)}
+                  href={
+                    replaceSlot
+                      ? buildReplaceDetailUrl(recipe.id, replaceSlot, currentRecipeId)
+                      : `/plan/recipes/${recipe.id}`
+                  }
+                  onToggleFavorite={
+                    replaceMode ? undefined : () => void handleFavorite(recipe.id)
+                  }
                   togglingFavorite={togglingId === recipe.id}
+                  replaceMode={replaceMode}
+                  isCurrentRecipe={currentRecipeId === recipe.id}
+                  onReplace={() => void handleReplace(recipe.id)}
+                  replacing={replacingId === recipe.id}
                 />
               ))}
             </div>

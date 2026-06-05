@@ -1,14 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { MenuSlotSheet2026 } from "@/components/recipes-2026/MenuSlotSheet2026";
 import { ReplaceDishSheet2026 } from "@/components/plan-2026/ReplaceDishSheet2026";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { fetchSelectedMenu } from "@/lib/menu/api";
+import { fetchSelectedMenu, replaceMenuSlot } from "@/lib/menu/api";
+import {
+  buildReplaceCatalogUrl,
+  parseCurrentRecipeId,
+  parseReplaceSlot,
+} from "@/lib/menu/replace-slot";
 import { defaultDayIndex } from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
 import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
@@ -53,9 +58,12 @@ function nutritionLine(recipe: RecipeDetail): string {
 
 export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { initData } = useTelegram();
   const { mode } = useAppMode();
   const { showToast } = useToast();
+  const replaceSlot = parseReplaceSlot(searchParams.get("replaceSlot"));
+  const replaceMode = replaceSlot != null;
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
   const [menu, setMenu] = useState<MenuVariant | null>(null);
   const [shoppingBusy, setShoppingBusy] = useState(false);
@@ -64,6 +72,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const [toggling, setToggling] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
+  const [replaceBusy, setReplaceBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!initData || !recipeId) {
@@ -107,6 +116,29 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
       showToast("Не удалось добавить ингредиенты. Попробуйте ещё раз.");
     } finally {
       setShoppingBusy(false);
+    }
+  }
+
+  async function handleReplaceSlot() {
+    if (!initData || !replaceSlot || !recipe) {
+      showToast("Не удалось заменить блюдо");
+      return;
+    }
+    setReplaceBusy(true);
+    try {
+      await replaceMenuSlot(
+        initData,
+        mode,
+        replaceSlot,
+        recipe.id,
+        recipe.servings ?? 2,
+      );
+      showToast("Блюдо заменено");
+      router.push("/plan/today?saved=1");
+    } catch {
+      showToast("Не удалось заменить блюдо");
+    } finally {
+      setReplaceBusy(false);
     }
   }
 
@@ -165,7 +197,14 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
           priority
         />
         <Link
-          href="/plan/recipes"
+          href={
+            replaceSlot
+              ? buildReplaceCatalogUrl(
+                  replaceSlot,
+                  parseCurrentRecipeId(searchParams.get("currentRecipeId")),
+                )
+              : "/plan/recipes"
+          }
           className="absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] rounded-control bg-pa-surface/90 px-3 py-1.5 pa26-micro font-semibold shadow-soft backdrop-blur-sm"
         >
           ← Каталог
@@ -202,22 +241,35 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button2026
-            variant="primary"
-            className="flex-1 min-w-[120px]"
-            onClick={() => {
-              if (!initData) {
-                void showToast("Добавление в меню доступно в Telegram Mini App");
-                return;
-              }
-              setAddOpen(true);
-            }}
-          >
-            В меню
-          </Button2026>
-          <Button2026 variant="secondary" onClick={() => setReplaceOpen(true)}>
-            Заменить
-          </Button2026>
+          {replaceMode ? (
+            <Button2026
+              variant="primary"
+              className="flex-1 min-w-[120px]"
+              loading={replaceBusy}
+              onClick={() => void handleReplaceSlot()}
+            >
+              Заменить блюдо
+            </Button2026>
+          ) : (
+            <>
+              <Button2026
+                variant="primary"
+                className="flex-1 min-w-[120px]"
+                onClick={() => {
+                  if (!initData) {
+                    void showToast("Добавление в меню доступно в Telegram Mini App");
+                    return;
+                  }
+                  setAddOpen(true);
+                }}
+              >
+                В меню
+              </Button2026>
+              <Button2026 variant="secondary" onClick={() => setReplaceOpen(true)}>
+                Заменить
+              </Button2026>
+            </>
+          )}
           <Button2026
             variant="ghost"
             loading={shoppingBusy}
@@ -266,26 +318,30 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
         </section>
       </div>
 
-      <MenuSlotSheet2026
-        open={addOpen}
-        recipe={recipe}
-        mode="add"
-        onClose={() => setAddOpen(false)}
-        onSuccess={() => {
-          showToast("Рецепт добавлен в меню");
-          router.push("/plan/today?saved=1");
-        }}
-        onError={() => {
-          showToast("Не удалось добавить рецепт в меню. Попробуйте ещё раз.");
-        }}
-      />
-      <ReplaceDishSheet2026
-        open={replaceOpen}
-        menu={menu}
-        dayIndex={menu ? defaultDayIndex(menu) : 1}
-        onClose={() => setReplaceOpen(false)}
-        onSuccess={() => router.push("/plan/today")}
-      />
+      {!replaceMode ? (
+        <>
+          <MenuSlotSheet2026
+            open={addOpen}
+            recipe={recipe}
+            mode="add"
+            onClose={() => setAddOpen(false)}
+            onSuccess={() => {
+              showToast("Рецепт добавлен в меню");
+              router.push("/plan/today?saved=1");
+            }}
+            onError={() => {
+              showToast("Не удалось добавить рецепт в меню. Попробуйте ещё раз.");
+            }}
+          />
+          <ReplaceDishSheet2026
+            open={replaceOpen}
+            menu={menu}
+            dayIndex={menu ? defaultDayIndex(menu) : 1}
+            onClose={() => setReplaceOpen(false)}
+            onSuccess={() => router.push("/plan/today")}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

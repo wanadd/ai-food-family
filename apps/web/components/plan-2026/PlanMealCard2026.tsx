@@ -11,6 +11,7 @@ import { useTelegram } from "@/components/TelegramProvider";
 import { addMealIngredientsToShopping } from "@/lib/plan/add-to-shopping";
 import type { PlanTodayMeal } from "@/lib/plan/plan-today";
 import { mealTypeLabel } from "@/lib/plan/plan-today";
+import { buildReplaceCatalogUrl } from "@/lib/menu/replace-slot";
 import { recipeDetailPath } from "@/lib/plan/plan-paths";
 import { cn } from "@/lib/planam/cn";
 
@@ -102,8 +103,10 @@ export function PlanMealCard2026({
                 onReplace();
                 return;
               }
-              if (item.meal.recipe_id) {
-                router.push(`/plan/recipes?replaceSlot=${item.meal.meal_type}`);
+              if (item.slotId) {
+                router.push(
+                  buildReplaceCatalogUrl(item.slotId, item.meal.recipe_id ?? undefined),
+                );
               }
             }}
           >
