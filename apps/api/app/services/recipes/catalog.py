@@ -163,6 +163,8 @@ def list_recipes(
     goal: str | None = None,
     scenario: str | None = None,
     scope: AppScope | None = None,
+    limit: int = 50,
+    offset: int = 0,
 ) -> RecipeListResponse:
     favorite_ids = repository.favorite_ids_for_user(db, user.id)
 
@@ -233,16 +235,27 @@ def list_recipes(
 
     from app.services.recipe_analysis import quick_recipe_fit_level
 
+    total = len(recipes)
+    safe_offset = max(offset, 0)
+    safe_limit = max(limit, 1)
+    page = recipes[safe_offset : safe_offset + safe_limit]
+
     items = []
-    for recipe in recipes:
+    for recipe in page:
         fit = (
             quick_recipe_fit_level(db, user, scope, recipe)
             if scope is not None
             else None
         )
         items.append(to_summary(recipe, favorite_ids, fit_level=fit))
-    logger.info("recipes.list response items=%d", len(items))
-    return RecipeListResponse(items=items, total=len(items))
+    logger.info(
+        "recipes.list response items=%d total=%d offset=%d limit=%d",
+        len(items),
+        total,
+        safe_offset,
+        safe_limit,
+    )
+    return RecipeListResponse(items=items, total=total)
 
 
 def _matches_pantry(recipe: Recipe, pantry: set[str]) -> bool:

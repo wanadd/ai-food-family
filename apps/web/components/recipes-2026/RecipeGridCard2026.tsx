@@ -32,18 +32,19 @@ export function RecipeGridCard2026({
   togglingFavorite = false,
 }: RecipeGridCard2026Props) {
   const time = recipe.prep_time_minutes ?? recipe.cooking_time_minutes;
+  const heading = recipe.display_title ?? recipe.title;
 
   return (
     <article className="overflow-hidden rounded-card border border-pa-border bg-pa-surface shadow-soft transition active:scale-[0.98] dark:shadow-none">
       <Link href={href} className="block">
         <RecipeImage2026
           imageUrl={recipe.image_url}
-          alt={recipe.title}
+          alt={heading}
           variant="grid"
           mealType={recipe.meal_type}
         />
         <div className="p-3">
-          <h3 className="pa26-card-title line-clamp-2">{recipe.title}</h3>
+          <h3 className="pa26-card-title line-clamp-2">{heading}</h3>
           <p className="pa26-caption mt-1 text-pa-muted">
             {time ? `${time} мин` : ""}
             {time && formatKcal(recipe) ? " · " : ""}

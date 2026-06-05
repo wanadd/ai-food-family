@@ -161,3 +161,43 @@ def test_list_recipes_passes_recipe_to_fit_level():
         catalog.list_recipes(db, user, scope=scope)
 
     assert seen == ["A", "B"]
+
+
+def test_list_recipes_paginates_with_total():
+    db = MagicMock()
+    user = MagicMock(id=1)
+    scope = AppScope(mode="personal", user_id=1, family_id=None)
+    recipes = [_recipe(f"Recipe {index}") for index in range(5)]
+
+    with patch(
+        "app.services.recipes.catalog.repository.favorite_ids_for_user",
+        return_value=set(),
+    ), patch(
+        "app.services.recipes.catalog.repository.query_recipes",
+        return_value=recipes,
+    ), patch(
+        "app.services.recipe_analysis.quick_recipe_fit_level",
+        return_value="good",
+    ), patch(
+        "app.services.recipes.catalog.to_summary",
+        side_effect=lambda recipe, _fav, fit_level=None: RecipeSummary(
+            id=recipe.id,
+            title=recipe.title,
+            description="",
+            meal_type="lunch",
+            category="main",
+            prep_time_minutes=20,
+            servings=2,
+            difficulty="easy",
+            diets=[],
+            tags=[],
+            is_favorited=False,
+            fit_level=fit_level,
+        ),
+    ):
+        result = catalog.list_recipes(db, user, scope=scope, limit=2, offset=1)
+
+    assert result.total == 5
+    assert len(result.items) == 2
+    assert result.items[0].title == "Recipe 1"
+    assert result.items[1].title == "Recipe 2"

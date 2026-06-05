@@ -44,6 +44,7 @@ class RecipeIngredient(BaseModel):
 class RecipeSummary(BaseModel):
     id: int
     title: str
+    display_title: str | None = None
     description: str
     meal_type: str
     category: str
@@ -68,6 +69,7 @@ class RecipeSummary(BaseModel):
 
 
 class RecipeDetail(RecipeSummary):
+    original_title: str | None = None
     ingredients: list[RecipeIngredient]
     steps: list[str]
     allergens: list[str] = []

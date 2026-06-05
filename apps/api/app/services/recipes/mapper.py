@@ -22,15 +22,28 @@ def prep_minutes(recipe: Recipe) -> int:
     return recipe.prep_time_minutes or recipe.cooking_time_minutes or 30
 
 
+def public_title(recipe: Recipe) -> str:
+    return recipe.display_title or recipe.title
+
+
+def public_original_title(recipe: Recipe, *, shown_title: str) -> str | None:
+    original = recipe.original_title or recipe.title
+    if original.strip() == shown_title.strip():
+        return None
+    return original
+
+
 def to_summary(
     recipe: Recipe,
     favorite_ids: set[int],
     *,
     fit_level: str | None = None,
 ) -> RecipeSummary:
+    shown = public_title(recipe)
     return RecipeSummary(
         id=recipe.id,
-        title=recipe.title,
+        title=shown,
+        display_title=recipe.display_title,
         description=recipe.description or "",
         meal_type=recipe.meal_type,
         category=recipe.category,
@@ -60,6 +73,7 @@ def to_detail(recipe: Recipe, favorite_ids: set[int]) -> RecipeDetail:
     structured = get_structured_ingredients(recipe)
     return RecipeDetail(
         **summary.model_dump(),
+        original_title=public_original_title(recipe, shown_title=summary.title),
         ingredients=[
             RecipeIngredient(
                 name=i["name"],

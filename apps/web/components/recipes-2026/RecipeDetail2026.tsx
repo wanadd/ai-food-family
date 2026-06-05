@@ -147,6 +147,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
     );
   }
 
+  const heading = recipe.display_title ?? recipe.title;
   const prep = recipe.prep_time_minutes ?? recipe.cooking_time_minutes ?? 30;
   const diets = Array.isArray(recipe.diets) ? recipe.diets : [];
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
@@ -157,7 +158,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
       <div className="relative max-h-[40vh]">
         <RecipeImage2026
           imageUrl={recipe.image_url}
-          alt={recipe.title}
+          alt={heading}
           variant="hero"
           mealType={recipe.meal_type}
           className="max-h-[40vh] rounded-none"
@@ -172,7 +173,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
       </div>
 
       <div className="px-4 pt-4">
-        <h1 className="pa26-hero">{recipe.title}</h1>
+        <h1 className="pa26-hero">{heading}</h1>
         {recipe.description ? (
           <p className="pa26-body mt-2 text-pa-muted line-clamp-3">{recipe.description}</p>
         ) : null}

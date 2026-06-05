@@ -6,6 +6,7 @@ export type RecipeIngredient = {
 export type RecipeSummary = {
   id: number;
   title: string;
+  display_title?: string | null;
   description: string;
   meal_type: string;
   category: string;
@@ -30,6 +31,7 @@ export type RecipeSummary = {
 };
 
 export type RecipeDetail = RecipeSummary & {
+  original_title?: string | null;
   ingredients: RecipeIngredient[];
   steps: string[];
   allergens?: string[];
@@ -61,6 +63,8 @@ export type RecipeFilters = {
 
 export type RecipeQuery = {
   q?: string;
+  limit?: number;
+  offset?: number;
   meal_type?: string;
   category?: string;
   diet?: string;

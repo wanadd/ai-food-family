@@ -224,6 +224,9 @@ def validate_recipe(raw: Any, index: int) -> dict[str, Any]:
     )
     if meal_type not in ALLOWED_MEAL_TYPES:
         raise RecipeImportError(f"meal_type is invalid: {meal_type!r}")
+    from app.services.recipes.title_normalize import catalog_meal_type
+
+    meal_type = catalog_meal_type(meal_type)
     menu_meal_type = normalize_menu_meal_type(meal_type)
 
     category = clean_text(
@@ -350,6 +353,7 @@ def apply_recipe(
     data: dict[str, Any],
     existing,
 ):
+    title = data["title"]
     fields = {
         key: data[key]
         for key in (
@@ -382,10 +386,20 @@ def apply_recipe(
             "tags",
         )
     }
+    fields["original_title"] = data.get("original_title") or title
+    fields["normalized_title"] = data.get("normalized_title") or normalize_title(title)
+    display = data.get("display_title")
+    if display is None:
+        from app.services.recipes.title_normalize import display_title_from
+
+        display = display_title_from(title)
+    fields["display_title"] = display
 
     recipe = existing or recipe_model(**fields)
     if existing is not None:
         for key, value in fields.items():
+            if key == "original_title" and recipe.original_title:
+                continue
             setattr(recipe, key, value)
     else:
         db.add(recipe)

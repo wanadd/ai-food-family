@@ -14,10 +14,10 @@ for the FTS migration planned in ``docs/RECIPE_ENGINE_V1.md`` § 2.4.
 
 from __future__ import annotations
 
-from sqlalchemy import or_
+from sqlalchemy import exists, or_
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.recipe import Recipe, RecipeFavorite
+from app.models.recipe import Recipe, RecipeFavorite, RecipeIngredientRow
 from app.services.recipes.types import RecipeListFilters
 
 
@@ -119,10 +119,17 @@ def query_recipes(db: Session, filters: RecipeListFilters) -> list[Recipe]:
 
     if filters.q:
         term = f"%{filters.q.strip()}%"
+        ingredient_match = exists().where(
+            RecipeIngredientRow.recipe_id == Recipe.id,
+            RecipeIngredientRow.name.ilike(term),
+        )
         query = query.filter(
             or_(
                 Recipe.title.ilike(term),
+                Recipe.original_title.ilike(term),
+                Recipe.normalized_title.ilike(term),
                 Recipe.description.ilike(term),
+                ingredient_match,
             )
         )
 

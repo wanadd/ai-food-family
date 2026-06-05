@@ -52,6 +52,8 @@ class RecipeListFilters:
     protein_only: bool = False
     smoothie_only: bool = False
     tea_coffee_only: bool = False
+    limit: int | None = None
+    offset: int = 0
 
 
 class RecipeSortOrder(str, Enum):

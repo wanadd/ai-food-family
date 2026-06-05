@@ -22,6 +22,9 @@ class Recipe(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(200), index=True)
+    original_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    normalized_title: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
+    display_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
     description: Mapped[str] = mapped_column(Text, default="")
     meal_type: Mapped[str] = mapped_column(String(32), index=True)
     category: Mapped[str] = mapped_column(String(32), index=True, default="main")

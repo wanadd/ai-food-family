@@ -415,6 +415,16 @@ def _schema_statements() -> list[str]:
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS suitable_for_event BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS original_title VARCHAR(200)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS normalized_title VARCHAR(200)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS display_title VARCHAR(200)",
+        "UPDATE recipes SET original_title = title WHERE original_title IS NULL",
+        """
+        UPDATE recipes
+        SET normalized_title = lower(trim(regexp_replace(title, '\\s+', ' ', 'g')))
+        WHERE normalized_title IS NULL AND title IS NOT NULL
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipes_normalized_title ON recipes (normalized_title)",
         "UPDATE recipes SET cooking_time_minutes = prep_time_minutes WHERE cooking_time_minutes IS NULL OR cooking_time_minutes = 30",
         """
         CREATE TABLE IF NOT EXISTS recipe_ingredients (

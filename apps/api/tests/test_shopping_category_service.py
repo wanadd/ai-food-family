@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-import importlib.util
 import os
 import sys
 from pathlib import Path
+
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
@@ -13,42 +16,29 @@ API_ROOT = Path(__file__).resolve().parents[1]
 if str(API_ROOT) not in sys.path:
     sys.path.insert(0, str(API_ROOT))
 
-
-def _load_module(name: str, relative_path: str):
-    path = API_ROOT / relative_path
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Cannot load {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-_load_module("app.config", "app/config.py")
-_load_module("app.database", "app/database.py")
-_load_module("app.models.shopping_category", "app/models/shopping_category.py")
-_load_module("app.services.app_scope", "app/services/app_scope.py")
-_load_module("app.services.shopping_categories", "app/services/shopping_categories.py")
-category_service = _load_module(
-    "app.services.shopping_category_service",
-    "app/services/shopping_category_service.py",
+from app.database import Base  # noqa: E402
+from app.models.family import Family  # noqa: E402
+from app.models.shopping_category import ShoppingCategory  # noqa: E402
+from app.models.user import User  # noqa: E402
+from app.services.app_scope import AppScope  # noqa: E402
+from app.services.shopping_category_service import (  # noqa: E402
+    SYSTEM_CATEGORIES,
+    ensure_system_categories,
+    get_category_by_slug,
 )
-
-ShoppingCategory = sys.modules["app.models.shopping_category"].ShoppingCategory
-AppScope = sys.modules["app.services.app_scope"].AppScope
-ensure_system_categories = category_service.ensure_system_categories
-get_category_by_slug = category_service.get_category_by_slug
-
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 
 @pytest.fixture()
 def db_session():
     engine = create_engine("sqlite:///:memory:")
-    ShoppingCategory.__table__.create(engine)
+    Base.metadata.create_all(
+        engine,
+        tables=[
+            User.__table__,
+            Family.__table__,
+            ShoppingCategory.__table__,
+        ],
+    )
     session = sessionmaker(bind=engine)()
     try:
         yield session
@@ -162,4 +152,4 @@ def test_ensure_system_categories_is_idempotent(db_session):
         .count()
     )
     assert count_after_first == count_after_second
-    assert count_after_second == len(category_service.SYSTEM_CATEGORIES)
+    assert count_after_second == len(SYSTEM_CATEGORIES)

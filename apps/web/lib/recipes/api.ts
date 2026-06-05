@@ -42,10 +42,17 @@ async function recipeFetch<T>(
   return response.json() as Promise<T>;
 }
 
+const DEFAULT_RECIPE_LIST_LIMIT = 50;
+
 function buildQuery(params: RecipeQuery): string {
   const search = new URLSearchParams();
   if (params.q) {
     search.set("q", params.q);
+  }
+  const limit = params.limit ?? DEFAULT_RECIPE_LIST_LIMIT;
+  search.set("limit", String(limit));
+  if (params.offset !== undefined && params.offset > 0) {
+    search.set("offset", String(params.offset));
   }
   if (params.meal_type) {
     search.set("meal_type", params.meal_type);
