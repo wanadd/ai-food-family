@@ -10,6 +10,7 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { EmptyState2026 } from "@/components/planam-2026/ui/EmptyState2026";
 import { Skeleton2026 } from "@/components/planam-2026/ui/Skeleton2026";
+import { useToast } from "@/components/ui/ToastProvider";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
   cacheKey,
@@ -18,7 +19,7 @@ import {
   setCached,
 } from "@/lib/cache/session-cache";
 import { fetchTodayMealCheckins } from "@/lib/meal-checkins/api";
-import { fetchSelectedMenu } from "@/lib/menu/api";
+import { deleteMenuItem, fetchSelectedMenu } from "@/lib/menu/api";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import {
   defaultDayIndex,
@@ -43,6 +44,7 @@ export function PlanToday2026() {
   const searchParams = useSearchParams();
   const { initData } = useTelegram();
   const { mode, loading: modeLoading } = useAppMode();
+  const { showToast } = useToast();
 
   const [menu, setMenu] = useState<MenuVariant | null>(null);
   const [loading, setLoading] = useState(true);
@@ -248,6 +250,20 @@ export function PlanToday2026() {
             onReplace={(index) => {
               setReplaceMealIndex(index);
               setReplaceOpen(true);
+            }}
+            onRemove={async (slotId) => {
+              if (!initData) {
+                return;
+              }
+              try {
+                await deleteMenuItem(initData, mode, slotId);
+                invalidateCache(cacheKey.menuOverview(mode));
+                invalidateCache(cacheKey.selectedMenu(mode));
+                showToast("Блюдо удалено из меню");
+                await load();
+              } catch {
+                showToast("Не удалось удалить блюдо. Попробуйте ещё раз.");
+              }
             }}
           />
         )}

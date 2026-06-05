@@ -29,12 +29,12 @@ export async function assignRecipeToMenuSlot(
   const days = getMenuDays(menu);
 
   if (days.length <= 1 && !menu.days?.length) {
-    const updated = await addRecipeToMenu(initData, mode, recipe.id, {
+    const result = await addRecipeToMenu(initData, mode, recipe.id, {
       meal_type: meal.meal_type,
       replace_meal_index: mealIndex,
     });
-    await selectMenu(initData, mode, updated);
-    return updated;
+    await selectMenu(initData, mode, result.menu);
+    return result.menu;
   }
 
   const nextDays = days.map((day) => {

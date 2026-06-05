@@ -8,6 +8,8 @@ export type MenuMeal = {
   prep_time_minutes: number;
   calories_estimate?: number | null;
   recipe_id?: number | null;
+  slot_id?: string | null;
+  servings?: number | null;
 };
 
 export type MenuIngredient = {

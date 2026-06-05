@@ -28,6 +28,7 @@ export const PLAN_TIMELINE_SLOTS: TimelineSlot[] = [
 export type PlanTodayMeal = {
   meal: MenuMeal;
   mealIndex: number;
+  slotId: string | null;
   imageUrl: string | null;
   statusLabel: string;
   statusCode: string | null;
@@ -81,7 +82,17 @@ export function enrichMealsForDay(
     statusByType.set(row.meal_type, row.actual_status);
   }
 
-  return meals.map((meal, mealIndex) => {
+  const dateIso = dateIsoForDayIndex(menu, dayIndex);
+
+  return meals
+    .map((meal, mealIndex) => ({ meal, mealIndex }))
+    .filter(
+      ({ meal }) =>
+        meal.recipe_id != null &&
+        meal.name.trim() !== "" &&
+        meal.name !== "Свободно",
+    )
+    .map(({ meal, mealIndex }) => {
     const statusCode = statusByType.get(meal.meal_type) ?? null;
     const statusLabel = statusCode
       ? (MEAL_CHECKIN_OPTIONS.find((o) => o.value === statusCode)?.label ??
@@ -97,6 +108,7 @@ export function enrichMealsForDay(
     return {
       meal,
       mealIndex,
+      slotId: meal.slot_id ?? `${dateIso}:${meal.meal_type}`,
       imageUrl,
       statusLabel,
       statusCode,

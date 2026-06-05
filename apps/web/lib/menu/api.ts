@@ -111,3 +111,51 @@ export async function fetchSelectedMenu(
 ): Promise<SelectedMenu | null> {
   return apiGet<SelectedMenu>(initData, mode, "/menus/selected");
 }
+
+export type MenuPlanItem = {
+  slot_id: string;
+  date: string;
+  meal_type: string;
+  recipe_id: number | null;
+  name: string;
+  servings: number;
+  prep_time_minutes: number;
+  calories_estimate?: number | null;
+};
+
+export type MenuTodayResponse = {
+  date: string;
+  items: MenuPlanItem[];
+  menu: MenuVariant | null;
+};
+
+export async function fetchMenuToday(
+  initData: string,
+  mode: AppMode,
+  date?: string,
+): Promise<MenuTodayResponse> {
+  const query = date ? `?date=${encodeURIComponent(date)}` : "";
+  const data = await apiGet<MenuTodayResponse>(initData, mode, `/menus/today${query}`);
+  if (!data) {
+    return { date: date ?? new Date().toISOString().slice(0, 10), items: [], menu: null };
+  }
+  return data;
+}
+
+export async function deleteMenuItem(
+  initData: string,
+  mode: AppMode,
+  slotId: string,
+): Promise<SelectedMenu> {
+  const encoded = encodeURIComponent(slotId);
+  const data = await apiFetch<SelectedMenu>(
+    initData,
+    mode,
+    `/menus/items/${encoded}`,
+    { method: "DELETE" },
+  );
+  if (!data) {
+    throw new Error("Не удалось удалить блюдо из меню");
+  }
+  return data;
+}

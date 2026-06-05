@@ -71,13 +71,33 @@ export async function fetchRecipeImproveSuggestions(
   return requireGet(initData, mode, `/recipes/${recipeId}/improve`);
 }
 
+export type AddRecipeToMenuResponse = {
+  item: {
+    slot_id: string;
+    date: string;
+    meal_type: string;
+    recipe_id: number | null;
+    name: string;
+    servings: number;
+    prep_time_minutes: number;
+    calories_estimate?: number | null;
+  };
+  created: boolean;
+  menu: MenuVariant;
+};
+
 export async function addRecipeToMenu(
   initData: string,
   mode: AppMode,
   recipeId: number,
-  payload: { meal_type?: string; replace_meal_index?: number },
-): Promise<MenuVariant> {
-  const data = await apiFetch<MenuVariant>(
+  payload: {
+    date?: string;
+    meal_type?: string;
+    servings?: number;
+    replace_meal_index?: number;
+  },
+): Promise<AddRecipeToMenuResponse> {
+  const data = await apiFetch<AddRecipeToMenuResponse>(
     initData,
     mode,
     `/recipes/${recipeId}/add-to-menu`,

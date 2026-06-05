@@ -18,12 +18,14 @@ type PlanMealCard2026Props = {
   item: PlanTodayMeal;
   onCook?: () => void;
   onReplace?: () => void;
+  onRemove?: () => void;
 };
 
 export function PlanMealCard2026({
   item,
   onCook,
   onReplace,
+  onRemove,
 }: PlanMealCard2026Props) {
   const router = useRouter();
   const { initData } = useTelegram();
@@ -93,9 +95,32 @@ export function PlanMealCard2026({
           <Button2026 variant="primary" className="flex-1 min-w-[100px]" onClick={onCook}>
             Приготовил
           </Button2026>
-          <Button2026 variant="secondary" onClick={onReplace}>
+          <Button2026
+            variant="secondary"
+            onClick={() => {
+              if (onReplace) {
+                onReplace();
+                return;
+              }
+              if (item.meal.recipe_id) {
+                router.push(`/plan/recipes?replaceSlot=${item.meal.meal_type}`);
+              }
+            }}
+          >
             Заменить
           </Button2026>
+          {onRemove ? (
+            <Button2026
+              variant="ghost"
+              onClick={() => {
+                if (window.confirm("Удалить это блюдо из меню?")) {
+                  onRemove();
+                }
+              }}
+            >
+              Удалить
+            </Button2026>
+          ) : null}
           {meal.recipe_id ? (
             <Button2026
               variant="ghost"

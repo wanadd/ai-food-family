@@ -14,6 +14,8 @@ class MenuMeal(BaseModel):
     prep_time_minutes: int = Field(ge=0, le=300)
     calories_estimate: int | None = Field(default=None, ge=0)
     recipe_id: int | None = None
+    slot_id: str | None = Field(default=None, max_length=64)
+    servings: int | None = Field(default=None, ge=1, le=50)
 
 
 class MenuDayPlan(BaseModel):

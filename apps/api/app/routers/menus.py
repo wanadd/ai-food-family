@@ -1,6 +1,7 @@
 import logging
+from datetime import date
 
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, get_db
@@ -19,6 +20,7 @@ from app.schemas.menu_overview import (
     MenuOverviewResponse,
     MenuQuickActionRequest,
     MenuQuickActionResponse,
+    MenuTodayResponse,
 )
 from app.services import menu as menu_service
 from app.services import menu_overview as menu_overview_service
@@ -80,6 +82,55 @@ def select_menu(
     result = menu_service.select_menu(db, user, scope, payload)
     background_tasks.add_task(_send_menu_care_notification, user.id)
     return result
+
+
+@router.get("/today", response_model=MenuTodayResponse)
+def get_menu_today(
+    plan_date: str | None = Query(default=None, alias="date"),
+    scope: AppScope = Depends(get_app_scope),
+    db: Session = Depends(get_db),
+) -> MenuTodayResponse:
+    from app.schemas.menu_overview import MenuPlanItem
+    from app.services.menu_recipe_plan import get_plan_for_date
+
+    date_value = plan_date or date.today().isoformat()
+    try:
+        date_iso, items, menu = get_plan_for_date(db, scope, plan_date=date_value)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    return MenuTodayResponse(
+        date=date_iso,
+        items=[MenuPlanItem(**item) for item in items],
+        menu=menu,
+    )
+
+
+@router.delete("/items/{slot_id}", response_model=SelectedMenuResponse)
+def delete_menu_item(
+    slot_id: str,
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> SelectedMenuResponse:
+    from app.services.menu_recipe_plan import remove_menu_item
+
+    try:
+        remove_menu_item(db, user, scope, slot_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    selected = menu_service.get_selected_menu(db, scope)
+    if selected is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Меню не найдено",
+        )
+    return selected
 
 
 @router.get("/selected", response_model=SelectedMenuResponse | None)

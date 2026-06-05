@@ -128,9 +128,34 @@ class MenuQuickActionResponse(BaseModel):
     message: str | None = None
 
 
+class MenuPlanItem(BaseModel):
+    slot_id: str
+    date: str
+    meal_type: str
+    recipe_id: int | None = None
+    name: str
+    servings: int = 2
+    prep_time_minutes: int = 0
+    calories_estimate: int | None = None
+
+
 class AddRecipeToMenuRequest(BaseModel):
+    date: str | None = Field(default=None, max_length=10)
     meal_type: str = Field(default="lunch", max_length=16)
+    servings: int | None = Field(default=None, ge=1, le=50)
     replace_meal_index: int | None = Field(default=None, ge=0)
+
+
+class AddRecipeToMenuResponse(BaseModel):
+    item: MenuPlanItem
+    created: bool = True
+    menu: MenuVariant
+
+
+class MenuTodayResponse(BaseModel):
+    date: str
+    items: list[MenuPlanItem]
+    menu: MenuVariant | None = None
 
 
 RecipeFitLevel = Literal["good", "partial", "not_recommended"]

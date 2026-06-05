@@ -273,7 +273,10 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
         onClose={() => setAddOpen(false)}
         onSuccess={() => {
           showToast("Рецепт добавлен в меню");
-          router.push("/plan/today");
+          router.push("/plan/today?saved=1");
+        }}
+        onError={() => {
+          showToast("Не удалось добавить рецепт в меню. Попробуйте ещё раз.");
         }}
       />
       <ReplaceDishSheet2026

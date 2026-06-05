@@ -1,17 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { BottomSheet2026 } from "@/components/planam-2026/ui/BottomSheet2026";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useTelegram } from "@/components/TelegramProvider";
 import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
-import { fetchSelectedMenu } from "@/lib/menu/api";
-import { dateIsoForDayIndex, getMenuDays, mealsForDayIndex } from "@/lib/menu/menu-days";
-import type { MenuVariant } from "@/lib/menu/types";
-import { assignRecipeToMenuSlot } from "@/lib/recipes/menu-from-recipe";
 import { mealLabel } from "@/lib/recipes/labels";
+import { addRecipeToMenu } from "@/lib/recipes/analysis-api";
 import type { RecipeSummary } from "@/lib/recipes/types";
 import { cn } from "@/lib/planam/cn";
 
@@ -23,9 +20,32 @@ type MenuSlotSheet2026Props = {
   mode: SheetMode;
   onClose: () => void;
   onSuccess?: () => void;
+  onError?: (message: string) => void;
 };
 
-type Step = "day" | "meal" | "confirm";
+const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
+
+function dateOptions(count = 7): { value: string; label: string }[] {
+  const options: { value: string; label: string }[] = [];
+  const today = new Date();
+  for (let offset = 0; offset < count; offset += 1) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + offset);
+    const value = d.toISOString().slice(0, 10);
+    const label =
+      offset === 0
+        ? "Сегодня"
+        : offset === 1
+          ? "Завтра"
+          : d.toLocaleDateString("ru-RU", {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+            });
+    options.push({ value, label });
+  }
+  return options;
+}
 
 export function MenuSlotSheet2026({
   open,
@@ -33,166 +53,143 @@ export function MenuSlotSheet2026({
   mode,
   onClose,
   onSuccess,
+  onError,
 }: MenuSlotSheet2026Props) {
   const { initData } = useTelegram();
   const { mode: appMode } = useAppMode();
-  const [step, setStep] = useState<Step>("day");
-  const [menu, setMenu] = useState<MenuVariant | null>(null);
-  const [loadingMenu, setLoadingMenu] = useState(false);
+  const dates = useMemo(() => dateOptions(), []);
+  const [planDate, setPlanDate] = useState(dates[0]?.value ?? "");
+  const [mealType, setMealType] = useState<string>(
+    recipe.meal_type && MEAL_TYPES.includes(recipe.meal_type as (typeof MEAL_TYPES)[number])
+      ? recipe.meal_type
+      : "dinner",
+  );
+  const [servings, setServings] = useState(recipe.servings || 2);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dayIndex, setDayIndex] = useState<number | null>(null);
-  const [mealIndex, setMealIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!open || !initData) {
+    if (!open) {
       return;
     }
-    setStep("day");
-    setDayIndex(null);
-    setMealIndex(null);
+    setPlanDate(dates[0]?.value ?? "");
+    setMealType(
+      recipe.meal_type && MEAL_TYPES.includes(recipe.meal_type as (typeof MEAL_TYPES)[number])
+        ? recipe.meal_type
+        : "dinner",
+    );
+    setServings(recipe.servings || 2);
     setError(null);
-    setLoadingMenu(true);
-    fetchSelectedMenu(initData, appMode)
-      .then((selected) => setMenu(selected?.menu ?? null))
-      .catch(() => setMenu(null))
-      .finally(() => setLoadingMenu(false));
-  }, [open, initData, appMode]);
+  }, [open, dates, recipe.meal_type, recipe.servings]);
 
-  const days = menu ? getMenuDays(menu) : [];
-  const meals =
-    menu && dayIndex != null ? mealsForDayIndex(menu, dayIndex) : [];
+  const title = mode === "add" ? "Добавить в меню" : "Заменить блюдо в плане";
 
-  const title =
-    mode === "add" ? "Добавить в меню" : "Заменить блюдо в плане";
-
-  async function handleConfirm() {
-    if (!initData || !menu || dayIndex == null || mealIndex == null) {
+  async function handleSubmit() {
+    if (!initData) {
+      const message = "Войдите в приложение, чтобы добавить рецепт в меню";
+      setError(message);
+      onError?.(message);
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      await assignRecipeToMenuSlot(
-        initData,
-        appMode,
-        recipe,
-        menu,
-        dayIndex,
-        mealIndex,
-      );
+      await addRecipeToMenu(initData, appMode, recipe.id, {
+        date: planDate,
+        meal_type: mealType,
+        servings,
+      });
       invalidateCache("selected-menu");
       invalidateCache("menu-overview");
       invalidateCache("shopping-list");
       onSuccess?.();
       onClose();
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Не удалось обновить меню. Сначала создайте план.";
-      if (/500|Internal|not found|404/i.test(message)) {
-        setError("Добавление в меню скоро будет доступно");
-      } else {
-        setError(message);
-      }
+    } catch {
+      const message = "Не удалось добавить рецепт в меню. Попробуйте ещё раз.";
+      setError(message);
+      onError?.(message);
     } finally {
       setBusy(false);
     }
   }
 
-  const footer =
-    step === "confirm" ? (
-      <div className="flex gap-2">
-        <Button2026 variant="ghost" className="flex-1" onClick={() => setStep("meal")}>
-          Назад
-        </Button2026>
-        <Button2026
-          variant="primary"
-          className="flex-1"
-          onClick={() => void handleConfirm()}
-          loading={busy}
-        >
-          {mode === "add" ? "Добавить" : "Заменить"}
-        </Button2026>
-      </div>
-    ) : null;
+  const footer = (
+    <Button2026
+      variant="primary"
+      className="w-full"
+      onClick={() => void handleSubmit()}
+      loading={busy}
+    >
+      Добавить в меню
+    </Button2026>
+  );
 
   return (
     <BottomSheet2026 open={open} title={title} onClose={onClose} footer={footer}>
-      {loadingMenu ? (
-        <p className="pa26-body text-pa-muted">Загружаем ваш план…</p>
-      ) : !menu ? (
-        <p className="pa26-body text-pa-muted">
-          Сначала создайте меню на неделю — затем можно добавить «{recipe.title}».
+      <div className="space-y-4">
+        <p className="pa26-body">
+          <strong>{recipe.display_title ?? recipe.title}</strong>
         </p>
-      ) : step === "day" ? (
+
         <div className="space-y-2">
-          <p className="pa26-caption text-pa-muted">Выберите день</p>
-          {days.map((day) => (
-            <button
-              key={day.day_index}
-              type="button"
-              onClick={() => {
-                setDayIndex(day.day_index);
-                setStep("meal");
-              }}
-              className="flex w-full items-center justify-between rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left transition hover:bg-sage-50 pa26-hover-row"
-            >
-              <span className="pa26-card-title">{day.label}</span>
-              <span className="pa26-caption text-pa-muted">
-                {day.date_iso ?? dateIsoForDayIndex(menu, day.day_index)}
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : step === "meal" ? (
-        <div className="space-y-2">
-          <p className="pa26-caption text-pa-muted">
-            {mode === "replace" ? "Какое блюдо заменить?" : "Куда добавить?"}
-          </p>
-          {meals.length === 0 ? (
-            <p className="pa26-body text-pa-muted">На этот день нет приёмов пищи в плане.</p>
-          ) : (
-            meals.map((meal, index) => (
+          <p className="pa26-caption text-pa-muted">Дата</p>
+          <div className="flex flex-wrap gap-2">
+            {dates.map((option) => (
               <button
-                key={`${meal.meal_type}-${index}`}
+                key={option.value}
                 type="button"
-                onClick={() => {
-                  setMealIndex(index);
-                  setStep("confirm");
-                }}
-                className="flex w-full flex-col rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left transition hover:bg-sage-50 pa26-hover-row"
+                onClick={() => setPlanDate(option.value)}
+                className={cn(
+                  "rounded-pill px-3 py-1.5 pa26-micro font-semibold",
+                  planDate === option.value
+                    ? "bg-sage-500 text-white dark:bg-sage-400"
+                    : "border border-pa-border bg-pa-surface text-pa-muted",
+                )}
               >
-                <span className="pa26-micro text-pa-muted">
-                  {mealLabel(meal.meal_type)}
-                </span>
-                <span className="pa26-card-title">{meal.name}</span>
+                {option.label}
               </button>
-            ))
-          )}
-          <button
-            type="button"
-            className="pa26-caption font-semibold text-sage-700 dark:text-sage-300"
-            onClick={() => setStep("day")}
-          >
-            ← Другой день
-          </button>
+            ))}
+          </div>
         </div>
-      ) : (
-        <div className="space-y-3">
-          <p className="pa26-body">
-            {mode === "add" ? "Добавить" : "Заменить на"}:{" "}
-            <strong>{recipe.title}</strong>
-          </p>
-          {mealIndex != null && meals[mealIndex] ? (
-            <p className={cn("pa26-caption text-pa-muted")}>
-              Вместо: {meals[mealIndex].name} ({mealLabel(meals[mealIndex].meal_type)})
-            </p>
-          ) : null}
-          {error ? <p className="pa26-caption text-pa-error">{error}</p> : null}
+
+        <div className="space-y-2">
+          <p className="pa26-caption text-pa-muted">Приём пищи</p>
+          <div className="grid grid-cols-2 gap-2">
+            {MEAL_TYPES.map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setMealType(type)}
+                className={cn(
+                  "rounded-card border px-3 py-2.5 text-left pa26-micro font-semibold",
+                  mealType === type
+                    ? "border-sage-500 bg-sage-50 text-sage-800 dark:border-sage-400 dark:bg-sage-700/30 dark:text-sage-200"
+                    : "border-pa-border bg-pa-surface text-pa-muted",
+                )}
+              >
+                {mealLabel(type)}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+
+        <div className="space-y-2">
+          <label className="pa26-caption text-pa-muted" htmlFor="menu-servings">
+            Порций
+          </label>
+          <input
+            id="menu-servings"
+            type="number"
+            min={1}
+            max={12}
+            value={servings}
+            onChange={(e) => setServings(Math.max(1, Number(e.target.value) || 1))}
+            className="w-full rounded-card border border-pa-border bg-pa-surface px-3 py-2.5 pa26-body"
+          />
+        </div>
+
+        {error ? <p className="pa26-caption text-pa-error">{error}</p> : null}
+      </div>
     </BottomSheet2026>
   );
 }

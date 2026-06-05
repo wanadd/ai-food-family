@@ -5,12 +5,14 @@ type PlanTimelineSection2026Props = {
   groups: PlanTodayTimelineGroup[];
   onCook: (mealIndex: number) => void;
   onReplace: (mealIndex: number) => void;
+  onRemove?: (slotId: string) => void;
 };
 
 export function PlanTimelineSection2026({
   groups,
   onCook,
   onReplace,
+  onRemove,
 }: PlanTimelineSection2026Props) {
   return (
     <div className="space-y-6">
@@ -27,6 +29,11 @@ export function PlanTimelineSection2026({
                 item={item}
                 onCook={() => onCook(item.mealIndex)}
                 onReplace={() => onReplace(item.mealIndex)}
+                onRemove={
+                  item.slotId && onRemove
+                    ? () => onRemove(item.slotId!)
+                    : undefined
+                }
               />
             ))}
           </div>

@@ -12,12 +12,13 @@ from app.models.user import User
 from app.deps import get_app_scope
 from app.schemas.menu_overview import (
     AddRecipeToMenuRequest,
+    AddRecipeToMenuResponse,
     ApplyRecipeImproveRequest,
+    MenuPlanItem,
     RecipeEvaluationResponse,
     RecipeFamilyCompatibilityResponse,
     RecipeImproveResponse,
 )
-from app.schemas.menu import MenuVariant
 from app.schemas.recipe import (
     AddRecipeToShoppingRequest,
     FavoriteToggleResponse,
@@ -564,26 +565,36 @@ def add_recipe_to_shopping(
     )
 
 
-@router.post("/{recipe_id}/add-to-menu", response_model=MenuVariant)
+@router.post("/{recipe_id}/add-to-menu", response_model=AddRecipeToMenuResponse)
 def add_recipe_to_menu(
     recipe_id: int,
     payload: AddRecipeToMenuRequest,
     scope: AppScope = Depends(get_app_scope),
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
-) -> MenuVariant:
+) -> AddRecipeToMenuResponse:
+    from app.services.menu_recipe_plan import add_recipe_to_plan
+
     recipe = _recipe_or_404(db, user, recipe_id)
+    plan_date = payload.date or date.today().isoformat()
     try:
-        return recipe_analysis.add_recipe_to_menu(
+        item_dict, menu, created = add_recipe_to_plan(
             db,
             user,
             scope,
             recipe,
+            plan_date=plan_date,
             meal_type=payload.meal_type,
-            replace_meal_index=payload.replace_meal_index,
+            servings=payload.servings,
         )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+    return AddRecipeToMenuResponse(
+        item=MenuPlanItem(**item_dict),
+        created=created,
+        menu=menu,
+    )
