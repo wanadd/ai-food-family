@@ -3,7 +3,9 @@
 import { readReturnTo, RETURN_TO_PARAM } from "@/lib/navigation/return-to";
 
 const MAIN_TAB_PATHS = new Set([
+  "/",
   "/plan/today",
+  "/shopping",
   "/home/shopping",
   "/wellness",
   "/account",
@@ -25,7 +27,7 @@ export function shouldShowBack2026(pathname: string): boolean {
   if (isMainTabPath2026(pathname)) {
     return false;
   }
-  if (pathname === "/" || pathname === "/account") {
+  if (pathname === "/" || pathname === "/account" || pathname === "/shopping") {
     return false;
   }
   if (pathname.startsWith("/onboarding") || pathname.startsWith("/admin")) {

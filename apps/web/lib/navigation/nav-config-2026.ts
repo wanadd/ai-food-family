@@ -4,7 +4,7 @@
  * @see docs/SPRINT_1_COMPLETION_REPORT.md
  */
 
-export type Nav2026TabId = "plan" | "shopping" | "wellness" | "account";
+export type Nav2026TabId = "plan" | "shopping" | "planam" | "wellness" | "account";
 
 export type Nav2026IconId =
   | "plan"
@@ -29,6 +29,8 @@ export type Nav2026Tab = {
   label: string;
   icon: Nav2026IconId;
   matchPrefixes: string[];
+  /** Центральная вкладка ПланАм (Sprint 1). */
+  isCenter?: boolean;
 };
 
 export type Nav2026SubTab = {
@@ -47,7 +49,7 @@ export type Nav2026RouteMeta = {
   planned?: boolean;
 };
 
-/** Нижняя навигация: Сегодня · Покупки · Здоровье · Профиль */
+/** Нижняя навигация: Сегодня · Покупки · ПланАм · Здоровье · Профиль */
 export const NAV_TABS_2026: Nav2026Tab[] = [
   {
     id: "plan",
@@ -58,10 +60,18 @@ export const NAV_TABS_2026: Nav2026Tab[] = [
   },
   {
     id: "shopping",
-    href: "/home/shopping",
+    href: "/shopping",
     label: "Покупки",
     icon: "shopping",
-    matchPrefixes: ["/home/shopping", "/shopping"],
+    matchPrefixes: ["/shopping", "/home/shopping"],
+  },
+  {
+    id: "planam",
+    href: "/",
+    label: "ПланАм",
+    icon: "home",
+    matchPrefixes: ["/", "/home"],
+    isCenter: true,
   },
   {
     id: "wellness",
@@ -164,6 +174,7 @@ export const ACCOUNT_HUB_ITEMS_2026: AccountHubItem[] = [
 export const ROUTES_2026: Nav2026RouteMeta[] = [
   { href: "/", title: "Дом", sectionId: "home" },
   { href: "/home", title: "Дом", sectionId: "home" },
+  { href: "/shopping", title: "Список покупок", tabId: "shopping", sectionId: "shopping" },
   { href: "/home/shopping", title: "Список покупок", tabId: "shopping", sectionId: "shopping" },
   { href: "/home/pantry", title: "Запасы", sectionId: "pantry" },
   { href: "/plan", title: "План на неделю", tabId: "plan", sectionId: "plan" },
@@ -256,7 +267,14 @@ export const LEGACY_FALLBACK_BY_2026_PATH: Record<string, string> = {
 };
 
 export function getActiveTabId2026(pathname: string): Nav2026TabId | null {
-  if (pathname === "/home/shopping" || pathname === "/shopping") {
+  if (pathname === "/" || pathname === "/home") {
+    return "planam";
+  }
+  if (
+    pathname === "/home/shopping" ||
+    pathname === "/shopping" ||
+    pathname.startsWith("/shopping/")
+  ) {
     return "shopping";
   }
   if (pathname === "/wellness" || pathname.startsWith("/wellness/")) {
@@ -321,6 +339,9 @@ export function getSubTabsForTab2026(tabId: Nav2026TabId): Nav2026SubTab[] {
     case "plan":
       return PLAN_SUBTABS_2026;
     case "shopping":
+    case "planam":
+    case "wellness":
+    case "account":
       return [];
     default:
       return [];
