@@ -1,8 +1,8 @@
 # PLANAM V1 Recipe Image Plan
 
 **Дата:** 2026-06-03  
-**Каталог:** `data/planam_v1_recipes.json` (150 рецептов)  
-**Источник данных:** Povarenok CSV → pipeline (без URL фото в исходнике)
+**Каталог:** 150 рецептов  
+**Модель:** 1 master → hero / card / thumb (см. [PLANAM_V1_RECIPE_IMAGE_STYLE_SYSTEM.md](./PLANAM_V1_RECIPE_IMAGE_STYLE_SYSTEM.md))
 
 ---
 
@@ -10,25 +10,17 @@
 
 | Статус | Количество | Доля |
 |--------|------------|------|
-| **Ready** (есть фото) | 0 | 0% |
-| **Needs Image** (запланировано, URL пустой) | 150 | 100% |
-| **Fallback** (UI без фото) | 150 | 100% |
-
-Поля модели:
-
-| Поле | Статус в V1 |
-|------|-------------|
-| `image_url` | Колонка + импорт; все `null` |
-| `hero_image_url` | Миграция + API + импорт; все `null` |
-| `thumbnail_url` | Миграция + API + импорт; все `null` |
-
-Frontend (`resolveRecipeImageUrl`) и Hero (`MealFallbackPlate2026`) готовы: при `null` показывается fallback-тарелка по `meal_type`.
+| **Ready** | 0 | 0% |
+| **Needs Image** | 150 | 100% |
+| **Fallback** | 150 | 100% |
+| **Generated Pilot** | 0 | 0% (prompts готовы, генерация не запущена) |
+| **Needs Manual Review** | 0 | — |
 
 ---
 
 ## Ready
 
-Рецепты с хотя бы одним из `image_url`, `hero_image_url`, `thumbnail_url`:
+Рецепты с URL во всех трёх полях или хотя бы `image_url`:
 
 _Пока нет._
 
@@ -36,43 +28,63 @@ _Пока нет._
 
 ## Needs Image
 
-Все 150 рецептов V1 требуют фото до Visual Polish. Приоритет — [Top 50 Hero Recipes](PLANAM_V1_RECIPE_FOUNDATION_REPORT.md#block-h-top-50-hero-recipes).
+Все 150 рецептов. Приоритет:
 
-Целевая схема URL (см. `PLANAM_RECIPE_MEDIA_ARCHITECTURE.md`):
-
-```text
-https://cdn.planam.ru/recipes/{recipe_id}/hero.jpg
-https://cdn.planam.ru/recipes/{recipe_id}/card_800.webp
-https://cdn.planam.ru/recipes/{recipe_id}/thumb_400.webp
-```
-
-До CDN: одно поле `image_url` как master; `hero_image_url` / `thumbnail_url` — опционально при batch-импорте.
+1. **Pilot 10** — `data/planam_v1_image_pilot_batch.json`
+2. **Top 50 Hero** — `reports/planam_v1_hero_top50.json`
+3. Остальные 100 каталога
 
 ---
 
 ## Fallback
 
-Пока фото нет, UI использует `MealFallbackPlate2026` (Hero, карточки каталога, деталь рецепта).
+UI (`MealFallbackPlate2026`, `RecipeImage2026`) при отсутствии URL.
 
-| # | Рецепт | meal_type | category |
-|---|--------|-----------|----------|
-| 1 | Салат "Баклажанчик" | dinner | salad |
-| 2 | Куриные котлеты с картофельным пюре в духовке | dinner | main |
-| 3 | Рыба «Красное и белое» | dinner | main |
-| 4 | Салат "Винегретная фантазия" | dinner | salad |
-| 5 | Гречка с грибами портабелла или шампиньонами | dinner | main |
-| 6 | Куриный суп с домашней лапшой | lunch | soup |
-| 7 | Котлеты с картофелем | dinner | main |
-| 8 | Салат овощной "По-гречески" | dinner | salad |
-| 9 | Мацовая запеканка с грибами | dinner | main |
-| 10 | Запеканка из творога со сметаной | dinner | main |
-
-_Полный список: 150 рецептов в `data/planam_v1_recipes.json`; все в статусе Fallback._
+Правило: `hero_image_url ?? image_url ?? thumbnail_url ?? fallback`
 
 ---
 
-## Следующие шаги (до Visual Polish)
+## Generated Pilot
 
-1. Batch-назначение `image_url` для Top 50 Hero.
-2. CDN или object storage + resize convention.
-3. Опционально: AI/stock pipeline без изменения контракта API.
+| # | title | status |
+|---|-------|--------|
+| 1–10 | см. [PLANAM_V1_RECIPE_IMAGE_AI_PILOT.md](./PLANAM_V1_RECIPE_IMAGE_AI_PILOT.md) | `planned` |
+
+После генерации: обновить статус в pilot JSON → `generated_draft` / `approved` / `final_ready`.
+
+---
+
+## Needs Manual Review
+
+Рецепты, где master **не кропается** в hero без потери блюда.
+
+_Пока нет._ Помечать при запуске `process_recipe_images.py` вручную.
+
+---
+
+## Поля БД
+
+| Поле | Файл | Назначение |
+|------|------|------------|
+| `hero_image_url` | `hero.webp` | Главная, Сегодня |
+| `image_url` | `card_800.webp` | Каталог, карточка |
+| `thumbnail_url` | `thumb_400.webp` | Превью, replace flow |
+
+---
+
+## Скрипты
+
+| Скрипт | Команда |
+|--------|---------|
+| Prompts | `python backend/scripts/build_recipe_image_prompts.py --pilot 10` |
+| Process | `python backend/scripts/process_recipe_images.py --master ... --recipe-id N` |
+| Apply | `python backend/scripts/apply_recipe_images.py --dry-run` |
+
+---
+
+## Следующие шаги
+
+1. Pilot 10 — AI master only
+2. `process_recipe_images.py` на каждый master
+3. `apply_recipe_images.py --commit`
+4. Решение по бюджету: Top 50 vs 150 ([PLANAM_V1_RECIPE_IMAGE_AI_BUDGET.md](./PLANAM_V1_RECIPE_IMAGE_AI_BUDGET.md))

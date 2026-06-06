@@ -47,6 +47,8 @@ ALLOWED_CATEGORIES = {
     "drink",
     "event",
     "bbq",
+    "breakfast",
+    "side",
 }
 ALLOWED_DIFFICULTIES = {"easy", "medium", "hard"}
 ALLOWED_SOURCE_TYPES = {"manual", "import", "seed", "v1_import"}

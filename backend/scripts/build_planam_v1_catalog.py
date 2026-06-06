@@ -14,9 +14,13 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from recipe_image_utils import short_visual_description  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -98,6 +102,19 @@ def infer_meal_type(title: str) -> str:
     return "dinner"
 
 
+SIDE_PATTERNS = (
+    r"\bгарнир\b",
+)
+
+
+def display_title_from(title: str) -> str | None:
+    cleaned = re.sub(r"\s+", " ", title.strip())
+    unquoted = re.sub(r'^["«»\']+|["«»\']+$', "", cleaned).strip()
+    if not unquoted or unquoted == cleaned:
+        return None
+    return unquoted[:200]
+
+
 def infer_category(title: str, meal_type: str) -> str:
     text = normalize_text(title)
     if matches_any(text, SOUP_PATTERNS):
@@ -106,7 +123,11 @@ def infer_category(title: str, meal_type: str) -> str:
         return "salad"
     if matches_any(text, KIDS_PATTERNS):
         return "kids"
-    if matches_any(text, QUICK_PATTERNS) or meal_type == "breakfast":
+    if matches_any(text, SIDE_PATTERNS):
+        return "side"
+    if meal_type == "breakfast":
+        return "breakfast"
+    if matches_any(text, QUICK_PATTERNS):
         return "quick"
     return "main"
 
@@ -181,9 +202,18 @@ def enrich_record(record: dict[str, Any]) -> dict[str, Any]:
     ingredients = normalize_ingredients(record.get("ingredients") or [])
     if len(ingredients) < 3:
         raise ValueError("too few ingredients")
+    if len(ingredients) > 25:
+        raise ValueError("too many ingredients")
+
+    tags = infer_tags(title, meal_type, category)
+    if "steps_generated" not in tags:
+        tags.append("steps_generated")
 
     return {
         "title": title[:200],
+        "original_title": title[:200],
+        "normalized_title": normalize_text(title)[:200],
+        "display_title": display_title_from(title),
         "description": default_description(title, category),
         "meal_type": meal_type,
         "category": category,
@@ -197,13 +227,15 @@ def enrich_record(record: dict[str, Any]) -> dict[str, Any]:
         "image_url": record.get("image_url"),
         "hero_image_url": record.get("hero_image_url"),
         "thumbnail_url": record.get("thumbnail_url"),
+        "short_visual_description": short_visual_description(title, meal_type, category),
+        "steps_quality": "steps_generated",
         "suitable_for_children": True,
         "suitable_for_sport": False,
         "suitable_for_event": False,
         "is_drink": False,
         "is_alcoholic": False,
         "diets": ["budget"],
-        "tags": infer_tags(title, meal_type, category),
+        "tags": tags,
         "allergens": [],
         "restrictions": [],
         "ingredients": ingredients,

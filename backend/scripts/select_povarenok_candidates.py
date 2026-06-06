@@ -205,7 +205,7 @@ def reject_reason(record: dict[str, Any]) -> str | None:
     ingredient_count = len(ingredients)
     if ingredient_count < 3:
         return "too_few_ingredients"
-    if ingredient_count > 18:
+    if ingredient_count > 25:
         return "too_many_ingredients"
 
     title_text = normalize_text(title)
