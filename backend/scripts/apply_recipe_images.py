@@ -25,9 +25,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 API_ROOT = ROOT / "apps" / "api"
-sys.path.insert(0, str(API_ROOT))
+SCRIPTS_DIR = ROOT / "backend" / "scripts"
+for _path in (str(SCRIPTS_DIR), str(API_ROOT)):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
 os.environ.setdefault("DATABASE_URL", os.environ.get("DATABASE_URL", ""))
+
+from recipe_id_resolver import (  # noqa: E402
+    RecipeResolutionError,
+    resolve_v1_recipe_id_by_title,
+)
 
 CDN_BASE_DEFAULT = "https://cdn.planam.ru/recipes"
 LOCAL_BASE_DEFAULT = "/recipe-images"
@@ -166,14 +174,21 @@ def apply_entries(entries: list[dict], *, dry_run: bool, args: argparse.Namespac
                 print(f"SKIP #{recipe_id}: missing local WebP files")
                 continue
 
-            recipe = db.get(Recipe, recipe_id)
-            if recipe is None and entry.get("title"):
-                title_key = normalize_title(str(entry["title"]))
-                recipe = (
-                    db.query(Recipe)
-                    .filter(Recipe.normalized_title == title_key)
-                    .first()
-                )
+            # Title is the single source of truth for v1_import recipes; the
+            # manifest recipe_id is only a fallback when no title is provided.
+            recipe = None
+            if entry.get("title"):
+                try:
+                    resolved_id = resolve_v1_recipe_id_by_title(
+                        db, Recipe, str(entry["title"])
+                    )
+                    recipe = db.get(Recipe, resolved_id)
+                except RecipeResolutionError as exc:
+                    failed += 1
+                    print(f"FAIL #{recipe_id}: {exc}")
+                    continue
+            else:
+                recipe = db.get(Recipe, recipe_id)
             if recipe is None:
                 failed += 1
                 print(f"FAIL #{recipe_id}: recipe not found in DB")

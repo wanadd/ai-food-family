@@ -89,6 +89,28 @@ URL пишутся локальные (под Next static): `/recipe-images/{id}
 
 ---
 
+## 6b. Hotfix — ID resolution (2026-06-06)
+
+Баг: pilot JSON `recipe_id` (индекс батча 1..10) использовался как PK в БД →
+фото попадали в архивные `manual`-рецепты id 1..10 вместо активных `v1_import`.
+
+Фикс:
+- `backend/scripts/recipe_id_resolver.py` — единый источник истины: поиск по
+  title среди `source_type='v1_import' AND is_active=true`; 0 или >1 → ошибка.
+- `run_recipe_image_pilot.py` и `apply_recipe_images.py` больше не используют
+  pilot/manifest id как PK — только title.
+- `backend/scripts/repair_recipe_image_assignments.py` — переносит URL на верный
+  рецепт и очищает их у ошибочных id 1..10 (`--dry-run` / `--commit`).
+- `tests/test_recipe_image_resolver.py` — 6 тестов (title → верный v1_import id).
+
+Repair на сервере:
+```bash
+docker compose -f docker-compose.prod.yml exec api \
+  python backend/scripts/repair_recipe_image_assignments.py --dry-run
+docker compose -f docker-compose.prod.yml exec api \
+  python backend/scripts/repair_recipe_image_assignments.py --commit
+```
+
 ## 7. Что НЕ делалось (по ТЗ)
 
 - Не запускался Top 50 и не все 150.

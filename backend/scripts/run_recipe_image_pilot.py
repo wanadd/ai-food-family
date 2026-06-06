@@ -50,6 +50,10 @@ from openai_recipe_image_client import (  # noqa: E402
     is_image_pipeline_configured,
 )
 from process_recipe_images import process_master  # noqa: E402
+from recipe_id_resolver import (  # noqa: E402
+    RecipeResolutionError,
+    resolve_v1_recipe_id_by_title,
+)
 from recipe_image_utils import build_master_prompt  # noqa: E402
 
 DEFAULT_PILOT_FILE = ROOT / "data" / "planam_v1_image_pilot_batch.json"
@@ -115,29 +119,18 @@ def resolve_prompt(entry: dict[str, Any]) -> str:
 
 
 def resolve_db_recipe(entry: dict[str, Any]):
-    """Find the real DB recipe by id then by normalized title (commit mode)."""
+    """Resolve the real DB recipe by TITLE only (commit mode).
+
+    The pilot JSON ``recipe_id`` is a batch index (1..N) and must never be used
+    as a DB primary key — that bug assigned images to archived manual recipes.
+    """
     from app.database import SessionLocal
     from app.models.recipe import Recipe
 
     db = SessionLocal()
     try:
-        recipe = None
-        rid = entry.get("recipe_id")
-        if isinstance(rid, int):
-            recipe = db.get(Recipe, rid)
-        if recipe is None and entry.get("title"):
-            key = normalize_title(entry["title"])
-            recipe = (
-                db.query(Recipe).filter(Recipe.normalized_title == key).first()
-            )
-            if recipe is None:
-                rows = db.query(Recipe).all()
-                for row in rows:
-                    if normalize_title(row.title) == key:
-                        recipe = row
-                        break
-        if recipe is None:
-            return None
+        recipe_id = resolve_v1_recipe_id_by_title(db, Recipe, entry.get("title", ""))
+        recipe = db.get(Recipe, recipe_id)
         return {"id": recipe.id, "title": recipe.title}
     finally:
         db.close()
@@ -166,14 +159,13 @@ def run_dry_run(entries: list[dict[str, Any]], args: argparse.Namespace) -> int:
     for index, entry in enumerate(entries, start=1):
         cost = estimate_cost(args.size, args.quality, None)
         total_cost += cost
-        rid = entry.get("recipe_id")
+        batch_index = entry.get("recipe_id")
         title = entry.get("title", "")
         prompt = resolve_prompt(entry)
-        print(f"\n[{index}] recipe_id={rid} title={title!r}")
+        print(f"\n[{index}] batch_index={batch_index} title={title!r}")
         print(f"    model={args.model} size={args.size} quality={args.quality}")
         print(f"    est_cost=${cost:.4f}")
-        print(f"    target_dir={args.output_root}/{rid}")
-        print(f"    urls={urls_from_local_recipe_id(rid or 0, public_base=LOCAL_URL_BASE)}")
+        print("    db_id: resolved at --commit by TITLE (v1_import, is_active)")
         print(f"    prompt_preview={prompt[:90]!r}...")
     print(f"\nDRY-RUN total estimated cost: ${total_cost:.4f}")
     return 0
@@ -191,15 +183,17 @@ def run_commit(entries: list[dict[str, Any]], args: argparse.Namespace) -> int:
 
     for index, entry in enumerate(entries, start=1):
         title = str(entry.get("title") or "")
-        db_recipe = resolve_db_recipe(entry)
-        if db_recipe is None:
+        try:
+            db_recipe = resolve_db_recipe(entry)
+        except RecipeResolutionError as exc:
             failures += 1
-            print(f"[{index}] SKIP: no DB recipe for {title!r}", file=sys.stderr)
+            print(f"[{index}] SKIP: {exc}", file=sys.stderr)
             results.append(
                 {
-                    "recipe_id": entry.get("recipe_id"),
+                    "recipe_id": None,
                     "title": title,
                     "status": "no_db_match",
+                    "error": str(exc),
                     "approved": False,
                 }
             )

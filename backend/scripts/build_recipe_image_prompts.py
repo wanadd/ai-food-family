@@ -90,6 +90,9 @@ def main() -> int:
     batch: list[dict] = []
     missing: list[str] = []
 
+    # NOTE: ``recipe_id`` below is a 1..N BATCH INDEX (selector), NOT a DB
+    # primary key. Consumers MUST resolve the real DB id by title via
+    # recipe_id_resolver.resolve_v1_recipe_id_by_title — never by this index.
     for index, title in enumerate(order, start=1):
         recipe = by_title.get(title)
         if recipe is None:
