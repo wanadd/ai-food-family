@@ -141,6 +141,10 @@ def extract_today_meals(menu_data: dict | None) -> list[MenuTodayMeal]:
     return result[:6]
 
 
+def _recipe_hero_image_url(recipe) -> str | None:
+    return recipe.hero_image_url or recipe.image_url or recipe.thumbnail_url
+
+
 def enrich_today_meals_images(db: Session, meals: list[MenuTodayMeal]) -> list[MenuTodayMeal]:
     """Attach image_url from recipes table (PLANAM 2026 Home rail)."""
     from app.models.recipe import Recipe
@@ -150,8 +154,8 @@ def enrich_today_meals_images(db: Session, meals: list[MenuTodayMeal]) -> list[M
         image_url: str | None = None
         if meal.recipe_id is not None:
             recipe = db.get(Recipe, meal.recipe_id)
-            if recipe and recipe.image_url:
-                image_url = recipe.image_url
+            if recipe:
+                image_url = _recipe_hero_image_url(recipe)
         enriched.append(meal.model_copy(update={"image_url": image_url}))
     return enriched
 

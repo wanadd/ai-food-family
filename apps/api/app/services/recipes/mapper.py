@@ -65,6 +65,8 @@ def to_summary(
         suitable_for_event=recipe.suitable_for_event,
         fit_level=fit_level,  # type: ignore[arg-type]
         image_url=recipe.image_url,
+        hero_image_url=recipe.hero_image_url,
+        thumbnail_url=recipe.thumbnail_url,
     )
 
 

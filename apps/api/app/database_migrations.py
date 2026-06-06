@@ -407,6 +407,8 @@ def _schema_statements() -> list[str]:
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS source_type VARCHAR(16) NOT NULL DEFAULT 'manual'",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS source_url VARCHAR(512)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS image_url VARCHAR(512)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS hero_image_url VARCHAR(512)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS thumbnail_url VARCHAR(512)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_drink BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_alcoholic BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS alcohol_percent DOUBLE PRECISION",

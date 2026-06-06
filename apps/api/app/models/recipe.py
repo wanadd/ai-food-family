@@ -42,6 +42,8 @@ class Recipe(Base):
     source_type: Mapped[str] = mapped_column(String(16), default="manual")
     source_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    hero_image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    thumbnail_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     is_drink: Mapped[bool] = mapped_column(Boolean, default=False)
     is_alcoholic: Mapped[bool] = mapped_column(Boolean, default=False)
     alcohol_percent: Mapped[float | None] = mapped_column(Float, nullable=True)

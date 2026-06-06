@@ -49,7 +49,7 @@ ALLOWED_CATEGORIES = {
     "bbq",
 }
 ALLOWED_DIFFICULTIES = {"easy", "medium", "hard"}
-ALLOWED_SOURCE_TYPES = {"manual", "import", "seed"}
+ALLOWED_SOURCE_TYPES = {"manual", "import", "seed", "v1_import"}
 MENU_MEAL_TYPES = {"breakfast", "lunch", "dinner", "snack"}
 MENU_SNACK_RECIPE_MEAL_TYPES = {
     "drink",
@@ -60,6 +60,24 @@ MENU_SNACK_RECIPE_MEAL_TYPES = {
     "tea",
     "coffee",
 }
+MEAL_TYPE_TO_CATALOG = {
+    "breakfast": "breakfast",
+    "lunch": "lunch",
+    "dinner": "dinner",
+    "snack": "snack",
+    "dessert": "snack",
+    "drink": "snack",
+    "cocktail": "snack",
+    "smoothie": "snack",
+    "protein_shake": "snack",
+    "tea": "snack",
+    "coffee": "snack",
+}
+
+
+def catalog_meal_type(meal_type: str | None) -> str:
+    raw = (meal_type or "lunch").strip().lower()
+    return MEAL_TYPE_TO_CATALOG.get(raw, "lunch")
 
 
 class RecipeImportError(ValueError):
@@ -224,7 +242,6 @@ def validate_recipe(raw: Any, index: int) -> dict[str, Any]:
     )
     if meal_type not in ALLOWED_MEAL_TYPES:
         raise RecipeImportError(f"meal_type is invalid: {meal_type!r}")
-    from app.services.recipes.title_normalize import catalog_meal_type
 
     meal_type = catalog_meal_type(meal_type)
     menu_meal_type = normalize_menu_meal_type(meal_type)
@@ -296,6 +313,12 @@ def validate_recipe(raw: Any, index: int) -> dict[str, Any]:
         "source_type": source_type,
         "source_url": clean_text(raw.get("source_url"), "source_url", max_length=512),
         "image_url": clean_text(raw.get("image_url"), "image_url", max_length=512),
+        "hero_image_url": clean_text(
+            raw.get("hero_image_url"), "hero_image_url", max_length=512
+        ),
+        "thumbnail_url": clean_text(
+            raw.get("thumbnail_url"), "thumbnail_url", max_length=512
+        ),
         "is_drink": bool(raw.get("is_drink", meal_type in {"drink", "cocktail", "smoothie", "protein_shake", "tea", "coffee"})),
         "is_alcoholic": bool(raw.get("is_alcoholic", False)),
         "alcohol_percent": as_optional_float(
@@ -375,6 +398,8 @@ def apply_recipe(
             "source_type",
             "source_url",
             "image_url",
+            "hero_image_url",
+            "thumbnail_url",
             "is_drink",
             "is_alcoholic",
             "alcohol_percent",

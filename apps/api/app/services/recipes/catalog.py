@@ -80,6 +80,18 @@ FILTER_LABELS: dict[str, list[dict[str, str]]] = {
 def seed_recipes_if_empty(db: Session) -> None:
     """Populate the recipes table on first boot if it is empty."""
 
+    v1_count = (
+        db.query(Recipe)
+        .filter(Recipe.source_type == "v1_import", Recipe.is_active.is_(True))
+        .count()
+    )
+    if v1_count >= 50:
+        logger.info(
+            "V1 recipe catalog present (%s active recipes), skipping placeholder seeds",
+            v1_count,
+        )
+        return
+
     count = repository.count_recipes(db)
     if count == 0:
         for item in SEED_RECIPES:
