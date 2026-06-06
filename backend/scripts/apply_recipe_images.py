@@ -87,7 +87,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--images-root",
-        default=str(ROOT / "public" / "recipe-images"),
+        default=str(ROOT / "apps" / "web" / "public" / "recipe-images"),
         help="Local images root for file existence check",
     )
     parser.add_argument(

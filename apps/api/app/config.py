@@ -1,3 +1,4 @@
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +16,13 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis:6379/0"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    # Separate key for the recipe image pipeline (never reuse the app key).
+    image_openai_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "PLANAM_IMAGE_OPENAI_API_KEY", "IMAGE_OPENAI_API_KEY"
+        ),
+    )
     admin_telegram_ids: str = ""
     admin_pin: str = ""
     admin_panel_enabled: bool = True
@@ -35,6 +43,11 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.environment.strip().lower() == "development"
+
+    @property
+    def effective_image_openai_api_key(self) -> str:
+        """Image pipeline key, falling back to the app key only if unset."""
+        return (self.image_openai_api_key or self.openai_api_key or "").strip()
 
     def admin_telegram_id_set(self) -> set[int]:
         ids: set[int] = set()

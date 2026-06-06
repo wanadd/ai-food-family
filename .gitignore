@@ -46,8 +46,8 @@ exports/*.json
 reports/*.md
 
 # Recipe image assets (generated locally; do not commit heavy binaries)
-public/recipe-images/**/*
-!public/recipe-images/.gitkeep
+apps/web/public/recipe-images/**/*
+!apps/web/public/recipe-images/.gitkeep
 
 # Local database backups
 backup_*.sql

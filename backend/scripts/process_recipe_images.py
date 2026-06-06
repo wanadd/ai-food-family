@@ -119,7 +119,9 @@ def main() -> int:
     if args.output_dir:
         output_dir = Path(args.output_dir).expanduser().resolve()
     elif args.recipe_id is not None:
-        output_dir = ROOT / "public" / "recipe-images" / str(args.recipe_id)
+        output_dir = (
+            ROOT / "apps" / "web" / "public" / "recipe-images" / str(args.recipe_id)
+        )
     else:
         raise SystemExit("Provide --output-dir or --recipe-id")
 

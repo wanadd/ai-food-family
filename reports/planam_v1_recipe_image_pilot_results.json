@@ -1,0 +1,22 @@
+{
+  "status": "pending_run",
+  "note": "Заполняется автоматически при запуске run_recipe_image_pilot.py --commit. До запуска pilot значения cost/usage/quality пустые.",
+  "model": "gpt-image-1",
+  "size": "1536x1024",
+  "quality": "medium",
+  "generated": 0,
+  "failed": 0,
+  "total_cost_usd": 0,
+  "results": [
+    { "recipe_id": 1, "title": "Куриные котлеты с картофельным пюре в духовке", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null },
+    { "recipe_id": 2, "title": "Мясные \"розы\", фаршированные гречневой крупой", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null },
+    { "recipe_id": 3, "title": "Рыба «Красное и белое»", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null },
+    { "recipe_id": 4, "title": "Куриный суп с домашней лапшой", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null },
+    { "recipe_id": 5, "title": "Чисто английский завтрак из овсянки", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null },
+    { "recipe_id": 6, "title": "Мацовая запеканка с грибами", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null },
+    { "recipe_id": 7, "title": "Спагетти с курицей в сливочном соусе", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null },
+    { "recipe_id": 8, "title": "Салат \"Баклажанчик\"", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null },
+    { "recipe_id": 9, "title": "Салат \"Винегретная фантазия\"", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null },
+    { "recipe_id": 10, "title": "Гречка с грибами портабелла или шампиньонами", "status": "planned", "cost_usd": null, "duration_s": null, "quality_score": null, "approved": null }
+  ]
+}
