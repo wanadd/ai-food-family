@@ -42,7 +42,7 @@ async function recipeFetch<T>(
   return response.json() as Promise<T>;
 }
 
-const DEFAULT_RECIPE_LIST_LIMIT = 50;
+const DEFAULT_RECIPE_LIST_LIMIT = 200;
 
 function buildQuery(params: RecipeQuery): string {
   const search = new URLSearchParams();

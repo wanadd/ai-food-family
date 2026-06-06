@@ -160,7 +160,7 @@ def create_recipe(
 def list_recipes(
     q: str | None = Query(default=None, max_length=120),
     search: str | None = Query(default=None, max_length=120),
-    limit: int = Query(default=50, ge=1, le=100),
+    limit: int = Query(default=200, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     meal_type: str | None = Query(default=None),
     category: str | None = Query(default=None),

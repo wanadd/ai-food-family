@@ -175,7 +175,7 @@ def list_recipes(
     goal: str | None = None,
     scenario: str | None = None,
     scope: AppScope | None = None,
-    limit: int = 50,
+    limit: int = 200,
     offset: int = 0,
 ) -> RecipeListResponse:
     favorite_ids = repository.favorite_ids_for_user(db, user.id)
