@@ -111,6 +111,24 @@ docker compose -f docker-compose.prod.yml exec api \
   python backend/scripts/repair_recipe_image_assignments.py --commit
 ```
 
+## 6c. Hotfix — 404 на перенесённых фото (2026-06-06)
+
+Баг: после repair БД указывала на `/recipe-images/{correct_id}/`, но файлы
+остались в старых папках `/recipe-images/{old_id}/` → `/75/hero.webp` = 404,
+`/1/hero.webp` = 200.
+
+Фикс (`repair_recipe_image_assignments.py`):
+- переносит файлы `{old_id} → {correct_id}` на диске (`relocate_image_folder`);
+- URL выставляется **только если файлы на месте**; иначе URL очищается
+  (UI уходит в fallback, без 404);
+- очищает URL у архивных manual-рецептов (old_ids из results + диапазон 1..10);
+- `--images-root` настраивается; полностью идемпотентно при повторном запуске.
+- тесты: `tests/test_repair_image_files.py` (move / dry-run / idempotent / missing).
+
+Примечание по инфраструктуре: `apps/web/public/recipe-images` генерится в
+рантайме и в `.gitignore`. Чтобы файлы переживали пересборку web-контейнера,
+эта папка должна быть на volume (или фото генерятся после деплоя).
+
 ## 7. Что НЕ делалось (по ТЗ)
 
 - Не запускался Top 50 и не все 150.
