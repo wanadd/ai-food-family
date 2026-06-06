@@ -12,37 +12,13 @@ from sqlalchemy.orm import Query, Session
 from app.models.shopping_category import ShoppingCategory
 from app.schemas.shopping_category import ShoppingCategoryCreateRequest
 from app.services.app_scope import AppScope
-from app.services.shopping_categories import NON_FOOD_CATEGORIES, is_food_category, normalize_category
+from app.services.categories_v1 import SYSTEM_CATEGORIES_V1
+from app.services.shopping_categories import is_food_category, normalize_category
 
 logger = logging.getLogger(__name__)
 
 SYSTEM_CATEGORIES: list[tuple[str, str, str | None, bool]] = [
-    ("продукты", "Продукты", "🛒", True),
-    ("овощи_зелень", "Овощи и зелень", "🥕", True),
-    ("фрукты", "Фрукты", "🍎", True),
-    ("мясо_птица", "Мясо и птица", "🥩", True),
-    ("рыба_морепродукты", "Рыба и морепродукты", "🐟", True),
-    ("молочные", "Молочные продукты", "🥛", True),
-    ("яйца", "Яйца", "🥚", True),
-    ("хлеб_выпечка", "Хлеб и выпечка", "🍞", True),
-    ("крупы_макароны", "Крупы и макароны", "🌾", True),
-    ("бакалея", "Бакалея", "🫙", True),
-    ("специи_соусы", "Специи и соусы", "🧂", True),
-    ("заморозка", "Заморозка", "🧊", True),
-    ("напитки", "Напитки", "🥤", True),
-    ("сладости", "Сладости", "🍰", True),
-    ("бытовые", "Бытовые товары", "🧴", False),
-    ("животные", "Для животных", "🐾", False),
-    ("другое", "Другое", "📦", False),
-    # legacy slugs kept for existing items
-    ("овощи", "Овощи", "🥕", True),
-    ("мясо", "Мясо", "🥩", True),
-    ("рыба", "Рыба", "🐟", True),
-    ("молочное", "Молочное", "🥛", True),
-    ("крупы", "Крупы", "🌾", True),
-    ("хлеб", "Хлеб", "🍞", True),
-    ("дом_и_химия", "Дом и химия", "🧴", False),
-    ("питомцы", "Питомцы", "🐾", False),
+    (slug, label, icon, is_food) for slug, label, icon, is_food in SYSTEM_CATEGORIES_V1
 ]
 
 

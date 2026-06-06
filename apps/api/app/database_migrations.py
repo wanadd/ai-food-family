@@ -149,7 +149,8 @@ def _schema_statements() -> list[str]:
         """,
         "CREATE INDEX IF NOT EXISTS ix_shopping_categories_user ON shopping_categories (user_id);",
         "CREATE INDEX IF NOT EXISTS ix_shopping_categories_family ON shopping_categories (family_id);",
-        "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS category VARCHAR(64) NOT NULL DEFAULT 'продукты';",
+        "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS category VARCHAR(64) NOT NULL DEFAULT 'другое';",
+        "ALTER TABLE family_pantry_items ALTER COLUMN category SET DEFAULT 'другое';",
         "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS note VARCHAR(200);",
         "ALTER TABLE family_pantry_items ALTER COLUMN expires_at DROP NOT NULL;",
         """
@@ -877,6 +878,11 @@ def ensure_database_schema(engine: Engine, base: type) -> None:
                 checkfirst=True,
             )
             _execute_statements(connection, _schema_statements())
+            from app.services.shopping_category_migration import (  # noqa: PLC0415
+                migrate_shopping_categories_v1,
+            )
+
+            migrate_shopping_categories_v1(connection)
         finally:
             connection.execute(
                 text("SELECT pg_advisory_unlock(:lock_id)"),

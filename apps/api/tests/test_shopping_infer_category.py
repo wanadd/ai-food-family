@@ -14,6 +14,7 @@ API_ROOT = Path(__file__).resolve().parents[1]
 if str(API_ROOT) not in sys.path:
     sys.path.insert(0, str(API_ROOT))
 
+from app.services.categories_v1 import FORBIDDEN_CATEGORY_SLUG  # noqa: E402
 from app.services.shopping_categories import infer_category  # noqa: E402
 
 
@@ -31,8 +32,8 @@ from app.services.shopping_categories import infer_category  # noqa: E402
         ("Помидоры", "овощи_зелень"),
         ("Огурец", "овощи_зелень"),
         ("Чеснок", "овощи_зелень"),
-        ("Яблоки", "фрукты"),
-        ("Банан", "фрукты"),
+        ("Яблоки", "фрукты_ягоды"),
+        ("Банан", "фрукты_ягоды"),
         ("Молоко 2.5%", "молочные"),
         ("Творог 5%", "молочные"),
         ("Сыр твёрдый", "молочные"),
@@ -60,8 +61,10 @@ from app.services.shopping_categories import infer_category  # noqa: E402
         ("Петрушка", "овощи_зелень"),
         ("Вода", "напитки"),
         ("Чай чёрный", "напитки"),
-        ("Неизвестный продукт XYZ", "продукты"),
+        ("Неизвестный продукт XYZ", "другое"),
     ],
 )
 def test_infer_category_common_products(name: str, expected: str):
-    assert infer_category(name, None) == expected
+    result = infer_category(name, None)
+    assert result == expected
+    assert result != FORBIDDEN_CATEGORY_SLUG

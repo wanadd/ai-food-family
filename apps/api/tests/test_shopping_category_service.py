@@ -21,6 +21,7 @@ from app.models.family import Family  # noqa: E402
 from app.models.shopping_category import ShoppingCategory  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.app_scope import AppScope  # noqa: E402
+from app.services.categories_v1 import FORBIDDEN_CATEGORY_SLUG  # noqa: E402
 from app.services.shopping_category_service import (  # noqa: E402
     SYSTEM_CATEGORIES,
     ensure_system_categories,
@@ -51,9 +52,9 @@ def test_ensure_system_categories_tolerates_duplicate_rows(db_session):
     for _ in range(2):
         db_session.add(
             ShoppingCategory(
-                slug="продукты",
-                name="Продукты",
-                icon="🛒",
+                slug="другое",
+                name="Другое",
+                icon="📦",
                 is_food=True,
                 is_system=True,
                 user_id=42,
@@ -68,13 +69,14 @@ def test_ensure_system_categories_tolerates_duplicate_rows(db_session):
         db_session.query(ShoppingCategory)
         .filter(
             ShoppingCategory.user_id == 42,
-            ShoppingCategory.slug == "продукты",
+            ShoppingCategory.slug == "другое",
             ShoppingCategory.is_system.is_(True),
         )
         .all()
     )
     assert len(rows) >= 1
-    assert get_category_by_slug(db_session, scope, "продукты") is not None
+    assert get_category_by_slug(db_session, scope, "другое") is not None
+    assert get_category_by_slug(db_session, scope, FORBIDDEN_CATEGORY_SLUG) is not None
 
 
 def test_get_category_by_slug_picks_first_when_duplicates(db_session):
@@ -153,3 +155,17 @@ def test_ensure_system_categories_is_idempotent(db_session):
     )
     assert count_after_first == count_after_second
     assert count_after_second == len(SYSTEM_CATEGORIES)
+
+
+def test_forbidden_produktы_slug_not_seeded(db_session):
+    scope = AppScope(mode="personal", user_id=88, family_id=None)
+    ensure_system_categories(db_session, scope)
+    forbidden = (
+        db_session.query(ShoppingCategory)
+        .filter(
+            ShoppingCategory.user_id == 88,
+            ShoppingCategory.slug == FORBIDDEN_CATEGORY_SLUG,
+        )
+        .all()
+    )
+    assert forbidden == []

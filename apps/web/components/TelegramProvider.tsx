@@ -103,7 +103,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       setPlatform(webApp.platform || "unknown");
       setColorScheme(webApp.colorScheme || "light");
       if (typeof document !== "undefined") {
-        const fallbackBg = isPlanamUi2026Enabled() ? "#fbf7ef" : "#f8fafc";
+        const fallbackBg = isPlanamUi2026Enabled() ? "#FFFFFF" : "#f8fafc";
         document.documentElement.style.setProperty(
           "--tg-theme-bg-color",
           webApp.themeParams?.bg_color ?? fallbackBg,

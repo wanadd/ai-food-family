@@ -68,3 +68,35 @@ export function optimizeRecipeImageUrl(
 export function hasRecipeImage(url: string | null | undefined): boolean {
   return Boolean(url?.trim());
 }
+
+/** Optional multi-field image source (import pipeline / API evolution). */
+export type RecipeImageSource = {
+  image_url?: string | null;
+  hero_image_url?: string | null;
+  thumbnail_url?: string | null;
+};
+
+/**
+ * Pick the best URL for a media variant. Accepts a plain URL or structured source.
+ * Today API exposes `image_url`; hero/thumbnail are forward-compatible.
+ */
+export function resolveRecipeImageUrl(
+  source: RecipeImageSource | string | null | undefined,
+  variant: RecipeMediaVariant,
+): string | null {
+  if (source == null) {
+    return null;
+  }
+  if (typeof source === "string") {
+    return optimizeRecipeImageUrl(source, variant);
+  }
+  let raw: string | null | undefined;
+  if (variant === "hero") {
+    raw = source.hero_image_url ?? source.image_url ?? source.thumbnail_url;
+  } else if (variant === "thumb") {
+    raw = source.thumbnail_url ?? source.image_url ?? source.hero_image_url;
+  } else {
+    raw = source.image_url ?? source.thumbnail_url ?? source.hero_image_url;
+  }
+  return optimizeRecipeImageUrl(raw, variant);
+}

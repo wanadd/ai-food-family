@@ -37,7 +37,7 @@ export type PantryItemDraft = {
 
 export const EMPTY_PANTRY_DRAFT: PantryItemDraft = {
   name: "",
-  category: "продукты",
+  category: "другое",
   quantity: "1",
   unit: "шт",
   expires_at: "",

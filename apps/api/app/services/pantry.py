@@ -51,7 +51,7 @@ def _item_response(
         user_id=item.user_id,
         family_id=item.family_id,
         name=item.name,
-        category=item.category or "продукты",
+        category=normalize_category(item.category),
         quantity=item.quantity,
         unit=item.unit or "",
         source=item.source or "manual",

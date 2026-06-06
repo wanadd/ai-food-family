@@ -77,7 +77,7 @@ export function PantryItemForm({
         </label>
 
         <CategoryPicker
-          value={draft.category || "продукты"}
+          value={draft.category || "другое"}
           categories={categories}
           onChange={(slug) => onChange({ ...draft, category: slug })}
           allowCreate

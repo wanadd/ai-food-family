@@ -5,15 +5,17 @@ import Image from "next/image";
 import { MealFallbackPlate2026 } from "@/components/home-2026/MealFallbackPlate2026";
 import {
   hasRecipeImage,
-  optimizeRecipeImageUrl,
   recipeAspectClass,
   recipeImageSizes,
+  resolveRecipeImageUrl,
+  type RecipeImageSource,
   type RecipeMediaVariant,
 } from "@/lib/recipes/recipe-media";
 import { cn } from "@/lib/planam/cn";
 
 type RecipeImage2026Props = {
   imageUrl?: string | null;
+  imageSource?: RecipeImageSource | null;
   alt: string;
   variant: RecipeMediaVariant;
   mealType?: string;
@@ -23,13 +25,14 @@ type RecipeImage2026Props = {
 
 export function RecipeImage2026({
   imageUrl,
+  imageSource,
   alt,
   variant,
   mealType = "dinner",
   className,
   priority = false,
 }: RecipeImage2026Props) {
-  const src = optimizeRecipeImageUrl(imageUrl, variant);
+  const src = resolveRecipeImageUrl(imageSource ?? imageUrl, variant);
   const showImage = hasRecipeImage(src);
 
   return (

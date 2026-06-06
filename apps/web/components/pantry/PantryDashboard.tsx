@@ -135,7 +135,7 @@ export function PantryDashboard() {
   const grouped = useMemo(() => {
     const buckets = new Map<string, PantryItem[]>();
     for (const item of filteredItems) {
-      const cat = item.category || "продукты";
+      const cat = item.category || "другое";
       const existing = buckets.get(cat) ?? [];
       existing.push(item);
       buckets.set(cat, existing);
@@ -159,7 +159,7 @@ export function PantryDashboard() {
     setEditingItem(item);
     setDraft({
       name: item.name,
-      category: item.category || "продукты",
+      category: item.category || "другое",
       quantity: item.quantity,
       unit: item.unit || "шт",
       expires_at: item.expires_at ?? "",
@@ -179,7 +179,7 @@ export function PantryDashboard() {
     const payload: PantryItemDraft = {
       ...draft,
       name,
-      category: draft.category?.trim() || suggestCategorySlug(name) || "продукты",
+      category: draft.category?.trim() || suggestCategorySlug(name) || "другое",
       quantity: draft.quantity?.trim() || "1",
       unit: draft.unit?.trim() || "шт",
     };
