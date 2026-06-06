@@ -3,18 +3,22 @@ import type { WellnessDayProgress } from "@/lib/wellness/wellness-status";
 
 type WellnessDayRing2026Props = {
   progress: WellnessDayProgress;
+  caloriesLabel?: string;
 };
 
-export function WellnessDayRing2026({ progress }: WellnessDayRing2026Props) {
+export function WellnessDayRing2026({
+  progress,
+  caloriesLabel,
+}: WellnessDayRing2026Props) {
   const { percent, label } = progress;
   const ringStyle = {
-    background: `conic-gradient(var(--tw-gradient-from, #6b8f71) ${percent}%, var(--tw-gradient-to, #e8e4dc) ${percent}%)`,
+    background: `conic-gradient(var(--pa-brand-primary) ${percent}%, var(--pa-border) ${percent}%)`,
   };
 
   return (
-    <section className="flex items-center gap-4 rounded-card border border-pa-border bg-gradient-to-br from-sage-50/80 to-pa-surface p-4 dark:from-sage-900/20 dark:to-pa-surface">
+    <section className="flex items-center gap-3 rounded-card border border-pa-border bg-pa-elevated p-3">
       <div
-        className="relative flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full p-1"
+        className="relative flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full p-1"
         style={ringStyle}
         aria-label={`Прогресс дня ${percent}%`}
       >
@@ -24,11 +28,11 @@ export function WellnessDayRing2026({ progress }: WellnessDayRing2026Props) {
         </div>
       </div>
       <div className="min-w-0">
-        <p className="pa26-caption text-pa-muted">Как у вас дела?</p>
+        <p className="pa26-caption text-pa-muted">Статус</p>
         <p className={cn("pa26-card-title mt-0.5")}>{label}</p>
-        <p className="pa26-caption mt-1 text-pa-muted">
-          Питание, вода и отметки без лишней аналитики
-        </p>
+        {caloriesLabel ? (
+          <p className="pa26-caption mt-0.5 text-pa-muted">Калории: {caloriesLabel}</p>
+        ) : null}
       </div>
     </section>
   );

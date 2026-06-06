@@ -108,6 +108,21 @@ export function resolvePlanAmHeroState(
 ): PlanAmHeroState {
   const unchecked = overview?.shopping_unchecked_count ?? 0;
 
+  // Priority 1: next meal (food first — never let wellness/shopping override)
+  const meal = hasMenu ? pickNextMealByTime(meals, now) : null;
+  if (meal) {
+    return {
+      variant: "meal",
+      ctaLabel: "Приготовить",
+      ctaHref: `/plan/today?meal=${meal.meal_type}`,
+      title: meal.name,
+      subtitle: formatMealMeta(meal),
+      meal,
+      shoppingCount: unchecked,
+    };
+  }
+
+  // Priority 2: no menu
   if (!hasMenu) {
     return {
       variant: "no_menu",
@@ -120,6 +135,7 @@ export function resolvePlanAmHeroState(
     };
   }
 
+  // Priority 3: shopping
   if (isShoppingHeroPriority(unchecked, now)) {
     return {
       variant: "shopping",
@@ -132,6 +148,7 @@ export function resolvePlanAmHeroState(
     };
   }
 
+  // Priority 4: wellness
   if (overview && isWellnessHeroPriority(overview)) {
     const advice = overview.nutritionist_advice;
     const title = advice.title?.trim() || "Есть рекомендации по здоровью";
@@ -144,19 +161,6 @@ export function resolvePlanAmHeroState(
       title,
       subtitle,
       meal: null,
-      shoppingCount: unchecked,
-    };
-  }
-
-  const meal = pickNextMealByTime(meals, now);
-  if (meal) {
-    return {
-      variant: "meal",
-      ctaLabel: "Приготовить",
-      ctaHref: `/plan/today?meal=${meal.meal_type}`,
-      title: meal.name,
-      subtitle: formatMealMeta(meal),
-      meal,
       shoppingCount: unchecked,
     };
   }

@@ -1,3 +1,5 @@
+import { compareCategoryOrder } from "@/lib/shopping/categories-v1";
+import { normalizeCategorySlug } from "@/lib/shopping/category-suggest";
 import { categoryMeta } from "@/lib/shopping/labels";
 import type { ShoppingCategory, ShoppingListItem } from "@/lib/shopping/types";
 
@@ -14,9 +16,9 @@ export function groupShoppingItems(
 ): ShoppingCategoryGroup[] {
   const buckets = new Map<string, ShoppingListItem[]>();
   for (const item of items) {
-    const cat = item.category || "продукты";
+    const cat = normalizeCategorySlug(item.category, item.name);
     const list = buckets.get(cat) ?? [];
-    list.push(item);
+    list.push({ ...item, category: cat });
     buckets.set(cat, list);
   }
   return Array.from(buckets.entries())
@@ -29,7 +31,7 @@ export function groupShoppingItems(
         items: groupItems,
       };
     })
-    .sort((a, b) => a.label.localeCompare(b.label, "ru"));
+    .sort((a, b) => compareCategoryOrder(a.category, b.category));
 }
 
 export function shoppingProgress(

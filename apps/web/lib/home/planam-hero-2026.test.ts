@@ -113,15 +113,8 @@ describe("planam-hero-2026", () => {
     expect(state.ctaLabel).toBe("Создать меню");
   });
 
-  it("resolve shopping over meal", () => {
+  it("resolve meal over shopping when meals exist", () => {
     const overview = baseOverview({ shopping_unchecked_count: 10 });
-    const state = resolvePlanAmHeroState(overview, meals, true);
-    expect(state.variant).toBe("shopping");
-    expect(state.ctaHref).toBe("/shopping");
-  });
-
-  it("resolve meal when shopping not priority", () => {
-    const overview = baseOverview({ shopping_unchecked_count: 1 });
     const state = resolvePlanAmHeroState(
       overview,
       meals,
@@ -130,5 +123,31 @@ describe("planam-hero-2026", () => {
     );
     expect(state.variant).toBe("meal");
     expect(state.ctaLabel).toBe("Приготовить");
+  });
+
+  it("resolve meal over wellness when meals exist", () => {
+    const overview = baseOverview({
+      nutritionist_advice: {
+        level: "update_recommended",
+        title: "Рекомендация нутрициолога",
+        body: "Обновите профиль",
+        freshness_status: "current",
+        update_reason: null,
+      },
+    });
+    const state = resolvePlanAmHeroState(
+      overview,
+      meals,
+      true,
+      new Date("2026-06-03T13:00:00"),
+    );
+    expect(state.variant).toBe("meal");
+  });
+
+  it("resolve shopping when menu exists but no meals today", () => {
+    const overview = baseOverview({ shopping_unchecked_count: 10 });
+    const state = resolvePlanAmHeroState(overview, [], true);
+    expect(state.variant).toBe("shopping");
+    expect(state.ctaHref).toBe("/shopping");
   });
 });

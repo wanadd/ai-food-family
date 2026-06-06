@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { DEFAULT_CATEGORY_SLUG } from "@/lib/shopping/category-suggest";
 import { categoryMeta } from "@/lib/shopping/labels";
 import type { ShoppingCategory } from "@/lib/shopping/types";
 
@@ -38,7 +39,7 @@ export function CategoryPicker({
     const slugs = new Set<string>();
     for (const c of categories) slugs.add(c.slug);
     for (const s of extraSlugs) if (s) slugs.add(s);
-    if (!slugs.size) slugs.add("продукты");
+    if (!slugs.size) slugs.add(DEFAULT_CATEGORY_SLUG);
     return Array.from(slugs).map((slug) => ({
       slug,
       ...categoryMeta(slug, categories),

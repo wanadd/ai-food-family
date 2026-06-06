@@ -74,7 +74,7 @@ export function ShoppingItemSheet({
         </label>
 
         <CategoryPicker
-          value={draft.category || "продукты"}
+          value={draft.category || "другое"}
           categories={categories}
           extraSlugs={categorySlugsFromItems}
           onChange={(slug) => onChange({ ...draft, category: slug })}

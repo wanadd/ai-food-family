@@ -143,7 +143,7 @@ export function ShoppingListView() {
       setItemDraft({
         ...EMPTY_SHOPPING_DRAFT,
         name: addName,
-        category: "продукты",
+        category: "другое",
       });
       setItemSheetOpen(true);
     }
@@ -302,7 +302,7 @@ export function ShoppingListView() {
   function normalizeDraft(draft: ShoppingItemDraft): ShoppingItemDraft {
     const name = draft.name.trim();
     const category =
-      draft.category?.trim() || suggestCategorySlug(name) || "продукты";
+      draft.category?.trim() || suggestCategorySlug(name) || "другое";
     return {
       ...draft,
       name,

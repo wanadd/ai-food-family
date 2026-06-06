@@ -136,17 +136,32 @@ export async function apiFetch<T>(
   });
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: unknown }
-      | null;
-    throw formatHttpError(response.status, payload?.detail);
+    const errText = await response.text().catch(() => "");
+    let detail: unknown;
+    if (errText.trim()) {
+      try {
+        detail = (JSON.parse(errText) as { detail?: unknown }).detail;
+      } catch {
+        detail = errText;
+      }
+    }
+    throw formatHttpError(response.status, detail);
   }
 
   if (response.status === 204) {
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const text = await response.text();
+  if (!text.trim() || text.trim() === "null") {
+    return undefined as T;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error("Некорректный ответ сервера");
+  }
 }
 
 export async function apiGet<T>(

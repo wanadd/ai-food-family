@@ -1,24 +1,12 @@
+import {
+  categoryV1Meta,
+  SHOPPING_CATEGORIES_V1,
+} from "@/lib/shopping/categories-v1";
 import type { ShoppingCategory } from "./types";
 
-const FALLBACK_META: Record<string, { label: string; emoji: string }> = {
-  продукты: { label: "Продукты", emoji: "🛒" },
-  овощи: { label: "Овощи", emoji: "🥕" },
-  фрукты: { label: "Фрукты", emoji: "🍎" },
-  мясо: { label: "Мясо", emoji: "🥩" },
-  рыба: { label: "Рыба", emoji: "🐟" },
-  молочное: { label: "Молочное", emoji: "🥛" },
-  яйца: { label: "Яйца", emoji: "🥚" },
-  крупы: { label: "Крупы", emoji: "🌾" },
-  бакалея: { label: "Бакалея", emoji: "🫙" },
-  специи: { label: "Специи", emoji: "🧂" },
-  зелень: { label: "Зелень", emoji: "🌿" },
-  хлеб: { label: "Хлеб", emoji: "🍞" },
-  напитки: { label: "Напитки", emoji: "🥤" },
-  дом_и_химия: { label: "Дом и химия", emoji: "🧴" },
-  аптека: { label: "Аптека", emoji: "💊" },
-  ремонт: { label: "Ремонт", emoji: "🔧" },
-  другое: { label: "Другое", emoji: "📦" },
-};
+const FALLBACK_META = Object.fromEntries(
+  SHOPPING_CATEGORIES_V1.map((c) => [c.slug, { label: c.label, emoji: c.emoji }]),
+) as Record<string, { label: string; emoji: string }>;
 
 export function categoryMeta(
   slug: string,
@@ -28,10 +16,15 @@ export function categoryMeta(
   if (found) {
     return {
       label: found.name,
-      emoji: found.icon ?? FALLBACK_META[slug]?.emoji ?? "📦",
+      emoji: found.icon ?? FALLBACK_META[slug]?.emoji ?? categoryV1Meta(slug).emoji,
     };
   }
-  return FALLBACK_META[slug] ?? { label: slug, emoji: "📦" };
+  const v1 = FALLBACK_META[slug];
+  if (v1) {
+    return v1;
+  }
+  const meta = categoryV1Meta(slug);
+  return { label: meta.label, emoji: meta.emoji };
 }
 
 export function sourceLabel(source: string): string {

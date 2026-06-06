@@ -179,7 +179,7 @@ export function PlanToday2026() {
   const justSaved = searchParams.get("saved") === "1";
 
   return (
-    <div className="pb-28">
+    <div className="pb-28 bg-pa-canvas">
       <div className="px-4 pt-2">
         {justSaved ? (
           <div className="mb-3 rounded-card border border-sage-200 bg-sage-50 px-4 py-3 dark:border-sage-700/40 dark:bg-sage-700/20">
@@ -188,7 +188,7 @@ export function PlanToday2026() {
             </p>
           </div>
         ) : null}
-        <p className="pa26-caption text-pa-muted capitalize">{dateLabel}</p>
+        <h1 className="pa26-page-title capitalize">{dateLabel}</h1>
         {menu.title ? (
           <p className="pa26-micro mt-1 text-pa-muted">{menu.title}</p>
         ) : null}
@@ -203,8 +203,8 @@ export function PlanToday2026() {
                 className={cn(
                   "shrink-0 rounded-pill px-3 py-1.5 pa26-micro font-semibold",
                   dayIndex === day.day_index
-                    ? "bg-sage-500 text-white dark:bg-sage-400"
-                    : "border border-pa-border bg-pa-surface text-pa-muted",
+                    ? "bg-pa-brand text-white"
+                    : "border border-pa-border bg-pa-elevated text-pa-muted",
                 )}
               >
                 {day.label}

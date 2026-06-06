@@ -1,5 +1,11 @@
 /** Heuristic category slug from product name (Russian). */
 
+import {
+  DEFAULT_CATEGORY_SLUG,
+  FORBIDDEN_CATEGORY_SLUG,
+  mapLegacyCategorySlug,
+} from "@/lib/shopping/categories-v1";
+
 const RULES: { slug: string; patterns: RegExp[] }[] = [
   { slug: "яйца", patterns: [/яйц/i] },
   {
@@ -7,6 +13,7 @@ const RULES: { slug: string; patterns: RegExp[] }[] = [
     patterns: [
       /соус|кетчуп|майонез|паста\s*томат|томатн\w*\s*паст/i,
       /паприк|куркум|кориандр|лавров|приправ|ванил|сунел|шафран|хмели|корица|гвоздик/i,
+      /(черн|чёрн|молот).{0,6}перец|перец.{0,6}(черн|чёрн|молот|горош)/i,
     ],
   },
   {
@@ -16,8 +23,10 @@ const RULES: { slug: string; patterns: RegExp[] }[] = [
     ],
   },
   {
-    slug: "фрукты",
-    patterns: [/яблок|груш|банан|апельсин|мандарин|лимон|ягод|виноград|персик|слив|арбуз|дын/i],
+    slug: "фрукты_ягоды",
+    patterns: [
+      /яблок|груш|банан|апельсин|мандарин|лимон|ягод|малин|виноград|персик|слив|арбуз|дын|черник|клубник|смородин/i,
+    ],
   },
   {
     slug: "мясо_птица",
@@ -39,31 +48,57 @@ const RULES: { slug: string; patterns: RegExp[] }[] = [
   },
   {
     slug: "крупы_макароны",
-    patterns: [/рис|греч|овсян|макарон|спагетти|паста|перлов|пшено|круп/i],
+    patterns: [/рис|греч|овсян|макарон|спагетти|паста|перлов|пшено|булгур|киноа/i],
   },
-  { slug: "бакалея", patterns: [/мук|сахар|соль|уксус|масло\s*раст/i] },
-  { slug: "заморозка", patterns: [/замороз|морожен/i] },
+  {
+    slug: "бакалея",
+    patterns: [
+      /мук|сахар|соль|уксус|масло\s*раст|бульон|орех|фундук|миндал|кешью|фисташ|грецк/i,
+    ],
+  },
   {
     slug: "напитки",
     patterns: [/сок|вода|чай|кофе|компот|лимонад|квас/i],
   },
-  { slug: "сладости", patterns: [/шоколад|конфет|печень|вафл|мармелад|сахар|варень/i] },
   {
-    slug: "бытовые",
-    patterns: [/лампоч|батарей|салфет|мыло|порошок|шампун|средство|губк|пакет|пленк/i],
+    slug: "быт_уборка",
+    patterns: [/лампоч|батарей|салфет|мыло|порошок|шампун|средство|губк|пакет|пленк|уборк/i],
   },
-  { slug: "животные", patterns: [/корм|наполнител|для\s*кот|для\s*соб/i] },
+  {
+    slug: "детские_товары",
+    patterns: [/подгуз|соск|пюре\s*дет|детск/i],
+  },
+  {
+    slug: "для_питомцев",
+    patterns: [/корм|наполнител|для\s*кот|для\s*соб|питомц/i],
+  },
 ];
 
 export function suggestCategorySlug(name: string): string {
   const trimmed = name.trim();
-  if (!trimmed) return "продукты";
+  if (!trimmed) {
+    return DEFAULT_CATEGORY_SLUG;
+  }
   for (const rule of RULES) {
     if (rule.patterns.some((p) => p.test(trimmed))) {
       return rule.slug;
     }
   }
-  return "продукты";
+  return DEFAULT_CATEGORY_SLUG;
 }
 
-export const DEFAULT_CATEGORY_SLUG = "продукты";
+export { DEFAULT_CATEGORY_SLUG };
+
+export function normalizeCategorySlug(
+  slug: string | null | undefined,
+  itemName?: string,
+): string {
+  const mapped = slug ? mapLegacyCategorySlug(slug) : null;
+  if (mapped) {
+    return mapped;
+  }
+  if (itemName?.trim()) {
+    return suggestCategorySlug(itemName);
+  }
+  return DEFAULT_CATEGORY_SLUG;
+}

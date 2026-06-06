@@ -5,15 +5,11 @@ import { useState } from "react";
 
 import { RecipeImage2026 } from "@/components/recipes-2026/RecipeImage2026";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
-import { useToast } from "@/components/ui/ToastProvider";
-import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { useTelegram } from "@/components/TelegramProvider";
-import { addMealIngredientsToShopping } from "@/lib/plan/add-to-shopping";
-import type { PlanTodayMeal } from "@/lib/plan/plan-today";
-import { mealTypeLabel } from "@/lib/plan/plan-today";
 import { buildReplaceCatalogUrl } from "@/lib/menu/replace-slot";
 import { withReturnTo } from "@/lib/navigation/return-to";
 import { recipeDetailPath } from "@/lib/plan/plan-paths";
+import type { PlanTodayMeal } from "@/lib/plan/plan-today";
+import { mealTypeLabel } from "@/lib/plan/plan-today";
 import { cn } from "@/lib/planam/cn";
 
 type PlanMealCard2026Props = {
@@ -30,10 +26,7 @@ export function PlanMealCard2026({
   onRemove,
 }: PlanMealCard2026Props) {
   const router = useRouter();
-  const { initData } = useTelegram();
-  const { mode } = useAppMode();
-  const { showToast } = useToast();
-  const [shoppingBusy, setShoppingBusy] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
 
   const { meal, imageUrl, statusLabel, statusCode } = item;
   const metaParts: string[] = [];
@@ -44,113 +37,102 @@ export function PlanMealCard2026({
     metaParts.push(`${Math.round(meal.calories_estimate)} ккал`);
   }
 
-  async function handleShopping() {
-    if (!initData) {
+  function handleReplace() {
+    if (onReplace) {
+      onReplace();
       return;
     }
-    setShoppingBusy(true);
-    try {
-      const result = await addMealIngredientsToShopping(initData, mode, meal);
-      if (result.ok) {
-        showToast(`✓ ${result.message}`);
-      } else {
-        showToast(result.message);
-      }
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Не удалось добавить");
-    } finally {
-      setShoppingBusy(false);
+    if (item.slotId) {
+      router.push(
+        buildReplaceCatalogUrl(
+          item.slotId,
+          item.meal.recipe_id ?? undefined,
+          "/plan/today",
+        ),
+      );
     }
+  }
+
+  function handleRecipe() {
+    if (!meal.recipe_id) {
+      return;
+    }
+    router.push(withReturnTo(recipeDetailPath(meal.recipe_id), "/plan/today"));
+  }
+
+  function handleRemove() {
+    if (!onRemove) {
+      return;
+    }
+    if (!removeOpen) {
+      setRemoveOpen(true);
+      return;
+    }
+    onRemove();
+    setRemoveOpen(false);
   }
 
   return (
     <article className="overflow-hidden rounded-card border border-pa-border bg-pa-surface shadow-soft dark:shadow-none">
-      <RecipeImage2026
-        imageUrl={imageUrl}
-        alt={meal.name}
-        variant="hero"
-        mealType={meal.meal_type}
-        className="max-h-[180px] rounded-none"
-      />
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="pa26-micro text-pa-muted">{mealTypeLabel(meal.meal_type)}</p>
-            <h3 className="pa26-card-title mt-0.5">{meal.name}</h3>
-            {metaParts.length ? (
-              <p className="pa26-caption mt-1 text-pa-muted">{metaParts.join(" · ")}</p>
-            ) : null}
-          </div>
-          <span
-            className={cn(
-              "shrink-0 rounded-pill px-2.5 py-1 pa26-micro font-semibold",
-              statusCode
-                ? "bg-sage-50 text-sage-700 dark:bg-sage-700/30 dark:text-sage-300"
-                : "bg-cream-deep text-pa-muted dark:bg-graphite-700/40",
-            )}
-          >
-            {statusLabel}
-          </span>
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button2026 variant="primary" className="flex-1 min-w-[100px]" onClick={onCook}>
-            Приготовил
-          </Button2026>
-          <Button2026
-            variant="secondary"
-            onClick={() => {
-              if (onReplace) {
-                onReplace();
-                return;
-              }
-              if (item.slotId) {
-                router.push(
-                  buildReplaceCatalogUrl(
-                    item.slotId,
-                    item.meal.recipe_id ?? undefined,
-                    "/plan/today",
-                  ),
-                );
-              }
-            }}
-          >
-            Заменить
-          </Button2026>
-          {onRemove ? (
-            <Button2026
-              variant="ghost"
-              onClick={() => {
-                if (window.confirm("Удалить это блюдо из меню?")) {
-                  onRemove();
-                }
-              }}
-            >
-              Удалить
-            </Button2026>
-          ) : null}
-          {meal.recipe_id ? (
-            <Button2026
-              variant="ghost"
-              onClick={() =>
-                router.push(
-                  withReturnTo(recipeDetailPath(meal.recipe_id!), "/plan/today"),
-                )
-              }
-            >
-              Рецепт
-            </Button2026>
+      <div className="relative min-h-[160px] w-full">
+        <RecipeImage2026
+          imageUrl={imageUrl}
+          alt={meal.name}
+          variant="hero"
+          mealType={meal.meal_type}
+          className="absolute inset-0 max-h-none h-full rounded-none"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
+          aria-hidden
+        />
+        <div className="absolute inset-x-0 bottom-0 p-3 text-white">
+          <p className="pa26-micro text-white/80">{mealTypeLabel(meal.meal_type)}</p>
+          <h3 className="pa26-card-title mt-0.5 text-white">{meal.name}</h3>
+          {metaParts.length ? (
+            <p className="pa26-caption mt-0.5 text-white/85">{metaParts.join(" · ")}</p>
           ) : null}
         </div>
-        <Button2026
-          variant="ghost"
-          className="mt-2 w-full"
-          loading={shoppingBusy}
-          onClick={() => void handleShopping()}
+        <span
+          className={cn(
+            "absolute right-3 top-3 rounded-pill px-2.5 py-1 pa26-micro font-semibold",
+            statusCode
+              ? "bg-white/90 text-sage-700"
+              : "bg-black/40 text-white",
+          )}
         >
-          В покупки
+          {statusLabel}
+        </span>
+      </div>
+
+      <div className="flex gap-2 p-3">
+        <Button2026 variant="primary" className="flex-1" onClick={onCook}>
+          Приготовить
+        </Button2026>
+        {meal.recipe_id ? (
+          <Button2026 variant="secondary" onClick={handleRecipe}>
+            Рецепт
+          </Button2026>
+        ) : null}
+        <Button2026 variant="secondary" onClick={handleReplace}>
+          Заменить
         </Button2026>
       </div>
+
+      {onRemove ? (
+        <div className="border-t border-pa-border px-3 pb-2 pt-1 text-center">
+          <button
+            type="button"
+            className={cn(
+              "pa26-micro text-pa-muted underline-offset-2 hover:underline",
+              removeOpen && "text-pa-error",
+            )}
+            onClick={handleRemove}
+          >
+            {removeOpen ? "Подтвердить удаление" : "Удалить из меню"}
+          </button>
+        </div>
+      ) : null}
     </article>
   );
 }

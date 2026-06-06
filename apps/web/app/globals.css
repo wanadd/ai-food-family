@@ -9,40 +9,40 @@
 
 @layer base {
   :root {
-    --pa-cream: #fbf7ef;
-    --pa-surface: #fffdf8;
-    --pa-border: #ece4d6;
-    --pa-sage: #5e8b57;
-    --pa-graphite: #2e2c28;
+    --pa-cream: #ffffff;
+    --pa-surface: #ffffff;
+    --pa-border: #e2e8e0;
+    --pa-sage: #2f9e44;
+    --pa-graphite: #1a1f1c;
 
-    /* PLANAM 2026 — Light */
-    --pa-bg-canvas: #fbf7ef;
-    --pa-bg-surface: #fffdf8;
-    --pa-bg-elevated: #ffffff;
-    --pa-text-primary: #2e2c28;
-    --pa-text-secondary: #726c61;
-    --pa-brand-primary: #5e8b57;
-    --pa-brand-secondary: #4c7347;
-    --pa-accent: #d98e5a;
-    --pa-success: #4c7347;
-    --pa-warning: #d98e5a;
-    --pa-error: #b85c5c;
-    --pa-border: #ece4d6;
+    /* PLANAM V1 — Light (fresh, high contrast) */
+    --pa-bg-canvas: #ffffff;
+    --pa-bg-surface: #ffffff;
+    --pa-bg-elevated: #f6faf6;
+    --pa-text-primary: #1a1f1c;
+    --pa-text-secondary: #5c665c;
+    --pa-brand-primary: #2f9e44;
+    --pa-brand-secondary: #248a38;
+    --pa-accent: #e07b39;
+    --pa-success: #248a38;
+    --pa-warning: #d97706;
+    --pa-error: #dc2626;
+    --pa-border: #e2e8e0;
   }
 
   .dark {
-    --pa-bg-canvas: #1a1917;
-    --pa-bg-surface: #252320;
-    --pa-bg-elevated: #2e2c28;
-    --pa-text-primary: #fffdf8;
-    --pa-text-secondary: #c9c3b8;
-    --pa-brand-primary: #7da870;
-    --pa-brand-secondary: #9cbe90;
-    --pa-accent: #e8b87e;
-    --pa-success: #7da870;
-    --pa-warning: #e8b87e;
-    --pa-error: #d47878;
-    --pa-border: #3a3834;
+    --pa-bg-canvas: #121412;
+    --pa-bg-surface: #1a1d1a;
+    --pa-bg-elevated: #242824;
+    --pa-text-primary: #f4faf4;
+    --pa-text-secondary: #a8b4a8;
+    --pa-brand-primary: #4ade80;
+    --pa-brand-secondary: #86efac;
+    --pa-accent: #fb923c;
+    --pa-success: #4ade80;
+    --pa-warning: #fbbf24;
+    --pa-error: #f87171;
+    --pa-border: #2f352f;
   }
 
   html:not([data-planam-ui="2026"]) body {

@@ -20,22 +20,22 @@ const config: Config = {
       colors: {
         // Тёплый фон и поверхности
         cream: {
-          DEFAULT: "#FBF7EF",
-          surface: "#FFFDF8",
-          deep: "#F3EEE2",
-          border: "#ECE4D6",
+          DEFAULT: "#FFFFFF",
+          surface: "#FFFFFF",
+          deep: "#F6FAF6",
+          border: "#E2E8E0",
         },
-        // Основной брендовый зелёный (шалфей)
+        // PlanAm V1 brand green — saturated, fresh
         sage: {
-          50: "#EEF3EC",
-          100: "#DCE8D6",
-          200: "#C2D6BA",
-          300: "#9CBE90",
-          400: "#7DA870",
-          500: "#5E8B57",
-          600: "#4C7347",
-          700: "#3C5B39",
-          DEFAULT: "#5E8B57",
+          50: "#ECFDF0",
+          100: "#D1FAE0",
+          200: "#A7F3C0",
+          300: "#6EE7A0",
+          400: "#4ADE80",
+          500: "#2F9E44",
+          600: "#248A38",
+          700: "#1B6B2C",
+          DEFAULT: "#2F9E44",
         },
         // Мягкий оливковый акцент (бейджи, второстепенное)
         olive: {

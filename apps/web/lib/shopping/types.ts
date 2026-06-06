@@ -1,3 +1,5 @@
+import { DEFAULT_CATEGORY_SLUG } from "@/lib/shopping/category-suggest";
+
 export type ShoppingCategory = {
   id: number;
   slug: string;
@@ -50,7 +52,7 @@ export type ShoppingItemDraft = {
 
 export const EMPTY_SHOPPING_DRAFT: ShoppingItemDraft = {
   name: "",
-  category: "продукты",
+  category: DEFAULT_CATEGORY_SLUG,
   quantity: "1",
   unit: "шт",
   note: "",

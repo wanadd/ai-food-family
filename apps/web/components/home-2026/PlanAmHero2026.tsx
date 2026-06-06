@@ -15,78 +15,96 @@ export type PlanAmHero2026Props = {
   state: PlanAmHeroState;
 };
 
-function HeroVisual({
+function MealHeroCard({
   state,
   compact,
+  onCta,
 }: {
   state: PlanAmHeroState;
   compact: boolean;
+  onCta: () => void;
 }) {
-  const heightClass = compact ? "h-32" : "aspect-video min-h-[128px]";
-
-  if (state.variant === "meal" && state.meal) {
-    return (
-      <div className={cn("relative w-full overflow-hidden", heightClass)}>
-        {state.meal.image_url ? (
-          <Image
-            src={state.meal.image_url}
-            alt={state.meal.name}
-            fill
-            className="object-cover"
-            sizes="100vw"
-            unoptimized
-            priority
-          />
-        ) : (
-          <MealFallbackPlate2026 mealType={state.meal.meal_type} />
-        )}
-      </div>
-    );
-  }
-
-  if (state.variant === "shopping") {
-    return (
-      <div
-        className={cn(
-          "flex w-full flex-col items-center justify-center gap-2 bg-cream-deep dark:bg-graphite-700/40",
-          heightClass,
-        )}
-      >
-        <span className="text-5xl" aria-hidden>
-          🛒
-        </span>
-        <span className="pa26-caption text-pa-muted">Список покупок</span>
-      </div>
-    );
-  }
-
-  if (state.variant === "wellness") {
-    return (
-      <div
-        className={cn(
-          "flex w-full flex-col items-center justify-center gap-2 bg-cream-deep dark:bg-graphite-700/40",
-          heightClass,
-        )}
-      >
-        <span className="text-5xl" aria-hidden>
-          ❤️
-        </span>
-        <span className="pa26-caption text-pa-muted">Здоровье</span>
-      </div>
-    );
-  }
+  const meal = state.meal!;
+  const heightClass = compact ? "min-h-[200px]" : "min-h-[240px]";
 
   return (
     <div
       className={cn(
-        "flex w-full flex-col items-center justify-center gap-2 bg-cream-deep dark:bg-graphite-700/40",
+        "relative w-full overflow-hidden rounded-card",
         heightClass,
       )}
     >
-      <span className="text-5xl" aria-hidden>
-        ✨
-      </span>
-      <span className="pa26-caption text-pa-muted">Меню на неделю</span>
+      {meal.image_url ? (
+        <Image
+          src={meal.image_url}
+          alt={meal.name}
+          fill
+          className="object-cover"
+          sizes="100vw"
+          unoptimized
+          priority
+        />
+      ) : (
+        <MealFallbackPlate2026 mealType={meal.meal_type} className="absolute inset-0" />
+      )}
+      <div
+        className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"
+        aria-hidden
+      />
+      <div className="absolute inset-x-0 bottom-0 p-4 text-white">
+        {meal.label ? (
+          <p className="pa26-micro font-semibold uppercase tracking-wide text-white/80">
+            {meal.label}
+          </p>
+        ) : null}
+        <h2 className="pa26-hero mt-0.5 line-clamp-2 text-white">{state.title}</h2>
+        <p className="pa26-caption mt-1 text-white/85">{state.subtitle}</p>
+        <Button2026
+          variant="primary"
+          size="wide"
+          className="mt-3 bg-white text-pa-brand hover:bg-white/95"
+          onClick={onCta}
+        >
+          {state.ctaLabel}
+        </Button2026>
+      </div>
+    </div>
+  );
+}
+
+function ContextHeroCard({
+  state,
+  onCta,
+}: {
+  state: PlanAmHeroState;
+  onCta: () => void;
+}) {
+  const icon =
+    state.variant === "shopping"
+      ? "🛒"
+      : state.variant === "wellness"
+        ? "💚"
+        : "✨";
+
+  return (
+    <div className="overflow-hidden rounded-card border border-pa-border bg-pa-elevated shadow-soft dark:shadow-none">
+      <div className="flex items-start gap-3 p-4">
+        <span
+          className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-sage-50 text-2xl dark:bg-sage-700/30"
+          aria-hidden
+        >
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="pa26-card-title line-clamp-2">{state.title}</h2>
+          <p className="pa26-caption mt-1 line-clamp-3 text-pa-muted">{state.subtitle}</p>
+        </div>
+      </div>
+      <div className="border-t border-pa-border px-4 pb-4 pt-3">
+        <Button2026 variant="primary" size="wide" onClick={onCta}>
+          {state.ctaLabel}
+        </Button2026>
+      </div>
     </div>
   );
 }
@@ -100,31 +118,21 @@ export function PlanAmHero2026({ loading = false, state }: PlanAmHero2026Props) 
       <section className="px-4 pt-2" aria-busy="true">
         <Skeleton2026
           variant="rect"
-          className={cn("rounded-card w-full", compact ? "h-32" : "aspect-video")}
+          className={cn("rounded-card w-full", compact ? "min-h-[200px]" : "min-h-[240px]")}
         />
-        <Skeleton2026 variant="text" className="mt-4 max-w-[200px]" />
-        <Skeleton2026 variant="rect" className="mt-3 h-11 w-full rounded-control" />
       </section>
     );
   }
 
+  const goCta = () => router.push(state.ctaHref);
+
   return (
     <section className="px-4 pt-2" aria-label="Главное действие">
-      <div className="overflow-hidden rounded-card border border-pa-border bg-pa-surface shadow-soft dark:shadow-none">
-        <HeroVisual state={state} compact={compact} />
-        <div className="p-4">
-          <h2 className="pa26-hero line-clamp-2">{state.title}</h2>
-          <p className="pa26-caption mt-1 line-clamp-2 text-pa-muted">{state.subtitle}</p>
-          <Button2026
-            variant="primary"
-            size="wide"
-            className="mt-4"
-            onClick={() => router.push(state.ctaHref)}
-          >
-            {state.ctaLabel}
-          </Button2026>
-        </div>
-      </div>
+      {state.variant === "meal" && state.meal ? (
+        <MealHeroCard state={state} compact={compact} onCta={goCta} />
+      ) : (
+        <ContextHeroCard state={state} onCta={goCta} />
+      )}
     </section>
   );
 }

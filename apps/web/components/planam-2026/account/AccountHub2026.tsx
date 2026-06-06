@@ -22,13 +22,13 @@ function UserAvatar({
       <img
         src={photoUrl}
         alt=""
-        className="size-14 shrink-0 rounded-card object-cover shadow-soft ring-2 ring-pa-surface"
+        className="size-11 shrink-0 rounded-[14px] object-cover ring-2 ring-pa-border"
       />
     );
   }
   return (
     <div
-      className="flex size-14 shrink-0 items-center justify-center rounded-card bg-sage-500 text-xl font-bold text-white shadow-soft"
+      className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-sage-500 text-lg font-bold text-white"
       aria-hidden
     >
       {initial}
@@ -43,14 +43,14 @@ export function AccountHub2026() {
     "Пользователь";
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 px-4 py-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
+    <div className="mx-auto max-w-lg space-y-3 px-4 py-3 pt-[max(0.5rem,env(safe-area-inset-top))]">
       <header>
         <h1 className="pa26-page-title">Профиль</h1>
       </header>
 
       {user ? (
-        <Card2026>
-          <div className="flex items-center gap-4">
+        <Card2026 padding="md" className="!p-3">
+          <div className="flex items-center gap-3">
             <UserAvatar name={fullName} photoUrl={user.photo_url} />
             <div className="min-w-0 flex-1">
               <p className="pa26-card-title truncate">{fullName}</p>
@@ -61,28 +61,25 @@ export function AccountHub2026() {
           </div>
         </Card2026>
       ) : (
-        <Card2026>
+        <Card2026 padding="md" className="!p-3">
           <p className="pa26-body text-pa-muted">
             Профиль, подписка и настройки — в одном месте.
           </p>
         </Card2026>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {ACCOUNT_HUB_ITEMS_2026.map((item) => {
           if (item.inline === "theme") {
             return (
-              <Card2026 key={item.id}>
-                <div className="flex items-start gap-3">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-[16px] bg-sage-50 dark:bg-sage-700/30">
+              <Card2026 key={item.id} padding="md" className="!p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-[12px] bg-sage-50 dark:bg-sage-700/30">
                     <NavIcon2026 id={item.icon} className="text-sage-700 dark:text-sage-300" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="pa26-card-title">{item.label}</p>
-                    {item.caption ? (
-                      <p className="pa26-caption">{item.caption}</p>
-                    ) : null}
-                    <div className="mt-3">
+                    <div className="mt-2">
                       <ThemeToggle2026 />
                     </div>
                   </div>
@@ -96,6 +93,7 @@ export function AccountHub2026() {
               <ActionCard2026
                 title={item.label}
                 caption={item.caption}
+                className="min-h-[52px] !px-3 !py-2.5"
                 icon={
                   <NavIcon2026
                     id={item.icon}

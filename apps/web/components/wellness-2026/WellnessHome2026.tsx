@@ -211,10 +211,9 @@ export function WellnessHome2026() {
     overview?.plan_summary.has_selected_menu;
 
   return (
-    <div className="space-y-3 px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-      <header className="pb-1">
+    <div className="space-y-2 px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <header>
         <h1 className="pa26-page-title">Здоровье</h1>
-        <p className="pa26-caption text-pa-muted">Калории, цели и ограничения</p>
       </header>
       {loading ? (
         <>
@@ -232,34 +231,41 @@ export function WellnessHome2026() {
         />
       ) : (
         <>
-          <WellnessDayRing2026 progress={dayProgress} />
-          <WellnessTodayCard2026 metrics={todayMetrics} />
-          <WaterIntake2026 onUpdated={handleWaterUpdated} />
+          <WellnessDayRing2026 progress={dayProgress} caloriesLabel={todayMetrics.eatenLabel} />
+          <WaterIntake2026 compact onUpdated={handleWaterUpdated} />
           <WellnessInsight2026 text={insight} />
-          <WellnessGoalCard2026
-            goalLabel={goalLabel}
-            goalCard={goalCard}
-            profileComplete={profileComplete}
-          />
-          <WellnessWeekStrip2026 days={weekDays} />
+          <details className="group rounded-card border border-pa-border bg-pa-surface">
+            <summary className="cursor-pointer list-none px-4 py-3 pa26-caption font-semibold text-pa-muted marker:content-none">
+              Цели и неделя
+            </summary>
+            <div className="space-y-2 border-t border-pa-border px-2 pb-3 pt-2">
+              <WellnessTodayCard2026 metrics={todayMetrics} />
+              <WellnessGoalCard2026
+                goalLabel={goalLabel}
+                goalCard={goalCard}
+                profileComplete={profileComplete}
+              />
+              <WellnessWeekStrip2026 days={weekDays} />
+            </div>
+          </details>
         </>
       )}
 
-      {!loading ? (
-        <div className="space-y-3 pt-2">
+      {!loading && hasAnyData ? (
+        <div className="flex gap-2 pt-1">
           <Button2026
-            size="wide"
-            variant="primary"
+            className="flex-1"
+            variant="secondary"
             onClick={() => router.push("/wellness/chat")}
           >
-            Спросить ПланАм
+            Спросить
           </Button2026>
           <Button2026
-            size="wide"
-            variant="secondary"
+            className="flex-1"
+            variant="ghost"
             onClick={() => router.push(`${PLAN_PATHS.today}?outcome=1`)}
           >
-            Отметить приём пищи
+            Отметить еду
           </Button2026>
         </div>
       ) : null}
