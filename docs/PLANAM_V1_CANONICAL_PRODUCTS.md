@@ -101,8 +101,53 @@ docker compose -f docker-compose.prod.yml exec api sh -lc \
 
 ---
 
+## Safe-only commit и JSONB resync
+
+Применение нормализации и ресинк денормализованной копии `recipes.ingredients`
+описаны в отдельном документе:
+[`PLANAM_V1_INGREDIENT_SAFE_COMMIT_AND_JSONB_RESYNC.md`](./PLANAM_V1_INGREDIENT_SAFE_COMMIT_AND_JSONB_RESYNC.md).
+
+Применение теперь требует явного намерения:
+
+```bash
+python backend/scripts/normalize_recipe_ingredients.py --commit --safe-only
+```
+
+`--commit` без `--safe-only` выводит предупреждение и работает как safe-only
+(других режимов commit нет). Dry-run остаётся дефолтом.
+
+---
+
+## To taste handling (следующий этап)
+
+Сейчас часть строк хранит `quantity = "по вкусу"`, `unit = "шт"`. Это
+некорректно для КБЖУ и списка покупок. Safe-only commit это **не меняет**
+(чтобы не терять данные и не выдумывать числа).
+
+Правильная будущая модель (требует новых полей / отдельной таблицы):
+
+| поле | значение |
+|------|----------|
+| `quantity_value` | `null` |
+| `quantity_text` | `"по вкусу"` |
+| `quantity_mode` | `"to_taste"` |
+| `is_to_taste` | `true` |
+| `unit` | `null` или `"по вкусу"` |
+| `nutrition_precision` | `low_confidence` |
+| `shopping_priority` | `low` |
+
+---
+
+## needs_review / manual review (следующий этап)
+
+~82 строки требуют ручного решения (generic / `другое` / плохое количество).
+Они **не меняются автоматически**. Список — в
+`reports/ingredient_normalization_needs_review.md`.
+
+---
+
 ## Дальше (вне этого этапа)
 
-1. Решить по `to_taste` (колонка/notes-конвенция) и по `needs_review`.
-2. Ресинк `recipes.ingredients` (JSONB) после commit.
+1. Реализовать `to_taste` модель (поля выше) отдельной миграцией.
+2. Разобрать `needs_review` вручную по отчёту.
 3. Связать canonical products с КБЖУ и shopping-list grouping.

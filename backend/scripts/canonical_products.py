@@ -228,6 +228,28 @@ def resolve_product(name: str) -> CanonicalProduct:
     )
 
 
+# Ingredients that should NOT be drawn as visible items in a photo prompt
+# (seasonings / cooking fats / water / sugar look like nothing on a plate).
+PHOTO_HIDDEN_NAMES = frozenset(
+    {
+        "соль", "сахар", "вода", "масло растительное", "масло подсолнечное",
+        "масло оливковое", "перец черный", "перец белый", "перец душистый",
+    }
+)
+PHOTO_HIDDEN_CATEGORIES = frozenset({"специи_соусы"})
+
+
+def is_photo_visible(name: str, category: str, to_taste: bool, generic: bool) -> bool:
+    """True if an ingredient is a good visible subject for a recipe photo."""
+    if to_taste or generic:
+        return False
+    if category in PHOTO_HIDDEN_CATEGORIES:
+        return False
+    if _norm(name) in PHOTO_HIDDEN_NAMES:
+        return False
+    return True
+
+
 def is_valid_quantity(quantity: str) -> bool:
     value = _norm(quantity)
     if value in NON_NUMERIC_QUANTITY:
