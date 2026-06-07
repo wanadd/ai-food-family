@@ -44,6 +44,13 @@ Thumbs.db
 exports/*.jsonl
 exports/*.json
 reports/*.md
+# Authored consolidation audit reports (tracked deliverables — keep in git)
+!reports/planam_cross_branch_audit.md
+!reports/planam_project_consolidation_audit.md
+!reports/profile_account_consolidation_audit.md
+!reports/ui_2026_consolidation_audit.md
+# Generated per-run project health audit (read-only script output)
+reports/project_health_audit.json
 # Environment-specific normalization/resync outputs (generated per-run)
 reports/planam_v1_ingredient_normalization*.json
 reports/recipe_ingredients_jsonb_resync_*.json
