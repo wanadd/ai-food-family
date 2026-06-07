@@ -70,7 +70,7 @@ export function formatPlanAmGreeting(
   if (displayName?.trim()) {
     return `${base}, ${displayName.trim()} 👋`;
   }
-  return "Добро пожаловать 👋";
+  return `${base} 👋`;
 }
 
 export function isShoppingHeroPriority(
@@ -207,6 +207,18 @@ export function wellnessStatusLabel(overview: MenuOverview | null): string {
 
 export function leftoversStatusLabel(overview: MenuOverview | null): string {
   const count = overview?.meal_leftovers_count ?? 0;
+  if (count <= 0) {
+    return "Пока пусто";
+  }
+  return `${count} ${productsLabel(count)}`;
+}
+
+/** Pantry stock label for the home "Остатки" block (real pantry_items_count). */
+export function pantryStatusLabel(overview: MenuOverview | null): string {
+  if (!overview || overview.pantry_items_count == null) {
+    return "Пока пусто";
+  }
+  const count = overview.pantry_items_count;
   if (count <= 0) {
     return "Пока пусто";
   }

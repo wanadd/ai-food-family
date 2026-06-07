@@ -108,6 +108,7 @@ class MenuOverviewResponse(BaseModel):
     nutritionist_advice_error: str | None = None
     next_action: HomeNextAction | None = None
     shopping_unchecked_count: int = 0
+    pantry_items_count: int = 0
     pantry_expiring_preview: PantryExpiringPreview | None = None
 
 

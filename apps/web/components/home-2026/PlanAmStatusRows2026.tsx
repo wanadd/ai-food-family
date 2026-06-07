@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 
 import {
-  leftoversStatusLabel,
+  pantryStatusLabel,
   shoppingStatusLabel,
   wellnessStatusLabel,
 } from "@/lib/home/planam-hero-2026";
@@ -39,8 +39,8 @@ export function PlanAmStatusRows2026({
     {
       emoji: "📦",
       label: "Остатки",
-      value: loading ? "…" : leftoversStatusLabel(overview),
-      href: "/shopping/leftovers",
+      value: loading ? "…" : pantryStatusLabel(overview),
+      href: "/home/pantry",
     },
     {
       emoji: "❤️",

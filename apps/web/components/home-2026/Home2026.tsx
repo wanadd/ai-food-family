@@ -8,7 +8,6 @@ import { MealOutcomeSheet2026 } from "@/components/dom-2026";
 import { PlanAmHero2026 } from "@/components/home-2026/PlanAmHero2026";
 import { PlanAmStatusRows2026 } from "@/components/home-2026/PlanAmStatusRows2026";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
-import { BottomSheet2026 } from "@/components/planam-2026/ui/BottomSheet2026";
 import { useTelegram } from "@/components/TelegramProvider";
 import { EmptyState2026 } from "@/components/planam-2026/ui/EmptyState2026";
 import {
@@ -42,7 +41,6 @@ export function Home2026() {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [mealOutcomeOpen, setMealOutcomeOpen] = useState(false);
-  const [askOpen, setAskOpen] = useState(false);
 
   const load = useCallback(
     async (force = false) => {
@@ -156,24 +154,26 @@ export function Home2026() {
         <div className="px-4 pt-3">
           <button
             type="button"
-            onClick={() => setAskOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-card border border-dashed border-pa-border bg-pa-surface/80 px-4 py-3 pa26-caption font-semibold text-sage-700 transition hover:bg-sage-50 dark:text-sage-300 dark:hover:bg-pa-elevated/40"
+            onClick={() => router.push("/wellness/chat")}
+            className="flex w-full items-center gap-3 rounded-card border border-dashed border-pa-border bg-pa-surface/80 px-4 py-3 text-left transition hover:bg-sage-50 dark:hover:bg-pa-elevated/40"
           >
-            <span aria-hidden>✨</span>
-            Спросить PlanAm
+            <span className="text-lg" aria-hidden>
+              ✨
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="pa26-card-title block text-sage-700 dark:text-sage-300">
+                AI помощник
+              </span>
+              <span className="pa26-micro text-pa-muted">
+                Поможет заменить блюдо, собрать меню или объяснить рацион
+              </span>
+            </span>
+            <span className="pa26-micro shrink-0 text-pa-muted" aria-hidden>
+              ›
+            </span>
           </button>
         </div>
       ) : null}
-
-      <BottomSheet2026
-        open={askOpen}
-        title="PlanAm"
-        onClose={() => setAskOpen(false)}
-      >
-        <p className="pa26-body text-pa-muted">
-          Скоро здесь появится помощник PlanAm.
-        </p>
-      </BottomSheet2026>
 
       <MealOutcomeSheet2026
         open={mealOutcomeOpen}

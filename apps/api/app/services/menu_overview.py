@@ -398,5 +398,6 @@ def get_menu_overview(db: Session, user: User, scope: AppScope) -> MenuOverviewR
         nutritionist_advice_error=advice_error,
         next_action=next_action,
         shopping_unchecked_count=shopping_unchecked,
+        pantry_items_count=len(pantry_items),
         pantry_expiring_preview=pantry_preview,
     )
