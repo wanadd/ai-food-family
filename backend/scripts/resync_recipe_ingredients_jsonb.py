@@ -13,8 +13,9 @@ Structure is intentionally kept identical to the project's own
     [{"name": <name>, "amount": "<quantity> <unit>"}]
 
 So no new technical fields are introduced and frontend/API compatibility is
-preserved. Names are never changed. to_taste quantities are kept verbatim
-(whatever is in recipe_ingredients).
+preserved. Names are never changed. Amounts use the honest formatter
+(``app.services.ingredient_format``): to_taste phrases like "по вкусу" never
+get a unit, and an empty unit never becomes "шт".
 
 Default mode is **--dry-run** (no writes). Apply with:
 
@@ -46,6 +47,11 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 ROOT = Path(__file__).resolve().parents[2]
+API_ROOT = ROOT / "apps" / "api"
+if str(API_ROOT) not in sys.path:
+    sys.path.insert(0, str(API_ROOT))
+
+from app.services.ingredient_format import format_ingredient_amount  # noqa: E402
 DEFAULT_DATABASE_URL = "postgresql://aifood:aifood@localhost:5432/aifood"
 REPORTS = ROOT / "reports"
 DRY_MD = REPORTS / "recipe_ingredients_jsonb_resync_dry_run.md"
@@ -94,7 +100,9 @@ def _coerce_jsonb(value: Any) -> list[dict[str, Any]]:
 
 
 def build_amount(quantity: str, unit: str) -> str:
-    return f"{(quantity or '').strip()} {(unit or '').strip()}".strip()
+    # Honest formatter: to_taste phrases ("по вкусу") drop the unit, empty unit
+    # never becomes "шт".
+    return format_ingredient_amount(quantity, unit)
 
 
 def build_diffs(engine, source_type: str, limit: int | None) -> list[RecipeDiff]:

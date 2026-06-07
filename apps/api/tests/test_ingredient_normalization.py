@@ -213,10 +213,10 @@ def test_resync_commit_updates_only_jsonb_and_is_idempotent():
         ing = json.loads(
             list(conn.execute(text("SELECT ingredients FROM recipes WHERE id=1")))[0][0]
         )
-    # rebuilt from rows: name preserved, amount = "<quantity> <unit>"
+    # rebuilt from rows via honest formatter: name preserved; to_taste drops unit
     names = [i["name"] for i in ing]
     assert names == ["Перец черный", "Картофель", "Загадка"]
-    assert ing[0]["amount"] == "по вкусу г"
+    assert ing[0]["amount"] == "по вкусу"  # not "по вкусу г"
 
     # idempotent: second resync changes nothing
     diffs2 = resync.build_diffs(engine, "v1_import", None)

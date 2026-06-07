@@ -40,6 +40,7 @@ import {
   perServingMacros,
   totalMacrosLine,
 } from "@/lib/recipes/nutrition";
+import { formatIngredientAmount } from "@/lib/recipes/ingredient-amount";
 import type { RecipeDetail } from "@/lib/recipes/types";
 type RecipeDetail2026Props = {
   recipeId: number;
@@ -373,7 +374,9 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
               {ingredients.map((ing, i) => (
                 <li key={`${ing.name}-${i}`} className="flex justify-between gap-3 px-4 py-3 pa26-body">
                   <span>{ing.name}</span>
-                  <span className="shrink-0 text-pa-muted">{ing.amount}</span>
+                  <span className="shrink-0 text-pa-muted">
+                    {formatIngredientAmount(ing)}
+                  </span>
                 </li>
               ))}
             </ul>

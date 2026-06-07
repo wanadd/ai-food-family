@@ -1,6 +1,9 @@
 export type RecipeIngredient = {
   name: string;
   amount: string;
+  quantity?: string | null;
+  unit?: string | null;
+  is_optional?: boolean;
 };
 
 export type NutritionConfidence =
