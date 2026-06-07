@@ -119,8 +119,9 @@ python backend/scripts/calculate_recipe_nutrition_summary.py --commit --safe-onl
 
 ## 12. Следующий этап
 
-Подключить recipe-level КБЖУ к меню/дню/целям и нутрициологу (агрегация на день
-и неделю). В этом этапе health/menu/nutritionist **не трогаются**.
+Recipe-level КБЖУ **подключены** к меню/дню/неделе и целям пользователя:
+агрегация на день/неделю, прогресс по целям, подготовка контекста для
+нутрициолога — см. [PLANAM_V1_MENU_NUTRITION_AGGREGATION.md](PLANAM_V1_MENU_NUTRITION_AGGREGATION.md).
 
 См. также: [PLANAM_V1_NUTRITION_SHOPPING_PHOTO.md](PLANAM_V1_NUTRITION_SHOPPING_PHOTO.md),
 [PLANAM_V1_TO_TASTE_AND_READINESS.md](PLANAM_V1_TO_TASTE_AND_READINESS.md).

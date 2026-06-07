@@ -55,6 +55,7 @@ reports/shopping_list_groups.json
 reports/photo_prompt_readiness.json
 reports/nutrition_shopping_photo_pipeline_*.json
 reports/recipe_nutrition_summary_*.json
+reports/menu_nutrition_readiness.json
 
 # Recipe image assets (generated locally; do not commit heavy binaries)
 apps/web/public/recipe-images/**/*

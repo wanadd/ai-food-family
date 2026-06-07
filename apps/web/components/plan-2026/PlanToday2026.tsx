@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { MealOutcomeSheet2026 } from "@/components/dom-2026/MealOutcomeSheet2026";
+import { DayNutritionCard2026 } from "@/components/plan-2026/DayNutritionCard2026";
 import { PlanTimelineSection2026 } from "@/components/plan-2026/PlanTimelineSection2026";
 import { ReplaceDishSheet2026 } from "@/components/plan-2026/ReplaceDishSheet2026";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -231,6 +232,8 @@ export function PlanToday2026() {
             Итог дня
           </Button2026>
         </div>
+
+        {plannedDate ? <DayNutritionCard2026 plannedDate={plannedDate} /> : null}
       </div>
 
       <div className="mt-4 px-4">

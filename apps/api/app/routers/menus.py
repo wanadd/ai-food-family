@@ -16,6 +16,7 @@ from app.schemas.menu import (
     SelectMenuRequest,
     SelectedMenuResponse,
 )
+from app.schemas.menu_nutrition import DayNutritionResponse, WeekNutritionResponse
 from app.schemas.menu_overview import (
     MenuOverviewResponse,
     MenuPlanItem,
@@ -109,6 +110,53 @@ def get_menu_today(
         items=[MenuPlanItem(**item) for item in items],
         menu=menu,
     )
+
+
+@router.get("/nutrition", response_model=DayNutritionResponse)
+def get_menu_day_nutrition(
+    plan_date: str | None = Query(default=None, alias="date"),
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> DayNutritionResponse:
+    from app.services.nutrition.plan_aggregator import build_day_nutrition
+
+    try:
+        data = build_day_nutrition(db, user.id, scope, plan_date)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
+    return DayNutritionResponse(**data)
+
+
+@router.get("/today/nutrition", response_model=DayNutritionResponse)
+def get_menu_today_nutrition(
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> DayNutritionResponse:
+    from app.services.nutrition.plan_aggregator import build_day_nutrition
+
+    return DayNutritionResponse(**build_day_nutrition(db, user.id, scope, None))
+
+
+@router.get("/nutrition/week", response_model=WeekNutritionResponse)
+def get_menu_week_nutrition(
+    start: str | None = Query(default=None),
+    scope: AppScope = Depends(get_app_scope),
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> WeekNutritionResponse:
+    from app.services.nutrition.plan_aggregator import build_week_nutrition
+
+    try:
+        data = build_week_nutrition(db, user.id, scope, start)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
+    return WeekNutritionResponse(**data)
 
 
 @router.post("/items/{slot_id}/replace", response_model=ReplaceMenuSlotResponse)

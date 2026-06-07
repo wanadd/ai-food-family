@@ -165,6 +165,86 @@ export type ReplaceMenuSlotResponse = {
   menu: MenuVariant;
 };
 
+export type NutritionConfidence =
+  | "exact"
+  | "estimated"
+  | "low_confidence"
+  | "unavailable";
+
+export type NutritionMacros = {
+  kcal: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+};
+
+export type DayNutrition = {
+  date: string;
+  totals: NutritionMacros;
+  targets: {
+    kcal: number | null;
+    protein: number | null;
+    fat: number | null;
+    carbs: number | null;
+  };
+  progress: {
+    kcal_pct: number | null;
+    protein_pct: number | null;
+    fat_pct: number | null;
+    carbs_pct: number | null;
+  };
+  confidence: NutritionConfidence;
+  coverage: {
+    total_items: number;
+    calculated_items: number;
+    exact_items: number;
+    estimated_items: number;
+    low_confidence_items: number;
+    unavailable_items: number;
+    coverage_pct: number;
+  };
+  meals: Array<{
+    meal_type: string;
+    totals: NutritionMacros;
+    items: Array<{
+      recipe_id: number | null;
+      name: string;
+      kcal: number | null;
+      confidence: NutritionConfidence | null;
+    }>;
+  }>;
+  warnings: string[];
+};
+
+export type WeekNutrition = {
+  start_date: string;
+  end_date: string;
+  days: DayNutrition[];
+  weekly_total: NutritionMacros;
+  weekly_average: NutritionMacros;
+  days_with_full_calc: number;
+  confidence: NutritionConfidence;
+  warnings: string[];
+};
+
+export async function fetchMenuDayNutrition(
+  initData: string,
+  mode: AppMode,
+  date?: string,
+): Promise<DayNutrition | null> {
+  const query = date ? `?date=${encodeURIComponent(date)}` : "";
+  return apiGet<DayNutrition>(initData, mode, `/menus/nutrition${query}`);
+}
+
+export async function fetchMenuWeekNutrition(
+  initData: string,
+  mode: AppMode,
+  start?: string,
+): Promise<WeekNutrition | null> {
+  const query = start ? `?start=${encodeURIComponent(start)}` : "";
+  return apiGet<WeekNutrition>(initData, mode, `/menus/nutrition/week${query}`);
+}
+
 export async function replaceMenuSlot(
   initData: string,
   mode: AppMode,
