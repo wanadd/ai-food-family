@@ -110,3 +110,6 @@ Readiness: `reports/recipe_readiness_after_to_taste.md` + `.json`.
    generic, исключение to_taste из обязательных (используя `shopping_priority`).
 3. **Photo**: RecipeVisualProfiler + PhotoPromptBuilder на основе
    `photo_visibility` (visible/optional), исключая hidden/unsafe.
+
+Реализация этих трёх пунктов: см.
+[PLANAM_V1_NUTRITION_SHOPPING_PHOTO.md](PLANAM_V1_NUTRITION_SHOPPING_PHOTO.md).

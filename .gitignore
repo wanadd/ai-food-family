@@ -50,6 +50,10 @@ reports/recipe_ingredients_jsonb_resync_*.json
 reports/to_taste_ingredients_migration_*.json
 reports/ingredient_normalization_needs_review.json
 reports/recipe_readiness_after_to_taste.json
+reports/nutrition_estimate.json
+reports/shopping_list_groups.json
+reports/photo_prompt_readiness.json
+reports/nutrition_shopping_photo_pipeline_*.json
 
 # Recipe image assets (generated locally; do not commit heavy binaries)
 apps/web/public/recipe-images/**/*
