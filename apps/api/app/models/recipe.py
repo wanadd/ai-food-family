@@ -101,6 +101,17 @@ class RecipeIngredientRow(Base):
     category: Mapped[str] = mapped_column(String(32), default="other")
     is_optional: Mapped[bool] = mapped_column(Boolean, default=False)
     notes: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Ingredient quality model (nullable; populated by migrate_to_taste_ingredients.py).
+    # Not exposed by API serializers yet — added for shopping/nutrition/photo pipelines.
+    quantity_mode: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    quantity_text: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    is_to_taste: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    nutrition_precision: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    shopping_priority: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    needs_review_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    photo_visibility: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    manual_review_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     recipe = relationship("Recipe", back_populates="ingredient_rows")
 

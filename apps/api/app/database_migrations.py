@@ -442,6 +442,16 @@ def _schema_statements() -> list[str]:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_recipe_ingredients_recipe_id ON recipe_ingredients (recipe_id);",
+        # Ingredient quality model (to_taste / nutrition / shopping / photo); all nullable/defaulted.
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS quantity_mode VARCHAR(16)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS quantity_text VARCHAR(64)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS is_to_taste BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS nutrition_precision VARCHAR(24)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS shopping_priority VARCHAR(16)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS needs_review BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS needs_review_reason VARCHAR(64)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS photo_visibility VARCHAR(16)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS manual_review_status VARCHAR(16)",
         """
         CREATE TABLE IF NOT EXISTS recipe_steps (
             id SERIAL PRIMARY KEY,

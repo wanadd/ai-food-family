@@ -148,6 +148,7 @@ python backend/scripts/normalize_recipe_ingredients.py --commit --safe-only
 
 ## Дальше (вне этого этапа)
 
-1. Реализовать `to_taste` модель (поля выше) отдельной миграцией.
+1. ✅ Реализована `to_taste`-модель и поля качества — см.
+   [`PLANAM_V1_TO_TASTE_AND_READINESS.md`](./PLANAM_V1_TO_TASTE_AND_READINESS.md).
 2. Разобрать `needs_review` вручную по отчёту.
 3. Связать canonical products с КБЖУ и shopping-list grouping.

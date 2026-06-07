@@ -128,6 +128,9 @@ docker compose -f docker-compose.prod.yml exec -T postgres \
   pg_dump -U aifood aifood --no-owner --no-acl > backup_$(date +%F_%H-%M).sql
 ```
 
+> Следующий этап (to_taste-модель, nutrition/shopping/photo readiness) описан в
+> [`PLANAM_V1_TO_TASTE_AND_READINESS.md`](./PLANAM_V1_TO_TASTE_AND_READINESS.md).
+
 ## 11. Что делать следующим этапом
 
 1. `to_taste` модель (отдельная миграция с полями `quantity_mode` и т.д.).

@@ -238,16 +238,141 @@ PHOTO_HIDDEN_NAMES = frozenset(
 )
 PHOTO_HIDDEN_CATEGORIES = frozenset({"специи_соусы"})
 
+# Herbs / greens that are usually a garnish, not a main visual subject.
+PHOTO_OPTIONAL_NAMES = frozenset(
+    {
+        "зелень", "петрушка", "укроп", "кинза", "лук зеленый", "базилик",
+        "мята", "руккола", "орехи грецкие", "кунжут",
+    }
+)
+
+# Frying / dressing fats: real shopping items but low priority.
+FRYING_OILS = frozenset(
+    {"масло растительное", "масло подсолнечное", "масло оливковое", "масло"}
+)
+SHOPPING_HIDDEN_NAMES = frozenset({"вода"})
+
+# Units that give an estimated (not exact) nutrition reading.
+ESTIMATED_UNITS = frozenset(
+    {"шт", "зубчик", "стакан", "ст.л.", "ч.л.", "упаковка", "пучок", "ломтик", "щепотка"}
+)
+EXACT_UNITS = frozenset({"г", "кг", "мл", "л"})
+
+
+def get_photo_visibility(
+    name: str, category: str, *, is_to_taste: bool = False, generic: bool = False
+) -> str:
+    """visible | optional | hidden | unsafe — subject quality for a photo prompt."""
+    if generic:
+        return "unsafe"
+    if is_to_taste:
+        return "hidden"
+    if category in PHOTO_HIDDEN_CATEGORIES or _norm(name) in PHOTO_HIDDEN_NAMES:
+        return "hidden"
+    if _norm(name) in PHOTO_OPTIONAL_NAMES:
+        return "optional"
+    return "visible"
+
 
 def is_photo_visible(name: str, category: str, to_taste: bool, generic: bool) -> bool:
-    """True if an ingredient is a good visible subject for a recipe photo."""
-    if to_taste or generic:
-        return False
-    if category in PHOTO_HIDDEN_CATEGORIES:
-        return False
-    if _norm(name) in PHOTO_HIDDEN_NAMES:
-        return False
-    return True
+    """Back-compat: a good (visible/optional) photo subject."""
+    return get_photo_visibility(
+        name, category, is_to_taste=to_taste, generic=generic
+    ) in {"visible", "optional"}
+
+
+def classify_quantity_mode(quantity: str) -> tuple[str, bool]:
+    """Return (quantity_mode, is_to_taste).
+
+    Modes: exact | range | approximate | to_taste | unknown. Never invents data.
+    """
+    value = (quantity or "").strip()
+    low = _norm(value)
+    if low in NON_NUMERIC_QUANTITY:
+        return "to_taste", True
+    if re.fullmatch(r"\d+([.,]\d+)?", low):
+        return "exact", False
+    if re.fullmatch(r"\d+([.,]\d+)?\s*-\s*\d+([.,]\d+)?", low):
+        return "range", False
+    if re.fullmatch(r"\d+\s*/\s*\d+", low):
+        return "approximate", False
+    return "unknown", False
+
+
+def get_nutrition_precision(
+    name: str,
+    quantity: str,
+    unit: str,
+    *,
+    category: str = DEFAULT_CATEGORY,
+    generic: bool = False,
+    is_to_taste: bool = False,
+) -> str:
+    """exact | estimated | low_confidence | unavailable."""
+    q = (quantity or "").strip()
+    u = _norm(unit)
+    if not q and not u:
+        return "unavailable"
+    if category == DEFAULT_CATEGORY:  # unknown product
+        return "unavailable"
+    if is_to_taste or generic:
+        return "low_confidence"
+    if is_valid_quantity(q) and u in EXACT_UNITS:
+        return "exact"
+    if u in ESTIMATED_UNITS:
+        return "estimated"
+    return "low_confidence"
+
+
+def get_shopping_priority(
+    name: str,
+    category: str,
+    *,
+    generic: bool = False,
+    is_to_taste: bool = False,
+    notes: str | None = None,
+) -> str:
+    """normal | low | optional | hidden."""
+    key = _norm(name)
+    note = _norm(notes or "")
+    if key in SHOPPING_HIDDEN_NAMES or "смазыв" in note or "для формы" in note:
+        return "hidden"
+    if is_to_taste:
+        return "low"
+    if category in PHOTO_HIDDEN_CATEGORIES:  # соль/перец/специи/соусы
+        return "low"
+    if key in FRYING_OILS:
+        return "low"
+    if "по желанию" in note or "украш" in note or "garnish" in note:
+        return "optional"
+    if generic:
+        return "optional"
+    return "normal"
+
+
+def get_needs_review_reason(
+    name: str,
+    quantity: str,
+    unit: str,
+    *,
+    category: str = DEFAULT_CATEGORY,
+    generic: bool = False,
+    is_to_taste: bool = False,
+) -> str | None:
+    """First applicable reason, or None when the row is clean."""
+    if generic:
+        return "generic"
+    if category == DEFAULT_CATEGORY:
+        return "ambiguous"
+    if _norm(unit) not in CANONICAL_UNITS:
+        return "unknown_unit"
+    if not is_to_taste and not is_valid_quantity(quantity):
+        return "bad_quantity"
+    if get_nutrition_precision(
+        name, quantity, unit, category=category, generic=generic, is_to_taste=is_to_taste
+    ) in {"low_confidence", "unavailable"} and not is_to_taste:
+        return "low_nutrition_precision"
+    return None
 
 
 def is_valid_quantity(quantity: str) -> bool:

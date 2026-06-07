@@ -47,6 +47,9 @@ reports/*.md
 # Environment-specific normalization/resync outputs (generated per-run)
 reports/planam_v1_ingredient_normalization*.json
 reports/recipe_ingredients_jsonb_resync_*.json
+reports/to_taste_ingredients_migration_*.json
+reports/ingredient_normalization_needs_review.json
+reports/recipe_readiness_after_to_taste.json
 
 # Recipe image assets (generated locally; do not commit heavy binaries)
 apps/web/public/recipe-images/**/*
