@@ -181,14 +181,6 @@ export function Shopping2026() {
     });
   }
 
-  useEffect(() => {
-    if (groups.length > 0) {
-      setExpanded((prev) =>
-        prev.size === 0 ? new Set(groups.map((g) => g.category)) : prev,
-      );
-    }
-  }, [groups]);
-
   if (loading && !list) {
     return (
       <div className="space-y-3 px-4 pb-6 pt-4">
@@ -306,7 +298,8 @@ export function Shopping2026() {
 
         <div className="max-h-[70vh] space-y-2 overflow-y-auto overscroll-contain">
           {groups.map((group) => {
-            const open = expanded.has(group.category);
+            // Collapsed by default; an active search reveals matching groups.
+            const open = expanded.has(group.category) || search.trim() !== "";
             const unchecked = group.items.filter((i) => !i.checked).length;
             return (
               <section
@@ -361,9 +354,12 @@ export function Shopping2026() {
                             >
                               {item.name}
                             </span>
-                            {(item.quantity || item.unit) && (
+                            {(item.amount || item.quantity || item.unit) && (
                               <span className="pa26-caption text-pa-muted">
-                                {[item.quantity, item.unit].filter(Boolean).join(" ")}
+                                {item.amount ||
+                                  [item.quantity, item.unit]
+                                    .filter(Boolean)
+                                    .join(" ")}
                               </span>
                             )}
                           </span>
