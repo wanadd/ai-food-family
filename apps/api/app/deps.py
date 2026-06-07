@@ -37,6 +37,11 @@ def get_current_user(
                 detail="Dev auth is disabled",
             )
         user, _ = get_or_create_dev_user(db)
+        if getattr(user, "is_deleted", False) or getattr(user, "is_blocked", False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Доступ временно ограничен",
+            )
         return user
 
     try:
