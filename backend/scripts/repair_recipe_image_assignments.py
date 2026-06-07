@@ -33,27 +33,29 @@ import sys
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "backend" / "scripts"
-API_ROOT = ROOT / "apps" / "api"
-for _path in (str(SCRIPTS_DIR), str(API_ROOT)):
-    if _path not in sys.path:
-        sys.path.insert(0, _path)
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
+from _image_paths import (  # noqa: E402
+    find_repo_file,
+    recipe_images_dir,
+    recipe_images_public_url,
+)
 from recipe_id_resolver import (  # noqa: E402
     RecipeResolutionError,
     resolve_v1_recipe_id_by_title,
 )
 
-DEFAULT_RESULTS = ROOT / "reports" / "planam_v1_recipe_image_pilot_results.json"
-DEFAULT_IMAGES_ROOT = ROOT / "apps" / "web" / "public" / "recipe-images"
-LOCAL_URL_BASE = "/recipe-images"
+DEFAULT_RESULTS = find_repo_file(
+    "reports", "planam_v1_recipe_image_pilot_results.json"
+)
 WRONG_MANUAL_IDS = list(range(1, 11))  # archived manual recipes id 1..10
 REQUIRED_FILES = ("hero.webp", "card_800.webp", "thumb_400.webp")
 
 
 def urls_for_recipe_id(recipe_id: int) -> dict[str, str]:
-    base = f"{LOCAL_URL_BASE}/{recipe_id}"
+    base = f"{recipe_images_public_url()}/{recipe_id}"
     return {
         "hero_image_url": f"{base}/hero.webp",
         "image_url": f"{base}/card_800.webp",
@@ -112,7 +114,7 @@ def load_results(path: Path) -> list[dict[str, Any]]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Repair mis-assigned recipe images")
     parser.add_argument("--results", default=str(DEFAULT_RESULTS))
-    parser.add_argument("--images-root", default=str(DEFAULT_IMAGES_ROOT))
+    parser.add_argument("--images-root", default=str(recipe_images_dir()))
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--commit", action="store_true")
@@ -124,6 +126,9 @@ def main() -> int:
     entries = load_results(Path(args.results).resolve())
     images_root = Path(args.images_root).resolve()
 
+    from _image_paths import ensure_app_on_path
+
+    ensure_app_on_path()
     from app.database import SessionLocal
     from app.models.recipe import Recipe
 

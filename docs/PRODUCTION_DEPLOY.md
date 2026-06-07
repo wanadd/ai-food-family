@@ -189,6 +189,70 @@ DOMAIN=your.domain EMAIL=you@example.com ./deploy/init-letsencrypt.sh
 
 ---
 
+## Recipe images storage
+
+Фото рецептов генерируются в рантайме и **не** должны жить только внутри Docker
+image — иначе они теряются при `build --no-cache`. Они хранятся на хосте и
+монтируются в контейнеры.
+
+| Слой | Путь |
+|------|------|
+| Production host path | `/var/www/ai-food-family-data/recipe-images` |
+| Web container | `/app/public/recipe-images` |
+| API container | `/app/public/recipe-images` |
+| Public URL | `/recipe-images/{recipe_id}/hero.webp` |
+
+Отдаёт изображения `web` (Next.js standalone, `/app/public`), nginx проксирует
+их через общий `location /`. Отдельная nginx-location не нужна.
+
+### Env (в `.env` рядом с docker-compose.prod.yml)
+
+```env
+# Хостовая папка с фото (можно переопределить путь)
+RECIPE_IMAGES_HOST_DIR=/var/www/ai-food-family-data/recipe-images
+# Путь и URL внутри api-контейнера (значения по умолчанию обычно достаточны)
+RECIPE_IMAGES_DIR=/app/public/recipe-images
+RECIPE_IMAGES_PUBLIC_URL=/recipe-images
+# Отдельный ключ для image pipeline (не основной OPENAI_API_KEY)
+PLANAM_IMAGE_OPENAI_API_KEY=
+```
+
+### Первичная настройка на сервере
+
+```bash
+sudo mkdir -p /var/www/ai-food-family-data/recipe-images
+sudo chown -R root:root /var/www/ai-food-family-data
+sudo chmod -R 755 /var/www/ai-food-family-data
+
+# Безопасно перенести существующие фото (без перезаписи и удаления)
+sudo rsync -a --ignore-existing \
+  /var/www/ai-food-family/apps/web/public/recipe-images/ \
+  /var/www/ai-food-family-data/recipe-images/
+```
+
+`web` работает под uid 1001 (read-only достаточно), `api` — под root (read/write
+для генерации). `chmod 777` не использовать.
+
+### Проверка
+
+```bash
+curl -I https://planam.ru/recipe-images/75/hero.webp
+docker compose -f docker-compose.prod.yml exec web sh -lc "ls -la /app/public/recipe-images/75/hero.webp"
+docker compose -f docker-compose.prod.yml exec api sh -lc "ls -la /app/public/recipe-images/75/hero.webp"
+# Скрипты доступны без ручного docker compose cp:
+docker compose -f docker-compose.prod.yml exec api sh -lc "find /app -name 'repair_recipe_image_assignments.py'"
+docker compose -f docker-compose.prod.yml exec api sh -lc "find /app -name 'recipe_id_resolver.py'"
+docker compose -f docker-compose.prod.yml exec api sh -lc "cd /app && python backend/scripts/audit_recipe_images.py"
+```
+
+### Предупреждения
+
+- Нельзя хранить runtime-generated recipe images только внутри Docker image.
+- Нельзя удалять `/var/www/ai-food-family-data/recipe-images` при deploy.
+- Нельзя запускать destructive cleanup для recipe-images без backup.
+
+---
+
 ## Полезные команды
 
 ```bash

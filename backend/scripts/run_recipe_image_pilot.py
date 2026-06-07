@@ -33,13 +33,15 @@ import time
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "backend" / "scripts"
-API_ROOT = ROOT / "apps" / "api"
-for path in (str(SCRIPTS_DIR), str(API_ROOT)):
-    if path not in sys.path:
-        sys.path.insert(0, path)
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
+from _image_paths import (  # noqa: E402
+    find_repo_file,
+    recipe_images_dir,
+    recipe_images_public_url,
+)
 from apply_recipe_images import urls_from_local_recipe_id  # noqa: E402
 from openai_recipe_image_client import (  # noqa: E402
     DEFAULT_MODEL,
@@ -56,10 +58,12 @@ from recipe_id_resolver import (  # noqa: E402
 )
 from recipe_image_utils import build_master_prompt  # noqa: E402
 
-DEFAULT_PILOT_FILE = ROOT / "data" / "planam_v1_image_pilot_batch.json"
-DEFAULT_OUTPUT_ROOT = ROOT / "apps" / "web" / "public" / "recipe-images"
-DEFAULT_RESULTS_PATH = ROOT / "reports" / "planam_v1_recipe_image_pilot_results.json"
-LOCAL_URL_BASE = "/recipe-images"
+DEFAULT_PILOT_FILE = find_repo_file("data", "planam_v1_image_pilot_batch.json")
+DEFAULT_OUTPUT_ROOT = recipe_images_dir()
+DEFAULT_RESULTS_PATH = find_repo_file(
+    "reports", "planam_v1_recipe_image_pilot_results.json"
+)
+LOCAL_URL_BASE = recipe_images_public_url()
 
 
 def normalize_title(value: str) -> str:
@@ -281,6 +285,9 @@ def main() -> int:
     entries = select_entries(args)
     if args.dry_run:
         return run_dry_run(entries, args)
+    from _image_paths import ensure_app_on_path
+
+    ensure_app_on_path()
     return run_commit(entries, args)
 
 

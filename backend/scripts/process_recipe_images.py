@@ -16,6 +16,11 @@ import argparse
 import sys
 from pathlib import Path
 
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from _image_paths import recipe_images_dir  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -119,9 +124,7 @@ def main() -> int:
     if args.output_dir:
         output_dir = Path(args.output_dir).expanduser().resolve()
     elif args.recipe_id is not None:
-        output_dir = (
-            ROOT / "apps" / "web" / "public" / "recipe-images" / str(args.recipe_id)
-        )
+        output_dir = recipe_images_dir() / str(args.recipe_id)
     else:
         raise SystemExit("Provide --output-dir or --recipe-id")
 

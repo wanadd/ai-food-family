@@ -104,3 +104,13 @@ python backend/scripts/archive_placeholder_recipes.py --dry-run
 ## Gate placeholder seeds
 
 `seed_recipes_if_empty()` в `catalog.py` **не выполняется**, если в БД ≥50 активных рецептов с `source_type=v1_import`.
+
+---
+
+## Recipe images storage
+
+Сгенерированные фото хранятся на хосте (`/var/www/ai-food-family-data/recipe-images`)
+и монтируются в `web` и `api` как `/app/public/recipe-images`. Image-скрипты
+используют `RECIPE_IMAGES_DIR` / `RECIPE_IMAGES_PUBLIC_URL` (с безопасным
+локальным fallback на `apps/web/public/recipe-images`). Подробности и команды —
+в `docs/PRODUCTION_DEPLOY.md` → раздел «Recipe images storage».

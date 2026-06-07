@@ -23,22 +23,23 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[2]
-API_ROOT = ROOT / "apps" / "api"
-SCRIPTS_DIR = ROOT / "backend" / "scripts"
-for _path in (str(SCRIPTS_DIR), str(API_ROOT)):
-    if _path not in sys.path:
-        sys.path.insert(0, _path)
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 os.environ.setdefault("DATABASE_URL", os.environ.get("DATABASE_URL", ""))
 
+from _image_paths import (  # noqa: E402
+    recipe_images_dir,
+    recipe_images_public_url,
+)
 from recipe_id_resolver import (  # noqa: E402
     RecipeResolutionError,
     resolve_v1_recipe_id_by_title,
 )
 
 CDN_BASE_DEFAULT = "https://cdn.planam.ru/recipes"
-LOCAL_BASE_DEFAULT = "/recipe-images"
+LOCAL_BASE_DEFAULT = recipe_images_public_url()
 
 
 def normalize_title(value: str) -> str:
@@ -95,7 +96,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--images-root",
-        default=str(ROOT / "apps" / "web" / "public" / "recipe-images"),
+        default=str(recipe_images_dir()),
         help="Local images root for file existence check",
     )
     parser.add_argument(
@@ -158,6 +159,9 @@ def resolve_entries(args: argparse.Namespace) -> list[dict]:
 
 
 def apply_entries(entries: list[dict], *, dry_run: bool, args: argparse.Namespace) -> int:
+    from _image_paths import ensure_app_on_path
+
+    ensure_app_on_path()
     from app.database import SessionLocal
     from app.models.recipe import Recipe
 

@@ -41,6 +41,10 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_PLANAM_UI_2026: ${NEXT_PUBLIC_PLANAM_UI_2026:-true}
+    volumes:
+      # Persistent recipe images live on the host and survive image rebuilds.
+      # Mount ONLY the recipe-images subdir so other /app/public assets stay intact.
+      - ${RECIPE_IMAGES_HOST_DIR:-/var/www/ai-food-family-data/recipe-images}:/app/public/recipe-images
     depends_on:
       api:
         condition: service_healthy
@@ -74,8 +78,18 @@ services:
       ADMIN_TELEGRAM_IDS: ${ADMIN_TELEGRAM_IDS:-}
       BACKUP_ROOT: ${BACKUP_ROOT:-backups}
       ENVIRONMENT: production
+      PLANAM_IMAGE_OPENAI_API_KEY: ${PLANAM_IMAGE_OPENAI_API_KEY:-}
+      RECIPE_IMAGES_DIR: ${RECIPE_IMAGES_DIR:-/app/public/recipe-images}
+      RECIPE_IMAGES_PUBLIC_URL: ${RECIPE_IMAGES_PUBLIC_URL:-/recipe-images}
     volumes:
       - ./backups:/app/backups
+      # Same persistent recipe images, so the api can read/write them and
+      # backend scripts work without manual `docker compose cp`.
+      - ${RECIPE_IMAGES_HOST_DIR:-/var/www/ai-food-family-data/recipe-images}:/app/public/recipe-images
+      # Production scripts + their inputs, available in the api container at build-independent paths.
+      - ./backend:/app/backend:ro
+      - ./data:/app/data:ro
+      - ./reports:/app/reports
     depends_on:
       postgres:
         condition: service_healthy
