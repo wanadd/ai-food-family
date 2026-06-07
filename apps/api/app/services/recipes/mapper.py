@@ -8,7 +8,12 @@ ORM instance and the favourite-ids set.
 from __future__ import annotations
 
 from app.models.recipe import Recipe
-from app.schemas.recipe import RecipeDetail, RecipeIngredient, RecipeSummary
+from app.schemas.recipe import (
+    NutritionSummary,
+    RecipeDetail,
+    RecipeIngredient,
+    RecipeSummary,
+)
 from app.services.recipe_storage import (
     get_allergens,
     get_restrictions,
@@ -31,6 +36,34 @@ def public_original_title(recipe: Recipe, *, shown_title: str) -> str | None:
     if original.strip() == shown_title.strip():
         return None
     return original
+
+
+def nutrition_summary(recipe: Recipe) -> NutritionSummary | None:
+    """Build the recipe-level nutrition summary; None when not yet calculated.
+
+    Reads the additive recipes.nutrition_* columns. Safe on older DBs where the
+    columns may be missing (returns None).
+    """
+    confidence = getattr(recipe, "nutrition_confidence", None)
+    calculated_at = getattr(recipe, "nutrition_calculated_at", None)
+    if not confidence and calculated_at is None:
+        return None
+    return NutritionSummary(
+        kcal_total=getattr(recipe, "nutrition_kcal_total", None),
+        protein_total=getattr(recipe, "nutrition_protein_total", None),
+        fat_total=getattr(recipe, "nutrition_fat_total", None),
+        carbs_total=getattr(recipe, "nutrition_carbs_total", None),
+        kcal_per_serving=getattr(recipe, "nutrition_kcal_per_serving", None),
+        protein_per_serving=getattr(recipe, "nutrition_protein_per_serving", None),
+        fat_per_serving=getattr(recipe, "nutrition_fat_per_serving", None),
+        carbs_per_serving=getattr(recipe, "nutrition_carbs_per_serving", None),
+        servings=getattr(recipe, "nutrition_servings", None),
+        serving_size_text=getattr(recipe, "nutrition_serving_size_text", None),
+        confidence=confidence,
+        needs_review=bool(getattr(recipe, "nutrition_needs_review", False)),
+        review_reason=getattr(recipe, "nutrition_review_reason", None),
+        calculated_at=calculated_at,
+    )
 
 
 def to_summary(
@@ -67,6 +100,7 @@ def to_summary(
         image_url=recipe.image_url,
         hero_image_url=recipe.hero_image_url,
         thumbnail_url=recipe.thumbnail_url,
+        nutrition_summary=nutrition_summary(recipe),
     )
 
 

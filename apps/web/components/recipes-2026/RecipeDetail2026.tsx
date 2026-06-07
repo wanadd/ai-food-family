@@ -35,12 +35,31 @@ import {
   dietLabel,
   mealLabel,
 } from "@/lib/recipes/labels";
+import {
+  confidenceNote,
+  perServingMacros,
+  totalMacrosLine,
+} from "@/lib/recipes/nutrition";
 import type { RecipeDetail } from "@/lib/recipes/types";
 type RecipeDetail2026Props = {
   recipeId: number;
 };
 
 function nutritionLine(recipe: RecipeDetail): string {
+  const summary = recipe.nutrition_summary;
+  if (summary && summary.confidence && summary.confidence !== "unavailable") {
+    const k = summary.kcal_per_serving;
+    const p = summary.protein_per_serving;
+    const f = summary.fat_per_serving;
+    const c = summary.carbs_per_serving;
+    const approx = summary.confidence === "low_confidence" ? "≈" : "";
+    const parts: string[] = [];
+    if (k != null) parts.push(`${approx}${Math.round(k)} ккал`);
+    if (p != null) parts.push(`Б ${Math.round(p)}`);
+    if (f != null) parts.push(`Ж ${Math.round(f)}`);
+    if (c != null) parts.push(`У ${Math.round(c)}`);
+    if (parts.length) return parts.join(" · ");
+  }
   const parts: string[] = [];
   if (recipe.calories_per_serving != null) {
     parts.push(`${Math.round(recipe.calories_per_serving)} ккал`);
@@ -55,6 +74,59 @@ function nutritionLine(recipe: RecipeDetail): string {
     parts.push(`У ${Math.round(recipe.carbs_g)}`);
   }
   return parts.length ? parts.join(" · ") : "—";
+}
+
+function NutritionBlock({ recipe }: { recipe: RecipeDetail }) {
+  const summary = recipe.nutrition_summary;
+  if (!summary || !summary.confidence) {
+    return null;
+  }
+  const note = confidenceNote(summary.confidence);
+  if (summary.confidence === "unavailable") {
+    return (
+      <section className="mt-6">
+        <h2 className="pa26-section-title mb-3">КБЖУ на порцию</h2>
+        <Card2026 padding="md">
+          <p className="pa26-body text-pa-muted">{note}</p>
+        </Card2026>
+      </section>
+    );
+  }
+  const macros = perServingMacros(summary);
+  const totalLine = totalMacrosLine(summary);
+  const approximate = summary.confidence === "low_confidence";
+  return (
+    <section className="mt-6">
+      <h2 className="pa26-section-title mb-3">
+        КБЖУ на порцию
+        {approximate ? (
+          <span className="ml-2 pa26-micro font-normal text-pa-muted">
+            примерно
+          </span>
+        ) : null}
+      </h2>
+      <Card2026 padding="none">
+        <div className="grid grid-cols-4 divide-x divide-pa-border">
+          {macros.map((m) => (
+            <div key={m.label} className="px-2 py-3 text-center">
+              <p className="pa26-caption font-semibold text-pa-foreground">
+                {approximate && m.value !== "—" ? `≈${m.value}` : m.value}
+              </p>
+              <p className="pa26-micro mt-0.5 text-pa-muted">{m.label}</p>
+            </div>
+          ))}
+        </div>
+        {totalLine ? (
+          <div className="border-t border-pa-border px-4 py-2 pa26-micro text-pa-muted">
+            На весь рецепт: {totalLine}
+          </div>
+        ) : null}
+      </Card2026>
+      {note ? (
+        <p className="mt-2 pa26-micro text-pa-muted">{note}</p>
+      ) : null}
+    </section>
+  );
 }
 
 export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
@@ -291,6 +363,8 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
             {recipe.is_favorited ? "★" : "☆"}
           </Button2026>
         </div>
+
+        <NutritionBlock recipe={recipe} />
 
         <section className="mt-6">
           <h2 className="pa26-section-title mb-3">Ингредиенты</h2>

@@ -113,3 +113,5 @@ Readiness: `reports/recipe_readiness_after_to_taste.md` + `.json`.
 
 Реализация этих трёх пунктов: см.
 [PLANAM_V1_NUTRITION_SHOPPING_PHOTO.md](PLANAM_V1_NUTRITION_SHOPPING_PHOTO.md).
+Recipe-level КБЖУ в БД/API/UI: см.
+[PLANAM_V1_RECIPE_NUTRITION_SUMMARY.md](PLANAM_V1_RECIPE_NUTRITION_SUMMARY.md).

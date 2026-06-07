@@ -56,6 +56,29 @@ class Recipe(Base):
     tags: Mapped[list] = mapped_column(JSONB, default=list)
     ingredients: Mapped[list] = mapped_column(JSONB, default=list)
     steps: Mapped[list] = mapped_column(JSONB, default=list)
+    # Recipe-level nutrition summary (nullable; computed by
+    # calculate_recipe_nutrition_summary.py). Additive — does NOT replace the
+    # legacy calories_per_serving / protein_g / fat_g / carbs_g fields.
+    nutrition_kcal_total: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_protein_total: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_fat_total: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_carbs_total: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_kcal_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_protein_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_fat_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_carbs_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_servings: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_serving_size_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    nutrition_confidence: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    nutrition_coverage_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    nutrition_calculated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    nutrition_source: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    nutrition_needs_review: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    nutrition_review_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

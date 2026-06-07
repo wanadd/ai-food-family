@@ -3,6 +3,29 @@ export type RecipeIngredient = {
   amount: string;
 };
 
+export type NutritionConfidence =
+  | "exact"
+  | "estimated"
+  | "low_confidence"
+  | "unavailable";
+
+export type NutritionSummary = {
+  kcal_total?: number | null;
+  protein_total?: number | null;
+  fat_total?: number | null;
+  carbs_total?: number | null;
+  kcal_per_serving?: number | null;
+  protein_per_serving?: number | null;
+  fat_per_serving?: number | null;
+  carbs_per_serving?: number | null;
+  servings?: number | null;
+  serving_size_text?: string | null;
+  confidence?: NutritionConfidence | null;
+  needs_review?: boolean;
+  review_reason?: string | null;
+  calculated_at?: string | null;
+};
+
 export type RecipeSummary = {
   id: number;
   title: string;
@@ -30,6 +53,7 @@ export type RecipeSummary = {
   image_url?: string | null;
   hero_image_url?: string | null;
   thumbnail_url?: string | null;
+  nutrition_summary?: NutritionSummary | null;
 };
 
 export type RecipeDetail = RecipeSummary & {

@@ -96,7 +96,8 @@ Commit обновляет только `nutrition_precision` и `shopping_priori
 ## Следующие шаги
 
 1. Ручной review продуктов без фактов КБЖУ (`unavailable`) и низких precision.
-2. Per-recipe нутриенты → колонки рецепта (отдельный этап, со схемой и UI).
+2. Per-recipe нутриенты → колонки рецепта (со схемой и UI) — **реализовано**:
+   см. [PLANAM_V1_RECIPE_NUTRITION_SUMMARY.md](PLANAM_V1_RECIPE_NUTRITION_SUMMARY.md).
 3. Photo prompt builder для рецептов со статусом *ready*.
 
 См. также: [PLANAM_V1_TO_TASTE_AND_READINESS.md](PLANAM_V1_TO_TASTE_AND_READINESS.md),

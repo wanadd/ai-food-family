@@ -41,6 +41,25 @@ class RecipeIngredient(BaseModel):
     is_optional: bool = False
 
 
+class NutritionSummary(BaseModel):
+    """Recipe-level KБЖУ summary (additive; null when not yet calculated)."""
+
+    kcal_total: float | None = None
+    protein_total: float | None = None
+    fat_total: float | None = None
+    carbs_total: float | None = None
+    kcal_per_serving: float | None = None
+    protein_per_serving: float | None = None
+    fat_per_serving: float | None = None
+    carbs_per_serving: float | None = None
+    servings: float | None = None
+    serving_size_text: str | None = None
+    confidence: Literal["exact", "estimated", "low_confidence", "unavailable"] | None = None
+    needs_review: bool = False
+    review_reason: str | None = None
+    calculated_at: datetime | None = None
+
+
 class RecipeSummary(BaseModel):
     id: int
     title: str
@@ -68,6 +87,7 @@ class RecipeSummary(BaseModel):
     image_url: str | None = None
     hero_image_url: str | None = None
     thumbnail_url: str | None = None
+    nutrition_summary: NutritionSummary | None = None
 
 
 class RecipeDetail(RecipeSummary):

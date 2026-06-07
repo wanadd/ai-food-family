@@ -9,6 +9,7 @@ import {
   difficultyLabel,
   mealLabel,
 } from "@/lib/recipes/labels";
+import { cardKcalBadge } from "@/lib/recipes/nutrition";
 import type { RecipeSummary } from "@/lib/recipes/types";
 
 type RecipeGridCard2026Props = {
@@ -22,13 +23,6 @@ type RecipeGridCard2026Props = {
   replacing?: boolean;
 };
 
-function formatKcal(recipe: RecipeSummary): string | null {
-  if (recipe.calories_per_serving == null) {
-    return null;
-  }
-  return `${Math.round(recipe.calories_per_serving)} ккал`;
-}
-
 export function RecipeGridCard2026({
   recipe,
   href,
@@ -41,6 +35,7 @@ export function RecipeGridCard2026({
 }: RecipeGridCard2026Props) {
   const time = recipe.prep_time_minutes ?? recipe.cooking_time_minutes;
   const heading = recipe.display_title ?? recipe.title;
+  const kcal = cardKcalBadge(recipe);
 
   return (
     <article className="overflow-hidden rounded-card border border-pa-border bg-pa-surface shadow-soft transition active:scale-[0.98] dark:shadow-none">
@@ -55,8 +50,11 @@ export function RecipeGridCard2026({
           <h3 className="pa26-card-title line-clamp-2">{heading}</h3>
           <p className="pa26-caption mt-1 text-pa-muted">
             {time ? `${time} мин` : ""}
-            {time && formatKcal(recipe) ? " · " : ""}
-            {formatKcal(recipe) ?? ""}
+            {time && kcal ? " · " : ""}
+            {kcal?.text ?? ""}
+            {kcal?.approximate ? (
+              <span className="ml-1 text-pa-muted/70">примерно</span>
+            ) : null}
           </p>
           <div className="mt-2 flex flex-wrap gap-1">
             <span className="rounded-pill bg-sage-50 px-2 py-0.5 pa26-micro font-semibold text-sage-700 dark:bg-sage-700/30 dark:text-sage-300">
