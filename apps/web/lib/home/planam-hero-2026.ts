@@ -177,7 +177,7 @@ export function resolvePlanAmHeroState(
       variant: "meal",
       priority: "P1",
       meal,
-      ctaLabel: "Открыть рецепт",
+      ctaLabel: "Готовить",
       ctaHref: mealHeroHref(meal),
       secondaryCtaLabel: "Заменить",
       secondaryCtaHref: mealReplaceHref(meal),
@@ -335,4 +335,29 @@ export function shoppingStatusLabel(unchecked: number): string {
     return "Всё куплено";
   }
   return `${unchecked} ${goodsLabel(unchecked)}`;
+}
+
+/** Home status chip for today's menu completeness. */
+export function menuStatusLabel(overview: MenuOverview | null): string {
+  if (!overview?.plan_summary.has_selected_menu) {
+    return "Собрать";
+  }
+  const slots = overview.today_meals;
+  if (!slots.length) {
+    return "Собрать";
+  }
+  const filled = slots.filter((m) => m.name?.trim()).length;
+  if (filled === 0) {
+    return "Собрать";
+  }
+  const pct = Math.round((filled / slots.length) * 100);
+  return `${pct}%`;
+}
+
+export function formatPlanAmDate(date: Date = new Date()): string {
+  return date.toLocaleDateString("ru-RU", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 }

@@ -7,8 +7,7 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MealOutcomeSheet2026 } from "@/components/dom-2026";
 import { PlanAmHero2026 } from "@/components/home-2026/PlanAmHero2026";
 import { PlanAmStatusRows2026 } from "@/components/home-2026/PlanAmStatusRows2026";
-import { TodayDishRail2026 } from "@/components/home-2026/TodayDishRail2026";
-import { Button2026 } from "@/components/planam-2026/ui/Button2026";
+import { PlanAmTip2026 } from "@/components/home-2026/PlanAmTip2026";
 import { useTelegram } from "@/components/TelegramProvider";
 import { EmptyState2026 } from "@/components/planam-2026/ui/EmptyState2026";
 import {
@@ -19,12 +18,12 @@ import {
 } from "@/lib/cache/session-cache";
 import { enrichTodayMeals } from "@/lib/home/home-2026-data";
 import {
+  formatPlanAmDate,
   formatPlanAmGreeting,
   resolvePlanAmHeroState,
 } from "@/lib/home/planam-hero-2026";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import type { MenuOverview } from "@/lib/menu/overview-types";
-import { PLANAM_ROUTES } from "@/lib/planam/routes";
 
 type LoadState = "loading" | "ready" | "error";
 
@@ -108,11 +107,12 @@ export function Home2026() {
     () => formatPlanAmGreeting(user?.first_name),
     [user?.first_name],
   );
+  const dateLabel = useMemo(() => formatPlanAmDate(), []);
 
   if (loadState === "error") {
     return (
       <div className="pb-2">
-        <PlanAmGreeting greeting={greeting} />
+        <PlanAmGreeting greeting={greeting} dateLabel={dateLabel} />
         <EmptyState2026
           title="Не удалось обновить день"
           description={errorMessage ?? "Проверьте сеть и попробуйте снова."}
@@ -125,89 +125,13 @@ export function Home2026() {
 
   return (
     <div className="space-y-0 pb-2">
-      <PlanAmGreeting greeting={greeting} />
+      <PlanAmGreeting greeting={greeting} dateLabel={dateLabel} />
 
       <PlanAmHero2026 loading={loading} state={heroState} />
 
-      <TodayDishRail2026 meals={meals} loading={loading} />
-
       <PlanAmStatusRows2026 overview={overview} loading={loading} />
 
-      {!loading ? (
-        <div className="px-4 pt-2">
-          <button
-            type="button"
-            onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
-            className="flex w-full min-h-10 items-center gap-3 rounded-card border border-pa-border bg-pa-surface px-3 py-2.5 text-left shadow-soft transition hover:bg-sage-50 dark:shadow-none dark:hover:bg-pa-elevated/40"
-          >
-            <span className="text-lg" aria-hidden>
-              🍲
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="pa26-card-title block">Из того, что есть дома</span>
-              <span className="pa26-micro text-pa-muted">
-                Подберём блюда из продуктов в запасах
-              </span>
-            </span>
-            <span className="pa26-micro shrink-0 font-semibold text-sage-700 dark:text-sage-300">
-              Подобрать
-            </span>
-          </button>
-        </div>
-      ) : null}
-
-      {!loading ? (
-        <section className="px-4 pt-2" aria-label="Быстрые действия">
-          <div className="flex gap-2">
-            <Button2026
-              variant="secondary"
-              size="default"
-              className="flex-1 text-sm"
-              onClick={() => router.push(PLANAM_ROUTES.shopping)}
-            >
-              Покупки
-            </Button2026>
-            <Button2026
-              variant="secondary"
-              size="default"
-              className="flex-1 text-sm"
-              onClick={() => router.push(PLANAM_ROUTES.pantry)}
-            >
-              Запасы
-            </Button2026>
-            <Button2026
-              variant="secondary"
-              size="default"
-              className="flex-1 text-sm"
-              onClick={() => router.push(PLANAM_ROUTES.planGenerate)}
-            >
-              Меню
-            </Button2026>
-          </div>
-        </section>
-      ) : null}
-
-      {!loading ? (
-        <div className="px-4 pt-2 pb-1">
-          <button
-            type="button"
-            onClick={() => router.push(PLANAM_ROUTES.wellnessChat)}
-            className="flex w-full min-h-10 items-center gap-3 rounded-card border border-dashed border-pa-border bg-pa-surface/80 px-3 py-2.5 text-left transition hover:bg-sage-50 dark:hover:bg-pa-elevated/40"
-          >
-            <span className="text-base" aria-hidden>
-              ✨
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="pa26-micro font-semibold text-sage-700 dark:text-sage-300">
-                AI помощник
-              </span>
-            </span>
-            <span className="pa26-micro shrink-0 text-pa-muted" aria-hidden>
-              ›
-            </span>
-          </button>
-        </div>
-      ) : null}
+      <PlanAmTip2026 overview={overview} loading={loading} />
 
       <MealOutcomeSheet2026
         open={mealOutcomeOpen}
@@ -218,10 +142,17 @@ export function Home2026() {
   );
 }
 
-function PlanAmGreeting({ greeting }: { greeting: string }) {
+function PlanAmGreeting({
+  greeting,
+  dateLabel,
+}: {
+  greeting: string;
+  dateLabel: string;
+}) {
   return (
     <header className="px-4 pb-0.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
       <h1 className="pa26-page-title truncate">{greeting}</h1>
+      <p className="pa26-micro mt-0.5 capitalize text-pa-muted">{dateLabel}</p>
     </header>
   );
 }

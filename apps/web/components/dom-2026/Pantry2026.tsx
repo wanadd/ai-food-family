@@ -112,6 +112,10 @@ export function Pantry2026() {
 
   return (
     <div className="pb-6 px-4 pt-4">
+      <header className="mb-3">
+        <h1 className="pa26-page-title">Запасы</h1>
+        <p className="pa26-micro mt-0.5 text-pa-muted">Что есть дома сейчас</p>
+      </header>
       {activeCount > 0 ? (
         <p className="pa26-caption mb-4 text-pa-muted">
           {activeCount}{" "}
@@ -176,7 +180,7 @@ export function Pantry2026() {
           size="wide"
           onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
         >
-          Подобрать из запасов
+          Из того, что есть дома
         </Button2026>
         <p className="text-center">
           <button

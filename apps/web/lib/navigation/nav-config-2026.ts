@@ -49,13 +49,13 @@ export type Nav2026RouteMeta = {
   planned?: boolean;
 };
 
-/** Нижняя навигация: Сегодня · Покупки · ПланАм · Здоровье · Профиль */
+/** Нижняя навигация: Меню · Покупки · ПланАм · Здоровье · Профиль */
 export const NAV_TABS_2026: Nav2026Tab[] = [
   {
     id: "plan",
     href: "/plan/today",
-    label: "Сегодня",
-    icon: "today",
+    label: "Меню",
+    icon: "recipes",
     matchPrefixes: ["/plan"],
   },
   {
@@ -183,7 +183,7 @@ export const ROUTES_2026: Nav2026RouteMeta[] = [
     sectionId: "leftovers",
   },
   { href: "/plan", title: "План на неделю", tabId: "plan", sectionId: "plan" },
-  { href: "/plan/today", title: "Сегодня", tabId: "plan", sectionId: "today" },
+  { href: "/plan/today", title: "Меню", tabId: "plan", sectionId: "today" },
   { href: "/plan/recipes", title: "Рецепты", tabId: "plan", sectionId: "recipes" },
   { href: "/wellness", title: "Здоровье", tabId: "wellness", sectionId: "wellness" },
   { href: "/wellness/chat", title: "AI помощник", sectionId: "wellness-chat" },

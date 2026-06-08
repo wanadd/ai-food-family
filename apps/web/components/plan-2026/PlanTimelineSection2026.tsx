@@ -21,14 +21,14 @@ export function PlanTimelineSection2026({
   onRemove,
 }: PlanTimelineSection2026Props) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {groups.map((group) => (
         <section key={group.slot.id}>
           <h2 className="pa26-section-title flex items-center gap-2">
             <span aria-hidden>{group.slot.emoji}</span>
             {group.slot.label}
           </h2>
-          <div className="mt-3 space-y-3">
+          <div className="mt-2 space-y-2">
             {group.meals.map((item) => (
               <PlanMealCard2026
                 key={`${item.meal.meal_type}-${item.mealIndex}`}

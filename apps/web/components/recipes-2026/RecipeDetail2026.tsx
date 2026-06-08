@@ -333,6 +333,17 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
             <>
               <Button2026
                 variant="primary"
+                className="w-full"
+                onClick={() => {
+                  document
+                    .getElementById("recipe-cooking-steps")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+              >
+                Начать готовить
+              </Button2026>
+              <Button2026
+                variant="secondary"
                 className="flex-1 min-w-[120px]"
                 onClick={() => {
                   if (!initData) {
@@ -383,21 +394,29 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
           </Card2026>
         </section>
 
-        <section className="mt-6">
+        <section id="recipe-cooking-steps" className="mt-6 scroll-mt-4">
           <h2 className="pa26-section-title mb-3">Приготовление</h2>
-          <ol className="space-y-3">
-            {steps.map((step, index) => (
-              <li
-                key={index}
-                className="flex gap-3 rounded-card border border-pa-border bg-pa-surface p-4"
-              >
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-sage-500 pa26-micro font-bold text-white dark:bg-sage-400">
-                  {index + 1}
-                </span>
-                <p className="pa26-body flex-1">{step}</p>
-              </li>
-            ))}
-          </ol>
+          {steps.length === 0 ? (
+            <Card2026 padding="md">
+              <p className="pa26-body text-pa-muted">
+                Пошаговые инструкции появятся, когда рецепт будет дополнен.
+              </p>
+            </Card2026>
+          ) : (
+            <ol className="space-y-2">
+              {steps.map((step, index) => (
+                <li
+                  key={index}
+                  className="flex gap-3 rounded-card border border-pa-border bg-pa-surface p-3.5"
+                >
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sage-500 text-sm font-bold text-white dark:bg-sage-400">
+                    {index + 1}
+                  </span>
+                  <p className="pa26-body flex-1 leading-snug">{step}</p>
+                </li>
+              ))}
+            </ol>
+          )}
         </section>
       </div>
 

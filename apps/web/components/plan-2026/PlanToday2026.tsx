@@ -219,7 +219,11 @@ export function PlanToday2026() {
             </p>
           </div>
         ) : null}
-        <h1 className="pa26-page-title capitalize">{dateLabel}</h1>
+        <h1 className="pa26-page-title">Меню</h1>
+        <p className="pa26-micro mt-1 capitalize text-pa-muted">{dateLabel}</p>
+        <p className="pa26-caption mt-0.5 text-pa-muted">
+          Ваш рацион на сегодня · можно заменить любое блюдо
+        </p>
         {menu.title ? (
           <p className="pa26-micro mt-1 text-pa-muted">{menu.title}</p>
         ) : null}

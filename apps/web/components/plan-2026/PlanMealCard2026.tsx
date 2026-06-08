@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { RecipeImage2026 } from "@/components/recipes-2026/RecipeImage2026";
-import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { buildReplaceCatalogUrl } from "@/lib/menu/replace-slot";
 import { withReturnTo } from "@/lib/navigation/return-to";
 import { recipeDetailPath } from "@/lib/plan/plan-paths";
@@ -30,7 +29,7 @@ export function PlanMealCard2026({
   const router = useRouter();
   const [removeOpen, setRemoveOpen] = useState(false);
 
-  const { meal, imageUrl, statusLabel, statusCode } = item;
+  const { meal, imageUrl, statusLabel } = item;
   const metaParts: string[] = [];
   if (meal.prep_time_minutes > 0) {
     metaParts.push(`${meal.prep_time_minutes} мин`);
@@ -55,11 +54,12 @@ export function PlanMealCard2026({
     }
   }
 
-  function handleRecipe() {
-    if (!meal.recipe_id) {
+  function handleOpen() {
+    if (meal.recipe_id) {
+      router.push(withReturnTo(recipeDetailPath(meal.recipe_id), "/plan/today"));
       return;
     }
-    router.push(withReturnTo(recipeDetailPath(meal.recipe_id), "/plan/today"));
+    onCook?.();
   }
 
   function handleRemove() {
@@ -83,53 +83,46 @@ export function PlanMealCard2026({
       className={cn(
         "overflow-hidden rounded-card border bg-pa-surface shadow-soft dark:shadow-none",
         highlighted
-          ? "border-pa-brand ring-2 ring-pa-brand/40"
+          ? "border-pa-brand ring-2 ring-pa-brand/30"
           : "border-pa-border",
       )}
     >
-      <div className="relative min-h-[160px] w-full">
-        <RecipeImage2026
-          imageUrl={imageUrl}
-          alt={meal.name}
-          variant="hero"
-          mealType={meal.meal_type}
-          className="absolute inset-0 max-h-none h-full rounded-none"
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
-          aria-hidden
-        />
-        <div className="absolute inset-x-0 bottom-0 p-3 text-white">
-          <p className="pa26-micro text-white/80">{mealTypeLabel(meal.meal_type)}</p>
-          <h3 className="pa26-card-title mt-0.5 text-white">{meal.name}</h3>
-          {metaParts.length ? (
-            <p className="pa26-caption mt-0.5 text-white/85">{metaParts.join(" · ")}</p>
-          ) : null}
-        </div>
-        <span
-          className={cn(
-            "absolute right-3 top-3 rounded-pill px-2.5 py-1 pa26-micro font-semibold",
-            statusCode
-              ? "bg-white/90 text-sage-700"
-              : "bg-black/40 text-white",
-          )}
+      <div className="flex w-full items-center gap-3 p-3">
+        <button
+          type="button"
+          onClick={handleOpen}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left transition hover:opacity-90"
         >
-          {statusLabel}
-        </span>
-      </div>
-
-      <div className="flex gap-2 p-3">
-        <Button2026 variant="primary" className="flex-1" onClick={onCook}>
-          Приготовить
-        </Button2026>
-        {meal.recipe_id ? (
-          <Button2026 variant="secondary" onClick={handleRecipe}>
-            Рецепт
-          </Button2026>
-        ) : null}
-        <Button2026 variant="secondary" onClick={handleReplace}>
-          Заменить
-        </Button2026>
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-control">
+            <RecipeImage2026
+              imageUrl={imageUrl}
+              alt={meal.name}
+              variant="thumb"
+              mealType={meal.meal_type}
+              className="size-full"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="pa26-micro text-pa-muted">{mealTypeLabel(meal.meal_type)}</p>
+            <h3 className="pa26-card-title line-clamp-2 leading-snug">{meal.name}</h3>
+            {metaParts.length ? (
+              <p className="pa26-micro mt-0.5 text-pa-muted">{metaParts.join(" · ")}</p>
+            ) : null}
+            {statusLabel ? (
+              <p className="pa26-micro mt-0.5 font-medium text-sage-700 dark:text-sage-300">
+                {statusLabel}
+              </p>
+            ) : null}
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={handleReplace}
+          className="flex size-9 shrink-0 items-center justify-center rounded-full border border-pa-border bg-pa-elevated pa26-card-title text-sage-700 transition hover:bg-sage-50 dark:text-sage-300 dark:hover:bg-sage-800/40"
+          aria-label="Заменить блюдо"
+        >
+          +
+        </button>
       </div>
 
       {onRemove ? (

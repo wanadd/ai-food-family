@@ -298,7 +298,7 @@ export function Shopping2026() {
           />
         ) : null}
 
-        <div className="max-h-[70vh] space-y-2 overflow-y-auto overscroll-contain">
+        <div className="space-y-2">
           {groups.map((group) => {
             // Collapsed by default; an active search reveals matching groups.
             const open = expanded.has(group.category) || search.trim() !== "";

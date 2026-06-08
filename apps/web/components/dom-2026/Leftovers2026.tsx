@@ -110,8 +110,8 @@ export function Leftovers2026() {
       <div className="px-4 py-8">
         <EmptyState2026
           icon={<span aria-hidden>🍽</span>}
-          title="Остатки дома"
-          description="Откройте ПланАм в Telegram — здесь появятся блюда, которые остались после готовки."
+          title="Из того, что есть дома"
+          description="Откройте ПланАм в Telegram — подберём рецепты из запасов и покажем остатки после готовки."
           actionLabel="На главную"
           onAction={() => {
             if (typeof window !== "undefined") {
@@ -150,49 +150,21 @@ export function Leftovers2026() {
 
   return (
     <div className="space-y-5 px-4 pb-8 pt-2">
-      {expiring.length > 0 ? (
-        <section>
-          <h2 className="pa26-section-title text-warm">Скоро испортится</h2>
-          <ul className="mt-2 space-y-2">
-            {expiring.map((item) => (
-              <LeftoverRow
-                key={item.id}
-                item={item}
-                urgent
-                busy={busyId === item.id}
-                onConsume={() => void markConsumed(item)}
-                onRemove={() => void remove(item)}
-              />
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {rest.length > 0 ? (
-        <section>
-          <h2 className="pa26-section-title">Что осталось</h2>
-          <ul className="mt-2 space-y-2">
-            {rest.map((item) => (
-              <LeftoverRow
-                key={item.id}
-                item={item}
-                busy={busyId === item.id}
-                onConsume={() => void markConsumed(item)}
-                onRemove={() => void remove(item)}
-              />
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <header>
+        <h1 className="pa26-page-title">Из того, что есть дома</h1>
+        <p className="pa26-micro mt-0.5 text-pa-muted">
+          Рецепты из запасов и порции после готовки
+        </p>
+      </header>
 
       {recipes.length > 0 ? (
         <section>
-          <h2 className="pa26-section-title">Что приготовить из запасов</h2>
+          <h2 className="pa26-section-title">Подбор из запасов</h2>
           <ul className="mt-2 space-y-2">
             {recipes.slice(0, 5).map((r) => (
               <li
                 key={r.recipe_id}
-                className="rounded-card border border-pa-border bg-pa-surface px-4 py-3"
+                className="rounded-card border border-pa-border bg-pa-surface px-4 py-3 shadow-soft dark:shadow-none"
               >
                 <p className="pa26-card-title">{r.title}</p>
                 <p className="pa26-caption text-pa-muted">
@@ -209,6 +181,46 @@ export function Leftovers2026() {
           </ul>
         </section>
       ) : null}
+
+      {leftovers.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="pa26-section-title">После готовки</h2>
+          {expiring.length > 0 ? (
+            <div>
+              <h3 className="pa26-micro font-semibold text-warm">Скоро испортится</h3>
+              <ul className="mt-2 space-y-2">
+                {expiring.map((item) => (
+                  <LeftoverRow
+                    key={item.id}
+                    item={item}
+                    urgent
+                    busy={busyId === item.id}
+                    onConsume={() => void markConsumed(item)}
+                    onRemove={() => void remove(item)}
+                  />
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {rest.length > 0 ? (
+            <div>
+              <h3 className="pa26-micro font-semibold text-pa-muted">Что осталось</h3>
+              <ul className="mt-2 space-y-2">
+                {rest.map((item) => (
+                  <LeftoverRow
+                    key={item.id}
+                    item={item}
+                    busy={busyId === item.id}
+                    onConsume={() => void markConsumed(item)}
+                    onRemove={() => void remove(item)}
+                  />
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { WaterIntake2026 } from "@/components/wellness-2026/WaterIntake2026";
 import { WellnessDayRing2026 } from "@/components/wellness-2026/WellnessDayRing2026";
 import { WellnessGoalCard2026 } from "@/components/wellness-2026/WellnessGoalCard2026";
 import { WellnessInsight2026 } from "@/components/wellness-2026/WellnessInsight2026";
+import { WellnessMetricsBars2026 } from "@/components/wellness-2026/WellnessMetricsBars2026";
 import { WellnessTodayCard2026 } from "@/components/wellness-2026/WellnessTodayCard2026";
 import { WellnessWeekStrip2026 } from "@/components/wellness-2026/WellnessWeekStrip2026";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
@@ -231,6 +232,7 @@ export function WellnessHome2026() {
         />
       ) : (
         <>
+          <WellnessMetricsBars2026 metrics={todayMetrics} />
           <WellnessDayRing2026 progress={dayProgress} caloriesLabel={todayMetrics.eatenLabel} />
           <WaterIntake2026 compact onUpdated={handleWaterUpdated} />
           <WellnessInsight2026 text={insight} />

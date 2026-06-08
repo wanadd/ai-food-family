@@ -84,6 +84,17 @@ export function NavIcon2026({ id, className }: NavIcon2026Props) {
         </svg>
       );
     case "recipes":
+      return (
+        <svg className={base} viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            d="M4 10h16M6 10V8a2 2 0 012-2h8a2 2 0 012 2v2M7 10v8a1 1 0 001 1h8a1 1 0 001-1v-8"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinejoin="round"
+          />
+          <path d="M9 14h6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+        </svg>
+      );
     case "today":
       return (
         <svg className={base} viewBox="0 0 24 24" fill="none" aria-hidden>
