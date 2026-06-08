@@ -15,6 +15,7 @@ import {
   fetchAdminFamilyCard,
   fetchAdminPlans,
 } from "@/lib/admin/api";
+import { hasAdminAuthCredential } from "@/lib/admin/session";
 import type { AdminFamilyCard, AdminPlanOption } from "@/lib/admin/types";
 
 function formatDate(value: string) {
@@ -39,11 +40,12 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
   const [newAdminUserId, setNewAdminUserId] = useState("");
 
   const reload = useCallback(async () => {
-    if (!initData) return;
-    const data = await fetchAdminFamilyCard(initData, familyId);
+    if (!hasAdminAuthCredential(initData)) return;
+    const auth = initData || null;
+    const data = await fetchAdminFamilyCard(auth, familyId);
     setCard(data);
     if (data) setName(data.name);
-    setPlans(await fetchAdminPlans(initData));
+    setPlans(await fetchAdminPlans(auth));
   }, [initData, familyId]);
 
   useEffect(() => {
@@ -98,7 +100,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
           <button
             type="button"
             className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs text-white"
-            onClick={() => run(() => adminRenameFamily(initData!, familyId, name))}
+            onClick={() => run(() => adminRenameFamily(initData || null, familyId, name))}
           >
             Переименовать
           </button>
@@ -137,7 +139,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
                   description={`Участник ${m.display_name} будет удалён из семьи.`}
                   confirmLabel="Удалить"
                   onConfirm={() =>
-                    run(() => adminRemoveFamilyMember(initData!, familyId, m.id))
+                    run(() => adminRemoveFamilyMember(initData || null, familyId, m.id))
                   }
                 />
               ) : null}
@@ -157,7 +159,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs text-white"
             onClick={() =>
               run(() =>
-                adminFamilyAction(initData!, familyId, "/transfer-owner", "POST", {
+                adminFamilyAction(initData || null, familyId, "/transfer-owner", "POST", {
                   new_admin_user_id: Number(newAdminUserId),
                 }),
               )
@@ -200,7 +202,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs text-white"
             onClick={() =>
               run(() =>
-                adminFamilySubscription(initData!, familyId, "grant", {
+                adminFamilySubscription(initData || null, familyId, "grant", {
                   plan_code: planCode,
                   days: Number(days) || 30,
                 }),
@@ -214,7 +216,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             className="rounded-lg bg-stone-200 px-3 py-1.5 text-xs"
             onClick={() =>
               run(() =>
-                adminFamilySubscription(initData!, familyId, "extend", {
+                adminFamilySubscription(initData || null, familyId, "extend", {
                   days: Number(days) || 30,
                 }),
               )
@@ -229,7 +231,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             description="Все участники потеряют семейные возможности тарифа."
             confirmLabel="Отключить"
             onConfirm={() =>
-              run(() => adminFamilySubscription(initData!, familyId, "disable"))
+              run(() => adminFamilySubscription(initData || null, familyId, "disable"))
             }
           />
           <button
@@ -237,7 +239,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             className="rounded-lg bg-violet-100 px-3 py-1.5 text-xs text-violet-900"
             onClick={() =>
               run(() =>
-                adminFamilySubscription(initData!, familyId, "grant", {
+                adminFamilySubscription(initData || null, familyId, "grant", {
                   plan_code: "pro",
                   days: Number(days) || 14,
                   as_trial: true,
@@ -265,7 +267,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs text-white"
             onClick={() =>
               run(() =>
-                adminFamilyAms(initData!, familyId, "add", {
+                adminFamilyAms(initData || null, familyId, "add", {
                   amount: Number(amsAmount) || 0,
                 }),
               )
@@ -278,7 +280,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             className="rounded-lg bg-stone-200 px-3 py-1.5 text-xs"
             onClick={() =>
               run(() =>
-                adminFamilyAms(initData!, familyId, "remove", {
+                adminFamilyAms(initData || null, familyId, "remove", {
                   amount: Number(amsAmount) || 0,
                 }),
               )
@@ -292,7 +294,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             title="Обнулить баланс семьи?"
             description="Весь семейный баланс Амов будет списан."
             confirmLabel="Обнулить"
-            onConfirm={() => run(() => adminFamilyAms(initData!, familyId, "reset"))}
+            onConfirm={() => run(() => adminFamilyAms(initData || null, familyId, "reset"))}
           />
         </div>
       </section>
@@ -307,7 +309,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             description="Участники не смогут пользоваться семейным режимом."
             confirmLabel="Заблокировать"
             onConfirm={() =>
-              run(() => adminFamilyAction(initData!, familyId, "/block", "POST", {}))
+              run(() => adminFamilyAction(initData || null, familyId, "/block", "POST", {}))
             }
           />
         ) : (
@@ -315,7 +317,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
             type="button"
             className="rounded-lg bg-stone-800 px-3 py-2 text-xs text-white"
             onClick={() =>
-              run(() => adminFamilyAction(initData!, familyId, "/unblock", "POST"))
+              run(() => adminFamilyAction(initData || null, familyId, "/unblock", "POST"))
             }
           >
             Разблокировать
@@ -328,7 +330,7 @@ export function AdminFamilyDetailPage({ familyId }: { familyId: number }) {
           description="Telegram-пользователи не удаляются. Семейные меню, покупки и запасы будут удалены вместе с семьёй."
           confirmLabel="Удалить"
           onConfirm={() =>
-            run(() => adminFamilyAction(initData!, familyId, "", "DELETE"))
+            run(() => adminFamilyAction(initData || null, familyId, "", "DELETE"))
           }
         />
       </section>

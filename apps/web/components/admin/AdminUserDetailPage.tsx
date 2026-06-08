@@ -13,6 +13,7 @@ import {
   fetchAdminPlans,
   fetchAdminUserCard,
 } from "@/lib/admin/api";
+import { hasAdminAuthCredential } from "@/lib/admin/session";
 import type { AdminPlanOption, AdminUserCard } from "@/lib/admin/types";
 
 function formatDate(value: string) {
@@ -37,10 +38,11 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
   const [blockReason, setBlockReason] = useState("");
 
   const reload = useCallback(async () => {
-    if (!initData) return;
-    const data = await fetchAdminUserCard(initData, userId);
+    if (!hasAdminAuthCredential(initData)) return;
+    const auth = initData || null;
+    const data = await fetchAdminUserCard(auth, userId);
     setCard(data);
-    setPlans(await fetchAdminPlans(initData));
+    setPlans(await fetchAdminPlans(auth));
   }, [initData, userId]);
 
   useEffect(() => {
@@ -144,7 +146,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
               className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs text-white"
               onClick={() =>
                 run(() =>
-                  adminUserSubscription(initData!, userId, "grant", {
+                  adminUserSubscription(initData || null, userId, "grant", {
                     plan_code: planCode,
                     days: Number(days) || 30,
                   }),
@@ -158,7 +160,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
               className="rounded-lg bg-stone-200 px-3 py-1.5 text-xs"
               onClick={() =>
                 run(() =>
-                  adminUserSubscription(initData!, userId, "extend", {
+                  adminUserSubscription(initData || null, userId, "extend", {
                     days: Number(days) || 30,
                   }),
                 )
@@ -171,7 +173,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
               className="rounded-lg bg-stone-200 px-3 py-1.5 text-xs"
               onClick={() =>
                 run(() =>
-                  adminUserSubscription(initData!, userId, "change-plan", {
+                  adminUserSubscription(initData || null, userId, "change-plan", {
                     plan_code: planCode,
                     days: Number(days) || 30,
                   }),
@@ -187,7 +189,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
               description="Пользователь потеряет платные возможности до новой выдачи тарифа."
               confirmLabel="Отключить"
               onConfirm={() =>
-                run(() => adminUserSubscription(initData!, userId, "disable"))
+                run(() => adminUserSubscription(initData || null, userId, "disable"))
               }
             />
             <button
@@ -195,7 +197,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
               className="rounded-lg bg-violet-100 px-3 py-1.5 text-xs text-violet-900"
               onClick={() =>
                 run(() =>
-                  adminUserSubscription(initData!, userId, "grant", {
+                  adminUserSubscription(initData || null, userId, "grant", {
                     plan_code: "trial",
                     days: Number(days) || 14,
                     as_trial: true,
@@ -227,7 +229,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
             className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs text-white"
             onClick={() =>
               run(() =>
-                adminUserAms(initData!, userId, "add", {
+                adminUserAms(initData || null, userId, "add", {
                   amount: Number(amsAmount) || 0,
                 }),
               )
@@ -240,7 +242,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
             className="rounded-lg bg-stone-200 px-3 py-1.5 text-xs"
             onClick={() =>
               run(() =>
-                adminUserAms(initData!, userId, "remove", {
+                adminUserAms(initData || null, userId, "remove", {
                   amount: Number(amsAmount) || 0,
                 }),
               )
@@ -254,7 +256,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
             title="Обнулить Амы?"
             description="Весь текущий баланс пользователя будет списан."
             confirmLabel="Обнулить"
-            onConfirm={() => run(() => adminUserAms(initData!, userId, "reset"))}
+            onConfirm={() => run(() => adminUserAms(initData || null, userId, "reset"))}
           />
         </div>
         <ul className="mt-3 space-y-1 border-t border-stone-100 pt-2">
@@ -281,7 +283,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
               type="button"
               className="rounded-lg bg-stone-200 px-3 py-1.5 text-xs"
               onClick={() =>
-                run(() => adminUserAction(initData!, userId, path, "POST"))
+                run(() => adminUserAction(initData || null, userId, path, "POST"))
               }
             >
               {label}
@@ -309,7 +311,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
               confirmLabel="Заблокировать"
               onConfirm={() =>
                 run(() =>
-                  adminUserAction(initData!, userId, "/block", "POST", {
+                  adminUserAction(initData || null, userId, "/block", "POST", {
                     reason: blockReason || undefined,
                   }),
                 )
@@ -320,7 +322,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
           <button
             type="button"
             className="rounded-lg bg-stone-800 px-3 py-2 text-xs text-white"
-            onClick={() => run(() => adminUserAction(initData!, userId, "/unblock"))}
+            onClick={() => run(() => adminUserAction(initData || null, userId, "/unblock"))}
           >
             Разблокировать
           </button>
@@ -332,7 +334,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
           description="Будут удалены личные данные пользователя, личные меню, покупки, запасы, профиль питания и сессии. Если пользователь состоит в семье, он будет удалён из семьи. Семейные данные других участников не удаляются."
           confirmLabel="Удалить"
           onConfirm={() =>
-            run(() => adminUserAction(initData!, userId, "", "DELETE"))
+            run(() => adminUserAction(initData || null, userId, "", "DELETE"))
           }
         />
       </section>

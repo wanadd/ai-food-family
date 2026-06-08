@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import { fetchAdminOpenAi } from "@/lib/admin/api";
+import { hasAdminAuthCredential } from "@/lib/admin/session";
 import type { AdminOpenAiStats } from "@/lib/admin/types";
 
 const PERIODS = [
@@ -21,9 +22,12 @@ export function AdminOpenAiPage() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!initData) return;
+    if (!hasAdminAuthCredential(initData)) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const data = await fetchAdminOpenAi(initData, period);
+    const data = await fetchAdminOpenAi(initData || null, period);
     setStats(data);
     setLoading(false);
   }, [initData, period]);

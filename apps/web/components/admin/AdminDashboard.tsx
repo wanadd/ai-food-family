@@ -26,6 +26,7 @@ import type {
   AdminTab,
   AdminUserRow,
 } from "@/lib/admin/types";
+import { hasAdminAuthCredential } from "@/lib/admin/session";
 import { useTelegram } from "@/components/TelegramProvider";
 
 function formatDate(value: string) {
@@ -126,30 +127,31 @@ export function AdminDashboard({ forcedTab = "summary" }: { forcedTab?: AdminTab
   const { initData } = useTelegram();
 
   const loadTab = useCallback(async () => {
-    if (!initData) {
+    if (!hasAdminAuthCredential(initData)) {
       setError("Откройте админку из Telegram Mini App");
       setLoading(false);
       return;
     }
+    const auth = initData || null;
     setError(null);
     try {
       if (tab === "summary") {
-        setSummary(await fetchAdminSummary(initData));
+        setSummary(await fetchAdminSummary(auth));
       } else if (tab === "users") {
         setUsers(
-          await fetchAdminUsers(initData, {
+          await fetchAdminUsers(auth, {
             q: userSearch || undefined,
             filter: userFilter,
           }),
         );
       } else if (tab === "families") {
-        setFamilies(await fetchAdminFamilies(initData));
+        setFamilies(await fetchAdminFamilies(auth));
       } else if (tab === "subscriptions") {
-        setSubscriptions(await fetchAdminSubscriptions(initData));
-        setPlans(await fetchAdminPlans(initData));
+        setSubscriptions(await fetchAdminSubscriptions(auth));
+        setPlans(await fetchAdminPlans(auth));
       } else if (tab === "ams") {
-        setAmsSummary(await fetchAdminAmsSummary(initData));
-        setAmaTx(await fetchAdminAmaTransactions(initData));
+        setAmsSummary(await fetchAdminAmsSummary(auth));
+        setAmaTx(await fetchAdminAmaTransactions(auth));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка загрузки");
@@ -162,13 +164,13 @@ export function AdminDashboard({ forcedTab = "summary" }: { forcedTab?: AdminTab
   }, [loadTab]);
 
   const handleGrantPlan = async () => {
-    if (!initData) return;
+    if (!hasAdminAuthCredential(initData)) return;
     const userId = Number(grantUserId);
     if (!userId) {
       setError("Укажите user_id");
       return;
     }
-    const result = await grantAdminSubscription(initData, {
+    const result = await grantAdminSubscription(initData || null, {
       user_id: userId,
       plan_code: grantPlan,
       extend_days: Number(grantDays) || 30,
@@ -179,26 +181,26 @@ export function AdminDashboard({ forcedTab = "summary" }: { forcedTab?: AdminTab
   };
 
   const handleGrantAms = async () => {
-    if (!initData) return;
+    if (!hasAdminAuthCredential(initData)) return;
     const userId = Number(amsUserId);
     const amount = Number(amsAmount);
     if (!userId || !amount) {
       setError("Укажите user_id и сумму Амов");
       return;
     }
-    const result = await grantAdminAms(initData, { user_id: userId, amount });
+    const result = await grantAdminAms(initData || null, { user_id: userId, amount });
     setMessage(result.message);
   };
 
   const handleGrantFamilyAms = async () => {
-    if (!initData) return;
+    if (!hasAdminAuthCredential(initData)) return;
     const familyId = Number(amsFamilyId);
     const amount = Number(amsAmount);
     if (!familyId || !amount) {
       setError("Укажите family_id и сумму");
       return;
     }
-    const result = await grantAdminFamilyAms(initData, {
+    const result = await grantAdminFamilyAms(initData || null, {
       family_id: familyId,
       amount,
     });

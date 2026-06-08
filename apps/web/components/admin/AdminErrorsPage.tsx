@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import { fetchAdminErrors } from "@/lib/admin/api";
+import { hasAdminAuthCredential } from "@/lib/admin/session";
 import type { AdminErrorRow } from "@/lib/admin/types";
 
 function formatDate(value: string) {
@@ -21,8 +22,11 @@ export function AdminErrorsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!initData) return;
-    fetchAdminErrors(initData)
+    if (!hasAdminAuthCredential(initData)) {
+      setLoading(false);
+      return;
+    }
+    fetchAdminErrors(initData || null)
       .then(setRows)
       .finally(() => setLoading(false));
   }, [initData]);
