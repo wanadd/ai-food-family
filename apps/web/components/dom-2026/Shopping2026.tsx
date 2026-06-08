@@ -19,6 +19,7 @@ import {
   shoppingProgress,
 } from "@/lib/dom/shopping-groups";
 import { formatProductQuantity } from "@/lib/planam/formatProductQuantity";
+import { PLANAM_ROUTES } from "@/lib/planam/routes";
 import { cn } from "@/lib/planam/cn";
 import {
   fetchShoppingCategories,
@@ -383,7 +384,11 @@ export function Shopping2026() {
           <p className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => router.push("/home/pantry?returnTo=/home/shopping")}
+              onClick={() =>
+                router.push(
+                  `${PLANAM_ROUTES.pantry}?returnTo=${encodeURIComponent(PLANAM_ROUTES.shopping)}`,
+                )
+              }
               className="pa26-caption font-semibold text-sage-700 dark:text-sage-300"
             >
               Перейти к запасам →

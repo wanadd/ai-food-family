@@ -1,4 +1,5 @@
 import { NUTRITION_GOAL_LABELS } from "@/lib/nutrition-profile/options";
+import { PLANAM_ROUTES } from "@/lib/planam/routes";
 
 export type PlanModeId =
   | "quick_simple"
@@ -98,10 +99,10 @@ export const CHECKLIST_ITEMS = [
 ] as const;
 
 export const CHECKLIST_ADD_LINKS: Record<string, string> = {
-  profile: "/profile/nutrition",
-  pantry: "/shopping/pantry",
-  leftovers: "/shopping/leftovers",
-  allergies: "/profile/nutrition",
-  budget: "/profile/nutrition",
-  cooking_time: "/profile/nutrition",
+  profile: PLANAM_ROUTES.accountNutrition,
+  pantry: PLANAM_ROUTES.pantry,
+  leftovers: PLANAM_ROUTES.homeLeftovers,
+  allergies: PLANAM_ROUTES.accountNutrition,
+  budget: PLANAM_ROUTES.accountNutrition,
+  cooking_time: PLANAM_ROUTES.accountNutrition,
 };

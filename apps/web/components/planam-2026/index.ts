@@ -12,4 +12,3 @@ export { Skeleton2026 } from "@/components/planam-2026/ui/Skeleton2026";
 export { BottomNavigation2026 } from "@/components/planam-2026/navigation/BottomNavigation2026";
 export { AppShell2026 } from "@/components/planam-2026/layout/AppShell2026";
 export { AccountHub2026 } from "@/components/planam-2026/account/AccountHub2026";
-export { RoutePlaceholder2026 } from "@/components/planam-2026/screens/RoutePlaceholder2026";

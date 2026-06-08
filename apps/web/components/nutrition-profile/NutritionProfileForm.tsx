@@ -92,7 +92,7 @@ export function NutritionProfileForm() {
   const embedded = usePlanam2026Embedded("/account/nutrition");
   const returnTo = readReturnTo(
     searchParams,
-    embedded ? "/account" : "/profile",
+    "/account",
   );
   const { showToast } = useToast();
   const { initData } = useTelegram();

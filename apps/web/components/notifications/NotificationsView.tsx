@@ -22,7 +22,7 @@ function NotificationsFrame({ children }: { children: ReactNode }) {
     <ScreenLayout
       title="Уведомления"
       subtitle="Заботливые подсказки от ПланАм в Telegram"
-      back={{ label: "Профиль", href: "/profile" }}
+      back={{ label: "Профиль", href: "/account" }}
       contentClassName="space-y-6"
     >
       {children}
@@ -54,7 +54,7 @@ export function NotificationsView() {
     return (
       <ScreenLayout
         title="Уведомления"
-        back={{ label: "Профиль", href: "/profile" }}
+        back={{ label: "Профиль", href: "/account" }}
       >
         <p className="text-sm text-graphite-600">
           Уведомления настраиваются в Telegram Mini App после авторизации.

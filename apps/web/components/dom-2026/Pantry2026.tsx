@@ -93,7 +93,7 @@ export function Pantry2026() {
           title="Запасы дома"
           description="Откройте ПланАм в Telegram — здесь появятся продукты из списка покупок и остатки."
           actionLabel="К покупкам"
-          onAction={() => router.push("/home/shopping")}
+          onAction={() => router.push(PLANAM_ROUTES.shopping)}
         />
       </div>
     );
@@ -132,7 +132,7 @@ export function Pantry2026() {
           title="Запасов пока нет"
           description="Отметьте продукты купленными в списке покупок — они появятся здесь автоматически."
           actionLabel="К покупкам"
-          onAction={() => router.push("/home/shopping")}
+          onAction={() => router.push(PLANAM_ROUTES.shopping)}
         />
       ) : (
         <div className="space-y-6">
@@ -164,7 +164,7 @@ export function Pantry2026() {
               title="Все позиции просрочены"
               description="Удалите устаревшие продукты или обновите срок годности."
               actionLabel="К покупкам"
-              onAction={() => router.push("/home/shopping")}
+              onAction={() => router.push(PLANAM_ROUTES.shopping)}
             />
           ) : null}
         </div>
@@ -181,7 +181,7 @@ export function Pantry2026() {
         <p className="text-center">
           <button
             type="button"
-            onClick={() => router.push("/home/shopping")}
+            onClick={() => router.push(PLANAM_ROUTES.shopping)}
             className="pa26-caption font-semibold text-sage-700 dark:text-sage-300"
           >
             ← Список покупок

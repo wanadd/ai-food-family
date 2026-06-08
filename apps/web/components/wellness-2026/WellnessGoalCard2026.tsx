@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { GoalProgressCard } from "@/lib/nutritionist/goal-progress";
+import { PLANAM_ROUTES } from "@/lib/planam/routes";
 
 type WellnessGoalCard2026Props = {
   goalLabel: string;
@@ -21,7 +22,7 @@ export function WellnessGoalCard2026({
           Укажите цель питания — подстроим меню и подсказки под вас.
         </p>
         <Link
-          href="/profile/nutrition"
+          href={PLANAM_ROUTES.accountNutrition}
           className="mt-4 flex min-h-[44px] w-full items-center justify-center rounded-control border border-sage-200 bg-pa-surface px-6 text-[15px] font-semibold text-sage-700 active:scale-[0.99] dark:border-pa-border dark:bg-pa-elevated dark:text-sage-300"
         >
           Настроить питание
@@ -52,7 +53,7 @@ export function WellnessGoalCard2026({
         <p className="pa26-caption mt-1 text-pa-muted">{goalCard.paceLine}</p>
       ) : null}
       <Link
-        href="/profile/nutrition"
+        href={PLANAM_ROUTES.accountNutrition}
         className="mt-3 inline-block pa26-micro font-semibold text-sage-700 dark:text-sage-300"
       >
         Изменить цель →

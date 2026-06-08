@@ -96,7 +96,7 @@ export function MemberCard({
       <div className="mt-3 flex flex-wrap gap-2">
         {member.is_you && !member.is_virtual ? (
           <Link
-            href="/profile/nutrition"
+            href="/account/nutrition"
             className="pa-btn-primary px-3 py-2 text-xs"
           >
             Мой профиль питания

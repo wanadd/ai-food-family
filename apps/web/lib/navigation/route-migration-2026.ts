@@ -19,15 +19,27 @@ export type RouteMigrationEntry = {
 };
 
 export const ROUTE_MIGRATION_2026: RouteMigrationEntry[] = [
-  { from: "/menu", to: "/plan", note: "Menu hub → Plan week" },
+  // Exact /menu/* rules must precede the /menu prefix rule.
   { from: "/menu/current", to: "/plan/today", exact: true, note: "Today meals" },
   { from: "/menu/recipes", to: "/plan/recipes", exact: true },
   { from: "/menu/generate", to: "/plan/generate", exact: true, note: "Sprint 4+" },
   { from: "/menu/favorites", to: "/plan/favorites", exact: true, note: "Sprint 5+" },
   { from: "/menu/collections", to: "/plan/collections", exact: true, note: "Sprint 5+" },
+  {
+    from: "/menu/event",
+    to: "/plan/generate",
+    exact: true,
+    note: "Event planner → plan generate",
+  },
+  {
+    from: "/menu/settings",
+    to: "/account/settings",
+    exact: true,
+    note: "Menu settings → account settings",
+  },
+  { from: "/menu", to: "/plan", note: "Menu hub → Plan week" },
   { from: "/recipes", to: "/plan/recipes", note: "Legacy recipes list" },
   { from: "/subscription", to: "/account/subscription", exact: true },
-  { from: "/shopping", to: "/home/shopping", exact: true },
   { from: "/shopping/pantry", to: "/home/pantry", exact: true },
   { from: "/pantry", to: "/home/pantry", exact: true },
   { from: "/health", to: "/wellness", exact: true },

@@ -32,7 +32,7 @@ export function SettingsScaffold({
     <ScreenLayout
       title={title}
       subtitle={subtitle}
-      back={{ label: "Настройки", href: "/settings" }}
+      back={{ label: "Настройки", href: "/account/settings" }}
     >
       {children}
     </ScreenLayout>
@@ -54,7 +54,7 @@ export function SettingsHub({ children }: SettingsHubProps) {
     <ScreenLayout
       title="Настройки"
       subtitle="Аккаунт и приложение"
-      back={{ label: "Профиль", href: "/profile" }}
+      back={{ label: "Профиль", href: "/account" }}
       contentClassName="space-y-3"
     >
       {children}
