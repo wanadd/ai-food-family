@@ -124,27 +124,29 @@ export function Home2026() {
   }
 
   return (
-    <div className="pb-2">
+    <div className="space-y-0 pb-2">
       <PlanAmGreeting greeting={greeting} />
 
       <PlanAmHero2026 loading={loading} state={heroState} />
 
       <TodayDishRail2026 meals={meals} loading={loading} />
 
+      <PlanAmStatusRows2026 overview={overview} loading={loading} />
+
       {!loading ? (
-        <div className="px-4 pt-3">
+        <div className="px-4 pt-2">
           <button
             type="button"
             onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
-            className="flex w-full items-center gap-3 rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left shadow-soft transition hover:bg-sage-50 dark:shadow-none dark:hover:bg-pa-elevated/40"
+            className="flex w-full min-h-10 items-center gap-3 rounded-card border border-pa-border bg-pa-surface px-3 py-2.5 text-left shadow-soft transition hover:bg-sage-50 dark:shadow-none dark:hover:bg-pa-elevated/40"
           >
             <span className="text-lg" aria-hidden>
               🍲
             </span>
             <span className="min-w-0 flex-1">
-              <span className="pa26-card-title block">Готовить из остатков</span>
+              <span className="pa26-card-title block">Из того, что есть дома</span>
               <span className="pa26-micro text-pa-muted">
-                Подберём блюда из продуктов, которые уже есть дома
+                Подберём блюда из продуктов в запасах
               </span>
             </span>
             <span className="pa26-micro shrink-0 font-semibold text-sage-700 dark:text-sage-300">
@@ -154,66 +156,50 @@ export function Home2026() {
         </div>
       ) : null}
 
-      <PlanAmStatusRows2026 overview={overview} loading={loading} />
-
       {!loading ? (
-        <section className="px-4 pt-3" aria-label="Быстрые действия">
-          <h2 className="pa26-micro mb-2 font-semibold uppercase tracking-wide text-pa-muted">
-            Быстрые действия
-          </h2>
-          <div className="grid grid-cols-2 gap-2">
+        <section className="px-4 pt-2" aria-label="Быстрые действия">
+          <div className="flex gap-2">
             <Button2026
               variant="secondary"
               size="default"
-              className="text-sm"
+              className="flex-1 text-sm"
               onClick={() => router.push(PLANAM_ROUTES.shopping)}
             >
-              Список покупок
+              Покупки
             </Button2026>
             <Button2026
               variant="secondary"
               size="default"
-              className="text-sm"
+              className="flex-1 text-sm"
               onClick={() => router.push(PLANAM_ROUTES.pantry)}
             >
-              Остатки
+              Запасы
             </Button2026>
             <Button2026
               variant="secondary"
               size="default"
-              className="text-sm"
-              onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
-            >
-              Готовить из остатков
-            </Button2026>
-            <Button2026
-              variant="secondary"
-              size="default"
-              className="text-sm"
+              className="flex-1 text-sm"
               onClick={() => router.push(PLANAM_ROUTES.planGenerate)}
             >
-              Собрать меню
+              Меню
             </Button2026>
           </div>
         </section>
       ) : null}
 
       {!loading ? (
-        <div className="px-4 pt-3">
+        <div className="px-4 pt-2 pb-1">
           <button
             type="button"
-            onClick={() => router.push("/wellness/chat")}
-            className="flex w-full items-center gap-3 rounded-card border border-dashed border-pa-border bg-pa-surface/80 px-4 py-3 text-left transition hover:bg-sage-50 dark:hover:bg-pa-elevated/40"
+            onClick={() => router.push(PLANAM_ROUTES.wellnessChat)}
+            className="flex w-full min-h-10 items-center gap-3 rounded-card border border-dashed border-pa-border bg-pa-surface/80 px-3 py-2.5 text-left transition hover:bg-sage-50 dark:hover:bg-pa-elevated/40"
           >
-            <span className="text-lg" aria-hidden>
+            <span className="text-base" aria-hidden>
               ✨
             </span>
             <span className="min-w-0 flex-1">
-              <span className="pa26-card-title block text-sage-700 dark:text-sage-300">
+              <span className="pa26-micro font-semibold text-sage-700 dark:text-sage-300">
                 AI помощник
-              </span>
-              <span className="pa26-micro text-pa-muted">
-                Поможет заменить блюдо, собрать меню или объяснить рацион
               </span>
             </span>
             <span className="pa26-micro shrink-0 text-pa-muted" aria-hidden>
@@ -234,7 +220,7 @@ export function Home2026() {
 
 function PlanAmGreeting({ greeting }: { greeting: string }) {
   return (
-    <header className="px-4 pb-1 pt-[max(0.5rem,env(safe-area-inset-top))]">
+    <header className="px-4 pb-0.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
       <h1 className="pa26-page-title truncate">{greeting}</h1>
     </header>
   );

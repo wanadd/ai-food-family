@@ -18,6 +18,7 @@ import { splitPantryBuckets } from "@/lib/dom/pantry-sections";
 import { categoryMeta } from "@/lib/shopping/labels";
 import { fetchShoppingCategories } from "@/lib/shopping/api";
 import type { ShoppingCategory } from "@/lib/shopping/types";
+import { formatProductQuantity } from "@/lib/planam/formatProductQuantity";
 import { PLANAM_ROUTES } from "@/lib/planam/routes";
 import { cn } from "@/lib/planam/cn";
 import {
@@ -175,7 +176,7 @@ export function Pantry2026() {
           size="wide"
           onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
         >
-          Подобрать рецепт из остатков
+          Подобрать из запасов
         </Button2026>
         <p className="text-center">
           <button
@@ -232,7 +233,11 @@ function PantryBlock({
               <div className="min-w-0">
                 <p className="pa26-card-title truncate">{item.name}</p>
                 <p className="pa26-caption text-pa-muted">
-                  {item.quantity} {item.unit}
+                  {formatProductQuantity({
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    name: item.name,
+                  })}
                   {item.expires_at
                     ? ` · ${item.days_until_expiry} дн.`
                     : ""}

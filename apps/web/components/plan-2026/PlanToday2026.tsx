@@ -210,7 +210,7 @@ export function PlanToday2026() {
   const justSaved = searchParams.get("saved") === "1";
 
   return (
-    <div className="pb-28 bg-pa-canvas">
+    <div className="bg-pa-canvas pb-4">
       <div className="px-4 pt-2">
         {justSaved ? (
           <div className="mb-3 rounded-card border border-sage-200 bg-sage-50 px-4 py-3 dark:border-sage-700/40 dark:bg-sage-700/20">

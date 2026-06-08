@@ -18,6 +18,7 @@ import {
   groupShoppingItems,
   shoppingProgress,
 } from "@/lib/dom/shopping-groups";
+import { formatProductQuantity } from "@/lib/planam/formatProductQuantity";
 import { cn } from "@/lib/planam/cn";
 import {
   fetchShoppingCategories,
@@ -354,14 +355,19 @@ export function Shopping2026() {
                             >
                               {item.name}
                             </span>
-                            {(item.amount || item.quantity || item.unit) && (
-                              <span className="pa26-caption text-pa-muted">
-                                {item.amount ||
-                                  [item.quantity, item.unit]
-                                    .filter(Boolean)
-                                    .join(" ")}
-                              </span>
-                            )}
+                            {(() => {
+                              const qtyLabel = formatProductQuantity({
+                                amount: item.amount,
+                                quantity: item.quantity,
+                                unit: item.unit,
+                                name: item.name,
+                              });
+                              return qtyLabel ? (
+                                <span className="pa26-caption text-pa-muted">
+                                  {qtyLabel}
+                                </span>
+                              ) : null;
+                            })()}
                           </span>
                         </button>
                       </li>

@@ -177,6 +177,11 @@ export const ROUTES_2026: Nav2026RouteMeta[] = [
   { href: "/shopping", title: "Список покупок", tabId: "shopping", sectionId: "shopping" },
   { href: "/home/shopping", title: "Список покупок", tabId: "shopping", sectionId: "shopping" },
   { href: "/home/pantry", title: "Запасы", sectionId: "pantry" },
+  {
+    href: "/home/leftovers",
+    title: "Из того, что есть дома",
+    sectionId: "leftovers",
+  },
   { href: "/plan", title: "План на неделю", tabId: "plan", sectionId: "plan" },
   { href: "/plan/today", title: "Сегодня", tabId: "plan", sectionId: "today" },
   { href: "/plan/recipes", title: "Рецепты", tabId: "plan", sectionId: "recipes" },

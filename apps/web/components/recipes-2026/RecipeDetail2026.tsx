@@ -264,7 +264,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
 
   return (
-    <div className="pb-28">
+    <div className="pb-4">
       <div className="relative max-h-[40vh]">
         <RecipeImage2026
           imageUrl={recipe.image_url}

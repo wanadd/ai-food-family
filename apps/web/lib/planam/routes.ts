@@ -28,7 +28,7 @@ export const PLANAM_ROUTES = {
   wellnessProgress: "/wellness/progress",
   shopping: "/shopping",
   pantry: "/home/pantry",
-  /** Canonical leftovers flow (cook from pantry stock). */
+  /** Cook from pantry stock at home (not meal portions). */
   homeLeftovers: "/home/leftovers",
   /** Legacy alias — still served, prefer homeLeftovers in new UI. */
   leftovers: "/shopping/leftovers",

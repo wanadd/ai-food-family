@@ -38,7 +38,7 @@ export function PlanAmStatusRows2026({
     },
     {
       emoji: "📦",
-      label: "Остатки",
+      label: "Запасы",
       value: loading ? "…" : pantryStatusLabel(overview),
       href: "/home/pantry",
     },
@@ -51,7 +51,7 @@ export function PlanAmStatusRows2026({
   ];
 
   return (
-    <section className="px-4 pt-3" aria-label="Статусы семьи">
+    <section className="px-4 pt-2" aria-label="Статусы семьи">
       <ul className="flex flex-col gap-1.5">
         {rows.map((row) => (
           <li key={row.label}>

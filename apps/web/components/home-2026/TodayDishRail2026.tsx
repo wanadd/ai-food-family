@@ -29,11 +29,11 @@ export function TodayDishRail2026({ meals, loading = false }: TodayDishRail2026P
 
   if (loading) {
     return (
-      <section className="px-4 pt-4" aria-busy="true" aria-label="Сегодня в меню">
-        <Skeleton2026 variant="text" className="mb-2 max-w-[50%]" />
-        <div className="flex gap-3 overflow-hidden">
-          <Skeleton2026 variant="rect" className="h-44 w-[72%] shrink-0 rounded-card" />
-          <Skeleton2026 variant="rect" className="h-44 w-[72%] shrink-0 rounded-card" />
+      <section className="px-4 pt-2" aria-busy="true" aria-label="Сегодня в меню">
+        <Skeleton2026 variant="text" className="mb-1.5 max-w-[50%]" />
+        <div className="flex gap-2 overflow-hidden">
+          <Skeleton2026 variant="rect" className="h-28 w-[68%] shrink-0 rounded-card" />
+          <Skeleton2026 variant="rect" className="h-28 w-[68%] shrink-0 rounded-card" />
         </div>
       </section>
     );
@@ -41,25 +41,25 @@ export function TodayDishRail2026({ meals, loading = false }: TodayDishRail2026P
 
   if (meals.length === 0) {
     return (
-      <section className="px-4 pt-4" aria-label="Сегодня в меню">
+      <section className="px-4 pt-2" aria-label="Сегодня в меню">
         <RailHeader />
         <EmptyState2026
           title="Меню на сегодня ещё не собрано"
           description="Соберите план — и здесь появятся блюда на каждый приём пищи."
           actionLabel="Собрать меню"
           onAction={() => router.push(PLANAM_ROUTES.planGenerate)}
-          className="py-6"
+          className="py-4"
         />
       </section>
     );
   }
 
   return (
-    <section className="px-4 pt-4" aria-label="Сегодня в меню">
+    <section className="px-4 pt-2" aria-label="Сегодня в меню">
       <RailHeader />
       <div
         className={cn(
-          "-mx-4 flex gap-3 overflow-x-auto px-4 pb-1",
+          "-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5",
           "snap-x snap-mandatory scroll-smooth",
         )}
       >
@@ -67,12 +67,12 @@ export function TodayDishRail2026({ meals, loading = false }: TodayDishRail2026P
           <article
             key={meal.meal_type}
             className={cn(
-              "flex w-[72%] shrink-0 snap-start flex-col overflow-hidden",
+              "flex w-[68%] shrink-0 snap-start flex-col overflow-hidden",
               "rounded-card border border-pa-border bg-pa-surface shadow-soft",
               "dark:shadow-none",
             )}
           >
-            <div className="relative h-28 w-full overflow-hidden">
+            <div className="relative h-20 w-full overflow-hidden">
               {meal.image_url ? (
                 <RecipeImage2026
                   imageUrl={meal.image_url}
@@ -88,16 +88,20 @@ export function TodayDishRail2026({ meals, loading = false }: TodayDishRail2026P
                 />
               )}
             </div>
-            <div className="flex flex-1 flex-col p-3">
+            <div className="flex flex-1 flex-col p-2">
               <p className="pa26-micro font-semibold uppercase tracking-wide text-pa-muted">
                 {meal.label}
               </p>
-              <h3 className="pa26-card-title mt-0.5 line-clamp-2">{meal.name}</h3>
-              <p className="pa26-caption mt-1 text-pa-muted">{formatMealMeta(meal)}</p>
+              <h3 className="pa26-card-title mt-0.5 line-clamp-2 text-sm leading-snug">
+                {meal.name}
+              </h3>
+              <p className="pa26-micro mt-0.5 line-clamp-1 text-pa-muted">
+                {formatMealMeta(meal)}
+              </p>
               <Button2026
                 variant="secondary"
-                size="default"
-                className="mt-3 w-full text-sm"
+                size="compact"
+                className="mt-2 w-full"
                 onClick={() => router.push(dishHref(meal))}
               >
                 Открыть
@@ -112,9 +116,9 @@ export function TodayDishRail2026({ meals, loading = false }: TodayDishRail2026P
 
 function RailHeader() {
   return (
-    <header className="mb-3">
-      <h2 className="pa26-section-title">Сегодня в меню</h2>
-      <p className="pa26-caption mt-0.5 text-pa-muted">
+    <header className="mb-2">
+      <h2 className="pa26-section-title text-base">Сегодня в меню</h2>
+      <p className="pa26-micro mt-0.5 text-pa-muted">
         Можно заменить любое блюдо или открыть рецепт
       </p>
     </header>
