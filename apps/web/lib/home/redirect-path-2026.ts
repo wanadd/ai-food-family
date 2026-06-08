@@ -36,7 +36,7 @@ export function resolveHomeRedirectPath(
     return "/plan/generate";
   }
   if (actionId === "complete_nutrition") {
-    return "/profile/nutrition";
+    return "/account/nutrition";
   }
   return LEGACY_TO_2026[legacyPath] ?? legacyPath;
 }

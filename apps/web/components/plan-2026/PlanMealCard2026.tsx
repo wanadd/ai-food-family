@@ -14,6 +14,7 @@ import { cn } from "@/lib/planam/cn";
 
 type PlanMealCard2026Props = {
   item: PlanTodayMeal;
+  highlighted?: boolean;
   onCook?: () => void;
   onReplace?: () => void;
   onRemove?: () => void;
@@ -21,6 +22,7 @@ type PlanMealCard2026Props = {
 
 export function PlanMealCard2026({
   item,
+  highlighted = false,
   onCook,
   onReplace,
   onRemove,
@@ -73,7 +75,18 @@ export function PlanMealCard2026({
   }
 
   return (
-    <article className="overflow-hidden rounded-card border border-pa-border bg-pa-surface shadow-soft dark:shadow-none">
+    <article
+      id={`meal-card-${item.meal.meal_type}`}
+      data-meal-type={item.meal.meal_type}
+      data-recipe-id={item.meal.recipe_id ?? undefined}
+      data-slot-id={item.slotId ?? undefined}
+      className={cn(
+        "overflow-hidden rounded-card border bg-pa-surface shadow-soft dark:shadow-none",
+        highlighted
+          ? "border-pa-brand ring-2 ring-pa-brand/40"
+          : "border-pa-border",
+      )}
+    >
       <div className="relative min-h-[160px] w-full">
         <RecipeImage2026
           imageUrl={imageUrl}

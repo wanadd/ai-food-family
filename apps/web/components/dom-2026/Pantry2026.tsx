@@ -18,6 +18,7 @@ import { splitPantryBuckets } from "@/lib/dom/pantry-sections";
 import { categoryMeta } from "@/lib/shopping/labels";
 import { fetchShoppingCategories } from "@/lib/shopping/api";
 import type { ShoppingCategory } from "@/lib/shopping/types";
+import { PLANAM_ROUTES } from "@/lib/planam/routes";
 import { cn } from "@/lib/planam/cn";
 import {
   deletePantryItem,
@@ -168,15 +169,24 @@ export function Pantry2026() {
         </div>
       )}
 
-      <p className="mt-6 text-center">
-        <button
-          type="button"
-          onClick={() => router.push("/home/shopping")}
-          className="pa26-caption font-semibold text-sage-700 dark:text-sage-300"
+      <div className="mt-6 space-y-3">
+        <Button2026
+          variant="secondary"
+          size="wide"
+          onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
         >
-          ← Список покупок
-        </button>
-      </p>
+          Подобрать рецепт из остатков
+        </Button2026>
+        <p className="text-center">
+          <button
+            type="button"
+            onClick={() => router.push("/home/shopping")}
+            className="pa26-caption font-semibold text-sage-700 dark:text-sage-300"
+          >
+            ← Список покупок
+          </button>
+        </p>
+      </div>
     </div>
   );
 }

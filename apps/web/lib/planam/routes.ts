@@ -22,9 +22,15 @@ export const PLANAM_ROUTES = {
   planToday: "/plan/today",
   planWeek: "/plan",
   planGenerate: "/plan/generate",
+  planFavorites: "/plan/favorites",
+  planCollections: "/plan/collections",
   recipes: "/plan/recipes",
+  wellnessProgress: "/wellness/progress",
   shopping: "/shopping",
   pantry: "/home/pantry",
+  /** Canonical leftovers flow (cook from pantry stock). */
+  homeLeftovers: "/home/leftovers",
+  /** Legacy alias — still served, prefer homeLeftovers in new UI. */
   leftovers: "/shopping/leftovers",
   wellness: "/wellness",
   wellnessChat: "/wellness/chat",

@@ -7,6 +7,7 @@ import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MealOutcomeSheet2026 } from "@/components/dom-2026";
 import { PlanAmHero2026 } from "@/components/home-2026/PlanAmHero2026";
 import { PlanAmStatusRows2026 } from "@/components/home-2026/PlanAmStatusRows2026";
+import { TodayDishRail2026 } from "@/components/home-2026/TodayDishRail2026";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { useTelegram } from "@/components/TelegramProvider";
 import { EmptyState2026 } from "@/components/planam-2026/ui/EmptyState2026";
@@ -23,6 +24,7 @@ import {
 } from "@/lib/home/planam-hero-2026";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import type { MenuOverview } from "@/lib/menu/overview-types";
+import { PLANAM_ROUTES } from "@/lib/planam/routes";
 
 type LoadState = "loading" | "ready" | "error";
 
@@ -127,27 +129,73 @@ export function Home2026() {
 
       <PlanAmHero2026 loading={loading} state={heroState} />
 
+      <TodayDishRail2026 meals={meals} loading={loading} />
+
+      {!loading ? (
+        <div className="px-4 pt-3">
+          <button
+            type="button"
+            onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
+            className="flex w-full items-center gap-3 rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left shadow-soft transition hover:bg-sage-50 dark:shadow-none dark:hover:bg-pa-elevated/40"
+          >
+            <span className="text-lg" aria-hidden>
+              🍲
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="pa26-card-title block">Готовить из остатков</span>
+              <span className="pa26-micro text-pa-muted">
+                Подберём блюда из продуктов, которые уже есть дома
+              </span>
+            </span>
+            <span className="pa26-micro shrink-0 font-semibold text-sage-700 dark:text-sage-300">
+              Подобрать
+            </span>
+          </button>
+        </div>
+      ) : null}
+
       <PlanAmStatusRows2026 overview={overview} loading={loading} />
 
       {!loading ? (
-        <div className="flex gap-2 px-4 pt-2">
-          <Button2026
-            variant="secondary"
-            size="default"
-            className="flex-1 text-sm"
-            onClick={() => router.push("/plan/today")}
-          >
-            Открыть меню
-          </Button2026>
-          <Button2026
-            variant="secondary"
-            size="default"
-            className="flex-1 text-sm"
-            onClick={() => router.push("/shopping")}
-          >
-            Список покупок
-          </Button2026>
-        </div>
+        <section className="px-4 pt-3" aria-label="Быстрые действия">
+          <h2 className="pa26-micro mb-2 font-semibold uppercase tracking-wide text-pa-muted">
+            Быстрые действия
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            <Button2026
+              variant="secondary"
+              size="default"
+              className="text-sm"
+              onClick={() => router.push(PLANAM_ROUTES.shopping)}
+            >
+              Список покупок
+            </Button2026>
+            <Button2026
+              variant="secondary"
+              size="default"
+              className="text-sm"
+              onClick={() => router.push(PLANAM_ROUTES.pantry)}
+            >
+              Остатки
+            </Button2026>
+            <Button2026
+              variant="secondary"
+              size="default"
+              className="text-sm"
+              onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
+            >
+              Готовить из остатков
+            </Button2026>
+            <Button2026
+              variant="secondary"
+              size="default"
+              className="text-sm"
+              onClick={() => router.push(PLANAM_ROUTES.planGenerate)}
+            >
+              Собрать меню
+            </Button2026>
+          </div>
+        </section>
       ) : null}
 
       {!loading ? (

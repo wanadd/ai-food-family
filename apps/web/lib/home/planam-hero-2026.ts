@@ -1,14 +1,28 @@
 import type { MenuOverview } from "@/lib/menu/overview-types";
+import { PLANAM_ROUTES, recipeDetailPath } from "@/lib/planam/routes";
 
 import type { Home2026TodayMeal } from "./home-2026-data";
 import { formatMealMeta } from "./home-2026-data";
 
-export type PlanAmHeroVariant = "no_menu" | "shopping" | "wellness" | "meal";
+export type PlanAmHeroPriority = "P0" | "P1" | "P2" | "P3" | "P4" | "fallback";
+
+export type PlanAmHeroVariant =
+  | "nutrition_profile"
+  | "meal"
+  | "no_menu"
+  | "pantry_expiry"
+  | "meal_outcome"
+  | "shopping"
+  | "wellness"
+  | "welcome";
 
 export type PlanAmHeroState = {
   variant: PlanAmHeroVariant;
+  priority: PlanAmHeroPriority;
   ctaLabel: string;
   ctaHref: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaHref?: string;
   title: string;
   subtitle: string;
   meal: Home2026TodayMeal | null;
@@ -16,6 +30,9 @@ export type PlanAmHeroState = {
 };
 
 const MEAL_CYCLE = ["breakfast", "lunch", "dinner", "snack"] as const;
+
+/** Days until expiry to surface P3 pantry hero. */
+const PANTRY_EXPIRY_HERO_DAYS = 3;
 
 /** Time-of-day meal priority (Final Vision Sprint 1). */
 export function mealTypesForHour(hour: number): string[] {
@@ -84,9 +101,7 @@ export function isShoppingHeroPriority(
   return hour >= 17 && hour < 19 && uncheckedCount >= 3;
 }
 
-export function isWellnessHeroPriority(
-  overview: MenuOverview,
-): boolean {
+export function isWellnessHeroPriority(overview: MenuOverview): boolean {
   const { level, body, freshness_status } = overview.nutritionist_advice;
   if (freshness_status === "no_menu") {
     return false;
@@ -100,6 +115,37 @@ export function isWellnessHeroPriority(
   return false;
 }
 
+function isNutritionProfileIncomplete(overview: MenuOverview | null): boolean {
+  return overview?.next_action?.id === "complete_nutrition";
+}
+
+function isPantryExpiryHero(overview: MenuOverview | null): boolean {
+  const preview = overview?.pantry_expiring_preview;
+  if (preview && preview.days_until_expiry <= PANTRY_EXPIRY_HERO_DAYS) {
+    return true;
+  }
+  return overview?.next_action?.id === "use_pantry_item";
+}
+
+function isMealOutcomeHero(overview: MenuOverview | null): boolean {
+  return overview?.next_action?.id === "meal_outcome";
+}
+
+function mealHeroHref(meal: Home2026TodayMeal): string {
+  if (meal.recipe_id != null) {
+    return recipeDetailPath(meal.recipe_id);
+  }
+  return `${PLANAM_ROUTES.planToday}?meal=${encodeURIComponent(meal.meal_type)}`;
+}
+
+function mealReplaceHref(meal: Home2026TodayMeal): string {
+  return `${PLANAM_ROUTES.planToday}?meal=${encodeURIComponent(meal.meal_type)}&replace=1`;
+}
+
+/**
+ * Hero priority: P0 profile → P1 meal → P2 no menu → P3 pantry → P4 outcome → fallback.
+ * Uses only fields already present in MenuOverview / Home data.
+ */
 export function resolvePlanAmHeroState(
   overview: MenuOverview | null,
   meals: Home2026TodayMeal[],
@@ -107,72 +153,119 @@ export function resolvePlanAmHeroState(
   now: Date = new Date(),
 ): PlanAmHeroState {
   const unchecked = overview?.shopping_unchecked_count ?? 0;
+  const base = { shoppingCount: unchecked, meal: null as Home2026TodayMeal | null };
 
-  // Priority 1: next meal (food first — never let wellness/shopping override)
+  // P0 — incomplete nutrition profile
+  if (isNutritionProfileIncomplete(overview)) {
+    return {
+      ...base,
+      variant: "nutrition_profile",
+      priority: "P0",
+      ctaLabel: "Заполнить профиль",
+      ctaHref: PLANAM_ROUTES.accountNutrition,
+      title: "Давайте настроим питание под вас",
+      subtitle:
+        "Пара минут — и PLANAM будет учитывать цели, аллергии и предпочтения семьи.",
+    };
+  }
+
+  // P1 — current meal
   const meal = hasMenu ? pickNextMealByTime(meals, now) : null;
   if (meal) {
     return {
+      ...base,
       variant: "meal",
-      ctaLabel: "Приготовить",
-      ctaHref: `/plan/today?meal=${meal.meal_type}`,
+      priority: "P1",
+      meal,
+      ctaLabel: "Открыть рецепт",
+      ctaHref: mealHeroHref(meal),
+      secondaryCtaLabel: "Заменить",
+      secondaryCtaHref: mealReplaceHref(meal),
       title: meal.name,
       subtitle: formatMealMeta(meal),
-      meal,
-      shoppingCount: unchecked,
     };
   }
 
-  // Priority 2: no menu
+  // P2 — no menu
   if (!hasMenu) {
     return {
+      ...base,
       variant: "no_menu",
-      ctaLabel: "Создать меню",
-      ctaHref: "/plan/generate",
-      title: "Составим меню?",
-      subtitle: "План на неделю за пару минут — с фото блюд и списком покупок",
-      meal: null,
-      shoppingCount: unchecked,
+      priority: "P2",
+      ctaLabel: "Собрать меню",
+      ctaHref: PLANAM_ROUTES.planGenerate,
+      title: "Соберём меню на неделю?",
+      subtitle: "PLANAM предложит варианты и сразу подготовит список покупок.",
     };
   }
 
-  // Priority 3: shopping
+  // P3 — pantry expiry
+  if (isPantryExpiryHero(overview)) {
+    const preview = overview?.pantry_expiring_preview;
+    const subtitle = preview
+      ? `${preview.name} — осталось ${preview.days_until_expiry} дн. Подберём рецепт из запасов.`
+      : "В остатках есть продукты, которые скоро испортятся. Подберём рецепт из них.";
+    return {
+      ...base,
+      variant: "pantry_expiry",
+      priority: "P3",
+      ctaLabel: "Подобрать рецепт",
+      ctaHref: PLANAM_ROUTES.homeLeftovers,
+      title: "Лучше использовать сегодня",
+      subtitle,
+    };
+  }
+
+  // P4 — after cooking / meal outcome
+  if (isMealOutcomeHero(overview)) {
+    return {
+      ...base,
+      variant: "meal_outcome",
+      priority: "P4",
+      ctaLabel: "Открыть покупки",
+      ctaHref: PLANAM_ROUTES.shopping,
+      title: "Готово, меню обновлено",
+      subtitle: "Можно отметить блюдо приготовленным или перейти к покупкам.",
+    };
+  }
+
+  // Fallback — shopping / wellness / welcome (no new backend fields)
   if (isShoppingHeroPriority(unchecked, now)) {
     return {
+      ...base,
       variant: "shopping",
+      priority: "fallback",
       ctaLabel: "Открыть список",
-      ctaHref: "/shopping",
+      ctaHref: PLANAM_ROUTES.shopping,
       title: `Нужно купить ${unchecked} ${goodsLabel(unchecked)}`,
       subtitle: "Еда и быт — один список для семьи",
-      meal: null,
-      shoppingCount: unchecked,
     };
   }
 
-  // Priority 4: wellness
   if (overview && isWellnessHeroPriority(overview)) {
     const advice = overview.nutritionist_advice;
     const title = advice.title?.trim() || "Есть рекомендации по здоровью";
     const subtitle =
       advice.body?.trim() || "Откройте раздел «Здоровье» для подробностей";
     return {
+      ...base,
       variant: "wellness",
+      priority: "fallback",
       ctaLabel: "Подробнее",
-      ctaHref: "/wellness",
+      ctaHref: PLANAM_ROUTES.wellness,
       title,
       subtitle,
-      meal: null,
-      shoppingCount: unchecked,
     };
   }
 
   return {
-    variant: "no_menu",
-    ctaLabel: "Создать меню",
-    ctaHref: "/plan/generate",
-    title: "Составим меню?",
-    subtitle: "Добавьте блюда на сегодня",
-    meal: null,
-    shoppingCount: unchecked,
+    ...base,
+    variant: "welcome",
+    priority: "fallback",
+    ctaLabel: "Открыть меню",
+    ctaHref: PLANAM_ROUTES.planToday,
+    title: "Ваш день в PLANAM",
+    subtitle: "Посмотрите план на сегодня или соберите новое меню.",
   };
 }
 

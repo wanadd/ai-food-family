@@ -19,10 +19,12 @@ function MealHeroCard({
   state,
   compact,
   onCta,
+  onSecondaryCta,
 }: {
   state: PlanAmHeroState;
   compact: boolean;
   onCta: () => void;
+  onSecondaryCta?: () => void;
 }) {
   const meal = state.meal!;
   const heightClass = compact ? "min-h-[200px]" : "min-h-[240px]";
@@ -59,14 +61,26 @@ function MealHeroCard({
         ) : null}
         <h2 className="pa26-hero mt-0.5 line-clamp-2 text-white">{state.title}</h2>
         <p className="pa26-caption mt-1 text-white/85">{state.subtitle}</p>
-        <Button2026
-          variant="primary"
-          size="wide"
-          className="mt-3 bg-white text-pa-brand hover:bg-white/95"
-          onClick={onCta}
-        >
-          {state.ctaLabel}
-        </Button2026>
+        <div className="mt-3 flex flex-col gap-2">
+          <Button2026
+            variant="primary"
+            size="wide"
+            className="bg-white text-pa-brand hover:bg-white/95"
+            onClick={onCta}
+          >
+            {state.ctaLabel}
+          </Button2026>
+          {state.secondaryCtaLabel && onSecondaryCta ? (
+            <Button2026
+              variant="secondary"
+              size="wide"
+              className="border-white/40 bg-white/15 text-white hover:bg-white/25"
+              onClick={onSecondaryCta}
+            >
+              {state.secondaryCtaLabel}
+            </Button2026>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -84,7 +98,13 @@ function ContextHeroCard({
       ? "🛒"
       : state.variant === "wellness"
         ? "💚"
-        : "✨";
+        : state.variant === "nutrition_profile"
+          ? "🎯"
+          : state.variant === "pantry_expiry"
+            ? "📦"
+            : state.variant === "meal_outcome"
+              ? "✅"
+              : "✨";
 
   return (
     <div className="overflow-hidden rounded-card border border-pa-border bg-pa-elevated shadow-soft dark:shadow-none">
@@ -125,11 +145,19 @@ export function PlanAmHero2026({ loading = false, state }: PlanAmHero2026Props) 
   }
 
   const goCta = () => router.push(state.ctaHref);
+  const goSecondary = state.secondaryCtaHref
+    ? () => router.push(state.secondaryCtaHref!)
+    : undefined;
 
   return (
     <section className="px-4 pt-2" aria-label="Главное действие">
       {state.variant === "meal" && state.meal ? (
-        <MealHeroCard state={state} compact={compact} onCta={goCta} />
+        <MealHeroCard
+          state={state}
+          compact={compact}
+          onCta={goCta}
+          onSecondaryCta={goSecondary}
+        />
       ) : (
         <ContextHeroCard state={state} onCta={goCta} />
       )}

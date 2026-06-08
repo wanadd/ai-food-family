@@ -57,6 +57,12 @@ export function PlanToday2026() {
   const [outcomeOpen, setOutcomeOpen] = useState(false);
   const [outcomeMealIndex, setOutcomeMealIndex] = useState<number | null>(null);
 
+  const mealQuery = searchParams.get("meal");
+  const recipeIdQuery = searchParams.get("recipeId");
+  const menuItemIdQuery = searchParams.get("menuItemId");
+  const highlightedRecipeId = recipeIdQuery ? Number(recipeIdQuery) : null;
+  const highlightedSlotId = menuItemIdQuery?.trim() || null;
+
   const load = useCallback(async () => {
     if (!initData) {
       setLoading(false);
@@ -137,6 +143,30 @@ export function PlanToday2026() {
     const meals = enrichMealsForDay(menu, dayIndex, checkins, imageMap);
     return groupByTimeline(meals);
   }, [menu, dayIndex, checkins, overviewCached]);
+
+  useEffect(() => {
+    if (loading || !menu || timeline.length === 0) {
+      return;
+    }
+    const selector = highlightedSlotId
+      ? `[data-slot-id="${highlightedSlotId}"]`
+      : mealQuery
+        ? `#meal-card-${mealQuery}`
+        : highlightedRecipeId != null && Number.isFinite(highlightedRecipeId)
+          ? `[data-recipe-id="${highlightedRecipeId}"]`
+          : null;
+    if (!selector) {
+      return;
+    }
+    const el = document.querySelector<HTMLElement>(selector);
+    if (!el) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [loading, menu, mealQuery, highlightedRecipeId, highlightedSlotId, timeline]);
 
   const multiDay = menu ? menuHasMultipleDays(menu) : false;
   const days = menu ? getMenuDays(menu) : [];
@@ -247,6 +277,13 @@ export function PlanToday2026() {
         ) : (
           <PlanTimelineSection2026
             groups={timeline}
+            highlightedMealType={mealQuery}
+            highlightedRecipeId={
+              highlightedRecipeId != null && Number.isFinite(highlightedRecipeId)
+                ? highlightedRecipeId
+                : null
+            }
+            highlightedSlotId={highlightedSlotId}
             onCook={(index) => {
               setOutcomeMealIndex(index);
               setOutcomeOpen(true);

@@ -110,7 +110,25 @@ describe("planam-hero-2026", () => {
   it("resolve no menu state", () => {
     const state = resolvePlanAmHeroState(null, [], false);
     expect(state.variant).toBe("no_menu");
-    expect(state.ctaLabel).toBe("Создать меню");
+    expect(state.ctaLabel).toBe("Собрать меню");
+  });
+
+  it("resolve P0 nutrition profile over meal", () => {
+    const overview = baseOverview({
+      next_action: {
+        id: "complete_nutrition",
+        cta_label: "Заполнить",
+        redirect_path: "/profile/nutrition",
+      },
+    });
+    const state = resolvePlanAmHeroState(
+      overview,
+      meals,
+      true,
+      new Date("2026-06-03T13:00:00"),
+    );
+    expect(state.variant).toBe("nutrition_profile");
+    expect(state.priority).toBe("P0");
   });
 
   it("resolve meal over shopping when meals exist", () => {
@@ -122,7 +140,8 @@ describe("planam-hero-2026", () => {
       new Date("2026-06-03T13:00:00"),
     );
     expect(state.variant).toBe("meal");
-    expect(state.ctaLabel).toBe("Приготовить");
+    expect(state.ctaLabel).toBe("Открыть рецепт");
+    expect(state.secondaryCtaLabel).toBe("Заменить");
   });
 
   it("resolve meal over wellness when meals exist", () => {
@@ -149,5 +168,14 @@ describe("planam-hero-2026", () => {
     const state = resolvePlanAmHeroState(overview, [], true);
     expect(state.variant).toBe("shopping");
     expect(state.ctaHref).toBe("/shopping");
+  });
+
+  it("resolve P3 pantry expiry hero", () => {
+    const overview = baseOverview({
+      pantry_expiring_preview: { name: "Молоко", days_until_expiry: 2 },
+    });
+    const state = resolvePlanAmHeroState(overview, [], true);
+    expect(state.variant).toBe("pantry_expiry");
+    expect(state.ctaHref).toBe("/home/leftovers");
   });
 });
