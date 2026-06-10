@@ -146,7 +146,7 @@ def main() -> int:
                     for key, val in payload.items():
                         setattr(existing, key, val)
                     existing.normalized_title = nt
-                    persist(existing, payload["ingredients"], payload["steps"])
+                    persist(db, existing, ingredients=payload["ingredients"], steps=payload["steps"], tags=payload.get("tags"), allergens=norm.get("allergens") or [], restrictions=norm.get("excludes") or norm.get("religious_tags") or [])
                     db.flush()
                     updated += 1
                     details.append(f"- UPDATED `{title}` (id={existing.id})")
@@ -158,7 +158,7 @@ def main() -> int:
                     row = Recipe(**payload, normalized_title=nt)
                     db.add(row)
                     db.flush()
-                    persist(row, payload["ingredients"], payload["steps"])
+                    persist(db, row, ingredients=payload["ingredients"], steps=payload["steps"], tags=payload.get("tags"), allergens=norm.get("allergens") or [], restrictions=norm.get("excludes") or norm.get("religious_tags") or [])
                     created += 1
                     details.append(f"- CREATED `{title}` (id={row.id})")
                 else:
