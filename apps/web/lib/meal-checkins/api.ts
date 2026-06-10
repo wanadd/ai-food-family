@@ -34,7 +34,7 @@ export async function createMealCheckin(
   mode: AppMode,
   payload: {
     meal_type: string;
-    actual_status: MealCheckinStatus | "saved_as_leftover";
+    actual_status: MealCheckinStatus | "saved_as_leftover" | "cooked" | "skipped";
     planned_date?: string;
     family_member_id?: number | null;
     actual_description?: string | null;

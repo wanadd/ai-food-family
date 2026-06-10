@@ -65,6 +65,30 @@ export function pickNextMealByTime(
   return meals[0] ?? null;
 }
 
+const QUOTE_PAIRS: Array<[string, string]> = [
+  ["«", "»"],
+  ['"', '"'],
+  ["“", "”"],
+  ["'", "'"],
+  ["`", "`"],
+];
+
+/** Убирает обрамляющие кавычки из названия блюда: «Каша» → Каша. */
+export function cleanMealTitle(name: string | null | undefined): string {
+  let text = (name ?? "").trim();
+  let changed = true;
+  while (changed && text.length > 2) {
+    changed = false;
+    for (const [open, close] of QUOTE_PAIRS) {
+      if (text.startsWith(open) && text.endsWith(close)) {
+        text = text.slice(open.length, text.length - close.length).trim();
+        changed = true;
+      }
+    }
+  }
+  return text;
+}
+
 export function greetingForPlanAm(date: Date = new Date()): string {
   const h = date.getHours();
   if (h >= 5 && h < 12) {
@@ -181,7 +205,7 @@ export function resolvePlanAmHeroState(
       ctaHref: mealHeroHref(meal),
       secondaryCtaLabel: "Заменить",
       secondaryCtaHref: mealReplaceHref(meal),
-      title: meal.name,
+      title: cleanMealTitle(meal.name),
       subtitle: formatMealMeta(meal),
     };
   }

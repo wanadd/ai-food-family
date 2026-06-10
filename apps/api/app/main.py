@@ -36,11 +36,12 @@ from app.routers import (
     users,
 )
 from app.services.notification_scheduler import run_notification_scheduler
-from app.telegram.bot import setup_menu_button, setup_webhook
+from app.telegram.bot import setup_bot_commands, setup_menu_button, setup_webhook
 
 
 async def _startup_telegram() -> None:
     await setup_menu_button()
+    await setup_bot_commands()
     await setup_webhook()
 
 

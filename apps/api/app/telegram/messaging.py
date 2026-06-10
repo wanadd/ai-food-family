@@ -43,6 +43,15 @@ async def answer_callback_query(callback_query_id: str, text: str = "") -> None:
         await client.post(api_url("answerCallbackQuery"), json=payload)
 
 
+PHONE_CONFIRM_CALLBACK = "phone:request"
+HELP_CALLBACK = "help:show"
+
+BOT_HELP_TEXT = (
+    "PLANAM помогает составлять меню, покупки и учитывать запасы дома.\n"
+    "Откройте приложение кнопкой ниже."
+)
+
+
 def own_phone_keyboard() -> dict[str, Any]:
     return {
         "keyboard": [[{"text": "📱 Поделиться номером", "request_contact": True}]],
@@ -58,6 +67,20 @@ def webapp_inline_keyboard() -> dict[str, Any]:
             [{"text": "🚀 Открыть ПланАм", "web_app": {"url": url}}],
         ],
     }
+
+
+def entry_inline_keyboard(*, include_phone: bool = True) -> dict[str, Any]:
+    """Main /start entry: open Mini App, confirm phone, help."""
+    url = settings.telegram_webapp_url or "https://planam.ru"
+    rows: list[list[dict[str, Any]]] = [
+        [{"text": "🚀 Открыть PLANAM", "web_app": {"url": url}}],
+    ]
+    if include_phone:
+        rows.append(
+            [{"text": "📱 Подтвердить телефон", "callback_data": PHONE_CONFIRM_CALLBACK}]
+        )
+    rows.append([{"text": "❓ Помощь", "callback_data": HELP_CALLBACK}])
+    return {"inline_keyboard": rows}
 
 
 def remove_keyboard() -> dict[str, Any]:

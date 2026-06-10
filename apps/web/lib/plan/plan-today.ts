@@ -1,5 +1,5 @@
 import type { MealCheckin } from "@/lib/meal-checkins/api";
-import { MEAL_CHECKIN_OPTIONS } from "@/lib/meal-checkins/constants";
+import { mealCheckinStatusLabel } from "@/lib/meal-checkins/constants";
 import { MEAL_LABELS } from "@/lib/menu/labels";
 import {
   dateIsoForDayIndex,
@@ -94,10 +94,7 @@ export function enrichMealsForDay(
     )
     .map(({ meal, mealIndex }) => {
     const statusCode = statusByType.get(meal.meal_type) ?? null;
-    const statusLabel = statusCode
-      ? (MEAL_CHECKIN_OPTIONS.find((o) => o.value === statusCode)?.label ??
-        statusCode)
-      : "В плане";
+    const statusLabel = mealCheckinStatusLabel(statusCode);
     const imageUrl =
       (meal.recipe_id != null
         ? imageByType.get(`recipe:${meal.recipe_id}`)

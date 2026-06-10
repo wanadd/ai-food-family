@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { MealOutcomeSheet2026 } from "@/components/dom-2026/MealOutcomeSheet2026";
+import { MealEatenSheetV2 } from "@/components/planam-v2/menu/MealEatenSheetV2";
 import { DayNutritionCard2026 } from "@/components/plan-2026/DayNutritionCard2026";
 import { ReplaceDishSheet2026 } from "@/components/plan-2026/ReplaceDishSheet2026";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -28,7 +29,10 @@ import {
   invalidate as invalidateCache,
   setCached,
 } from "@/lib/cache/session-cache";
-import { fetchTodayMealCheckins } from "@/lib/meal-checkins/api";
+import {
+  createMealCheckin,
+  fetchTodayMealCheckins,
+} from "@/lib/meal-checkins/api";
 import { deleteMenuItem, fetchSelectedMenu } from "@/lib/menu/api";
 import { buildReplaceCatalogUrl } from "@/lib/menu/replace-slot";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
@@ -71,6 +75,8 @@ export function MenuTodayV2() {
   const [outcomeMealIndex, setOutcomeMealIndex] = useState<number | null>(null);
   const [actionMeal, setActionMeal] = useState<PlanTodayMeal | null>(null);
   const [shoppingBusy, setShoppingBusy] = useState(false);
+  const [ateOtherMeal, setAteOtherMeal] = useState<PlanTodayMeal | null>(null);
+  const [skipBusy, setSkipBusy] = useState(false);
 
   const mealQuery = searchParams.get("meal");
   const recipeIdQuery = searchParams.get("recipeId");
@@ -187,6 +193,29 @@ export function MenuTodayV2() {
 
   const multiDay = menu ? menuHasMultipleDays(menu) : false;
   const days = menu ? getMenuDays(menu) : [];
+
+  async function handleSkipMeal(meal: PlanTodayMeal) {
+    if (!initData || skipBusy) {
+      return;
+    }
+    setSkipBusy(true);
+    try {
+      await createMealCheckin(initData, mode, {
+        meal_type: meal.meal.meal_type,
+        actual_status: "skipped",
+        planned_date: plannedDate || undefined,
+        actual_description: meal.meal.name,
+      });
+      invalidateCache(cacheKey.menuOverview(mode));
+      showToast("Приём пищи пропущен — КБЖУ не учитываем");
+      setActionMeal(null);
+      void reloadCheckins();
+    } catch {
+      showToast("Не удалось сохранить. Попробуйте ещё раз.");
+    } finally {
+      setSkipBusy(false);
+    }
+  }
 
   async function handleAddMealToShopping(meal: PlanTodayMeal) {
     if (!initData || meal.meal.recipe_id == null) {
@@ -356,11 +385,14 @@ export function MenuTodayV2() {
 
       <V2BottomSheet
         open={actionMeal != null}
-        title={actionMeal?.meal.name ?? "Блюдо"}
+        title="Что сделать с блюдом?"
         onClose={() => setActionMeal(null)}
       >
         {actionMeal ? (
           <div className="space-y-2 pb-2">
+            <p className="pa26-caption -mt-1 text-pa-muted">
+              {actionMeal.meal.name}
+            </p>
             {actionMeal.meal.recipe_id ? (
               <SheetAction
                 label="Открыть рецепт"
@@ -385,6 +417,17 @@ export function MenuTodayV2() {
                   setReplaceOpen(true);
                 }
               }}
+            />
+            <SheetAction
+              label="Ел другое"
+              onClick={() => {
+                setAteOtherMeal(actionMeal);
+                setActionMeal(null);
+              }}
+            />
+            <SheetAction
+              label={skipBusy ? "Сохраняем…" : "Пропустил"}
+              onClick={() => void handleSkipMeal(actionMeal)}
             />
             {actionMeal.meal.recipe_id ? (
               <SheetAction
@@ -430,6 +473,20 @@ export function MenuTodayV2() {
           invalidateCache(cacheKey.menuOverview(mode));
           void load();
         }}
+      />
+
+      <MealEatenSheetV2
+        open={ateOtherMeal != null}
+        onClose={() => setAteOtherMeal(null)}
+        onSaved={() => {
+          invalidateCache(cacheKey.menuOverview(mode));
+          void reloadCheckins();
+        }}
+        mealType={ateOtherMeal?.meal.meal_type ?? null}
+        mealName={ateOtherMeal?.meal.name ?? null}
+        plannedDate={plannedDate || null}
+        initialStep="other"
+        title="Ел другое"
       />
 
       <MealOutcomeSheet2026
@@ -514,10 +571,14 @@ function MealRowV2({
       <button
         type="button"
         onClick={onQuickActions}
-        className="flex size-9 shrink-0 items-center justify-center rounded-full border border-pa-border bg-pa-elevated text-lg font-semibold text-sage-700 transition hover:bg-sage-50 dark:text-sage-300 dark:hover:bg-sage-800/40"
+        className={cn(
+          "shrink-0 rounded-pill border border-sage-300 bg-sage-50 px-3 py-2",
+          "pa26-micro font-semibold text-sage-700 transition hover:bg-sage-100",
+          "dark:border-sage-700/60 dark:bg-sage-900/30 dark:text-sage-300 dark:hover:bg-sage-800/40",
+        )}
         aria-label="Действия с блюдом"
       >
-        +
+        Ещё
       </button>
     </article>
   );

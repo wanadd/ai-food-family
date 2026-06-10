@@ -35,6 +35,12 @@ from app.services.users import (
     user_has_verified_phone,
 )
 from app.telegram.files import download_telegram_file
+from app.telegram.messaging import (
+    BOT_HELP_TEXT,
+    HELP_CALLBACK,
+    PHONE_CONFIRM_CALLBACK,
+    entry_inline_keyboard,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -222,6 +228,11 @@ async def send_phone_required(chat_id: int, *, invite_token: str | None = None) 
         chat_id,
         PHONE_REQUIRED_TEXT,
         reply_markup=_own_phone_keyboard(),
+    )
+    await send_telegram_message(
+        chat_id,
+        "Пока можно открыть приложение — телефон нужен для семейных приглашений:",
+        reply_markup=_webapp_inline_keyboard(),
     )
 
 
@@ -734,9 +745,50 @@ async def handle_callback(db: Session, callback: dict[str, Any]) -> None:
             await answer_callback_query(callback_id, "Ссылка создана")
         return
 
-    if not user_can_access_app(user):
+    if data == PHONE_CONFIRM_CALLBACK:
+        if user_has_verified_phone(user):
+            await send_telegram_message(
+                chat_id,
+                "Номер уже подтверждён ✅",
+                reply_markup=_webapp_inline_keyboard(),
+            )
+        else:
+            await send_telegram_message(
+                chat_id,
+                "Отправьте номер через кнопку Telegram — вводить его вручную не нужно. "
+                "PLANAM свяжет профиль и семейные приглашения.",
+                reply_markup=_own_phone_keyboard(),
+            )
         if callback_id:
-            await answer_callback_query(callback_id, "Сначала завершите регистрацию: /start")
+            await answer_callback_query(callback_id)
+        return
+
+    if data == HELP_CALLBACK:
+        await send_telegram_message(
+            chat_id,
+            BOT_HELP_TEXT,
+            reply_markup=entry_inline_keyboard(
+                include_phone=not user_has_verified_phone(user)
+            ),
+        )
+        if callback_id:
+            await answer_callback_query(callback_id)
+        return
+
+    if not user_can_access_app(user):
+        # Не отправляем пользователя «писать /start» — даём кнопки сразу.
+        if callback_id:
+            await answer_callback_query(callback_id, "Остался один шаг")
+        await send_telegram_message(
+            chat_id,
+            "Чтобы продолжить, подтвердите номер телефона кнопкой ниже.",
+            reply_markup=_own_phone_keyboard(),
+        )
+        await send_telegram_message(
+            chat_id,
+            "Или откройте приложение:",
+            reply_markup=entry_inline_keyboard(include_phone=False),
+        )
         return
 
     if data.startswith("accept_family_invite:"):
@@ -883,10 +935,16 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
     command = text.split()[0].split("@")[0].lower() if text else ""
 
     if command in ("/help",):
-        await send_telegram_message(chat_id, BOT_COMMANDS_HELP)
         from app.services.bot_menu import send_main_menu
 
         await send_main_menu(chat_id)
+        await send_telegram_message(
+            chat_id,
+            f"{BOT_HELP_TEXT}\n\n{BOT_COMMANDS_HELP}",
+            reply_markup=entry_inline_keyboard(
+                include_phone=not user_has_verified_phone(user)
+            ),
+        )
         return
 
     if command in ("/invite",):

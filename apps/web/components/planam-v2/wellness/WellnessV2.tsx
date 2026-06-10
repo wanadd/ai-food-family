@@ -265,7 +265,11 @@ export function WellnessV2() {
                         {row.format(row.current, row.target)}
                       </span>
                     </div>
-                    <V2ProgressBar percent={pct} className="mt-1.5" />
+                    <V2ProgressBar
+                      percent={pct}
+                      tone={row.label === "Вода" ? "water" : "brand"}
+                      className="mt-1.5"
+                    />
                   </div>
                 );
               })}

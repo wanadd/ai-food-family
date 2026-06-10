@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { MenuSlotSheet2026 } from "@/components/recipes-2026/MenuSlotSheet2026";
+import { MealEatenSheetV2 } from "@/components/planam-v2/menu/MealEatenSheetV2";
 import { ReplaceDishSheet2026 } from "@/components/plan-2026/ReplaceDishSheet2026";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -151,6 +152,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const [addOpen, setAddOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [replaceBusy, setReplaceBusy] = useState(false);
+  const [cookedOpen, setCookedOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!initData || !recipeId) {
@@ -417,6 +419,16 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
               ))}
             </ol>
           )}
+          {!replaceMode ? (
+            <Button2026
+              variant="primary"
+              size="wide"
+              className="mt-4"
+              onClick={() => setCookedOpen(true)}
+            >
+              Готово
+            </Button2026>
+          ) : null}
         </section>
       </div>
 
@@ -441,6 +453,19 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
             dayIndex={menu ? defaultDayIndex(menu) : 1}
             onClose={() => setReplaceOpen(false)}
             onSuccess={() => router.push("/plan/today")}
+          />
+          <MealEatenSheetV2
+            open={cookedOpen}
+            onClose={() => setCookedOpen(false)}
+            mealType={
+              ["breakfast", "lunch", "dinner", "snack"].includes(
+                recipe.meal_type ?? "",
+              )
+                ? recipe.meal_type
+                : null
+            }
+            mealName={heading}
+            recipeId={recipe.id}
           />
         </>
       ) : null}

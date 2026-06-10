@@ -2,7 +2,7 @@
 
 /**
  * PLANAM V2 — Home: «что мне сделать сейчас».
- * Greeting → Hero (P0–P4) → 3 статуса → AI tip. Не больше.
+ * Greeting → Hero → 3 статуса → «Дальше сегодня» → контекст дня. Не больше.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -10,7 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MealOutcomeSheet2026 } from "@/components/dom-2026";
-import { PlanAmHero2026 } from "@/components/home-2026/PlanAmHero2026";
+import { HomeHeroV2 } from "@/components/planam-v2/home/HomeHeroV2";
 import { V2AiTip, V2EmptyState } from "@/components/planam-v2/ui/V2Primitives";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
@@ -19,8 +19,16 @@ import {
   invalidate as invalidateCache,
   setCached,
 } from "@/lib/cache/session-cache";
-import { enrichTodayMeals } from "@/lib/home/home-2026-data";
 import {
+  enrichTodayMeals,
+  type Home2026TodayMeal,
+} from "@/lib/home/home-2026-data";
+import {
+  buildHomeDayContext,
+  shouldShowAiTip,
+} from "@/lib/home/home-day-context";
+import {
+  cleanMealTitle,
   formatPlanAmDate,
   formatPlanAmGreeting,
   menuStatusLabel,
@@ -107,10 +115,21 @@ export function HomeV2() {
   );
   const dateLabel = useMemo(() => formatPlanAmDate(), []);
 
-  const advice = overview?.nutritionist_advice;
-  const tipText =
-    advice?.body?.trim() ||
-    "Соберите меню — и я подскажу, как сделать рацион удобнее.";
+  const showAiTip = shouldShowAiTip(overview);
+  const aiTipText = overview?.nutritionist_advice.body?.trim() ?? "";
+  const dayContext = useMemo(() => buildHomeDayContext(overview), [overview]);
+
+  const nextMeals = useMemo(() => {
+    if (heroState.variant !== "meal" || !heroState.meal) {
+      return [];
+    }
+    const heroType = heroState.meal.meal_type;
+    const order = ["breakfast", "lunch", "dinner", "snack"];
+    return meals
+      .filter((m) => m.meal_type !== heroType)
+      .sort((a, b) => order.indexOf(a.meal_type) - order.indexOf(b.meal_type))
+      .slice(0, 2);
+  }, [heroState, meals]);
 
   if (loadState === "error") {
     return (
@@ -133,7 +152,14 @@ export function HomeV2() {
     <div className="space-y-0 pb-2">
       <Greeting greeting={greeting} dateLabel={dateLabel} />
 
-      <PlanAmHero2026 loading={loading} state={heroState} />
+      <HomeHeroV2
+        loading={loading}
+        state={heroState}
+        onChanged={() => {
+          invalidateCache(cacheK);
+          void load(true);
+        }}
+      />
 
       <section className="px-4 pt-2" aria-label="Статусы дня">
         <ul className="grid grid-cols-3 gap-2">
@@ -158,9 +184,41 @@ export function HomeV2() {
         </ul>
       </section>
 
+      {!loading && nextMeals.length > 0 ? (
+        <section className="px-4 pt-3" aria-label="Дальше сегодня">
+          <h2 className="pa26-section-title">Дальше сегодня</h2>
+          <div className="mt-2 space-y-2">
+            {nextMeals.map((m) => (
+              <NextMealRow
+                key={m.meal_type}
+                meal={m}
+                onClick={() =>
+                  router.push(
+                    `${PLANAM_ROUTES.planToday}?meal=${encodeURIComponent(m.meal_type)}`,
+                  )
+                }
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {!loading ? (
-        <section className="px-4 pt-2" aria-label="Совет PLANAM">
-          <V2AiTip text={tipText} onClick={() => router.push(PLANAM_ROUTES.wellness)} />
+        <section className="px-4 pt-3" aria-label="Контекст дня">
+          {showAiTip && aiTipText ? (
+            <V2AiTip
+              title="Совет PLANAM"
+              tone="ai"
+              text={aiTipText}
+              onClick={() => router.push(PLANAM_ROUTES.wellness)}
+            />
+          ) : (
+            <V2AiTip
+              title={dayContext.title}
+              text={dayContext.text}
+              onClick={() => router.push(PLANAM_ROUTES.planToday)}
+            />
+          )}
         </section>
       ) : null}
 
@@ -182,6 +240,42 @@ function Greeting({ greeting, dateLabel }: { greeting: string; dateLabel: string
       <h1 className="pa26-page-title truncate">{greeting}</h1>
       <p className="pa26-micro mt-0.5 capitalize text-pa-muted">{dateLabel}</p>
     </header>
+  );
+}
+
+function NextMealRow({
+  meal,
+  onClick,
+}: {
+  meal: Home2026TodayMeal;
+  onClick: () => void;
+}) {
+  const metaParts: string[] = [];
+  if (meal.prep_time_minutes != null && meal.prep_time_minutes > 0) {
+    metaParts.push(`${meal.prep_time_minutes} мин`);
+  }
+  if (meal.calories != null && meal.calories > 0) {
+    metaParts.push(`${Math.round(meal.calories)} ккал`);
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full min-h-[52px] items-center gap-3 rounded-card border border-pa-border",
+        "bg-pa-surface px-3.5 py-2.5 text-left shadow-soft transition active:scale-[0.99] dark:shadow-none",
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="pa26-micro text-pa-muted">{meal.label}</p>
+        <p className="pa26-card-title line-clamp-1">{cleanMealTitle(meal.name)}</p>
+      </div>
+      {metaParts.length ? (
+        <span className="pa26-micro shrink-0 text-pa-muted">
+          {metaParts.join(" · ")}
+        </span>
+      ) : null}
+    </button>
   );
 }
 

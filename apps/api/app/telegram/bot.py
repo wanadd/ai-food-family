@@ -49,6 +49,26 @@ async def setup_menu_button() -> None:
     logger.info("Telegram menu button → %s", settings.telegram_webapp_url)
 
 
+async def setup_bot_commands() -> None:
+    """Register bot command menu so the chat always has visible entry points."""
+    if not settings.telegram_bot_token:
+        logger.info("Skip Telegram bot commands: TELEGRAM_BOT_TOKEN missing")
+        return
+
+    payload = {
+        "commands": [
+            {"command": "start", "description": "Запустить PLANAM"},
+            {"command": "help", "description": "Помощь и кнопки"},
+            {"command": "invite", "description": "Пригласить в семью"},
+        ]
+    }
+    data = await _telegram_api("setMyCommands", payload)
+    if not data.get("ok"):
+        logger.warning("setMyCommands failed: %s", data)
+        return
+    logger.info("Telegram bot commands registered")
+
+
 async def setup_webhook() -> None:
     if not settings.telegram_auto_setup_webhook:
         logger.info("Telegram auto webhook setup disabled (TELEGRAM_AUTO_SETUP_WEBHOOK=false)")

@@ -56,6 +56,31 @@ const config: Config = {
           DEFAULT: "#D98E5A",
           soft: "#E8B87E",
         },
+        /**
+         * P0 hotfix: семантические акценты. Основной цвет — зелёный PLANAM
+         * (sage). Эти цвета — только акценты (chips, иконки, прогресс),
+         * не фоны целых экранов.
+         */
+        food: {
+          DEFAULT: "#E8833A", // food-orange — еда / meal accent
+          soft: "#FDEFE2",
+        },
+        water: {
+          DEFAULT: "#3BA7E0", // water-blue — вода
+          soft: "#E5F4FC",
+        },
+        danger: {
+          DEFAULT: "#E05A4E", // danger-red — ограничения / ошибки / просрочено
+          soft: "#FDEAE8",
+        },
+        ai: {
+          DEFAULT: "#6366F1", // ai-indigo — Pro / AI
+          soft: "#EEF0FE",
+        },
+        energy: {
+          DEFAULT: "#F5B82E", // energy-yellow — активность / энергия
+          soft: "#FDF4DD",
+        },
         /** PLANAM 2026 semantic roles (CSS variables in globals.css). */
         pa: {
           canvas: "var(--pa-bg-canvas)",

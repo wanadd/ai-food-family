@@ -77,18 +77,34 @@ export function V2PageHeader({
   );
 }
 
+export type V2ProgressTone = "brand" | "water" | "food" | "energy" | "danger";
+
+const progressToneClasses: Record<V2ProgressTone, string> = {
+  brand: "bg-sage-500 dark:bg-sage-400",
+  water: "bg-water",
+  food: "bg-food",
+  energy: "bg-energy",
+  danger: "bg-danger",
+};
+
 export function V2ProgressBar({
   percent,
+  tone = "brand",
   className,
 }: {
   percent: number;
+  /** Семантический акцент: вода — голубой, еда — оранжевый и т.д. */
+  tone?: V2ProgressTone;
   className?: string;
 }) {
   const safe = Math.max(0, Math.min(100, Math.round(percent)));
   return (
     <div className={cn("h-2 overflow-hidden rounded-pill bg-pa-border/60", className)}>
       <div
-        className="h-full rounded-pill bg-sage-500 transition-all dark:bg-sage-400"
+        className={cn(
+          "h-full rounded-pill transition-all",
+          progressToneClasses[tone],
+        )}
         style={{ width: `${safe}%` }}
       />
     </div>
@@ -193,22 +209,34 @@ export function V2AiTip({
   title = "Совет PLANAM",
   text,
   onClick,
+  tone = "brand",
   className,
 }: {
   title?: string;
   text: string;
   onClick?: () => void;
+  /** "ai" — индиго-акцент для AI/Pro советов; "brand" — обычный контекст дня. */
+  tone?: "brand" | "ai";
   className?: string;
 }) {
   const body = (
     <div
       className={cn(
-        "rounded-card border border-sage-200/80 bg-sage-50/60 px-3 py-3 text-left",
-        "dark:border-sage-700/40 dark:bg-sage-900/20",
+        "rounded-card border px-3 py-3 text-left",
+        tone === "ai"
+          ? "border-ai/30 bg-ai-soft/70 dark:border-ai/40 dark:bg-ai/10"
+          : "border-sage-200/80 bg-sage-50/60 dark:border-sage-700/40 dark:bg-sage-900/20",
         className,
       )}
     >
-      <p className="pa26-micro font-semibold text-sage-800 dark:text-sage-300">
+      <p
+        className={cn(
+          "pa26-micro font-semibold",
+          tone === "ai"
+            ? "text-ai dark:text-ai/90"
+            : "text-sage-800 dark:text-sage-300",
+        )}
+      >
         {title}
       </p>
       <p className="pa26-caption mt-1 line-clamp-3 text-pa-foreground">{text}</p>

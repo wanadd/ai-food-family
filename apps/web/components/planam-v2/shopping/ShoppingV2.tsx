@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { AiProcessLoadingV2 } from "@/components/planam-v2/ai/AiProcessLoadingV2";
+import { HomeDomainSegmentV2 } from "@/components/planam-v2/home-domain/HomeDomainSegmentV2";
 import {
   V2BottomSheet,
   V2Button,
@@ -247,6 +248,8 @@ export function ShoppingV2() {
             : "Всё куплено"}
         </p>
 
+        <HomeDomainSegmentV2 active="shopping" className="mt-3" />
+
         {list && list.total_count > 0 ? (
           <V2ProgressBar percent={percent} className="mt-3" />
         ) : null}
@@ -317,13 +320,6 @@ export function ShoppingV2() {
         <div className="mt-5 space-y-2">
           <V2Button variant="primary" size="wide" onClick={() => setAddOpen(true)}>
             Добавить продукт
-          </V2Button>
-          <V2Button
-            variant="ghost"
-            size="wide"
-            onClick={() => router.push(PLANAM_ROUTES.pantry)}
-          >
-            Запасы дома →
           </V2Button>
         </div>
       </div>

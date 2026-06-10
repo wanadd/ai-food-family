@@ -9,6 +9,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { HomeDomainSegmentV2 } from "@/components/planam-v2/home-domain/HomeDomainSegmentV2";
+
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import {
   V2BottomSheet,
@@ -196,6 +198,8 @@ export function PantryV2() {
             : "Продукты, которые уже есть дома"}
         </p>
 
+        <HomeDomainSegmentV2 active="pantry" className="mt-3" />
+
         <input
           type="search"
           value={search}
@@ -263,7 +267,7 @@ export function PantryV2() {
             size="wide"
             onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
           >
-            Из того, что есть дома
+            Приготовить из того, что есть
           </V2Button>
         </div>
       </div>

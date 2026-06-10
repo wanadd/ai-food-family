@@ -17,8 +17,10 @@ export type Button2026Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 const variantClasses: Record<Button2026Variant, string> = {
   primary:
     "bg-sage-500 text-white shadow-soft hover:bg-sage-600 active:scale-[0.99] disabled:opacity-40 dark:bg-sage-500 dark:hover:bg-sage-400 dark:shadow-none",
+  // Light theme: тонированная поверхность + заметная рамка — никаких
+  // «белых пустых» кнопок на белом фоне (P0 hotfix после QA).
   secondary:
-    "border border-sage-200 bg-pa-surface text-sage-700 hover:bg-sage-50 active:scale-[0.99] disabled:opacity-40 dark:border-pa-border dark:bg-pa-elevated dark:text-sage-300 dark:hover:bg-pa-elevated/40",
+    "border border-sage-300 bg-sage-50 text-sage-800 hover:bg-sage-100 active:scale-[0.99] disabled:opacity-40 dark:border-sage-700/60 dark:bg-sage-900/30 dark:text-sage-300 dark:hover:bg-sage-800/40",
   ghost:
     "bg-transparent text-sage-700 hover:bg-sage-50 active:scale-[0.99] disabled:opacity-40 dark:text-sage-300 dark:hover:bg-pa-elevated/40",
   danger:

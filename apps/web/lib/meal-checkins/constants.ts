@@ -24,3 +24,26 @@ export const MEAL_TYPE_LABELS: Record<string, string> = {
   dinner: "Ужин",
   snack: "Перекус",
 };
+
+/**
+ * Статусы вне MEAL_CHECKIN_OPTIONS: «приготовил» ≠ «съел».
+ * cooked / skipped не входят в EATEN_STATUSES на backend — КБЖУ не считаются.
+ */
+export const MEAL_STATUS_LABELS: Record<string, string> = {
+  planned: "В плане",
+  cooked: "Приготовлено · съем позже",
+  skipped: "Пропущено",
+  saved_as_leftover: "Съедено · есть остатки",
+  completed: "Съедено",
+};
+
+export function mealCheckinStatusLabel(status: string | null): string {
+  if (!status) {
+    return "В плане";
+  }
+  return (
+    MEAL_STATUS_LABELS[status] ??
+    MEAL_CHECKIN_OPTIONS.find((o) => o.value === status)?.label ??
+    status
+  );
+}
