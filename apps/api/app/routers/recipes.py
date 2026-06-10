@@ -57,6 +57,7 @@ from app.services.recipes.explainability import ExplainabilityService
 from app.services.recipes.family_preferences import FamilyPreferenceService
 from app.services.recipes.access import assert_can_create_recipe, assert_can_update_recipe
 from app.services.recipes.scenarios import ScenarioService, ScenarioType
+from app.models.user import User
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 logger = logging.getLogger(__name__)
