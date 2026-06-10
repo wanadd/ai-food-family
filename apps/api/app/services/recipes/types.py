@@ -52,6 +52,7 @@ class RecipeListFilters:
     protein_only: bool = False
     smoothie_only: bool = False
     tea_coffee_only: bool = False
+    include_legacy: bool = False
     limit: int | None = None
     offset: int = 0
 

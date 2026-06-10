@@ -23,6 +23,14 @@ from app.services.ingredient_format import (
     sanitize_amount_text,
 )
 from app.services.shopping_categories import infer_category
+from app.recipes.product_taxonomy import SHOPPING_CATEGORIES_V2, legacy_shopping_slug
+
+
+def _resolve_ingredient_category(name: str, category_hint: str | None) -> str:
+    hint = (category_hint or "").strip()
+    if hint in SHOPPING_CATEGORIES_V2:
+        return legacy_shopping_slug(hint)
+    return infer_category(name, hint or None)
 
 
 def _parse_legacy_amount(amount_str: str) -> tuple[str, str]:
@@ -40,7 +48,7 @@ def get_structured_ingredients(recipe: Recipe) -> list[dict[str, Any]]:
                 "name": row.name,
                 "quantity": row.quantity,
                 "unit": normalize_unit_display(row.unit),
-                "category": row.category,
+                "category": _resolve_ingredient_category(row.name, row.category),
                 "is_optional": row.is_optional,
                 "notes": row.notes,
                 "is_to_taste": is_to_taste(
@@ -66,7 +74,7 @@ def get_structured_ingredients(recipe: Recipe) -> list[dict[str, Any]]:
             # only sanitising wrongly-appended "шт" (e.g. "по вкусу шт").
             amount = sanitize_amount_text(str(raw.get("amount", "")))
             qty, unit = _parse_legacy_amount(amount or "1")
-            category = infer_category(name, raw.get("category"))
+            category = _resolve_ingredient_category(name, raw.get("category"))
             result.append(
                 {
                     "name": name,

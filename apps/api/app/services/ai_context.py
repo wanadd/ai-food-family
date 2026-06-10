@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models.recipe import Recipe
 from app.models.user import User
+from app.recipes.gold_filter import apply_gold_recipe_filter
 from app.services.app_scope import AppScope
 from app.services.meal_leftovers import (
     format_meal_leftovers_for_prompt,
@@ -44,8 +45,9 @@ class AiUserContext:
 
 def _recipe_catalog_slice(db: Session, *, limit: int = 40) -> list[dict[str, Any]]:
     rows = (
-        db.query(Recipe)
-        .filter(Recipe.is_active.is_(True))
+        apply_gold_recipe_filter(
+            db.query(Recipe).filter(Recipe.is_active.is_(True)),
+        )
         .order_by(Recipe.title.asc())
         .limit(limit)
         .all()

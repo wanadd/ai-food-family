@@ -6,10 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_verified_user
-from app.models.family import FamilyMember
-from app.models.user import User
-from app.deps import get_app_scope
+from app.deps import get_app_scope, get_verified_user, is_admin_user
 from app.schemas.menu_overview import (
     AddRecipeToMenuRequest,
     AddRecipeToMenuResponse,
@@ -130,11 +127,12 @@ def _ingredient_in_pantry(name: str, pantry_names: set[str]) -> bool:
 
 @router.get("/filters", response_model=RecipeFiltersResponse)
 def get_recipe_filters(
+    include_legacy: bool = Query(default=False),
     user: User = Depends(get_verified_user),
     db: Session = Depends(get_db),
 ) -> RecipeFiltersResponse:
-    _ = user
-    return recipes_service.get_filters(db)
+    legacy = include_legacy and is_admin_user(user)
+    return recipes_service.get_filters(db, include_legacy=legacy)
 
 
 @router.get("/recommendations", response_model=RecipeRecommendationsResponse)
@@ -181,11 +179,13 @@ def list_recipes(
     exclude_allergens: str | None = Query(default=None),
     goal: str | None = Query(default=None),
     scenario: str | None = Query(default=None),
+    include_legacy: bool = Query(default=False),
     user: User = Depends(get_verified_user),
     scope: AppScope = Depends(get_app_scope),
     db: Session = Depends(get_db),
 ) -> RecipeListResponse:
     query_text = (q or search or "").strip() or None
+    legacy = include_legacy and is_admin_user(user)
     logger.info(
         "GET /recipes q=%r search=%r limit=%d offset=%d meal_type=%r scenario=%r user=%s",
         q,
@@ -232,6 +232,7 @@ def list_recipes(
         scope=scope,
         limit=limit,
         offset=offset,
+        include_legacy=legacy,
     )
     logger.info("GET /recipes -> total=%d", result.total)
     return result

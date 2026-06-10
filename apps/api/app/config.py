@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     recipe_scenarios: bool = True
     recipe_explainability: bool = True
     family_recipe_preferences: bool = True
+    # Stage 2A: catalog/menu/search use only gold V2 recipes by default.
+    recipe_gold_v2_only: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

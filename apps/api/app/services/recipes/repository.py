@@ -18,6 +18,7 @@ from sqlalchemy import exists, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.recipe import Recipe, RecipeFavorite, RecipeIngredientRow
+from app.recipes.gold_filter import apply_gold_recipe_filter
 from app.services.recipes.types import RecipeListFilters
 
 
@@ -66,13 +67,13 @@ def find_favorite(
     )
 
 
-def get_max_cooking_time(db: Session) -> int | None:
-    row = (
-        db.query(Recipe.cooking_time_minutes)
-        .order_by(Recipe.cooking_time_minutes.desc())
-        .first()
+def get_max_cooking_time(db: Session, *, include_legacy: bool = False) -> int | None:
+    query = apply_gold_recipe_filter(
+        db.query(Recipe).filter(Recipe.is_active.is_(True)),
+        include_legacy=include_legacy,
     )
-    return row[0] if row else None
+    row = query.order_by(Recipe.cooking_time_minutes.desc()).first()
+    return row.cooking_time_minutes if row else None
 
 
 def query_recipes(db: Session, filters: RecipeListFilters) -> list[Recipe]:
@@ -83,6 +84,7 @@ def query_recipes(db: Session, filters: RecipeListFilters) -> list[Recipe]:
     """
 
     query = db.query(Recipe).filter(Recipe.is_active.is_(True))
+    query = apply_gold_recipe_filter(query, include_legacy=filters.include_legacy)
 
     if filters.favorites_only:
         if not filters.favorite_ids:

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.models.recipe import Recipe
 from app.models.user import User
+from app.recipes.gold_filter import apply_gold_recipe_filter
 from app.schemas.recipe import (
     RecipeRecommendationItem,
     RecipeRecommendationsResponse,
@@ -29,12 +30,9 @@ def get_recommendations(
 ) -> RecipeRecommendationsResponse:
     _ = scope
     profile = get_or_create_profile(db, user)
-    recipes = (
-        db.query(Recipe)
-        .filter(Recipe.is_active.is_(True), Recipe.is_alcoholic.is_(False))
-        .limit(80)
-        .all()
-    )
+    recipes = apply_gold_recipe_filter(
+        db.query(Recipe).filter(Recipe.is_active.is_(True), Recipe.is_alcoholic.is_(False)),
+    ).limit(80).all()
 
     goal = profile.goal or "healthy"
     items: list[RecipeRecommendationItem] = []

@@ -138,8 +138,8 @@ def seed_recipes_if_empty(db: Session) -> None:
         db.commit()
 
 
-def get_filters(db: Session) -> RecipeFiltersResponse:
-    max_time = repository.get_max_cooking_time(db)
+def get_filters(db: Session, *, include_legacy: bool = False) -> RecipeFiltersResponse:
+    max_time = repository.get_max_cooking_time(db, include_legacy=include_legacy)
     return RecipeFiltersResponse(
         meal_types=FILTER_LABELS["meal_types"],
         categories=FILTER_LABELS["categories"],
@@ -177,6 +177,7 @@ def list_recipes(
     scope: AppScope | None = None,
     limit: int = 200,
     offset: int = 0,
+    include_legacy: bool = False,
 ) -> RecipeListResponse:
     favorite_ids = repository.favorite_ids_for_user(db, user.id)
 
@@ -198,6 +199,7 @@ def list_recipes(
         protein_only=protein_only,
         smoothie_only=smoothie_only,
         tea_coffee_only=tea_coffee_only,
+        include_legacy=include_legacy,
     )
 
     recipes = repository.query_recipes(db, filters)

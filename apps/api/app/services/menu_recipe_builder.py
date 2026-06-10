@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.recipe import Recipe
 from app.models.user import User
+from app.recipes.gold_filter import query_active_recipes
 from app.schemas.menu import MenuIngredient, MenuMeal, MenuVariant
 from app.services.menu_context import MenuGenerationContext
 from app.services.menu_labels import VARIANT_META
@@ -167,12 +168,11 @@ def build_menus_from_recipes(
     plan_mode: str = "healthy",
 ) -> list[MenuVariant] | None:
     recipes = (
-        db.query(Recipe)
+        query_active_recipes(db)
         .options(
             joinedload(Recipe.ingredient_rows),
             joinedload(Recipe.step_rows),
         )
-        .filter(Recipe.is_active.is_(True))
         .all()
     )
     if len(recipes) < 6:

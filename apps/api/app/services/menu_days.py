@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.recipe import Recipe
 from app.models.user import User
+from app.recipes.gold_filter import query_active_recipes
 from app.schemas.menu import MenuDayPlan, MenuIngredient, MenuMeal, MenuVariant
 from app.services.app_scope import AppScope
 from app.services.menu_recipe_builder import (
@@ -78,9 +79,8 @@ def expand_variant_to_plan_days(
 
     if user and scope:
         recipes = (
-            db.query(Recipe)
+            query_active_recipes(db)
             .options(joinedload(Recipe.ingredient_rows))
-            .filter(Recipe.is_active.is_(True))
             .all()
         )
         profile = get_or_create_profile(db, user)
