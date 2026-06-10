@@ -49,6 +49,8 @@ reports/*.md
 !reports/planam_project_consolidation_audit.md
 !reports/profile_account_consolidation_audit.md
 !reports/ui_2026_consolidation_audit.md
+!reports/recipe_rebuild_v2_*.md
+!reports/nutrition_profile_religious_restrictions_gap.md
 # Generated per-run project health audit (read-only script output)
 reports/project_health_audit.json
 # Environment-specific normalization/resync outputs (generated per-run)
