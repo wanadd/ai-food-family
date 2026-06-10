@@ -140,7 +140,7 @@ describe("planam-hero-2026", () => {
       new Date("2026-06-03T13:00:00"),
     );
     expect(state.variant).toBe("meal");
-    expect(state.ctaLabel).toBe("Открыть рецепт");
+    expect(state.ctaLabel).toBe("Готовить");
     expect(state.secondaryCtaLabel).toBe("Заменить");
   });
 

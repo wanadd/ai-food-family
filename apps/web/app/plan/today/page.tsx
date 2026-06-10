@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { PlanToday2026 } from "@/components/plan-2026/PlanToday2026";
+import { MenuTodayV2 } from "@/components/planam-v2/menu/MenuTodayV2";
 import { requirePlanamUi2026OrRedirect } from "@/lib/planam/planam-2026-page";
 
 export default function PlanTodayPage() {
@@ -8,7 +8,7 @@ export default function PlanTodayPage() {
 
   return (
     <Suspense fallback={null}>
-      <PlanToday2026 />
+      <MenuTodayV2 />
     </Suspense>
   );
 }

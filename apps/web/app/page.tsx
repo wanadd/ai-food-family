@@ -1,14 +1,14 @@
 import { Suspense } from "react";
 
 import { PlanAmHome } from "@/components/home/PlanAmHome";
-import { Home2026 } from "@/components/home-2026/Home2026";
+import { HomeV2 } from "@/components/planam-v2/home/HomeV2";
 import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
 
 export default function Home() {
   if (isPlanamUi2026Enabled()) {
     return (
       <Suspense fallback={null}>
-        <Home2026 />
+        <HomeV2 />
       </Suspense>
     );
   }

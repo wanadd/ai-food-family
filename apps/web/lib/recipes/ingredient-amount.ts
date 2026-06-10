@@ -1,3 +1,5 @@
+import { formatProductQuantity } from "@/lib/planam/productTaxonomy";
+
 import type { RecipeIngredient } from "./types";
 
 const TO_TASTE_PHRASES = new Set([
@@ -12,9 +14,9 @@ const TO_TASTE_PHRASES = new Set([
 /**
  * Display amount for a recipe ingredient.
  *
- * The backend already sends a correct `amount`, so we trust it. This is a
- * defensive fallback that builds an amount from quantity/unit WITHOUT ever
- * appending a fake "шт" default.
+ * The backend already sends a correct `amount`, so we trust it. The fallback
+ * goes through the V2 taxonomy guard: no «1 л л» dupes, no volume units on
+ * solid products, no undefined/null/NaN — and never a fake «шт» default.
  */
 export function formatIngredientAmount(ing: RecipeIngredient): string {
   const amount = (ing.amount ?? "").trim();
@@ -22,15 +24,12 @@ export function formatIngredientAmount(ing: RecipeIngredient): string {
     return amount;
   }
   const quantity = (ing.quantity ?? "").trim();
-  const unit = (ing.unit ?? "").trim();
   if (quantity && TO_TASTE_PHRASES.has(quantity.toLowerCase())) {
     return quantity;
   }
-  if (quantity && unit) {
-    return `${quantity} ${unit}`;
-  }
-  if (quantity) {
-    return quantity;
-  }
-  return unit;
+  return formatProductQuantity({
+    quantity: ing.quantity,
+    unit: ing.unit,
+    name: ing.name,
+  });
 }

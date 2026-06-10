@@ -1,8 +1,8 @@
-import { Pantry2026 } from "@/components/dom-2026/Pantry2026";
+import { PantryV2 } from "@/components/planam-v2/home-domain/PantryV2";
 import { requirePlanamUi2026OrRedirect } from "@/lib/planam/planam-2026-page";
 
 export default function HomePantryPage() {
   requirePlanamUi2026OrRedirect("/home/pantry");
 
-  return <Pantry2026 />;
+  return <PantryV2 />;
 }
