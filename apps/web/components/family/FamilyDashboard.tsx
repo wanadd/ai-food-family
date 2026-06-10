@@ -423,8 +423,10 @@ export function FamilyDashboard() {
             ) : null}
 
             {lastInvite ? (
-              <p className="rounded-control border border-warm/30 bg-warm/10 px-4 py-3 text-sm text-graphite-900">
-                Приглашение отправлено — ожидаем ответ в Telegram
+              <p className="rounded-control border border-warm/30 bg-warm/10 px-4 py-3 text-sm text-graphite-900 dark:border-sage-700/40 dark:bg-sage-900/20 dark:text-pa-foreground">
+                {lastInvite.invitee_notified
+                  ? "Приглашение отправлено — ожидаем ответ в Telegram"
+                  : "Ссылка отправлена — ожидаем, когда человек примет приглашение"}
               </p>
             ) : null}
 
@@ -493,7 +495,6 @@ export function FamilyDashboard() {
           onClose={() => setShowInviteSheet(false)}
           onSuccess={(invite) => {
             setLastInvite(invite);
-            setShowInviteSheet(false);
           }}
         />
       ) : null}
