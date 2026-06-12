@@ -21,6 +21,7 @@ from app.services.menu_recipe_builder import (
     _pick_one,
 )
 from app.services.meal_leftovers import list_active_leftovers
+from app.services.menu_restriction_safety import apply_pre_ai_recipe_filter
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import get_active_items_for_scope
 
@@ -84,6 +85,7 @@ def expand_variant_to_plan_days(
             .all()
         )
         profile = get_or_create_profile(db, user)
+        recipes, _ = apply_pre_ai_recipe_filter(recipes, profile)
         profile_allergies = {str(a).lower() for a in (profile.allergies or [])}
         pantry = _pantry_names(get_active_items_for_scope(db, scope))
         leftovers = _leftover_titles(list_active_leftovers(db, scope))

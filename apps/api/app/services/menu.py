@@ -29,6 +29,12 @@ from app.services.menu_context_fingerprint import (
 )
 from app.services.meal_leftovers import list_active_leftovers
 from app.services.pantry import get_active_items_for_scope
+from app.services.menu_restriction_safety import (
+    append_safety_notes_to_menus,
+    load_restriction_safe_recipe_pool,
+    resolve_menu_profile,
+    sanitize_menu_variants,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +84,9 @@ async def generate_menus_for_scope(
 
     plan_days = options.plan_days if options and options.plan_days else 1
 
+    profile = resolve_menu_profile(db, user)
+    safe_pool = load_restriction_safe_recipe_pool(db, profile) if profile else []
+
     menus, used_ai = await generate_menus(
         context,
         db=db,
@@ -88,8 +97,16 @@ async def generate_menus_for_scope(
         allow_alcohol=allow_alcohol,
         plan_days=plan_days,
     )
-    # Stage C: post-AI validation — explain_recipe_restriction_conflicts per meal
-    # recipe; block or replace dishes with hard conflicts before commit/response.
+
+    menus, safety_notes = sanitize_menu_variants(
+        db,
+        menus,
+        profile,
+        replacement_pool=safe_pool,
+    )
+    if safety_notes:
+        menus = append_safety_notes_to_menus(menus, safety_notes)
+
     if plan_days > 1:
         from app.services.menu_days import expand_variant_to_plan_days
 

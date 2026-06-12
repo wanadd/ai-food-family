@@ -22,6 +22,10 @@ from app.services.recipe_storage import (
 )
 from app.services.app_scope import AppScope
 from app.services.meal_leftovers import list_active_leftovers
+from app.services.menu_restriction_safety import (
+    MIN_RECIPE_POOL_SIZE,
+    apply_pre_ai_recipe_filter,
+)
 
 MealSlot = Literal["breakfast", "lunch", "dinner", "snack"]
 DrinkMode = Literal[
@@ -175,19 +179,19 @@ def build_menus_from_recipes(
         )
         .all()
     )
-    if len(recipes) < 6:
+    from app.services.onboarding import get_or_create_profile
+
+    profile = get_or_create_profile(db, user)
+    recipes, pool_warnings = apply_pre_ai_recipe_filter(recipes, profile)
+    if len(recipes) < MIN_RECIPE_POOL_SIZE:
         return None
 
     pantry_items = get_active_items_for_scope(db, scope)
     pantry = _pantry_names(pantry_items)
     leftovers = _leftover_titles(list_active_leftovers(db, scope))
 
-    from app.services.onboarding import get_or_create_profile
-
-    profile = get_or_create_profile(db, user)
-    # Stage C: pre-AI pool filter — filter_recipes_for_profile(recipes, profile)
-    # after query_active_recipes and before _filter_candidates.
     profile_allergies = {str(a).lower() for a in (profile.allergies or [])}
+    safety_suffix = "\n".join(pool_warnings) if pool_warnings else ""
 
     rng = random.Random(hash(context.context_label) % 2**32)
 
@@ -255,6 +259,7 @@ def build_menus_from_recipes(
                     f"Меню собрано из базы ПланАм ({len(meals_recipes)} блюд). "
                     "Рецепты подобраны под ваш профиль; порции пересчитаны на "
                     f"{persons} чел."
+                    + (f"\n{safety_suffix}" if safety_suffix else "")
                 ),
                 total_prep_minutes=total_prep,
                 meals=meals,
