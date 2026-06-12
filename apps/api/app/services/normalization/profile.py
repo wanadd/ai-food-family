@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
+from app.nutrition.restrictions_catalog import normalize_restrictions
+
 _T = TypeVar("_T")
 
 
@@ -60,9 +62,11 @@ def normalize_profile_dict(data: dict[str, Any]) -> dict[str, Any]:
     Unknown keys are passed through untouched.
     """
     cleaned = dict(data)
-    for list_field in ("allergies", "diets", "restrictions", "goals"):
+    for list_field in ("allergies", "diets", "goals"):
         if list_field in cleaned:
             cleaned[list_field] = normalize_string_list(cleaned.get(list_field))
+    if "restrictions" in cleaned:
+        cleaned["restrictions"] = normalize_restrictions(cleaned.get("restrictions"))
     for text_field in (
         "medical_restrictions",
         "banned_foods",
@@ -93,6 +97,9 @@ def normalize_profile_payload(payload: _T) -> _T:
     for list_field in ("allergies", "diets"):
         if hasattr(payload, list_field):
             updates[list_field] = normalize_string_list(getattr(payload, list_field))
+
+    if hasattr(payload, "restrictions"):
+        updates["restrictions"] = normalize_restrictions(getattr(payload, "restrictions"))
 
     for text_field in (
         "medical_restrictions",

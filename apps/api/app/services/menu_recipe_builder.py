@@ -185,6 +185,8 @@ def build_menus_from_recipes(
     from app.services.onboarding import get_or_create_profile
 
     profile = get_or_create_profile(db, user)
+    # Stage C: pre-AI pool filter — filter_recipes_for_profile(recipes, profile)
+    # after query_active_recipes and before _filter_candidates.
     profile_allergies = {str(a).lower() for a in (profile.allergies or [])}
 
     rng = random.Random(hash(context.context_label) % 2**32)

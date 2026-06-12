@@ -88,6 +88,8 @@ async def generate_menus_for_scope(
         allow_alcohol=allow_alcohol,
         plan_days=plan_days,
     )
+    # Stage C: post-AI validation — explain_recipe_restriction_conflicts per meal
+    # recipe; block or replace dishes with hard conflicts before commit/response.
     if plan_days > 1:
         from app.services.menu_days import expand_variant_to_plan_days
 
