@@ -11,6 +11,7 @@ from app.recipes.product_taxonomy import (
     infer_shopping_category_v2,
     legacy_shopping_slug,
 )
+from app.recipes.recipe_gold_v3_validation import validate_recipe_gold_v3
 from app.recipes.recipe_v2_validation import validate_recipe_v2
 
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     "is_gold_v2_recipe",
     "legacy_shopping_slug",
     "query_active_recipes",
+    "validate_recipe_gold_v3",
     "validate_recipe_v2",
 ]
