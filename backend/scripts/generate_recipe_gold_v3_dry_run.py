@@ -19,11 +19,14 @@ API_ROOT = ROOT / "apps" / "api"
 if str(API_ROOT) not in sys.path:
     sys.path.insert(0, str(API_ROOT))
 
+from app.recipes.recipe_gold_v3_postprocess import postprocess_generated_recipe  # noqa: E402
 from app.recipes.recipe_gold_v3_prompt_builder import (  # noqa: E402
     build_recipe_gold_v3_generation_messages,
+    build_target_profile_from_signal,
+    feedback_codes_for_retry,
     sanitize_signal_for_prompt,
 )
-from app.recipes.recipe_gold_v3_schema import SCHEMA_VERSION  # noqa: E402
+from app.recipes.recipe_gold_v3_schema import PRODUCTION_READY_MIN_SCORE, SCHEMA_VERSION  # noqa: E402
 from app.nutrition.restrictions_catalog import get_restriction_definition  # noqa: E402
 from app.recipes.recipe_gold_v3_validation import (  # noqa: E402
     ValidationResult,
@@ -37,6 +40,12 @@ DEFAULT_OUTPUT = ROOT / "exports" / "recipe_gold_v3_generated_10_dry_run.jsonl"
 DEFAULT_REPORT = ROOT / "reports" / "recipe_gold_v3_stage_f_generation_report.md"
 
 ESTIMATED_COST_PER_REQUEST_USD = 0.05
+MODEL_ESTIMATED_COST_USD: dict[str, float] = {
+    "gpt-4o-mini": 0.05,
+    "gpt-4.1": 0.10,
+    "gpt-4.1-mini": 0.08,
+    "gpt-4o": 0.12,
+}
 FORBIDDEN_RECIPE_KEYS = frozenset(
     {
         "source_url",
@@ -68,6 +77,7 @@ class GenerationStats:
     originality_violations: list[str] = field(default_factory=list)
     mode: str = "api"
     model: str = ""
+    low_score_retries: int = 0
     real_api_run: bool = False
 
 
@@ -79,10 +89,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=10)
     parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--max-cost-usd", type=float, default=1.0)
-    parser.add_argument("--model", type=str, default=None)
+    parser.add_argument("--model", type=str, default=None, help="OpenAI model override (e.g. gpt-4o-mini, gpt-4.1)")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--sample-start", type=int, default=0)
     parser.add_argument("--retry-invalid", type=int, default=1)
+    parser.add_argument(
+        "--retry-below-score",
+        type=int,
+        default=PRODUCTION_READY_MIN_SCORE,
+        help="Retry when valid but validation score is below this threshold",
+    )
     parser.add_argument(
         "--no-api",
         action="store_true",
@@ -154,9 +170,22 @@ def select_diverse_signals(
     return selected[:limit]
 
 
-def check_cost_guard(limit: int, retry_invalid: int, max_cost_usd: float) -> tuple[bool, float]:
+def estimated_cost_per_request(model: str | None) -> float:
+    if model and model in MODEL_ESTIMATED_COST_USD:
+        return MODEL_ESTIMATED_COST_USD[model]
+    return ESTIMATED_COST_PER_REQUEST_USD
+
+
+def check_cost_guard(
+    limit: int,
+    retry_invalid: int,
+    max_cost_usd: float,
+    *,
+    model: str | None = None,
+) -> tuple[bool, float]:
     estimated_requests = limit * (1 + retry_invalid)
-    estimated = estimated_requests * ESTIMATED_COST_PER_REQUEST_USD
+    per_request = estimated_cost_per_request(model)
+    estimated = estimated_requests * per_request
     return estimated <= max_cost_usd, estimated
 
 
@@ -452,10 +481,14 @@ async def generate_recipe_via_api(
     signal: dict[str, Any],
     *,
     temperature: float,
+    model: str | None = None,
     validator_feedback: list[dict[str, str]] | None = None,
+    target_profile: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     messages = build_recipe_gold_v3_generation_messages(
-        signal, validator_feedback=validator_feedback
+        signal,
+        target_profile,
+        validator_feedback=validator_feedback,
     )
     data = await ai_client.chat_json(
         system=messages[0]["content"],
@@ -463,17 +496,52 @@ async def generate_recipe_via_api(
         temperature=temperature,
         max_tokens=4096,
         retries=1,
+        model=model,
     )
     if not isinstance(data, dict):
         raise ValueError("Model response is not a JSON object")
     return data
 
 
-def validator_feedback_from_result(result: ValidationResult) -> list[dict[str, str]]:
-    return [
-        {"code": i.code, "message": i.message, "path": i.path or ""}
+def needs_quality_retry(result: ValidationResult, retry_below_score: int) -> bool:
+    return not result.ok or result.score < retry_below_score
+
+
+def validator_feedback_from_result(
+    result: ValidationResult,
+    *,
+    retry_below_score: int = PRODUCTION_READY_MIN_SCORE,
+) -> list[dict[str, str]]:
+    retry_codes = feedback_codes_for_retry()
+    feedback: list[dict[str, str]] = [
+        {
+            "code": i.code,
+            "message": i.message,
+            "path": i.path or "",
+            "severity": i.severity,
+        }
         for i in result.errors[:8]
     ]
+    for issue in result.warnings:
+        if issue.code in retry_codes and len(feedback) < 12:
+            feedback.append(
+                {
+                    "code": issue.code,
+                    "message": issue.message,
+                    "path": issue.path or "",
+                    "severity": "warning",
+                }
+            )
+    if result.ok and result.score < retry_below_score:
+        feedback.append(
+            {
+                "code": "score_below_threshold",
+                "message": f"validation score {result.score} < {retry_below_score}",
+                "path": "quality.score",
+                "severity": "warning",
+            }
+        )
+    return feedback
 
 
 async def generate_one(
@@ -482,11 +550,14 @@ async def generate_one(
     seq: int,
     no_api: bool,
     temperature: float,
+    model: str | None,
     retry_invalid: int,
+    retry_below_score: int,
     stats: GenerationStats,
 ) -> dict[str, Any] | None:
     stats.attempted += 1
     feedback: list[dict[str, str]] | None = None
+    target_profile = build_target_profile_from_signal(signal)
 
     for attempt in range(1 + retry_invalid):
         if no_api:
@@ -494,9 +565,13 @@ async def generate_one(
         else:
             stats.api_calls += 1
             raw = await generate_recipe_via_api(
-                signal, temperature=temperature, validator_feedback=feedback
+                signal,
+                temperature=temperature,
+                model=model,
+                validator_feedback=feedback,
+                target_profile=target_profile,
             )
-        recipe = enrich_recipe_metadata(raw, signal)
+        recipe = postprocess_generated_recipe(enrich_recipe_metadata(raw, signal))
         violations = originality_post_check(recipe)
         if violations:
             stats.originality_violations.extend(
@@ -518,7 +593,7 @@ async def generate_one(
         for issue in result.warnings:
             stats.warning_codes[issue.code] += 1
 
-        if result.ok:
+        if not needs_quality_retry(result, retry_below_score):
             recipe["quality"]["score"] = result.score
             stats.valid += 1
             stats.scores.append(result.score)
@@ -533,7 +608,11 @@ async def generate_one(
 
         if attempt < retry_invalid:
             stats.retries_used += 1
-            feedback = validator_feedback_from_result(result)
+            if result.ok:
+                stats.low_score_retries += 1
+            feedback = validator_feedback_from_result(
+                result, retry_below_score=retry_below_score
+            )
         else:
             stats.invalid += 1
             stats.failed.append(
@@ -541,7 +620,9 @@ async def generate_one(
                     "signal_id": signal.get("signal_id"),
                     "title": recipe.get("title"),
                     "errors": [e.code for e in result.errors],
+                    "warnings": [w.code for w in result.warnings[:5]],
                     "score": result.score,
+                    "reason": "low_score" if result.ok else "validation_errors",
                 }
             )
     return None
@@ -557,11 +638,18 @@ async def run_generation(args: argparse.Namespace) -> GenerationStats:
     )
 
     if not args.no_api:
-        ok_cost, estimated = check_cost_guard(args.limit, args.retry_invalid, args.max_cost_usd)
+        ok_cost, estimated = check_cost_guard(
+            args.limit,
+            args.retry_invalid,
+            args.max_cost_usd,
+            model=args.model,
+        )
         stats.estimated_cost_usd = estimated
         if not ok_cost:
+            per = estimated_cost_per_request(args.model)
             raise SystemExit(
-                f"Cost guard: estimated ${estimated:.2f} exceeds --max-cost-usd {args.max_cost_usd}"
+                f"Cost guard: estimated ${estimated:.2f} exceeds --max-cost-usd {args.max_cost_usd} "
+                f"(~{args.limit * (1 + args.retry_invalid)} calls × ${per:.2f}/call, model={args.model or 'default'})"
             )
         if not ai_client.is_ai_configured():
             raise AiUnavailableError("OPENAI_API_KEY not configured")
@@ -572,7 +660,9 @@ async def run_generation(args: argparse.Namespace) -> GenerationStats:
             seq=idx,
             no_api=args.no_api,
             temperature=args.temperature,
+            model=args.model,
             retry_invalid=args.retry_invalid,
+            retry_below_score=args.retry_below_score,
             stats=stats,
         )
         if recipe:
@@ -580,7 +670,8 @@ async def run_generation(args: argparse.Namespace) -> GenerationStats:
 
     stats.real_api_run = not args.no_api and stats.api_calls > 0
     if stats.real_api_run:
-        stats.estimated_cost_usd = stats.api_calls * ESTIMATED_COST_PER_REQUEST_USD
+        per = estimated_cost_per_request(args.model)
+        stats.estimated_cost_usd = stats.api_calls * per
     return stats
 
 
@@ -630,7 +721,10 @@ def build_report_md(
             f"- Limit: `{args.limit}`",
             f"- Max cost USD: `{args.max_cost_usd}`",
             f"- Model: `{stats.model}`",
+            f"- Model override CLI: `{args.model or '(default from settings)'}`",
             f"- Temperature: `{args.temperature}`",
+            f"- Retry invalid: `{args.retry_invalid}`",
+            f"- Retry below score: `{args.retry_below_score}`",
             "",
             "## Summary",
             "",
@@ -638,6 +732,13 @@ def build_report_md(
             f"- Valid generated: `{stats.valid}`",
             f"- Invalid failed: `{stats.invalid}`",
             f"- Retries used: `{stats.retries_used}`",
+            f"- Low-score retries: `{stats.low_score_retries}`",
+            "",
+            "## Quality gate",
+            "",
+            f"- Retry below score threshold: `{args.retry_below_score}`",
+            f"- Output includes only recipes with validator ok=True and score >= {args.retry_below_score}",
+            "",
             f"- API calls: `{stats.api_calls}`",
             f"- Estimated cost USD: `{stats.estimated_cost_usd:.2f}`",
             f"- Avg validation score: `{avg_score}`",

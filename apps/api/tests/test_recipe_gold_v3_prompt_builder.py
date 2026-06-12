@@ -1,4 +1,4 @@
-"""Tests for Gold V3 recipe prompt builder."""
+"""Tests for Gold V3 recipe prompt builder (Stage F.1)."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def test_prompt_includes_schema_requirements():
     system = build_recipe_gold_v3_system_prompt()
     assert "recipe_gold_v3" in system
     assert "nutrition_per_serving" in system
-    assert "минимум 4" in system.lower() or "минимум 4" in system
+    assert "минимум 4" in system.lower() or "ingredients: минимум 4" in system
 
 
 def test_prompt_includes_originality_rules():
@@ -63,17 +63,47 @@ def test_prompt_includes_originality_rules():
 
 
 def test_prompt_includes_nutrition_per_serving():
-    user = build_recipe_gold_v3_user_prompt(_signal_with_leaks())
     system = build_recipe_gold_v3_system_prompt()
     assert "nutrition_per_serving" in system
-    assert "kcal" in system
+    assert "fiber_g" in system
+    assert "salt_g" in system
+    assert "sugar_g" in system
 
 
 def test_prompt_includes_shopping_and_image_contract():
     system = build_recipe_gold_v3_system_prompt()
-    assert "shopping" in system
+    assert "shopping_name" in system
     assert "image_prompt_data" in system
     assert "единый сервиз PLANAM" in system
+
+
+def test_prompt_contains_allowed_units():
+    system = build_recipe_gold_v3_system_prompt()
+    for unit in ("г", "мл", "шт", "ч.л.", "ст.л.", "по вкусу"):
+        assert unit in system
+
+
+def test_prompt_forbids_bad_units():
+    system = build_recipe_gold_v3_system_prompt()
+    assert "шт." in system or "ст. л." in system
+    assert "зубчик" in system
+
+
+def test_prompt_requires_shopping_name_for_every_ingredient():
+    system = build_recipe_gold_v3_system_prompt()
+    assert "shopping_name ОБЯЗАТЕЛЕН" in system or "shopping_name" in system
+
+
+def test_prompt_requires_fiber_salt_sugar():
+    system = build_recipe_gold_v3_system_prompt()
+    assert "fiber_g" in system and "salt_g" in system and "sugar_g" in system
+    assert "null" in system.lower() or "без null" in system.lower()
+
+
+def test_prompt_tells_not_to_add_contradictory_restriction_keys():
+    system = build_recipe_gold_v3_system_prompt()
+    assert "vegan" in system
+    assert "противореч" in system.lower()
 
 
 def test_generation_messages_structure():

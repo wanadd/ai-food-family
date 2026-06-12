@@ -5,7 +5,13 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.recipes.recipe_gold_v3_schema import SCHEMA_VERSION
+from app.nutrition.restrictions_catalog import get_restriction_definition
+from app.recipes.recipe_gold_v3_postprocess import PROMPT_ALLOWED_UNITS
+from app.recipes.recipe_gold_v3_schema import (
+    ALLOWED_INGREDIENT_CATEGORIES,
+    PRODUCTION_READY_MIN_SCORE,
+    SCHEMA_VERSION,
+)
 
 # Keys safe to pass into AI prompts (no raw Povarenok text / URLs / ingredient names).
 _SIGNAL_PROMPT_KEYS: frozenset[str] = frozenset(
@@ -43,6 +49,18 @@ _FORBIDDEN_SIGNAL_KEYS: frozenset[str] = frozenset(
     }
 )
 
+_RETRY_WARNING_CODES: frozenset[str] = frozenset(
+    {
+        "ingredient_unclear_unit",
+        "unknown_ingredient_category",
+        "missing_fiber",
+        "missing_sugar_salt",
+        "title_too_many_words",
+    }
+)
+
+_CATEGORIES_FOR_PROMPT = sorted(ALLOWED_INGREDIENT_CATEGORIES)
+
 
 def sanitize_signal_for_prompt(signal: dict[str, Any]) -> dict[str, Any]:
     """Return signal subset safe for AI — no titles, steps, URLs, raw ingredient names."""
@@ -55,6 +73,62 @@ def sanitize_signal_for_prompt(signal: dict[str, Any]) -> dict[str, Any]:
     return cleaned
 
 
+def build_target_profile_from_signal(signal: dict[str, Any]) -> dict[str, Any]:
+    """Hints for restrictions — model must align ingredients with declared keys."""
+    hints = signal.get("restriction_hints") or []
+    canonical = [h for h in hints if get_restriction_definition(h)]
+    return {
+        "restriction_hints": canonical,
+        "allergen_hints": signal.get("allergen_hints") or [],
+        "note": (
+            "restriction_keys must NOT contradict ingredients. "
+            "If unsure — use only no_pork and no_alcohol or leave restriction_keys empty."
+        ),
+    }
+
+
+def _ingredient_contract_block() -> str:
+    units = ", ".join(f'"{u}"' for u in PROMPT_ALLOWED_UNITS)
+    forbidden_units = (
+        "шт., ст. л., ч. ложка, ст. ложки, ложка, стакан, зубчик, пучок, щепотка, гр, грамм"
+    )
+    categories = ", ".join(_CATEGORIES_FOR_PROMPT)
+    return f"""ИНГРЕДИЕНТЫ (строго):
+- Каждый ingredient ОБЯЗАН иметь: name, amount, unit, display_amount, category, optional, shopping_name.
+- shopping_name ОБЯЗАТЕЛЕН для КАЖДОГО ингредиента (короткое нормализованное имя для списка покупок).
+  Пример: name="куриное филе" → shopping_name="куриное филе";
+  name="масло оливковое" → shopping_name="оливковое масло".
+- Разрешённые unit: {units}.
+- ЗАПРЕЩЁННЫЕ unit: {forbidden_units}.
+  Для чеснока/зелени: amount=1, unit="шт", display_amount="1 шт", shopping_name="чеснок"/"петрушка".
+- Разрешённые category (только из whitelist): {categories}.
+- ЗАПРЕЩЁННЫЕ category: жиры, мясо птицы, приправы, жидкость, другие, eggs, dairy, sport."""
+
+
+def _nutrition_contract_block() -> str:
+    return """NUTRITION (nutrition_per_serving — все поля обязательны, без null):
+- kcal, protein_g, fat_g, carbs_g — согласованы: kcal ≈ protein_g*4 + fat_g*9 + carbs_g*4 (±35%).
+- fiber_g, salt_g, sugar_g — реалистичные оценки (не null, не нули везде).
+  Пример супа: fiber_g=5, salt_g=1.2, sugar_g=3; десерт: sugar_g=10."""
+
+
+def _title_contract_block() -> str:
+    return """TITLE:
+- 2–5 слов, желательно ≤40 символов.
+- Без длинных конструкций «с ... и ... и ...».
+- Без английских слов и технических префиксов."""
+
+
+def _restriction_contract_block() -> str:
+    return """RESTRICTION_KEYS (не противоречить ингредиентам):
+- Нельзя vegan/vegetarian/pescatarian если есть мясо/рыба/курица.
+- Нельзя vegan/lactose_free/no_milk если есть молоко/сыр/творог/йогурт/сметана.
+- Нельзя vegan/no_eggs если есть яйца.
+- Нельзя no_pork/halal/kosher если есть свинина/бекон/ветчина.
+- Нельзя no_alcohol если есть вино/пиво/алкоголь.
+- Лучше пустой список или только no_pork + no_alcohol, чем противоречивые ключи."""
+
+
 def build_recipe_gold_v3_system_prompt() -> str:
     return f"""Ты — шеф-редактор PLANAM. Создаёшь полностью оригинальные русскоязычные семейные рецепты.
 
@@ -65,6 +139,7 @@ def build_recipe_gold_v3_system_prompt() -> str:
    английские префиксы (High protein:, Pro small portion:, Pre-workout:), слово bowl в названии.
 4. Culinary signal — только абстрактная подсказка (группы продуктов, методы, meal hints).
 5. Ответ — ТОЛЬКО один JSON-объект без markdown.
+6. Production-ready: score ≥ {PRODUCTION_READY_MIN_SCORE} после валидации.
 
 СХЕМА (schema_version={SCHEMA_VERSION}):
 - schema_version, status=gold, source_type=generated_original
@@ -73,19 +148,34 @@ def build_recipe_gold_v3_system_prompt() -> str:
 - title (8-80 символов, русский), subtitle, description (мин. 20 символов)
 - meal_type: breakfast|lunch|dinner|snack
 - category: main|soup|salad|side|breakfast|snack|dessert|drink
-- cuisine_style, servings (1-8), prep_time_min, cook_time_min, total_time_min, difficulty, family_fit
-- ingredients: минимум 4, каждый с name, amount>0, unit, display_amount, category (русские группы),
-  shopping_name, optional
+- cuisine_style, servings (1-8), prep_time_min, cook_time_min, total_time_min (=prep+cook), difficulty, family_fit
+- ingredients: минимум 4
 - steps: минимум 4, step_number, text >= 25 символов каждый
-- nutrition_per_serving: kcal>0, protein_g, fat_g, carbs_g (согласованы с kcal), fiber_g опционально
-- restriction_keys: только из canonical catalog (no_pork, vegetarian, gluten_free, …)
+- restriction_keys: только canonical keys из catalog
 - allergen_keys, diet_tags
 - shopping: aggregation_safe=true, has_fractional_amounts, rounding_notes
 - image_prompt_data: dish_visual_summary, serving_style="единый сервиз PLANAM",
   avoid_visuals=["текст","логотипы","руки","грязный фон"]
 - quality: score=0, flags=[], warnings=[]
 
+{_ingredient_contract_block()}
+
+{_nutrition_contract_block()}
+
+{_title_contract_block()}
+
+{_restriction_contract_block()}
+
 Не включай source_url, original_title, original_steps, tags (добавятся автоматически)."""
+
+
+def _retry_fix_block() -> str:
+    return """ИСПРАВЬ и верни ВЕСЬ JSON заново:
+- У каждого ingredient должен быть shopping_name.
+- Только разрешённые unit и category.
+- Заполни fiber_g, salt_g, sugar_g.
+- Убери противоречивые restriction_keys.
+- Сократи title до 2–5 слов."""
 
 
 def build_recipe_gold_v3_user_prompt(
@@ -95,27 +185,25 @@ def build_recipe_gold_v3_user_prompt(
     validator_feedback: list[dict[str, str]] | None = None,
 ) -> str:
     safe_signal = sanitize_signal_for_prompt(signal)
+    profile = target_profile or build_target_profile_from_signal(signal)
     parts = [
         "Создай один оригинальный рецепт PLANAM по culinary signal ниже.",
         "Используй только абстрактные подсказки signal. Не воспроизводи чужие названия и шаги.",
         "",
         "CULINARY SIGNAL (обезличенный):",
         json.dumps(safe_signal, ensure_ascii=False, indent=2),
+        "",
+        "TARGET PROFILE (ограничения — не противоречь ингредиентам):",
+        json.dumps(profile, ensure_ascii=False, indent=2),
     ]
-    if target_profile:
-        parts.extend(
-            [
-                "",
-                "TARGET PROFILE (учитывай ограничения):",
-                json.dumps(target_profile, ensure_ascii=False, indent=2),
-            ]
-        )
     if validator_feedback:
         parts.extend(
             [
                 "",
-                "ИСПРАВЬ ОШИБКИ ВАЛИДАТОРА (без копирования источника):",
+                "ИСПРАВЬ ОШИБКИ/ПРЕДУПРЕЖДЕНИЯ ВАЛИДАТОРА (без копирования источника):",
                 json.dumps(validator_feedback, ensure_ascii=False, indent=2),
+                "",
+                _retry_fix_block(),
             ]
         )
     parts.append("")
@@ -140,3 +228,7 @@ def build_recipe_gold_v3_generation_messages(
             ),
         },
     ]
+
+
+def feedback_codes_for_retry() -> frozenset[str]:
+    return _RETRY_WARNING_CODES
