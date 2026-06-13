@@ -181,6 +181,10 @@ def list_recipes(
     goal: str | None = Query(default=None),
     scenario: str | None = Query(default=None),
     include_legacy: bool = Query(default=False),
+    sort: str | None = Query(
+        default=None,
+        description="Catalog sort: default quality-first; use title for legacy A-Z",
+    ),
     user: User = Depends(get_verified_user),
     scope: AppScope = Depends(get_app_scope),
     db: Session = Depends(get_db),
@@ -234,6 +238,7 @@ def list_recipes(
         limit=limit,
         offset=offset,
         include_legacy=legacy,
+        sort=sort,
     )
     logger.info("GET /recipes -> total=%d", result.total)
     return result

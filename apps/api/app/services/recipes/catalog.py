@@ -25,6 +25,7 @@ from app.services.recipe_storage import (
     get_structured_ingredients,
 )
 from . import repository
+from app.services.recipes.catalog_sort import sort_recipes_catalog
 from app.services.recipes.mapper import to_detail, to_summary
 from app.services.recipes.scenarios import ScenarioMatcher, ScenarioType
 from app.services.recipes.types import RecipeListFilters
@@ -178,6 +179,7 @@ def list_recipes(
     limit: int = 200,
     offset: int = 0,
     include_legacy: bool = False,
+    sort: str | None = None,
 ) -> RecipeListResponse:
     favorite_ids = repository.favorite_ids_for_user(db, user.id)
 
@@ -244,8 +246,9 @@ def list_recipes(
         ]
 
     if goal in ("weight_loss", "sport", "health"):
-        if goal == "sport":
-            recipes.sort(key=lambda r: (not r.suitable_for_sport, r.title))
+        recipes = sort_recipes_catalog(recipes, sort=sort, goal=goal)
+    else:
+        recipes = sort_recipes_catalog(recipes, sort=sort)
 
     from app.services.recipe_analysis import quick_recipe_fit_level
 

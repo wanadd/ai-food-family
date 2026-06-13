@@ -79,8 +79,8 @@ def get_max_cooking_time(db: Session, *, include_legacy: bool = False) -> int | 
 def query_recipes(db: Session, filters: RecipeListFilters) -> list[Recipe]:
     """Apply scalar filters and return the matching active recipes.
 
-    Result is ordered by title — the existing public contract. Higher
-    layers may re-sort (e.g. by goal-affinity) post-fetch.
+    Result is fetched without a fixed public order — ``catalog_sort`` applies
+    the quality-first default in ``catalog.list_recipes``.
     """
 
     query = db.query(Recipe).filter(Recipe.is_active.is_(True))
@@ -135,4 +135,4 @@ def query_recipes(db: Session, filters: RecipeListFilters) -> list[Recipe]:
             )
         )
 
-    return query.order_by(Recipe.title.asc()).all()
+    return query.order_by(Recipe.id.desc()).all()

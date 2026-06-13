@@ -29,7 +29,12 @@ def normalize_tags(tags: Any) -> list[str]:
 
 
 def is_gold_v2_recipe(recipe: Recipe) -> bool:
-    return bool(GOLD_V2_TAGS.intersection(normalize_tags(recipe.tags)))
+    if str(recipe.source_type or "") == "seed":
+        return True
+    tag_list = normalize_tags(recipe.tags)
+    if "gold_v3" in tag_list:
+        return True
+    return bool(GOLD_V2_TAGS.intersection(tag_list))
 
 
 def gold_filter_enabled(*, include_legacy: bool | None = None) -> bool:
@@ -54,6 +59,8 @@ def apply_gold_recipe_filter(
             Recipe.tags.contains(["gold_v2"]),
             Recipe.tags.contains(["recipe_schema_v2"]),
             Recipe.tags.contains(["status:gold"]),
+            Recipe.tags.contains(["gold_v3"]),
+            Recipe.source_type == "seed",
         )
     )
 

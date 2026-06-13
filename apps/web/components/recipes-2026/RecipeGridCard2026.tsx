@@ -41,7 +41,7 @@ export function RecipeGridCard2026({
     <article className="overflow-hidden rounded-card border border-pa-border bg-pa-surface shadow-soft transition active:scale-[0.98] dark:shadow-none">
       <Link href={href} className="block">
         <RecipeImage2026
-          imageUrl={recipe.image_url}
+          imageSource={recipe}
           alt={heading}
           variant="grid"
           mealType={recipe.meal_type}

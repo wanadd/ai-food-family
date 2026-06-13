@@ -65,6 +65,7 @@ class RecipeSortOrder(str, Enum):
     """
 
     title = "title"
+    quality = "quality"
     relevance = "relevance"
     popularity = "popularity"
     score = "score"

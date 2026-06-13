@@ -21,10 +21,12 @@ from app.services.recipes import catalog  # noqa: E402
 from app.services.recipes.types import RecipeListFilters  # noqa: E402
 
 
-def _recipe(title: str, *, active: bool = True) -> MagicMock:
+def _recipe(title: str, *, active: bool = True, recipe_id: int | None = None) -> MagicMock:
     recipe = MagicMock()
-    recipe.id = hash(title) % 10000
+    recipe.id = recipe_id if recipe_id is not None else hash(title) % 10000
     recipe.title = title
+    recipe.source_type = "import"
+    recipe.hero_image_url = None
     recipe.description = ""
     recipe.meal_type = "lunch"
     recipe.category = "main"
@@ -128,7 +130,7 @@ def test_list_recipes_passes_recipe_to_fit_level():
     db = MagicMock()
     user = MagicMock(id=1)
     scope = AppScope(mode="personal", user_id=1, family_id=None)
-    recipes = [_recipe("A"), _recipe("B")]
+    recipes = [_recipe("A", recipe_id=1), _recipe("B", recipe_id=2)]
     seen: list[str] = []
 
     with patch(
@@ -160,14 +162,14 @@ def test_list_recipes_passes_recipe_to_fit_level():
     ):
         catalog.list_recipes(db, user, scope=scope)
 
-    assert seen == ["A", "B"]
+    assert set(seen) == {"A", "B"}
 
 
 def test_list_recipes_paginates_with_total():
     db = MagicMock()
     user = MagicMock(id=1)
     scope = AppScope(mode="personal", user_id=1, family_id=None)
-    recipes = [_recipe(f"Recipe {index}") for index in range(5)]
+    recipes = [_recipe(f"Recipe {index}", recipe_id=index) for index in range(5)]
 
     with patch(
         "app.services.recipes.catalog.repository.favorite_ids_for_user",
@@ -195,7 +197,7 @@ def test_list_recipes_paginates_with_total():
             fit_level=fit_level,
         ),
     ):
-        result = catalog.list_recipes(db, user, scope=scope, limit=2, offset=1)
+        result = catalog.list_recipes(db, user, scope=scope, limit=2, offset=1, sort="title")
 
     assert result.total == 5
     assert len(result.items) == 2

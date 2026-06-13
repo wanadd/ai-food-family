@@ -46,9 +46,13 @@ def test_legacy_import_not_gold():
     assert is_gold_v2_recipe(_recipe("Legacy", tags=[], source_type="v1_import")) is False
 
 
+def test_seed_source_type_in_catalog_pool():
+    assert is_gold_v2_recipe(_recipe("Curated", tags=[], source_type="seed")) is True
+
+
 def test_filter_gold_recipes_in_memory():
     gold = _recipe("Gold", tags=["gold_v2"])
-    legacy = _recipe("Legacy", tags=[])
+    legacy = _recipe("Legacy", tags=[], source_type="import")
     result = filter_gold_recipes([gold, legacy])
     assert [r.title for r in result] == ["Gold"]
 
