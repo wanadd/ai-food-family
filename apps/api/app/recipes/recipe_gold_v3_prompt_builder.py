@@ -119,6 +119,8 @@ def _title_contract_block() -> str:
 - display_title: ОБЯЗАТЕЛЬНО, 18-38 символов, короткое имя для карточки каталога.
   Не дублируй длинный title дословно — сократи без потери смысла.
 - description: 1-2 предложения, 90-170 символов, без пустых рекламных фраз, не повторяй title.
+- Семантика: если в title/display_title/description упомянуты тофу, кальмар, креветки, курица, свинина или фарш —
+  те же продукты должны быть в ingredients/steps. Нельзя писать «салат с кальмарами», если в рецепте креветки.
 - category/meal_type: только canonical slugs в JSON; НИКОГДА не вставляй slugs в title/display_title/description.
 - nutrition_confidence: только exact|estimated|low_confidence|unavailable (для AI по умолчанию estimated).
 - source_type: generated_original (AI) или manual_original (ручной); не используй import для новых PlanAm рецептов."""

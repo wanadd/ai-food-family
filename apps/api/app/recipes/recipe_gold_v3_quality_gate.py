@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from app.recipes.recipe_gold_v3_postprocess import postprocess_generated_recipe
 from app.recipes.recipe_gold_v3_schema import ALLOWED_UNITS
+from app.recipes.recipe_gold_v3_semantic_consistency import check_semantic_consistency
 from app.recipes.recipe_gold_v3_ui_contract import check_ui_text_contract
 from app.recipes.recipe_gold_v3_validation import validate_recipe_gold_v3
 
@@ -650,6 +651,17 @@ def evaluate_recipe_gold_v3_quality_gate(
                     warnings_by_code[code] += 1
 
         for finding in check_ui_text_contract(recipe, recipe_index=idx):
+            code = finding["code"]
+            if finding["severity"] == "error":
+                if code not in recipe_errors:
+                    recipe_errors.append(code)
+                errors_by_code[code] += 1
+            else:
+                if code not in recipe_warnings:
+                    recipe_warnings.append(code)
+                warnings_by_code[code] += 1
+
+        for finding in check_semantic_consistency(recipe, recipe_index=idx):
             code = finding["code"]
             if finding["severity"] == "error":
                 if code not in recipe_errors:

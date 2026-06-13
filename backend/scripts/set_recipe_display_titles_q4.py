@@ -16,6 +16,9 @@ from _image_paths import ensure_app_on_path  # noqa: E402
 
 ensure_app_on_path()
 
+# This script updates display_title ONLY — never title or description.
+UPDATABLE_FIELDS = frozenset({"display_title"})
+
 DISPLAY_TITLES: dict[int, str] = {
     256: "Куриные котлеты с овощами",
     257: "Перловка с овощами",
@@ -28,6 +31,19 @@ DISPLAY_TITLES: dict[int, str] = {
     264: "Салат с курицей и яблоком",
     265: "Овощной суп с фасолью",
 }
+
+
+def apply_display_title_only(recipe, new_display_title: str, *, commit: bool) -> bool:
+    """Set display_title without touching title or description."""
+    before_title = recipe.title
+    before_description = recipe.description
+    if recipe.display_title == new_display_title:
+        return False
+    if commit:
+        recipe.display_title = new_display_title
+    assert recipe.title == before_title
+    assert recipe.description == before_description
+    return True
 
 
 def parse_args() -> argparse.Namespace:
@@ -58,13 +74,12 @@ def main() -> int:
                 print(f"SKIP #{rid}: not found")
                 skipped += 1
                 continue
-            if recipe.display_title == display_title:
+            old_display_title = recipe.display_title
+            if not apply_display_title_only(recipe, display_title, commit=args.commit):
                 print(f"UNCHANGED #{rid}: {display_title!r}")
                 skipped += 1
                 continue
-            print(f"UPDATE #{rid}: {recipe.display_title!r} -> {display_title!r}")
-            if args.commit:
-                recipe.display_title = display_title
+            print(f"UPDATE #{rid}: {old_display_title!r} -> {display_title!r}")
             updated += 1
         if args.commit and updated:
             session.commit()
