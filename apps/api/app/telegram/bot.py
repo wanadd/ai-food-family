@@ -3,6 +3,7 @@ import logging
 import httpx
 
 from app.config import settings
+from app.telegram.api_urls import telegram_bot_api_url
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ def resolve_webhook_url() -> str | None:
 
 
 async def _telegram_api(method: str, payload: dict | None = None) -> dict:
-    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/{method}"
+    url = telegram_bot_api_url(method)
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(url, json=payload or {})
         return response.json()

@@ -34,6 +34,7 @@ from app.services.users import (
     upsert_user_from_bot,
     user_has_verified_phone,
 )
+from app.telegram.api_urls import telegram_bot_api_url
 from app.telegram.files import download_telegram_file
 from app.telegram.messaging import (
     BOT_HELP_TEXT,
@@ -80,10 +81,6 @@ async def admin_bot_pin_if_needed(
     return await admin_bot.handle_admin_pin_message(db, chat_id, from_user, text)
 
 
-def _api_url(method: str) -> str:
-    return f"https://api.telegram.org/bot{settings.telegram_bot_token}/{method}"
-
-
 async def send_telegram_message(
     chat_id: int,
     text: str,
@@ -99,7 +96,7 @@ async def send_telegram_message(
         payload["reply_markup"] = reply_markup
 
     async with httpx.AsyncClient(timeout=15.0) as client:
-        response = await client.post(_api_url("sendMessage"), json=payload)
+        response = await client.post(telegram_bot_api_url("sendMessage"), json=payload)
         data = response.json()
     if not data.get("ok"):
         logger.warning("sendMessage failed chat_id=%s: %s", chat_id, data)
@@ -112,7 +109,7 @@ async def answer_callback_query(callback_query_id: str, text: str = "") -> None:
     if text:
         payload["text"] = text
     async with httpx.AsyncClient(timeout=15.0) as client:
-        await client.post(_api_url("answerCallbackQuery"), json=payload)
+        await client.post(telegram_bot_api_url("answerCallbackQuery"), json=payload)
 
 
 def _own_phone_keyboard() -> dict[str, Any]:

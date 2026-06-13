@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     app_name: str = "ПланАм API"
     backend_cors_origins: str = "http://localhost:3000"
     telegram_bot_token: str = ""
+    telegram_api_base_url: str = "https://api.telegram.org"
     telegram_webapp_url: str = ""
     telegram_webhook_url: str = ""
     telegram_menu_button_text: str = "Открыть ПланАм"

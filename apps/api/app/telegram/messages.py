@@ -3,6 +3,7 @@ import logging
 import httpx
 
 from app.config import settings
+from app.telegram.api_urls import telegram_bot_api_url
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ async def send_telegram_message(
             ]
         }
 
-    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+    url = telegram_bot_api_url("sendMessage")
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         response = await client.post(url, json=payload)

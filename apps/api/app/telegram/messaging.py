@@ -4,12 +4,13 @@ from typing import Any
 import httpx
 
 from app.config import settings
+from app.telegram.api_urls import telegram_bot_api_url
 
 logger = logging.getLogger(__name__)
 
 
 def api_url(method: str) -> str:
-    return f"https://api.telegram.org/bot{settings.telegram_bot_token}/{method}"
+    return telegram_bot_api_url(method)
 
 
 async def send_telegram_message(
