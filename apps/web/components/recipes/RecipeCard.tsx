@@ -3,8 +3,11 @@
 import {
   categoryLabel,
   difficultyLabel,
+  hasCategoryLabel,
+  hasMealLabel,
   mealLabel,
 } from "@/lib/recipes/labels";
+import { recipeCardHeading } from "@/lib/recipes/card-title";
 import {
   FIT_BADGE_LABELS,
   FIT_BADGE_STYLES,
@@ -34,12 +37,18 @@ export function RecipeCard({
   onToggleFavorite,
   togglingFavorite,
 }: RecipeCardProps) {
+  const heading = recipeCardHeading(recipe);
+  const meal = mealLabel(recipe.meal_type);
+  const category = categoryLabel(recipe.category);
+
   return (
     <article className="pa-card p-4 transition hover:border-sage-200">
       <div className="flex items-start justify-between gap-2">
         <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold text-graphite-900">{recipe.title}</h3>
+            <h3 className="line-clamp-2 min-h-[2.75rem] font-semibold leading-snug text-graphite-900">
+              {heading}
+            </h3>
             {recipe.fit_level ? (
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${FIT_BADGE_STYLES[recipe.fit_level as RecipeFitLevel]}`}
@@ -70,12 +79,16 @@ export function RecipeCard({
 
       <button type="button" onClick={onOpen} className="mt-3 w-full text-left">
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-pill bg-sage-50 px-2.5 py-1 text-xs font-semibold text-sage-700">
-            {mealLabel(recipe.meal_type)}
-          </span>
-          <span className="rounded-pill bg-cream-deep px-2.5 py-1 text-xs font-medium text-graphite-500">
-            {categoryLabel(recipe.category)}
-          </span>
+          {meal ? (
+            <span className="rounded-pill bg-sage-50 px-2.5 py-1 text-xs font-semibold text-sage-700">
+              {meal}
+            </span>
+          ) : null}
+          {category ? (
+            <span className="rounded-pill bg-cream-deep px-2.5 py-1 text-xs font-medium text-graphite-500">
+              {category}
+            </span>
+          ) : null}
           <span className="rounded-pill bg-warm/10 px-2.5 py-1 text-xs font-medium text-graphite-700">
             {recipe.prep_time_minutes} мин
           </span>

@@ -113,10 +113,15 @@ def _nutrition_contract_block() -> str:
 
 
 def _title_contract_block() -> str:
-    return """TITLE:
-- 2–5 слов, желательно ≤40 символов.
-- Без длинных конструкций «с ... и ... и ...».
-- Без английских слов и технических префиксов."""
+    return """TITLE / DISPLAY_TITLE / DESCRIPTION (UI contract):
+- title: полное пользовательское название на русском, 28-52 символа (макс. 64).
+  Без #1, Pro, High protein, Pre-workout, AI, Gold, английских префиксов, raw slugs (side/main/soup/salad/lunch/dinner).
+- display_title: ОБЯЗАТЕЛЬНО, 18-38 символов, короткое имя для карточки каталога.
+  Не дублируй длинный title дословно — сократи без потери смысла.
+- description: 1-2 предложения, 90-170 символов, без пустых рекламных фраз, не повторяй title.
+- category/meal_type: только canonical slugs в JSON; НИКОГДА не вставляй slugs в title/display_title/description.
+- nutrition_confidence: только exact|estimated|low_confidence|unavailable (для AI по умолчанию estimated).
+- source_type: generated_original (AI) или manual_original (ручной); не используй import для новых PlanAm рецептов."""
 
 
 def _restriction_contract_block() -> str:
@@ -145,7 +150,7 @@ def build_recipe_gold_v3_system_prompt() -> str:
 - schema_version, status=gold, source_type=generated_original
 - originality: is_original_planam_recipe, no_source_title_used, no_source_steps_used, no_direct_copy=true;
   source_similarity_risk=low|medium (не high)
-- title (8-80 символов, русский), subtitle, description (мин. 20 символов)
+- title (8-64 символов, русский), display_title (18-38, обязателен), subtitle, description (90-170 символов)
 - meal_type: breakfast|lunch|dinner|snack
 - category: main|soup|salad|side|breakfast|snack|dessert|drink
 - cuisine_style, servings (1-8), prep_time_min, cook_time_min, total_time_min (=prep+cook), difficulty, family_fit

@@ -129,7 +129,9 @@ def map_gold_v3_to_db_payload(recipe: dict[str, Any]) -> dict[str, Any]:
 
     payload: dict[str, Any] = {
         "title": str(recipe.get("title") or "").strip()[:TITLE_MAX_LEN],
-        "display_title": str(recipe.get("title") or "").strip()[:TITLE_MAX_LEN],
+        "display_title": str(recipe.get("display_title") or recipe.get("title") or "").strip()[
+            :TITLE_MAX_LEN
+        ],
         "normalized_title": normalize_recipe_title(str(recipe.get("title") or "")),
         "description": str(recipe.get("description") or "").strip(),
         "meal_type": str(recipe.get("meal_type") or "lunch"),
@@ -182,7 +184,7 @@ def map_gold_v3_to_db_payload(recipe: dict[str, Any]) -> dict[str, Any]:
 
     payload["nutrition_servings"] = float(payload["servings"])
     payload["nutrition_source"] = "gold_v3_import"
-    payload["nutrition_confidence"] = "high"
+    payload["nutrition_confidence"] = "estimated"
     payload["nutrition_coverage_json"] = {
         "fiber_g": _as_float(nutrition.get("fiber_g")),
         "salt_g": _as_float(nutrition.get("salt_g")),

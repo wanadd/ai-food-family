@@ -36,6 +36,7 @@ import {
   dietLabel,
   mealLabel,
 } from "@/lib/recipes/labels";
+import { recipeDetailHeading } from "@/lib/recipes/card-title";
 import {
   confidenceNote,
   perServingMacros,
@@ -46,6 +47,30 @@ import type { RecipeDetail } from "@/lib/recipes/types";
 type RecipeDetail2026Props = {
   recipeId: number;
 };
+
+function RecipeDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const needsToggle = text.length > 140 || text.split(/\s+/).length > 24;
+
+  return (
+    <div className="mt-2">
+      <p
+        className={`pa26-body text-pa-muted ${expanded ? "" : "line-clamp-3"}`}
+      >
+        {text}
+      </p>
+      {needsToggle ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1 pa26-micro font-semibold text-sage-600 dark:text-sage-300"
+        >
+          {expanded ? "Свернуть" : "Показать полностью"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 function nutritionLine(recipe: RecipeDetail): string {
   const summary = recipe.nutrition_summary;
@@ -259,8 +284,10 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
     );
   }
 
-  const heading = recipe.display_title ?? recipe.title;
+  const heading = recipeDetailHeading(recipe);
   const prep = recipe.prep_time_minutes ?? recipe.cooking_time_minutes ?? 30;
+  const meal = mealLabel(recipe.meal_type);
+  const category = categoryLabel(recipe.category);
   const diets = Array.isArray(recipe.diets) ? recipe.diets : [];
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
@@ -269,7 +296,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
     <div className="pb-4">
       <div className="relative max-h-[40vh]">
         <RecipeImage2026
-          imageUrl={recipe.image_url}
+          imageSource={recipe}
           alt={heading}
           variant="hero"
           mealType={recipe.meal_type}
@@ -293,22 +320,22 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
       </div>
 
       <div className="px-4 pt-4">
-        <h1 className="pa26-hero">{heading}</h1>
+        <h1 className="pa26-hero leading-tight">{heading}</h1>
         {recipe.description ? (
-          <p className="pa26-body mt-2 text-pa-muted line-clamp-3">{recipe.description}</p>
+          <RecipeDescription text={recipe.description} />
         ) : null}
 
         <div className="mt-4 grid grid-cols-2 gap-2">
           <MetricChip label="КБЖУ" value={nutritionLine(recipe)} />
           <MetricChip label="Время" value={`${prep} мин`} />
           <MetricChip label="Сложность" value={difficultyLabel(recipe.difficulty)} />
-          <MetricChip label="Приём" value={mealLabel(recipe.meal_type)} />
+          {meal ? <MetricChip label="Приём" value={meal} /> : null}
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
-          {recipe.category ? (
+          {category ? (
             <span className="rounded-pill bg-sage-50 px-2.5 py-1 pa26-micro font-semibold text-sage-700 dark:bg-sage-700/30 dark:text-sage-300">
-              {categoryLabel(recipe.category)}
+              {category}
             </span>
           ) : null}
           {diets.slice(0, 3).map((d) => (
