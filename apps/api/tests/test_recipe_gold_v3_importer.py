@@ -18,7 +18,9 @@ if str(API_ROOT) not in sys.path:
     sys.path.insert(0, str(API_ROOT))
 
 from app.recipes.recipe_gold_v3_importer import (  # noqa: E402
+    apply_import_gold_v3_batch,
     detect_existing_duplicates,
+    is_gold_v3_import_recipe,
     load_gold_v3_jsonl,
     map_gold_v3_to_db_payload,
     normalize_recipe_title,
@@ -27,6 +29,47 @@ from app.recipes.recipe_gold_v3_importer import (  # noqa: E402
 )
 
 CLI = ROOT / "backend" / "scripts" / "import_recipe_gold_v3_dry_run.py"
+
+
+def _db_row(
+    rid: int,
+    title: str,
+    *,
+    gold_v3: bool = True,
+    source_type: str | None = None,
+) -> tuple:
+    norm = normalize_recipe_title(title)
+    tags = ["gold_v3", "schema:recipe_gold_v3"] if gold_v3 else ["legacy"]
+    st = source_type if source_type is not None else ("import" if gold_v3 else "manual")
+    return (rid, title, norm, tags, st)
+
+
+class _FakeSession:
+    def __init__(self, rows: list[tuple] | None = None):
+        self.rows = rows or []
+        self.rolled_back = False
+
+    def add(self, obj):
+        pass
+
+    def flush(self):
+        pass
+
+    def commit(self):
+        pass
+
+    def rollback(self):
+        self.rolled_back = True
+
+    def execute(self, stmt):
+        class R:
+            def __init__(self, data):
+                self._data = data
+
+            def all(self):
+                return list(self._data)
+
+        return R(self.rows)
 
 
 def _ing(name: str, *, category: str = "\u043e\u0432\u043e\u0449\u0438", amount: float = 100) -> dict:
@@ -199,9 +242,300 @@ def test_duplicate_title_in_batch_fails():
     assert result["ok"] is False
 
 
-def test_dry_run_cannot_write_db():
-    with pytest.raises(RuntimeError, match="db_write_attempted"):
-        plan_import_gold_v3_batch([_valid_recipe()], dry_run=False)
+def test_plan_import_with_dry_run_false_is_read_only_plan():
+    result = plan_import_gold_v3_batch([_valid_recipe()], dry_run=False, quality_gate_ok=True)
+    assert result["would_create"] == 1
+    assert result["dry_run"] is False
+
+
+def test_apply_import_creates_recipe(monkeypatch):
+    class FakeRecipe:
+        _next_id = 100
+
+        def __init__(self, **kwargs):
+            self.id = FakeRecipe._next_id
+            FakeRecipe._next_id += 1
+            self.__dict__.update(kwargs)
+            self.title = kwargs.get("title", "")
+
+    monkeypatch.setattr("app.models.recipe.Recipe", FakeRecipe)
+    monkeypatch.setattr(
+        "app.services.recipe_storage.persist_recipe_structure",
+        lambda *a, **k: None,
+    )
+    monkeypatch.setattr(
+        "app.recipes.recipe_gold_v3_importer.collect_db_snapshot",
+        lambda _s: {
+            "recipes_total": 1,
+            "recipe_ingredients_total": 4,
+            "gold_v3_count": 1,
+            "generated_original_count": 0,
+            "max_recipe_id": 100,
+        },
+    )
+
+    result = apply_import_gold_v3_batch(
+        [_valid_recipe(title="\u041a\u043e\u0442\u043b\u0435\u0442\u044b \u0434\u043e\u043c\u0430\u0448\u043d\u0438\u0435")],
+        session=_FakeSession(),
+        quality_gate_ok=True,
+    )
+    assert result["ok"] is True
+    assert result["created_count"] == 1
+
+
+def test_apply_import_idempotent_skip_on_duplicate_title(monkeypatch):
+    title = "\u0421\u0443\u043f \u0438\u0437 \u0431\u0440\u043e\u043a\u043a\u043e\u043b\u0438"
+    existing = [_db_row(42, title)]
+
+    monkeypatch.setattr(
+        "app.recipes.recipe_gold_v3_importer.collect_db_snapshot",
+        lambda _s: {
+            "recipes_total": 1,
+            "recipe_ingredients_total": 4,
+            "gold_v3_count": 1,
+            "generated_original_count": 0,
+            "max_recipe_id": 42,
+        },
+    )
+
+    result = apply_import_gold_v3_batch(
+        [_valid_recipe(title=title)],
+        session=_FakeSession(existing),
+        quality_gate_ok=True,
+    )
+    assert result["created_count"] == 0
+    assert result["skipped_count"] == 1
+    assert result["ok"] is True
+    assert result.get("idempotent_full_skip") is True
+
+
+def test_apply_import_aborts_on_partial_db_duplicate(monkeypatch):
+    """If some titles exist in DB and others do not, abort — no partial write."""
+    title = "\u0421\u0443\u043f \u0438\u0437 \u0431\u0440\u043e\u043a\u043a\u043e\u043b\u0438"
+    existing = [_db_row(42, title)]
+
+    monkeypatch.setattr(
+        "app.recipes.recipe_gold_v3_importer.collect_db_snapshot",
+        lambda _s: {
+            "recipes_total": 1,
+            "recipe_ingredients_total": 0,
+            "gold_v3_count": 1,
+            "generated_original_count": 0,
+            "max_recipe_id": 42,
+        },
+    )
+
+    recipes = [
+        _valid_recipe(title=title),
+        _valid_recipe(title="\u041a\u043e\u0442\u043b\u0435\u0442\u044b \u0434\u043e\u043c\u0430\u0448\u043d\u0438\u0435"),
+    ]
+    result = apply_import_gold_v3_batch(recipes, session=_FakeSession(existing), quality_gate_ok=True)
+    assert result["ok"] is False
+    assert result["abort_reason"] == "import_plan_not_ok"
+    assert result["created_count"] == 0
+
+
+def test_dry_run_idempotent_full_skip_after_import():
+    title = "\u0421\u0443\u043f \u0438\u0437 \u0431\u0440\u043e\u043a\u043a\u043e\u043b\u0438"
+    session = _FakeSession([_db_row(256, title)])
+    result = plan_import_gold_v3_batch(
+        [_valid_recipe(title=title)],
+        session=session,
+        dry_run=True,
+        quality_gate_ok=True,
+    )
+    assert result["would_create"] == 0
+    assert result["would_skip"] == 1
+    assert result["idempotent_full_skip"] is True
+    assert result["ok"] is True
+    assert "duplicate_title_in_db" not in result["errors_by_code"]
+    assert result["warnings_by_code"].get("idempotent_duplicate_in_db") == 1
+
+
+def test_dry_run_partial_db_duplicate_fails():
+    title = "\u0421\u0443\u043f \u0438\u0437 \u0431\u0440\u043e\u043a\u043a\u043e\u043b\u0438"
+    session = _FakeSession([_db_row(42, title)])
+    recipes = [
+        _valid_recipe(title=title),
+        _valid_recipe(title="\u041a\u043e\u0442\u043b\u0435\u0442\u044b \u0434\u043e\u043c\u0430\u0448\u043d\u0438\u0435"),
+    ]
+    result = plan_import_gold_v3_batch(recipes, session=session, dry_run=True, quality_gate_ok=True)
+    assert result["ok"] is False
+    assert result["idempotent_full_skip"] is False
+    assert result["would_create"] == 1
+
+
+def test_dry_run_unrelated_db_duplicate_fails():
+    title = "\u0421\u0443\u043f \u0438\u0437 \u0431\u0440\u043e\u043a\u043a\u043e\u043b\u0438"
+    session = _FakeSession([_db_row(99, title, gold_v3=False, source_type="manual")])
+    result = plan_import_gold_v3_batch(
+        [_valid_recipe(title=title)],
+        session=session,
+        dry_run=True,
+        quality_gate_ok=True,
+    )
+    assert result["ok"] is False
+    assert result["errors_by_code"].get("duplicate_title_in_db_unrelated") == 1
+    assert result["idempotent_full_skip"] is False
+
+
+def test_is_gold_v3_import_recipe_helper():
+    assert is_gold_v3_import_recipe(["gold_v3"], "manual") is True
+    assert is_gold_v3_import_recipe([], "import") is True
+    assert is_gold_v3_import_recipe([], "manual") is False
+
+
+def test_dry_run_full_batch_idempotent_skip(monkeypatch):
+    recipes = [
+        _valid_recipe(title=f"\u041a\u0443\u0440\u0438\u043d\u043e\u0435 \u0440\u0430\u0433\u0443 \u0432\u0430\u0440\u0438\u0430\u043d\u0442 {i}")
+        for i in range(10)
+    ]
+    rows = [
+        _db_row(256 + i, recipes[i]["title"])
+        for i in range(10)
+    ]
+    result = plan_import_gold_v3_batch(
+        recipes,
+        session=_FakeSession(rows),
+        dry_run=True,
+        quality_gate_ok=True,
+    )
+    assert result["would_create"] == 0
+    assert result["would_skip"] == 10
+    assert result["idempotent_full_skip"] is True
+    assert result["ok"] is True
+
+
+def test_apply_repeated_full_batch_idempotent(monkeypatch):
+    recipes = [
+        _valid_recipe(title=f"\u041a\u0443\u0440\u0438\u043d\u043e\u0435 \u0440\u0430\u0433\u0443 \u0432\u0430\u0440\u0438\u0430\u043d\u0442 {i}")
+        for i in range(10)
+    ]
+    rows = [_db_row(256 + i, recipes[i]["title"]) for i in range(10)]
+    monkeypatch.setattr(
+        "app.recipes.recipe_gold_v3_importer.collect_db_snapshot",
+        lambda _s: {
+            "recipes_total": 263,
+            "recipe_ingredients_total": 1652,
+            "gold_v3_count": 10,
+            "generated_original_count": 0,
+            "max_recipe_id": 265,
+        },
+    )
+    result = apply_import_gold_v3_batch(
+        recipes,
+        session=_FakeSession(rows),
+        quality_gate_ok=True,
+    )
+    assert result["ok"] is True
+    assert result["created_count"] == 0
+    assert result["skipped_count"] == 10
+    assert result.get("idempotent_full_skip") is True
+
+
+def test_apply_import_rollback_on_exception(monkeypatch):
+    class FakeRecipe:
+        def __init__(self, **kwargs):
+            self.id = 1
+            self.__dict__.update(kwargs)
+
+    class FakeSession:
+        def __init__(self):
+            self.rolled_back = False
+
+        def add(self, obj):
+            pass
+
+        def flush(self):
+            raise RuntimeError("db flush failed")
+
+        def commit(self):
+            pass
+
+        def rollback(self):
+            self.rolled_back = True
+
+        def execute(self, stmt):
+            class R:
+                def all(self):
+                    return []
+
+            return R()
+
+    monkeypatch.setattr("app.models.recipe.Recipe", FakeRecipe)
+    monkeypatch.setattr(
+        "app.recipes.recipe_gold_v3_importer.collect_db_snapshot",
+        lambda _s: {"recipes_total": 0, "recipe_ingredients_total": 0, "gold_v3_count": 0,
+                    "generated_original_count": 0, "max_recipe_id": 0},
+    )
+    session = _FakeSession()
+    result = apply_import_gold_v3_batch(
+        [_valid_recipe()],
+        session=session,
+        quality_gate_ok=True,
+    )
+    assert result["ok"] is False
+    assert result["abort_reason"] == "db_write_failed"
+    assert session.rolled_back is True
+
+
+def test_nutrition_payload_maps_to_db_fields():
+    payload = map_gold_v3_to_db_payload(_valid_recipe())
+    assert payload["calories_per_serving"] == 410
+    assert payload["protein_g"] == 30
+    assert payload["nutrition_kcal_per_serving"] == 410
+    assert payload["nutrition_coverage_json"]["salt_g"] == 1.2
+    assert "salt_g" in payload.get("_nutrition_aliases", {}) or payload["nutrition_coverage_json"].get("salt_g")
+
+
+def test_ingredient_rows_use_shopping_name_and_legacy_category():
+    payload = map_gold_v3_to_db_payload(_valid_recipe())
+    rows = payload["ingredient_rows_plan"]
+    assert len(rows) >= 4
+    assert rows[0]["name"] == rows[0]["shopping_name"]
+    assert rows[0]["quantity"]
+    assert rows[0]["unit"]
+    assert rows[0]["category"]
+
+
+def test_dry_run_plan_aborts_on_batch_duplicate():
+    a = _valid_recipe(title="\u0421\u0443\u043f \u043b\u0435\u0442\u043d\u0438\u0439")
+    b = _valid_recipe(title="\u0421\u0443\u043f \u043b\u0435\u0442\u043d\u0438\u0439!")
+    result = plan_import_gold_v3_batch([a, b], dry_run=True, quality_gate_ok=True)
+    assert result["ok"] is False
+    assert result["errors_by_code"].get("duplicate_title_in_batch")
+
+
+def test_dry_run_db_duplicate_fails_plan():
+    payloads = [map_gold_v3_to_db_payload(_valid_recipe(title="\u0421\u0443\u043f"))]
+    dupes = detect_existing_duplicates(None, payloads)
+    assert dupes["db_check_available"] is False
+
+
+def test_cli_dry_run_passes_with_expected_count_10(tmp_path):
+    inp = tmp_path / "in.jsonl"
+    report = tmp_path / "report.md"
+    quality = tmp_path / "quality.md"
+    quality.write_text("Quality gate: **`PASS`**\n", encoding="utf-8")
+    lines = [
+        json.dumps(
+            _valid_recipe(title=f"\u041a\u0443\u0440\u0438\u043d\u043e\u0435 \u0440\u0430\u0433\u0443 \u0432\u0430\u0440\u0438\u0430\u043d\u0442 {i}"),
+            ensure_ascii=False,
+        )
+        for i in range(10)
+    ]
+    inp.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    proc = subprocess.run(
+        [
+            sys.executable, str(CLI),
+            "--input", str(inp),
+            "--quality-report", str(quality),
+            "--report", str(report),
+            "--dry-run", "--expected-count", "10",
+        ],
+        cwd=str(ROOT), capture_output=True, text=True, check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
 
 
 def test_detect_duplicates_without_session():
@@ -331,3 +665,55 @@ def test_cli_passes_with_quality_report_pass(tmp_path):
         check=False,
     )
     assert proc.returncode == 0
+
+
+def _cli_run(tmp_path, *, extra_args: list[str]) -> subprocess.CompletedProcess:
+    inp = tmp_path / "in.jsonl"
+    report = tmp_path / "report.md"
+    quality = tmp_path / "quality.md"
+    quality.write_text("Quality gate: **`PASS`**\n", encoding="utf-8")
+    inp.write_text(json.dumps(_valid_recipe(), ensure_ascii=False) + "\n", encoding="utf-8")
+    return subprocess.run(
+        [
+            sys.executable,
+            str(CLI),
+            "--input",
+            str(inp),
+            "--quality-report",
+            str(quality),
+            "--report",
+            str(report),
+            *extra_args,
+        ],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def test_cli_dry_run_passes_when_expected_count_matches(tmp_path):
+    proc = _cli_run(tmp_path, extra_args=["--dry-run", "--expected-count", "1"])
+    assert proc.returncode == 0, proc.stderr
+    text = (tmp_path / "report.md").read_text(encoding="utf-8")
+    assert "Expected count: `1`" in text
+    assert "Actual count: `1`" in text
+
+
+def test_cli_dry_run_fails_when_expected_count_mismatch(tmp_path):
+    proc = _cli_run(tmp_path, extra_args=["--dry-run", "--expected-count", "10"])
+    assert proc.returncode == 1
+    assert "expected_count_mismatch" in proc.stderr
+    assert "expected_count_mismatch" in (tmp_path / "report.md").read_text(encoding="utf-8")
+
+
+def test_cli_apply_fails_when_expected_count_missing(tmp_path):
+    proc = _cli_run(tmp_path, extra_args=["--apply", "--allow-write"])
+    assert proc.returncode == 1
+    assert "expected_count_required_for_apply" in proc.stderr
+
+
+def test_cli_apply_fails_when_expected_count_mismatch_before_write(tmp_path):
+    proc = _cli_run(tmp_path, extra_args=["--apply", "--allow-write", "--expected-count", "10"])
+    assert proc.returncode == 1
+    assert "expected_count_mismatch" in proc.stderr

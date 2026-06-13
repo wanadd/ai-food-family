@@ -1,4 +1,4 @@
-"""Stage R: Gold V3 recipe importer тАФ dry-run planning only (no DB writes by default)."""
+"""Stage R: Gold V3 recipe importer — dry-run planning and safe apply import."""
 
 from __future__ import annotations
 
@@ -19,6 +19,12 @@ from app.recipes.recipe_gold_v3_validation import validate_recipe_gold_v3
 
 DB_SOURCE_TYPE = "import"
 TITLE_MAX_LEN = 200
+
+
+def is_gold_v3_import_recipe(tags: Any, source_type: str | None) -> bool:
+    """True when an existing DB row looks like a prior Gold V3 Stage R import."""
+    tag_list = tags if isinstance(tags, list) else []
+    return "gold_v3" in tag_list or str(source_type or "") == DB_SOURCE_TYPE
 
 NUTRITION_GOLD_TO_LEGACY: tuple[tuple[str, str], ...] = (
     ("kcal", "calories_per_serving"),
@@ -104,7 +110,7 @@ def _map_ingredient(ing: dict[str, Any], index: int) -> tuple[dict[str, Any] | N
     payload = {
         "name": list_name,
         "quantity": qty,
-        "unit": unit or "╨│",
+        "unit": unit or "\u0433",
         "category": legacy_category,
         "is_optional": bool(ing.get("optional", False)),
         "amount": display_amount or f"{qty} {unit}".strip(),
@@ -271,16 +277,30 @@ def detect_existing_duplicates(
             from app.models.recipe import Recipe
 
             rows = session.execute(
-                select(Recipe.id, Recipe.title, Recipe.normalized_title)
+                select(
+                    Recipe.id,
+                    Recipe.title,
+                    Recipe.normalized_title,
+                    Recipe.tags,
+                    Recipe.source_type,
+                )
             ).all()
             db_available = True
             db_index: dict[str, list[dict[str, Any]]] = {}
             for row in rows:
-                rid, title, norm = row[0], row[1], row[2]
+                rid, title, norm, tags, source_type = row[0], row[1], row[2], row[3], row[4]
+                gold_v3_import = is_gold_v3_import_recipe(tags, source_type)
                 for key in {normalize_recipe_title(title or ""), normalize_recipe_title(norm or "")}:
                     if key:
                         db_index.setdefault(key, []).append(
-                            {"id": rid, "title": title, "normalized_title": norm}
+                            {
+                                "id": rid,
+                                "title": title,
+                                "normalized_title": norm,
+                                "tags": tags,
+                                "source_type": source_type,
+                                "is_gold_v3_import": gold_v3_import,
+                            }
                         )
             for idx, payload in enumerate(payloads):
                 norm = payload.get("normalized_title") or ""
@@ -293,6 +313,8 @@ def detect_existing_duplicates(
                             "normalized_title": norm,
                             "existing_id": hit["id"],
                             "existing_title": hit["title"],
+                            "existing_source_type": hit.get("source_type"),
+                            "is_gold_v3_import": hit.get("is_gold_v3_import", False),
                         }
                     )
         except Exception as exc:
@@ -310,6 +332,259 @@ def detect_existing_duplicates(
     }
 
 
+def _is_idempotent_full_skip(
+    *,
+    record_count: int,
+    per_recipe: list[dict[str, Any]],
+    db_duplicates: list[dict[str, Any]],
+    batch_duplicates: list[dict[str, Any]],
+    errors_by_code: dict[str, int],
+) -> bool:
+    """All valid records already imported as gold_v3 — safe to re-run dry-run/apply."""
+    if record_count <= 0 or batch_duplicates:
+        return False
+    if errors_by_code.get("duplicate_title_in_db_unrelated"):
+        return False
+    blocking = {
+        code: count
+        for code, count in errors_by_code.items()
+        if code not in {"duplicate_title_in_db"}
+    }
+    if blocking:
+        return False
+
+    would_create = sum(1 for r in per_recipe if r.get("would_create"))
+    would_skip = sum(1 for r in per_recipe if r.get("would_skip"))
+    if would_create != 0 or would_skip != record_count:
+        return False
+
+    gold_db_hits = [
+        hit
+        for hit in db_duplicates
+        if hit.get("code") == "duplicate_title_in_db" and hit.get("is_gold_v3_import")
+    ]
+    if not gold_db_hits:
+        return False
+
+    covered = {hit["index"] for hit in gold_db_hits}
+    valid_indices = {idx for idx, row in enumerate(per_recipe) if row.get("valid")}
+    if not valid_indices or not valid_indices.issubset(covered):
+        return False
+    for idx in valid_indices:
+        if not per_recipe[idx].get("db_duplicate"):
+            return False
+        if not per_recipe[idx].get("db_duplicate_gold_v3_import"):
+            return False
+    return True
+
+
+def collect_db_snapshot(session: Any) -> dict[str, Any]:
+    """Lightweight counts for pre/post import reports."""
+    from sqlalchemy import func, select
+
+    from app.models.recipe import Recipe, RecipeIngredientRow
+
+    recipes_total = session.scalar(select(func.count()).select_from(Recipe)) or 0
+    ingredients_total = session.scalar(
+        select(func.count()).select_from(RecipeIngredientRow)
+    ) or 0
+    max_id = session.scalar(select(func.max(Recipe.id))) or 0
+
+    gold_v3_count = 0
+    generated_original_count = 0
+    rows = session.execute(select(Recipe.id, Recipe.tags, Recipe.source_type)).all()
+    for _rid, tags, source_type in rows:
+        tag_list = tags if isinstance(tags, list) else []
+        if "gold_v3" in tag_list:
+            gold_v3_count += 1
+        if source_type == "generated_original":
+            generated_original_count += 1
+
+    return {
+        "recipes_total": int(recipes_total),
+        "recipe_ingredients_total": int(ingredients_total),
+        "gold_v3_count": gold_v3_count,
+        "generated_original_count": generated_original_count,
+        "max_recipe_id": int(max_id),
+    }
+
+
+def _recipe_model_fields(payload: dict[str, Any]) -> dict[str, Any]:
+    from app.services.recipes.title_normalize import display_title_from
+
+    title = payload["title"]
+    display = payload.get("display_title") or display_title_from(title)
+    return {
+        "title": title,
+        "display_title": display,
+        "normalized_title": payload["normalized_title"],
+        "original_title": title,
+        "description": payload.get("description") or "",
+        "meal_type": payload["meal_type"],
+        "category": payload["category"],
+        "cuisine": payload.get("cuisine"),
+        "difficulty": payload.get("difficulty") or "easy",
+        "cooking_time_minutes": payload.get("cooking_time_minutes") or 30,
+        "prep_time_minutes": payload.get("prep_time_minutes") or 0,
+        "servings": payload.get("servings") or 4,
+        "calories_per_serving": payload.get("calories_per_serving"),
+        "protein_g": payload.get("protein_g"),
+        "fat_g": payload.get("fat_g"),
+        "carbs_g": payload.get("carbs_g"),
+        "fiber_g": payload.get("fiber_g"),
+        "sugar_g": payload.get("sugar_g"),
+        "nutrition_kcal_per_serving": payload.get("nutrition_kcal_per_serving"),
+        "nutrition_protein_per_serving": payload.get("nutrition_protein_per_serving"),
+        "nutrition_fat_per_serving": payload.get("nutrition_fat_per_serving"),
+        "nutrition_carbs_per_serving": payload.get("nutrition_carbs_per_serving"),
+        "nutrition_servings": payload.get("nutrition_servings"),
+        "nutrition_source": payload.get("nutrition_source"),
+        "nutrition_confidence": payload.get("nutrition_confidence"),
+        "nutrition_coverage_json": payload.get("nutrition_coverage_json"),
+        "source_type": payload.get("source_type") or DB_SOURCE_TYPE,
+        "source_url": payload.get("source_url"),
+        "is_active": payload.get("is_active", True),
+        "diets": payload.get("diets") or [],
+        "tags": payload.get("tags") or [],
+    }
+
+
+def _ingredients_for_persist(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {
+            "name": row["name"],
+            "quantity": row["quantity"],
+            "unit": row["unit"],
+            "category": row["category"],
+            "is_optional": row.get("is_optional", False),
+        }
+        for row in payload.get("ingredient_rows_plan") or []
+    ]
+
+
+def apply_import_gold_v3_batch(
+    recipes: list[dict[str, Any]],
+    *,
+    session: Any,
+    require_quality_pass: bool = False,
+    quality_gate_ok: bool | None = None,
+) -> dict[str, Any]:
+    """Insert new Gold V3 recipes only — never update or delete existing rows."""
+    from app.models.recipe import Recipe
+    from app.services.recipe_storage import persist_recipe_structure
+
+    plan = plan_import_gold_v3_batch(
+        recipes,
+        session=session,
+        dry_run=True,
+        require_quality_pass=require_quality_pass,
+        quality_gate_ok=quality_gate_ok,
+    )
+
+    result: dict[str, Any] = {
+        "ok": False,
+        "dry_run": False,
+        "plan_ok": plan.get("ok"),
+        "records": plan.get("records", 0),
+        "created_count": 0,
+        "skipped_count": 0,
+        "created": [],
+        "skipped": [],
+        "errors_by_code": dict(plan.get("errors_by_code") or {}),
+        "warnings_by_code": dict(plan.get("warnings_by_code") or {}),
+        "before_snapshot": collect_db_snapshot(session),
+        "after_snapshot": None,
+        "old_recipes_touched": 0,
+    }
+
+    if not plan.get("ok"):
+        non_dupe_errors = {
+            code: count
+            for code, count in (plan.get("errors_by_code") or {}).items()
+            if code not in {"duplicate_title_in_db"}
+        }
+        if non_dupe_errors or (require_quality_pass and quality_gate_ok is False):
+            result["abort_reason"] = "import_plan_not_ok"
+            return result
+        result["abort_reason"] = "import_plan_not_ok"
+        return result
+
+    result["idempotent_full_skip"] = bool(plan.get("idempotent_full_skip"))
+
+    db_dupes = plan.get("db_duplicate_findings") or []
+    skip_indices = {
+        hit["index"]
+        for hit in db_dupes
+        if hit.get("code") == "duplicate_title_in_db" and hit.get("is_gold_v3_import")
+    }
+
+    per_recipe = plan.get("per_recipe") or []
+    payloads: list[tuple[int, dict[str, Any]]] = []
+    for idx, recipe in enumerate(recipes):
+        if idx in skip_indices:
+            hit = next(h for h in db_dupes if h.get("index") == idx)
+            result["skipped"].append(
+                {
+                    "index": idx,
+                    "title": recipe.get("title"),
+                    "reason": "duplicate_title_in_db",
+                    "existing_id": hit.get("existing_id"),
+                }
+            )
+            continue
+        if idx >= len(per_recipe) or not per_recipe[idx].get("would_create"):
+            continue
+        payloads.append((idx, map_gold_v3_to_db_payload(recipe)))
+
+    if not payloads and result["skipped"]:
+        result["skipped_count"] = len(result["skipped"])
+        result["ok"] = True
+        result["after_snapshot"] = collect_db_snapshot(session)
+        if plan.get("idempotent_full_skip"):
+            result["warnings_by_code"]["idempotent_full_skip"] = result["skipped_count"]
+        return result
+
+    created: list[dict[str, Any]] = []
+    try:
+        for idx, payload in payloads:
+            recipe = Recipe(**_recipe_model_fields(payload))
+            session.add(recipe)
+            session.flush()
+            persist_recipe_structure(
+                session,
+                recipe,
+                ingredients=_ingredients_for_persist(payload),
+                steps=payload.get("steps_jsonb") or [],
+                tags=payload.get("tags") or [],
+                allergens=payload.get("allergens_plan") or [],
+                restrictions=payload.get("restrictions_plan") or [],
+            )
+            created.append(
+                {
+                    "index": idx,
+                    "id": recipe.id,
+                    "title": recipe.title,
+                    "normalized_title": recipe.normalized_title,
+                }
+            )
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        result["abort_reason"] = "db_write_failed"
+        result["error"] = str(exc)
+        return result
+
+    result["created"] = created
+    result["created_count"] = len(created)
+    result["skipped_count"] = len(result["skipped"])
+    result["after_snapshot"] = collect_db_snapshot(session)
+    valid_count = sum(1 for r in per_recipe if r.get("valid"))
+    result["ok"] = (len(created) + result["skipped_count"]) == valid_count and valid_count > 0
+    if created and result["skipped_count"]:
+        result["warnings_by_code"]["partial_idempotent_skip"] = result["skipped_count"]
+    return result
+
+
 def plan_import_gold_v3_batch(
     recipes: list[dict[str, Any]],
     *,
@@ -318,9 +593,6 @@ def plan_import_gold_v3_batch(
     require_quality_pass: bool = False,
     quality_gate_ok: bool | None = None,
 ) -> dict[str, Any]:
-    if not dry_run:
-        raise RuntimeError("db_write_attempted_in_dry_run: real import not implemented in Stage R")
-
     errors_by_code: Counter[str] = Counter()
     warnings_by_code: Counter[str] = Counter()
     per_recipe: list[dict[str, Any]] = []
@@ -425,11 +697,17 @@ def plan_import_gold_v3_batch(
         if hit.get("code") == "db_duplicate_check_skipped":
             warnings_by_code["db_duplicate_check_skipped"] += 1
             continue
-        errors_by_code[hit["code"]] += 1
+        code = (
+            "duplicate_title_in_db"
+            if hit.get("is_gold_v3_import")
+            else "duplicate_title_in_db_unrelated"
+        )
+        errors_by_code[code] += 1
         idx = hit["index"]
         if idx < len(per_recipe):
-            per_recipe[idx]["errors"].append(hit["code"])
+            per_recipe[idx]["errors"].append(code)
             per_recipe[idx]["db_duplicate"] = True
+            per_recipe[idx]["db_duplicate_gold_v3_import"] = bool(hit.get("is_gold_v3_import"))
             per_recipe[idx]["would_create"] = False
             per_recipe[idx]["would_skip"] = True
 
@@ -446,7 +724,20 @@ def plan_import_gold_v3_batch(
     would_skip = sum(1 for r in per_recipe if r.get("would_skip"))
     valid = sum(1 for r in per_recipe if r.get("valid"))
 
-    ok = not errors_by_code and would_create == len(recipes)
+    idempotent_full_skip = _is_idempotent_full_skip(
+        record_count=len(recipes),
+        per_recipe=per_recipe,
+        db_duplicates=dupes["db_duplicates"],
+        batch_duplicates=dupes["batch_duplicates"],
+        errors_by_code=dict(errors_by_code),
+    )
+    if idempotent_full_skip:
+        dup_count = errors_by_code.pop("duplicate_title_in_db", 0)
+        if dup_count:
+            warnings_by_code["idempotent_duplicate_in_db"] = dup_count
+        ok = True
+    else:
+        ok = not errors_by_code and would_create == len(recipes)
 
     mapping_summary = {
         "recipe_fields": [
@@ -483,6 +774,7 @@ def plan_import_gold_v3_batch(
     return {
         "ok": ok,
         "dry_run": dry_run,
+        "idempotent_full_skip": idempotent_full_skip,
         "records": len(recipes),
         "valid": valid,
         "would_create": would_create,
@@ -494,12 +786,20 @@ def plan_import_gold_v3_batch(
         "db_duplicate_findings": dupes["db_duplicates"],
         "batch_duplicate_findings": dupes["batch_duplicates"],
         "mapping_summary": mapping_summary,
-        "not_done": [
-            "DB import write",
-            "image generation",
-            "safe reset",
-            "production DB changes",
-        ],
+        "not_done": (
+            [
+                "DB import write",
+                "safe reset",
+                "old recipe updates",
+                "old recipe deletes",
+            ]
+            if dry_run
+            else [
+                "safe reset",
+                "old recipe updates",
+                "old recipe deletes",
+            ]
+        ),
     }
 
 
@@ -517,9 +817,9 @@ def get_mapping_summary() -> dict[str, Any]:
                     "name": "x",
                     "shopping_name": "x",
                     "amount": 1,
-                    "unit": "╤И╤В",
-                    "display_amount": "1 ╤И╤В",
-                    "category": "╨╛╨▓╨╛╤Й╨╕",
+                    "unit": "\u0448\u0442",
+                    "display_amount": "1 \u0448\u0442",
+                    "category": "\u043e\u0432\u043e\u0449\u0438",
                     "optional": False,
                 }
             ]
