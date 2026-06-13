@@ -20,17 +20,20 @@ from _image_paths import ensure_app_on_path  # noqa: E402
 API_ROOT = ensure_app_on_path()
 
 from app.recipes.recipe_gold_v3_semantic_consistency import check_semantic_consistency  # noqa: E402
+from app.services.recipe_storage import get_structured_ingredients, get_structured_steps  # noqa: E402
 
 DEFAULT_REPORT_PATH = ROOT / "reports" / "recipe_semantic_consistency_audit.md"
 
 
 def _recipe_to_gate_payload(recipe: Any) -> dict[str, Any]:
+    ingredients = get_structured_ingredients(recipe)
+    steps = [{"text": text} for text in get_structured_steps(recipe)]
     return {
         "title": recipe.title,
         "display_title": recipe.display_title,
         "description": recipe.description,
-        "ingredients": recipe.ingredients or [],
-        "steps": recipe.steps or [],
+        "ingredients": ingredients,
+        "steps": steps,
     }
 
 

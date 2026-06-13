@@ -88,6 +88,63 @@ def test_shrimp_title_with_shrimp_ingredients_passes():
     assert findings == []
 
 
+def test_recipe_261_like_pork_mince_passes():
+    findings = check_semantic_consistency(
+        _recipe(
+            title="Суп со свиным фаршем и овощами",
+            display_title="Суп со свиным фаршем",
+            description="Сытный суп со свининой, картофелем, морковью, луком и зеленью.",
+            ingredients=[
+                {"name": "свинина"},
+                {"name": "картофель"},
+            ],
+            steps=[{"text": "измельчите свинину в фарш"}],
+        )
+    )
+    assert findings == []
+
+
+def test_recipe_263_like_shrimp_salad_passes():
+    findings = check_semantic_consistency(
+        _recipe(
+            title="Салат с креветками и свежим огурцом",
+            display_title="Салат с креветками",
+            description="Лёгкий салат с креветками, огурцом и лимонной заправкой.",
+            ingredients=[
+                {"name": "креветки"},
+                {"name": "огурец"},
+            ],
+            steps=[{"text": "отварите креветки"}],
+        )
+    )
+    assert findings == []
+
+
+def test_squid_title_with_shrimp_only_fails():
+    findings = check_semantic_consistency(
+        _recipe(
+            title="Салат с кальмарами",
+            display_title="Салат с кальмарами",
+            ingredients=[{"name": "креветки"}, {"name": "огурец"}],
+            steps=[{"text": "добавьте креветки"}],
+        )
+    )
+    codes = {f["code"] for f in findings}
+    assert "semantic_squid_vs_shrimp" in codes or "semantic_squid_mismatch" in codes
+
+
+def test_tofu_soup_without_tofu_fails():
+    findings = check_semantic_consistency(
+        _recipe(
+            title="Овощной суп с тофу",
+            display_title="Овощной суп с тофу",
+            ingredients=[{"name": "картофель"}, {"name": "брокколи"}],
+            steps=[{"text": "пюрируйте овощи"}],
+        )
+    )
+    assert any(f["code"] == "semantic_tofu_mismatch" for f in findings)
+
+
 def test_quality_gate_fails_on_semantic_mismatch():
     recipe = _recipe(
         title="Овощной суп с тофу",
@@ -153,6 +210,31 @@ def _make_db_recipe(recipe_id: int) -> SimpleNamespace:
         is_active=True,
         **{k: payload[k] for k in ()},
     )
+
+
+def test_audit_payload_uses_structured_ingredient_rows():
+    audit_mod = _load_script("audit_recipe_semantic_consistency", "audit_recipe_semantic_consistency.py")
+    row = SimpleNamespace(
+        name="креветки",
+        quantity="200",
+        unit="г",
+        category="морепродукты",
+        is_optional=False,
+        notes=None,
+    )
+    recipe = SimpleNamespace(
+        title="Салат с креветками и свежим огурцом",
+        display_title="Салат с креветками",
+        description="Лёгкий салат с креветками и огурцом.",
+        ingredients=[],
+        steps=[],
+        ingredient_rows=[row],
+        step_rows=[SimpleNamespace(step_number=1, text="отварите креветки")],
+    )
+    payload = audit_mod._recipe_to_gate_payload(recipe)
+    findings = check_semantic_consistency(payload)
+    assert findings == []
+    assert any(ing["name"] == "креветки" for ing in payload["ingredients"])
 
 
 def test_hotfix_dry_run_does_not_mutate_recipe():
