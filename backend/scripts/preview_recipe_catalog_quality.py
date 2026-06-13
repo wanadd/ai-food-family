@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage Q2: preview default recipe catalog ordering (first 30 rows)."""
+"""Stage Q3: preview default catalog-ready recipe pool (first 30 rows)."""
 
 from __future__ import annotations
 
@@ -45,8 +45,9 @@ def main() -> int:
         "# Recipe Catalog Quality Preview",
         "",
         f"**Generated:** {now}",
-        f"**Sort:** `quality-first` (default GET /recipes)",
-        f"**Total active (gold filter):** `{len(recipes)}`",
+        f"**Pool:** `catalog-ready` (default GET /recipes)",
+        f"**Rules:** `is_active` + `hero_image_url` + curated `source_type`",
+        f"**Total catalog-ready:** `{len(recipes)}`",
         f"**Preview rows:** `{len(preview)}`",
         "",
         "## First 30 recipes",

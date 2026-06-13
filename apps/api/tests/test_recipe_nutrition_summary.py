@@ -226,3 +226,143 @@ def test_mapper_missing_columns_safe():
     # Older DB row without nutrition columns at all -> getattr default None.
     recipe = SimpleNamespace()
     assert nutrition_summary(recipe) is None
+
+
+def test_mapper_normalizes_invalid_confidence_high():
+    recipe = SimpleNamespace(
+        nutrition_confidence="high",
+        nutrition_calculated_at=None,
+        nutrition_kcal_per_serving=300.0,
+        nutrition_protein_per_serving=12.0,
+        nutrition_fat_per_serving=10.0,
+        nutrition_carbs_per_serving=30.0,
+        nutrition_kcal_total=None,
+        nutrition_protein_total=None,
+        nutrition_fat_total=None,
+        nutrition_carbs_total=None,
+        nutrition_servings=4.0,
+        nutrition_serving_size_text=None,
+        nutrition_needs_review=False,
+        nutrition_review_reason=None,
+    )
+    summary = nutrition_summary(recipe)
+    assert summary is not None
+    assert summary.confidence == "estimated"
+
+
+def test_to_summary_with_invalid_nutrition_confidence():
+    from app.services.recipes.mapper import to_summary
+
+    recipe = SimpleNamespace(
+        id=256,
+        title="Котлеты с овощами",
+        display_title=None,
+        description="",
+        meal_type="dinner",
+        category="main",
+        prep_time_minutes=20,
+        cooking_time_minutes=20,
+        servings=4,
+        difficulty="easy",
+        diets=[],
+        tags=[],
+        tag_rows=None,
+        is_drink=False,
+        is_alcoholic=False,
+        calories_per_serving=300.0,
+        protein_g=12.0,
+        fat_g=10.0,
+        carbs_g=30.0,
+        suitable_for_children=True,
+        suitable_for_sport=False,
+        suitable_for_event=False,
+        image_url="/recipe-images/256/card_800.webp",
+        hero_image_url="/recipe-images/256/hero.webp",
+        thumbnail_url="/recipe-images/256/thumb_400.webp",
+        nutrition_confidence="high",
+        nutrition_calculated_at=None,
+        nutrition_kcal_per_serving=300.0,
+        nutrition_protein_per_serving=12.0,
+        nutrition_fat_per_serving=10.0,
+        nutrition_carbs_per_serving=30.0,
+        nutrition_kcal_total=None,
+        nutrition_protein_total=None,
+        nutrition_fat_total=None,
+        nutrition_carbs_total=None,
+        nutrition_servings=4.0,
+        nutrition_serving_size_text=None,
+        nutrition_needs_review=False,
+        nutrition_review_reason=None,
+    )
+    summary = to_summary(recipe, set())
+    assert summary.nutrition_summary is not None
+    assert summary.nutrition_summary.confidence == "estimated"
+
+
+def test_list_recipes_survives_invalid_nutrition_confidence():
+    from unittest.mock import MagicMock, patch
+
+    from app.services.app_scope import AppScope
+    from app.services.recipes import catalog
+
+    db = MagicMock()
+    user = MagicMock(id=1)
+    scope = AppScope(mode="personal", user_id=1, family_id=None)
+    recipe = SimpleNamespace(
+        id=256,
+        title="Котлеты с овощами",
+        display_title=None,
+        description="",
+        meal_type="dinner",
+        category="main",
+        prep_time_minutes=20,
+        cooking_time_minutes=20,
+        servings=4,
+        difficulty="easy",
+        diets=[],
+        tags=[],
+        tag_rows=None,
+        is_drink=False,
+        is_alcoholic=False,
+        calories_per_serving=300.0,
+        protein_g=12.0,
+        fat_g=10.0,
+        carbs_g=30.0,
+        suitable_for_children=True,
+        suitable_for_sport=False,
+        suitable_for_event=False,
+        image_url="/recipe-images/256/card_800.webp",
+        hero_image_url="/recipe-images/256/hero.webp",
+        thumbnail_url="/recipe-images/256/thumb_400.webp",
+        source_type="seed",
+        nutrition_confidence="high",
+        nutrition_calculated_at=None,
+        nutrition_kcal_per_serving=300.0,
+        nutrition_protein_per_serving=12.0,
+        nutrition_fat_per_serving=10.0,
+        nutrition_carbs_per_serving=30.0,
+        nutrition_kcal_total=None,
+        nutrition_protein_total=None,
+        nutrition_fat_total=None,
+        nutrition_carbs_total=None,
+        nutrition_servings=4.0,
+        nutrition_serving_size_text=None,
+        nutrition_needs_review=False,
+        nutrition_review_reason=None,
+    )
+
+    with patch(
+        "app.services.recipes.catalog.repository.favorite_ids_for_user",
+        return_value=set(),
+    ), patch(
+        "app.services.recipes.catalog.repository.query_recipes",
+        return_value=[recipe],
+    ), patch(
+        "app.services.recipe_analysis.quick_recipe_fit_level",
+        return_value="good",
+    ):
+        result = catalog.list_recipes(db, user, scope=scope, limit=10)
+
+    assert result.total == 1
+    assert result.items[0].nutrition_summary is not None
+    assert result.items[0].nutrition_summary.confidence == "estimated"

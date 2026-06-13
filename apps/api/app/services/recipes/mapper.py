@@ -22,6 +22,22 @@ from app.services.recipe_storage import (
     get_tags,
 )
 
+ALLOWED_NUTRITION_CONFIDENCE = frozenset(
+    {"exact", "estimated", "low_confidence", "unavailable"}
+)
+
+
+def normalize_nutrition_confidence(raw: str | None) -> str | None:
+    """Map DB/import values to NutritionSummary.confidence literals."""
+    if raw is None:
+        return None
+    value = str(raw).strip()
+    if not value:
+        return None
+    if value in ALLOWED_NUTRITION_CONFIDENCE:
+        return value
+    return "estimated"
+
 
 def prep_minutes(recipe: Recipe) -> int:
     return recipe.prep_time_minutes or recipe.cooking_time_minutes or 30
@@ -44,7 +60,9 @@ def nutrition_summary(recipe: Recipe) -> NutritionSummary | None:
     Reads the additive recipes.nutrition_* columns. Safe on older DBs where the
     columns may be missing (returns None).
     """
-    confidence = getattr(recipe, "nutrition_confidence", None)
+    confidence = normalize_nutrition_confidence(
+        getattr(recipe, "nutrition_confidence", None)
+    )
     calculated_at = getattr(recipe, "nutrition_calculated_at", None)
     if not confidence and calculated_at is None:
         return None

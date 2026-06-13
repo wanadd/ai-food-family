@@ -99,14 +99,19 @@ def test_title_sort_legacy_mode():
     assert [r.title for r in ordered] == ["Арбуз", "Яблоко"]
 
 
-def test_list_recipes_default_puts_seed_with_images_first():
+def test_list_recipes_default_returns_only_catalog_ready():
+    """Repository applies catalog-ready filter; list surfaces seed batch only."""
     db = MagicMock()
     user = MagicMock(id=1)
     scope = AppScope(mode="personal", user_id=1, family_id=None)
     recipes = [
-        _recipe(rid=10, title="Import без фото", source_type="import"),
-        _recipe(rid=256, title="Котлеты с овощами", source_type="seed", hero_image_url="/recipe-images/256/hero.webp"),
-        _recipe(rid=99, title="Import с фото", source_type="import", hero_image_url="/recipe-images/99/hero.webp"),
+        _recipe(
+            rid=rid,
+            title=f"Seed {rid}",
+            source_type="seed",
+            hero_image_url=f"/recipe-images/{rid}/hero.webp",
+        )
+        for rid in range(256, 266)
     ]
 
     with patch(
@@ -136,10 +141,10 @@ def test_list_recipes_default_puts_seed_with_images_first():
             hero_image_url=recipe.hero_image_url,
         ),
     ):
-        result = catalog.list_recipes(db, user, scope=scope, limit=10)
+        result = catalog.list_recipes(db, user, scope=scope, limit=200)
 
-    assert result.items[0].id == 256
-    assert result.items[1].id == 99
+    assert result.total == 10
+    assert {item.id for item in result.items} == set(range(256, 266))
 
 
 def test_list_recipes_sort_title_preserves_alphabetical():

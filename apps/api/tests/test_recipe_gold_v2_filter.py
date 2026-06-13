@@ -57,19 +57,16 @@ def test_filter_gold_recipes_in_memory():
     assert [r.title for r in result] == ["Gold"]
 
 
-def test_repository_query_applies_gold_filter():
+def test_repository_query_applies_catalog_ready_filter():
     from app.services.recipes import repository
 
     db = MagicMock()
-    legacy = _recipe("Legacy soup", tags=[])
-    gold = _recipe("Gold soup", tags=["gold_v2", "recipe_schema_v2"])
-
     chain = MagicMock()
     chain.filter.return_value = chain
-    chain.order_by.return_value.all.return_value = [gold]
+    chain.order_by.return_value.all.return_value = []
     db.query.return_value = chain
 
-    with patch("app.services.recipes.repository.apply_gold_recipe_filter") as mock_apply:
+    with patch("app.services.recipes.repository.apply_catalog_ready_filter") as mock_apply:
         mock_apply.side_effect = lambda q, **kw: q
         filters = RecipeListFilters(include_legacy=False)
         repository.query_recipes(db, filters)
@@ -81,12 +78,16 @@ def test_catalog_excludes_legacy_when_filter_on():
     db = MagicMock()
     user = MagicMock(id=1)
     scope = AppScope(mode="personal", user_id=1, family_id=None)
-    legacy = _recipe("Legacy", tags=[])
-    gold = _recipe("Gold omelet", tags=["gold_v2"])
+    ready = _recipe(
+        "Seed omelet",
+        tags=["gold_v3"],
+        source_type="seed",
+    )
+    ready.hero_image_url = "/recipe-images/256/hero.webp"
 
     def _query(_db, filters: RecipeListFilters):
         assert filters.include_legacy is False
-        return [gold]
+        return [ready]
 
     with patch(
         "app.services.recipes.catalog.repository.favorite_ids_for_user",
@@ -117,7 +118,7 @@ def test_catalog_excludes_legacy_when_filter_on():
         result = catalog.list_recipes(db, user, scope=scope, include_legacy=False)
 
     assert result.total == 1
-    assert result.items[0].title == "Gold omelet"
+    assert result.items[0].title == "Seed omelet"
 
 
 def test_get_recipe_model_by_id_not_filtered():
