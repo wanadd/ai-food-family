@@ -37,6 +37,15 @@ server {
         proxy_read_timeout   180s;
     }
 
+    # ------------------------------------------------------ Recipe images ----
+    # Serve generated recipe images directly from the persistent host volume.
+    location /recipe-images/ {
+        alias /var/www/recipe-images/;
+        try_files $uri =404;
+        access_log off;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+    }
+
     # --------------------------------------------------------------- Frontend -
     location / {
         set $web_upstream http://web:3000;

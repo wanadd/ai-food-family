@@ -13,6 +13,8 @@ services:
       - ./deploy/nginx/docker-entrypoint.sh:/docker-entrypoint.sh:ro
       - certbot_www:/var/www/certbot:ro
       - certbot_certs:/etc/letsencrypt:ro
+      # Generated recipe images are served directly by nginx.
+      - ${RECIPE_IMAGES_HOST_DIR:-/var/www/ai-food-family-data/recipe-images}:/var/www/recipe-images:ro
     entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
     depends_on:
       web:

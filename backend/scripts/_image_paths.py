@@ -69,17 +69,41 @@ def recipe_images_public_url() -> str:
 def find_repo_file(*relative_parts: str) -> Path:
     """Resolve a repo-relative file across local and container layouts.
 
-    Tries ``<api_root>/<parts>`` (container, e.g. /app/reports/x) and
-    ``<repo>/<parts>`` (local, e.g. <repo>/reports/x); returns the first that
-    exists, otherwise the first candidate.
+    Supports:
+    - API container: /app
+    - local repo root: <repo>
+    - local API root: <repo>/apps/api
+
+    The function must never crash on shallow paths such as /app.
+    It returns the first existing candidate, otherwise the first safe candidate.
     """
     candidates: list[Path] = []
+
+    def add_candidate(candidate: Path) -> None:
+        candidate = candidate.resolve()
+        if candidate not in candidates:
+            candidates.append(candidate)
+
     api_root = find_app_root()
     if api_root is not None:
-        candidates.append(api_root.joinpath(*relative_parts))
-        candidates.append(api_root.parents[1].joinpath(*relative_parts))
-    candidates.append(SCRIPTS_DIR.parents[1].joinpath(*relative_parts))
+        add_candidate(api_root.joinpath(*relative_parts))
+
+        # API container layout: /app/app/database.py, reports live in /app/reports.
+        add_candidate(api_root.parent.joinpath(*relative_parts))
+
+        # Local layout: <repo>/apps/api/app/database.py, reports live in <repo>/reports.
+        if len(api_root.parents) >= 2:
+            add_candidate(api_root.parents[1].joinpath(*relative_parts))
+
+    # Script layout fallback: /app/backend/scripts -> /app/reports.
+    if len(SCRIPTS_DIR.parents) >= 2:
+        add_candidate(SCRIPTS_DIR.parents[1].joinpath(*relative_parts))
+
+    if not candidates:
+        return Path(*relative_parts)
+
     for candidate in candidates:
         if candidate.exists():
             return candidate
+
     return candidates[0]
