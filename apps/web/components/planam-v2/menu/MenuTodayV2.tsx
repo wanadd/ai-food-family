@@ -10,7 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { MealOutcomeSheet2026 } from "@/components/dom-2026/MealOutcomeSheet2026";
-import { DaySummarySheetV2 } from "@/components/planam-v2/menu/DaySummarySheetV2";
+import { MealConsumptionSheetV2 } from "@/components/planam-v2/menu/MealConsumptionSheetV2";
 import { MealEatenSheetV2 } from "@/components/planam-v2/menu/MealEatenSheetV2";
 import { DayNutritionCard2026 } from "@/components/plan-2026/DayNutritionCard2026";
 import { ReplaceDishSheet2026 } from "@/components/plan-2026/ReplaceDishSheet2026";
@@ -64,6 +64,7 @@ import {
   plannedDateForDay,
   type PlanTodayMeal,
 } from "@/lib/plan/plan-today";
+import { MENU_TODAY_MARK_CONSUMPTION_BUTTON } from "@/lib/plan/meal-consumption-sheet";
 import { menuMealHeading } from "@/lib/menu/meal-heading";
 import { addRecipeToShopping } from "@/lib/recipes/api";
 import { cn } from "@/lib/planam/cn";
@@ -83,7 +84,7 @@ export function MenuTodayV2() {
   const [dayIndex, setDayIndex] = useState(1);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [replaceMealIndex, setReplaceMealIndex] = useState<number | null>(null);
-  const [daySummaryOpen, setDaySummaryOpen] = useState(false);
+  const [consumptionOpen, setConsumptionOpen] = useState(false);
   const [outcomeOpen, setOutcomeOpen] = useState(false);
   const [outcomeMealIndex, setOutcomeMealIndex] = useState<number | null>(null);
   const [actionMeal, setActionMeal] = useState<PlanTodayMeal | null>(null);
@@ -172,7 +173,7 @@ export function MenuTodayV2() {
       setReplaceMealIndex(null);
     }
     if (searchParams.get("outcome") === "1") {
-      setDaySummaryOpen(true);
+      setConsumptionOpen(true);
     }
   }, [searchParams, menu]);
 
@@ -416,8 +417,8 @@ export function MenuTodayV2() {
           >
             Заменить блюдо
           </V2Button>
-          <V2Button variant="ghost" onClick={() => setDaySummaryOpen(true)}>
-            Показать итог дня
+          <V2Button variant="ghost" onClick={() => setConsumptionOpen(true)}>
+            {MENU_TODAY_MARK_CONSUMPTION_BUTTON}
           </V2Button>
         </div>
       </div>
@@ -528,11 +529,10 @@ export function MenuTodayV2() {
         title="Ел другое"
       />
 
-      <DaySummarySheetV2
-        open={daySummaryOpen}
-        plannedDate={plannedDate}
+      <MealConsumptionSheetV2
+        open={consumptionOpen}
         meals={flatMeals}
-        onClose={() => setDaySummaryOpen(false)}
+        onClose={() => setConsumptionOpen(false)}
       />
 
       <MealOutcomeSheet2026
