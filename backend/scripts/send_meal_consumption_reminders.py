@@ -52,7 +52,7 @@ async def _run(*, dry_run: bool, now: datetime, limit: int | None) -> dict[str, 
             now,
             dry_run=dry_run,
             limit=limit,
-            force=args.dry_run,
+            force=dry_run,
         )
         db.commit()
         return counts
