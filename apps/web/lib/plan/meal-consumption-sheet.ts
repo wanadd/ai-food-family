@@ -6,6 +6,8 @@ export const MEAL_CONSUMPTION_SHEET_SUBTITLE =
 
 export const MEAL_CONSUMPTION_MEMBER_PROMPT = "Кого отмечаем?";
 
+export const MEAL_CONSUMPTION_SAVE_BUTTON_LABEL = "Сохранить отметки";
+
 export const MEAL_CONSUMPTION_SAVE_DISABLED_HINT =
   "Сохранение будет доступно после настройки семейного учёта";
 
@@ -38,4 +40,42 @@ export function formatConsumptionPortion(value: number): string {
     return "½";
   }
   return String(value);
+}
+
+type MemberPickerInput = {
+  id: number;
+  display_name: string;
+  is_you: boolean;
+};
+
+/** Who can be marked in the consumption sheet (UI only). */
+export function buildConsumptionMemberTargets(
+  members: MemberPickerInput[],
+  isAdmin: boolean,
+): Array<{ id: ConsumptionTargetId; label: string }> {
+  if (!isAdmin) {
+    const self = members.find((m) => m.is_you);
+    return [{ id: "self", label: self?.display_name?.trim() || "Я" }];
+  }
+
+  const targets: Array<{ id: ConsumptionTargetId; label: string }> = [];
+  const self = members.find((m) => m.is_you);
+  if (self) {
+    targets.push({ id: "self", label: "Я" });
+  }
+  for (const member of members) {
+    if (member.is_you) {
+      continue;
+    }
+    targets.push({ id: member.id, label: member.display_name });
+  }
+  targets.push({ id: "family", label: "Вся семья" });
+  return targets;
+}
+
+export function shouldShowConsumptionMemberPicker(
+  members: MemberPickerInput[],
+  isAdmin: boolean,
+): boolean {
+  return buildConsumptionMemberTargets(members, isAdmin).length > 1;
 }

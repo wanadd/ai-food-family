@@ -9,15 +9,17 @@ import {
   V2Chip,
 } from "@/components/planam-v2/ui/V2Primitives";
 import { menuMealHeading } from "@/lib/menu/meal-heading";
-import type { FamilyMember } from "@/lib/family/types";
 import {
+  buildConsumptionMemberTargets,
   formatConsumptionPortion,
   MEAL_CONSUMPTION_MEMBER_PROMPT,
   MEAL_CONSUMPTION_PORTION_OPTIONS,
+  MEAL_CONSUMPTION_SAVE_BUTTON_LABEL,
   MEAL_CONSUMPTION_SAVE_DISABLED_HINT,
   MEAL_CONSUMPTION_SHEET_SUBTITLE,
   MEAL_CONSUMPTION_SHEET_TITLE,
   MEAL_CONSUMPTION_STATUS_OPTIONS,
+  shouldShowConsumptionMemberPicker,
   type ConsumptionTargetId,
   type MealConsumptionStatus,
 } from "@/lib/plan/meal-consumption-sheet";
@@ -53,28 +55,35 @@ function buildDefaultDrafts(meals: PlanTodayMeal[]): Record<string, MealDraft> {
   return drafts;
 }
 
-function buildMemberTargets(
-  members: FamilyMember[],
-  isAdmin: boolean,
-): Array<{ id: ConsumptionTargetId; label: string }> {
-  if (!isAdmin) {
-    const self = members.find((m) => m.is_you);
-    return [{ id: "self", label: self?.display_name?.trim() || "Я" }];
-  }
-
-  const targets: Array<{ id: ConsumptionTargetId; label: string }> = [];
-  const self = members.find((m) => m.is_you);
-  if (self) {
-    targets.push({ id: "self", label: "Я" });
-  }
-  for (const member of members) {
-    if (member.is_you) {
-      continue;
-    }
-    targets.push({ id: member.id, label: member.display_name });
-  }
-  targets.push({ id: "family", label: "Вся семья" });
-  return targets;
+function MealSelectionToggle({
+  checked,
+  onChange,
+  mealLabel,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  mealLabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={`Включить в отметку: ${mealLabel}`}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400/60",
+        checked
+          ? "border-sage-500 bg-sage-500 text-white shadow-sm dark:border-sage-400 dark:bg-sage-400"
+          : "border-sage-200 bg-sage-50/80 text-transparent dark:border-sage-700/50 dark:bg-sage-900/20",
+      )}
+    >
+      <span aria-hidden className="text-xs font-bold leading-none">
+        ✓
+      </span>
+    </button>
+  );
 }
 
 export function MealConsumptionSheetV2({
@@ -95,8 +104,12 @@ export function MealConsumptionSheetV2({
 
   const isFamilyAdmin = context?.family?.your_role === "admin";
   const memberTargets = useMemo(
-    () => buildMemberTargets(familyMembers, isFamilyAdmin),
+    () => buildConsumptionMemberTargets(familyMembers, isFamilyAdmin),
     [familyMembers, isFamilyAdmin],
+  );
+  const showMemberPicker = shouldShowConsumptionMemberPicker(
+    familyMembers,
+    isFamilyAdmin,
   );
 
   useEffect(() => {
@@ -114,14 +127,30 @@ export function MealConsumptionSheetV2({
     }));
   }
 
+  const footer = (
+    <div className="space-y-2">
+      <V2Button variant="primary" className="w-full" disabled>
+        {MEAL_CONSUMPTION_SAVE_BUTTON_LABEL}
+      </V2Button>
+      <p className="pa26-micro text-center text-pa-muted">
+        {MEAL_CONSUMPTION_SAVE_DISABLED_HINT}
+      </p>
+    </div>
+  );
+
   return (
-    <V2BottomSheet open={open} title={MEAL_CONSUMPTION_SHEET_TITLE} onClose={onClose}>
-      <div className="space-y-4 pb-2">
+    <V2BottomSheet
+      open={open}
+      title={MEAL_CONSUMPTION_SHEET_TITLE}
+      onClose={onClose}
+      footer={footer}
+    >
+      <div className="space-y-4">
         <p className="pa26-caption -mt-1 text-pa-muted">
           {MEAL_CONSUMPTION_SHEET_SUBTITLE}
         </p>
 
-        {memberTargets.length > 1 ? (
+        {showMemberPicker ? (
           <div>
             <p className="pa26-micro mb-2 font-semibold text-pa-foreground">
               {MEAL_CONSUMPTION_MEMBER_PROMPT}
@@ -160,24 +189,19 @@ export function MealConsumptionSheetV2({
                     !draft.included && "opacity-60",
                   )}
                 >
-                  <label className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
+                  <div className="flex items-start gap-2">
+                    <MealSelectionToggle
                       checked={draft.included}
-                      onChange={(e) =>
-                        updateDraft(key, { included: e.target.checked })
-                      }
-                      className="mt-1 size-4 rounded border-pa-border"
+                      mealLabel={heading}
+                      onChange={(included) => updateDraft(key, { included })}
                     />
-                    <span className="min-w-0 flex-1">
-                      <span className="pa26-micro text-pa-muted">{type}</span>
-                      <span className="block pa26-card-title leading-snug">
-                        {heading}
-                      </span>
-                    </span>
-                  </label>
+                    <div className="min-w-0 flex-1">
+                      <p className="pa26-micro text-pa-muted">{type}</p>
+                      <p className="pa26-card-title leading-snug">{heading}</p>
+                    </div>
+                  </div>
                   {draft.included ? (
-                    <div className="mt-3 space-y-2 pl-6">
+                    <div className="mt-3 space-y-2 pl-8">
                       <div>
                         <p className="pa26-micro mb-1 text-pa-muted">Порция</p>
                         <div className="flex flex-wrap gap-2">
@@ -211,11 +235,6 @@ export function MealConsumptionSheetV2({
             })}
           </ul>
         )}
-
-        <p className="pa26-micro text-pa-muted">{MEAL_CONSUMPTION_SAVE_DISABLED_HINT}</p>
-        <V2Button variant="primary" className="w-full" disabled>
-          Сохранить отметки
-        </V2Button>
       </div>
     </V2BottomSheet>
   );
