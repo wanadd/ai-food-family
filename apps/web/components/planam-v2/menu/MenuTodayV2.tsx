@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { MealOutcomeSheet2026 } from "@/components/dom-2026/MealOutcomeSheet2026";
+import { DaySummarySheetV2 } from "@/components/planam-v2/menu/DaySummarySheetV2";
 import { MealEatenSheetV2 } from "@/components/planam-v2/menu/MealEatenSheetV2";
 import { DayNutritionCard2026 } from "@/components/plan-2026/DayNutritionCard2026";
 import { ReplaceDishSheet2026 } from "@/components/plan-2026/ReplaceDishSheet2026";
@@ -37,13 +38,23 @@ import { deleteMenuItem, fetchSelectedMenu } from "@/lib/menu/api";
 import { buildReplaceCatalogUrl } from "@/lib/menu/replace-slot";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import {
-  defaultDayIndex,
   getMenuDays,
   menuHasMultipleDays,
 } from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
 import { withReturnTo } from "@/lib/navigation/return-to";
+import {
+  restoreScrollPosition,
+  saveScrollPosition,
+} from "@/lib/navigation/scroll-restore";
 import { PLAN_PATHS, recipeDetailPath } from "@/lib/plan/plan-paths";
+import {
+  buildPlanTodaySearchParams,
+  planTodayReturnPath,
+  planTodayScrollQuery,
+  resolvePlanTodayDay,
+  savePlanTodayDay,
+} from "@/lib/plan/plan-today-nav";
 import {
   buildImageMapFromOverview,
   enrichMealsForDay,
@@ -72,6 +83,7 @@ export function MenuTodayV2() {
   const [dayIndex, setDayIndex] = useState(1);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [replaceMealIndex, setReplaceMealIndex] = useState<number | null>(null);
+  const [daySummaryOpen, setDaySummaryOpen] = useState(false);
   const [outcomeOpen, setOutcomeOpen] = useState(false);
   const [outcomeMealIndex, setOutcomeMealIndex] = useState<number | null>(null);
   const [actionMeal, setActionMeal] = useState<PlanTodayMeal | null>(null);
@@ -106,21 +118,47 @@ export function MenuTodayV2() {
         setCached(cacheKey.menuOverview(mode), overview);
       }
       setMenu(loaded);
-      if (loaded) {
-        const dayParam = searchParams.get("day");
-        const parsed = dayParam ? Number(dayParam) : NaN;
-        if (Number.isFinite(parsed) && parsed > 0) {
-          setDayIndex(parsed);
-        } else {
-          setDayIndex(defaultDayIndex(loaded));
-        }
-      }
     } catch {
       setError("Не получилось загрузить меню");
     } finally {
       setLoading(false);
     }
-  }, [initData, mode, searchParams]);
+  }, [initData, mode]);
+
+  useEffect(() => {
+    if (!menu) {
+      return;
+    }
+    const resolved = resolvePlanTodayDay(searchParams.get("day"), menu);
+    setDayIndex(resolved);
+    savePlanTodayDay(resolved);
+  }, [menu, searchParams]);
+
+  const returnToToday = useMemo(
+    () => planTodayReturnPath(dayIndex, menu),
+    [dayIndex, menu],
+  );
+
+  function selectDay(index: number) {
+    setDayIndex(index);
+    savePlanTodayDay(index);
+    const next = buildPlanTodaySearchParams(searchParams, index);
+    const qs = next.toString();
+    router.replace(qs ? `${PLAN_PATHS.today}?${qs}` : PLAN_PATHS.today, {
+      scroll: false,
+    });
+  }
+
+  function openRecipe(recipeId: number) {
+    saveScrollPosition(PLAN_PATHS.today, planTodayScrollQuery(dayIndex), window.scrollY);
+    router.push(withReturnTo(recipeDetailPath(recipeId), returnToToday));
+  }
+
+  useEffect(() => {
+    if (!loading && menu) {
+      restoreScrollPosition(PLAN_PATHS.today, planTodayScrollQuery(dayIndex));
+    }
+  }, [loading, menu, dayIndex]);
 
   useEffect(() => {
     if (!modeLoading) {
@@ -134,7 +172,7 @@ export function MenuTodayV2() {
       setReplaceMealIndex(null);
     }
     if (searchParams.get("outcome") === "1") {
-      setOutcomeOpen(true);
+      setDaySummaryOpen(true);
     }
   }, [searchParams, menu]);
 
@@ -167,6 +205,11 @@ export function MenuTodayV2() {
     const meals = enrichMealsForDay(menu, dayIndex, checkins, imageMap);
     return groupByTimeline(meals);
   }, [menu, dayIndex, checkins, overviewCached]);
+
+  const flatMeals = useMemo(
+    () => timeline.flatMap((group) => group.meals),
+    [timeline],
+  );
 
   useEffect(() => {
     if (loading || !menu || timeline.length === 0) {
@@ -297,7 +340,7 @@ export function MenuTodayV2() {
               <button
                 key={day.day_index}
                 type="button"
-                onClick={() => setDayIndex(day.day_index)}
+                onClick={() => selectDay(day.day_index)}
                 className={cn(
                   "shrink-0 rounded-pill px-3.5 py-2 pa26-micro font-semibold transition",
                   dayIndex === day.day_index
@@ -347,12 +390,7 @@ export function MenuTodayV2() {
                       }
                       onOpen={() => {
                         if (item.meal.recipe_id) {
-                          router.push(
-                            withReturnTo(
-                              recipeDetailPath(item.meal.recipe_id),
-                              "/plan/today",
-                            ),
-                          );
+                          openRecipe(item.meal.recipe_id);
                         } else {
                           setOutcomeMealIndex(item.mealIndex);
                           setOutcomeOpen(true);
@@ -378,7 +416,7 @@ export function MenuTodayV2() {
           >
             Заменить блюдо
           </V2Button>
-          <V2Button variant="ghost" onClick={() => setOutcomeOpen(true)}>
+          <V2Button variant="ghost" onClick={() => setDaySummaryOpen(true)}>
             Показать итог дня
           </V2Button>
         </div>
@@ -400,7 +438,7 @@ export function MenuTodayV2() {
                 onClick={() => {
                   const id = actionMeal.meal.recipe_id!;
                   setActionMeal(null);
-                  router.push(withReturnTo(recipeDetailPath(id), "/plan/today"));
+                  openRecipe(id);
                 }}
               />
             ) : null}
@@ -412,7 +450,7 @@ export function MenuTodayV2() {
                 setActionMeal(null);
                 if (slotId) {
                   router.push(
-                    buildReplaceCatalogUrl(slotId, recipeId, "/plan/today"),
+                    buildReplaceCatalogUrl(slotId, recipeId, returnToToday),
                   );
                 } else {
                   setReplaceOpen(true);
@@ -488,6 +526,13 @@ export function MenuTodayV2() {
         plannedDate={plannedDate || null}
         initialStep="other"
         title="Ел другое"
+      />
+
+      <DaySummarySheetV2
+        open={daySummaryOpen}
+        plannedDate={plannedDate}
+        meals={flatMeals}
+        onClose={() => setDaySummaryOpen(false)}
       />
 
       <MealOutcomeSheet2026
