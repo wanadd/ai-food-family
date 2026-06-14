@@ -309,7 +309,7 @@ def _selection_response(
 ) -> SelectedMenuResponse:
     from app.services.menu_selection import selection_response
 
-    return _selection_response(selection, scope, db=db)
+    return selection_response(selection, scope, db=db)
 
 
 async def run_quick_action(
