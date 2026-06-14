@@ -130,12 +130,18 @@ def extract_today_meals(menu_data: dict | None) -> list[MenuTodayMeal]:
                     recipe_id = int(raw_rid)
                 except (TypeError, ValueError):
                     recipe_id = None
+            image_url = item.get("image_url") or item.get("hero_image_url")
+            if isinstance(image_url, str):
+                image_url = image_url.strip() or None
+            else:
+                image_url = None
             result.append(
                 MenuTodayMeal(
                     meal_type=meal_type,
                     label=MEAL_LABELS.get(meal_type, meal_type),
                     name=name.strip(),
                     recipe_id=recipe_id,
+                    image_url=image_url,
                 )
             )
     return result[:6]
@@ -151,8 +157,8 @@ def enrich_today_meals_images(db: Session, meals: list[MenuTodayMeal]) -> list[M
 
     enriched: list[MenuTodayMeal] = []
     for meal in meals:
-        image_url: str | None = None
-        if meal.recipe_id is not None:
+        image_url: str | None = meal.image_url
+        if meal.recipe_id is not None and not image_url:
             recipe = db.get(Recipe, meal.recipe_id)
             if recipe:
                 image_url = _recipe_hero_image_url(recipe)

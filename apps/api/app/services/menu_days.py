@@ -5,23 +5,21 @@ from __future__ import annotations
 import random
 from datetime import date, timedelta
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from app.models.recipe import Recipe
 from app.models.user import User
-from app.recipes.gold_filter import query_active_recipes
+from app.services.menu_catalog_pool import load_menu_catalog_pool, meal_from_catalog_recipe
 from app.schemas.menu import MenuDayPlan, MenuIngredient, MenuMeal, MenuVariant
 from app.services.app_scope import AppScope
 from app.services.menu_recipe_builder import (
     FOOD_MEAL_TYPES,
     _filter_candidates,
     _ingredients_for_variant,
-    _meal_from_recipe,
     _pantry_names,
     _pick_one,
 )
 from app.services.meal_leftovers import list_active_leftovers
-from app.services.menu_restriction_safety import apply_pre_ai_recipe_filter
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import get_active_items_for_scope
 
@@ -62,16 +60,6 @@ def expand_variant_to_plan_days(
     days_out: list[MenuDayPlan] = []
     all_meal_recipe_pairs: list[tuple[str, Recipe]] = []
 
-    # Day 1 — исходные блюда
-    days_out.append(
-        MenuDayPlan(
-            day_index=1,
-            label=day_label(1, start),
-            date_iso=start.isoformat(),
-            meals=list(variant.meals),
-        )
-    )
-
     recipes: list[Recipe] = []
     profile_allergies: set[str] = set()
     pantry: set[str] = set()
@@ -79,16 +67,45 @@ def expand_variant_to_plan_days(
     persons = 1
 
     if user and scope:
-        recipes = (
-            query_active_recipes(db)
-            .options(joinedload(Recipe.ingredient_rows))
-            .all()
-        )
         profile = get_or_create_profile(db, user)
-        recipes, _ = apply_pre_ai_recipe_filter(recipes, profile)
+        recipes = load_menu_catalog_pool(db, profile)
         profile_allergies = {str(a).lower() for a in (profile.allergies or [])}
         pantry = _pantry_names(get_active_items_for_scope(db, scope))
         leftovers = _leftover_titles(list_active_leftovers(db, scope))
+
+    day1_needs_rebuild = any(not m.recipe_id for m in variant.meals)
+    if recipes and user and scope and day1_needs_rebuild:
+        day1_pairs: list[tuple[str, Recipe]] = []
+        for slot in ("breakfast", "lunch", "dinner"):
+            candidates = _filter_candidates(
+                recipes,
+                meal_types=FOOD_MEAL_TYPES,
+                exclude_alcohol=True,
+                exclude_allergens=profile_allergies,
+            )
+            candidates = [r for r in candidates if r.meal_type == slot]
+            picked = _pick_one(candidates, used_recipe_ids, rng)
+            if picked:
+                day1_pairs.append((slot, picked))
+                used_recipe_ids.add(picked.id)
+        if len(day1_pairs) >= 2:
+            day1_meals = [
+                meal_from_catalog_recipe(r, slot, persons) for slot, r in day1_pairs
+            ]
+            all_meal_recipe_pairs.extend(day1_pairs)
+        else:
+            day1_meals = list(variant.meals)
+    else:
+        day1_meals = list(variant.meals)
+
+    days_out.append(
+        MenuDayPlan(
+            day_index=1,
+            label=day_label(1, start),
+            date_iso=start.isoformat(),
+            meals=day1_meals,
+        )
+    )
 
     for day_idx in range(2, plan_days + 1):
         day_date = start + timedelta(days=day_idx - 1)
@@ -110,7 +127,9 @@ def expand_variant_to_plan_days(
                     used_recipe_ids.add(picked.id)
 
             if len(day_pairs) >= 2:
-                meals = [_meal_from_recipe(r, slot, persons) for slot, r in day_pairs]
+                meals = [
+                    meal_from_catalog_recipe(r, slot, persons) for slot, r in day_pairs
+                ]
                 all_meal_recipe_pairs.extend(day_pairs)
         else:
             # Fallback: сдвиг блюд с небольшим суффиксом в названии

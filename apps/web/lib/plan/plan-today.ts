@@ -83,6 +83,7 @@ export function enrichMealsForDay(
   }
 
   const dateIso = dateIsoForDayIndex(menu, dayIndex);
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   return meals
     .map((meal, mealIndex) => ({ meal, mealIndex }))
@@ -96,10 +97,13 @@ export function enrichMealsForDay(
     const statusCode = statusByType.get(meal.meal_type) ?? null;
     const statusLabel = mealCheckinStatusLabel(statusCode);
     const imageUrl =
+      meal.image_url ??
+      meal.hero_image_url ??
+      meal.thumbnail_url ??
       (meal.recipe_id != null
         ? imageByType.get(`recipe:${meal.recipe_id}`)
         : null) ??
-      imageByType.get(meal.meal_type) ??
+      (dateIso === todayIso ? imageByType.get(meal.meal_type) : null) ??
       null;
 
     return {

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.recipe import Recipe
 from app.models.user import User
-from app.recipes.gold_filter import query_active_recipes
+from app.services.menu_catalog_pool import meal_from_catalog_recipe, query_menu_catalog_recipes
 from app.schemas.menu import MenuIngredient, MenuMeal, MenuVariant
 from app.services.menu_context import MenuGenerationContext
 from app.services.menu_labels import VARIANT_META
@@ -172,7 +172,7 @@ def build_menus_from_recipes(
     plan_mode: str = "healthy",
 ) -> list[MenuVariant] | None:
     recipes = (
-        query_active_recipes(db)
+        query_menu_catalog_recipes(db)
         .options(
             joinedload(Recipe.ingredient_rows),
             joinedload(Recipe.step_rows),
@@ -246,7 +246,7 @@ def build_menus_from_recipes(
         if len(meals_recipes) < 3:
             return None
 
-        meals = [_meal_from_recipe(r, slot, persons) for slot, r in meals_recipes]
+        meals = [meal_from_catalog_recipe(r, slot, persons) for slot, r in meals_recipes]
         ingredients = _ingredients_for_variant(meals_recipes, persons, pantry, leftovers)
         total_prep = sum(m.prep_time_minutes for m in meals)
 

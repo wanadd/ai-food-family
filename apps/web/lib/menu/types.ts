@@ -10,6 +10,9 @@ export type MenuMeal = {
   recipe_id?: number | null;
   slot_id?: string | null;
   servings?: number | null;
+  image_url?: string | null;
+  hero_image_url?: string | null;
+  thumbnail_url?: string | null;
 };
 
 export type MenuIngredient = {

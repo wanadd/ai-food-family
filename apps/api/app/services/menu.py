@@ -16,6 +16,7 @@ from app.schemas.menu import (
     SelectedMenuResponse,
 )
 from app.config import settings
+from app.services.menu_catalog_enrichment import finalize_menu_variant, finalize_menu_variants
 from app.services.ai_client import current_model_name
 from app.services.menu_labels import PLAN_MODE_PROMPT_HINTS
 from app.services.app_scope import AppScope
@@ -114,6 +115,14 @@ async def generate_menus_for_scope(
             expand_variant_to_plan_days(db, m, plan_days, user=user, scope=scope)
             for m in menus
         ]
+
+    menus = finalize_menu_variants(
+        db,
+        menus,
+        user=user,
+        scope=scope,
+        persons=persons,
+    )
     subscription_service.commit_menu_generation(
         db,
         user,
@@ -181,6 +190,13 @@ async def replace_dish(
 
     selection = _get_latest_selection(db, scope)
     if selection is not None and selection.variant == updated.variant:
+        updated = finalize_menu_variant(
+            db,
+            updated,
+            user=user,
+            scope=scope,
+            persons=resolve_persons_count(db, user, scope),
+        )
         menu_dict = updated.model_dump(mode="json")
         if isinstance(selection.menu_data, dict) and "_meta" in selection.menu_data:
             menu_dict["_meta"] = selection.menu_data["_meta"]
@@ -219,8 +235,15 @@ def select_menu(
     persons_count: int | None = None,
 ) -> SelectedMenuResponse:
     existing = _get_latest_selection(db, scope)
-    menu_dict = payload.menu.model_dump(mode="json")
     persons = persons_count or resolve_persons_count(db, user, scope)
+    finalized_menu = finalize_menu_variant(
+        db,
+        payload.menu,
+        user=user,
+        scope=scope,
+        persons=persons,
+    )
+    menu_dict = finalized_menu.model_dump(mode="json")
     mode_key = plan_mode or "healthy"
     pantry_items = get_active_items_for_scope(db, scope)
     leftovers = list_active_leftovers(db, scope)
@@ -255,8 +278,8 @@ def select_menu(
 
     db.commit()
     db.refresh(selection)
-    shopping_list_service.sync_from_menu(db, scope, payload.menu, selection.id)
-    return _selection_response(selection, scope)
+    shopping_list_service.sync_from_menu(db, scope, finalized_menu, selection.id)
+    return selection_response(selection, scope, db=db)
 
 
 def get_selected_menu(
@@ -282,11 +305,11 @@ def _menu_from_storage(menu_data: dict) -> MenuVariant:
 
 
 def _selection_response(
-    selection: FamilyMenuSelection, scope: AppScope
+    selection: FamilyMenuSelection, scope: AppScope, db: Session
 ) -> SelectedMenuResponse:
     from app.services.menu_selection import selection_response
 
-    return selection_response(selection, scope)
+    return selection_response(selection, scope, db=db)
 
 
 async def run_quick_action(

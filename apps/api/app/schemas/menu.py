@@ -16,6 +16,9 @@ class MenuMeal(BaseModel):
     recipe_id: int | None = None
     slot_id: str | None = Field(default=None, max_length=64)
     servings: int | None = Field(default=None, ge=1, le=50)
+    image_url: str | None = None
+    hero_image_url: str | None = None
+    thumbnail_url: str | None = None
 
 
 class MenuDayPlan(BaseModel):

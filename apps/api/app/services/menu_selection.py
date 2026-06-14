@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.menu_selection import FamilyMenuSelection
 from app.schemas.menu import MenuVariant, SelectedMenuResponse
 from app.services.app_scope import AppScope
+from app.services.menu_catalog_enrichment import finalize_menu_variant
 
 
 def get_latest_selection(
@@ -30,15 +31,21 @@ def menu_from_storage(menu_data: dict) -> MenuVariant:
 
 
 def selection_response(
-    selection: FamilyMenuSelection, scope: AppScope
+    selection: FamilyMenuSelection, scope: AppScope, *, db: Session | None = None
 ) -> SelectedMenuResponse:
+    menu = menu_from_storage(selection.menu_data)
+    if db is not None:
+        from app.models.user import User
+
+        user = db.get(User, selection.user_id)
+        menu = finalize_menu_variant(db, menu, user=user, scope=scope)
     return SelectedMenuResponse(
         id=selection.id,
         scope_mode=scope.mode,
         user_id=selection.user_id,
         family_id=selection.family_id,
         variant=selection.variant,  # type: ignore[arg-type]
-        menu=menu_from_storage(selection.menu_data),
+        menu=menu,
         selected_at=selection.selected_at,
     )
 
@@ -49,4 +56,4 @@ def get_selected_menu(
     selection = get_latest_selection(db, scope)
     if selection is None:
         return None
-    return selection_response(selection, scope)
+    return selection_response(selection, scope, db=db)
