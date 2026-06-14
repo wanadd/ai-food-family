@@ -13,6 +13,9 @@ import { useTelegram } from "@/components/TelegramProvider";
 import { fetchSelectedMenu } from "@/lib/menu/api";
 import { getMenuDays, defaultDayIndex } from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
+import { menuMealHeading } from "@/lib/menu/meal-heading";
+import { pluralRuWithCount } from "@/lib/i18n/plural-ru";
+import { mealLabel } from "@/lib/recipes/labels";
 import { PLAN_PATHS } from "@/lib/plan/plan-paths";
 import { formatPlanDayLabel } from "@/lib/plan/plan-today";
 
@@ -71,7 +74,7 @@ export function PlanWeek2026() {
   return (
     <div className="space-y-4 px-4 pb-8 pt-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="pa26-page-title">Неделя</h1>
+        <h1 className="pa26-page-title">Обзор</h1>
         <Link href={PLAN_PATHS.generate}>
           <Button2026 variant="secondary">Пересобрать</Button2026>
         </Link>
@@ -79,7 +82,6 @@ export function PlanWeek2026() {
 
       <div className="space-y-3">
         {days.map((day) => {
-          const thumbs = day.meals.slice(0, 3);
           const isToday = day.day_index === todayIdx;
           return (
             <Link
@@ -97,25 +99,50 @@ export function PlanWeek2026() {
                   ) : null}
                 </p>
                 <span className="pa26-caption text-pa-muted">
-                  {day.meals.length} блюд →
+                  {pluralRuWithCount(day.meals.length, "блюдо", "блюда", "блюд")} →
                 </span>
               </div>
-              <div className="mt-3 flex gap-2">
-                {thumbs.map((meal, i) => (
-                  <div
-                    key={`${meal.meal_type}-${i}`}
-                    className="h-14 w-14 shrink-0 overflow-hidden rounded-control"
-                  >
-                    <RecipeImage2026
-                      imageUrl={null}
-                      alt={meal.name}
-                      variant="thumb"
-                      mealType={meal.meal_type}
-                      className="size-14"
-                    />
-                  </div>
-                ))}
-              </div>
+              <ul className="mt-3 space-y-2">
+                {day.meals.slice(0, 4).map((meal, i) => {
+                  const heading = menuMealHeading(meal);
+                  const mealType = mealLabel(meal.meal_type);
+                  const kcal =
+                    meal.calories_estimate != null
+                      ? `${Math.round(meal.calories_estimate)} ккал`
+                      : null;
+                  return (
+                    <li
+                      key={`${meal.meal_type}-${meal.recipe_id ?? i}`}
+                      className="flex items-center gap-2"
+                    >
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-control">
+                        <RecipeImage2026
+                          imageUrl={meal.image_url ?? meal.thumbnail_url ?? meal.hero_image_url}
+                          alt={heading}
+                          variant="thumb"
+                          mealType={meal.meal_type}
+                          className="size-10"
+                        />
+                      </div>
+                      <p className="min-w-0 flex-1 pa26-caption leading-snug text-pa-ink">
+                        {mealType ? (
+                          <span className="text-pa-muted">{mealType} · </span>
+                        ) : null}
+                        {heading}
+                        {kcal ? (
+                          <span className="text-pa-muted"> · {kcal}</span>
+                        ) : null}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+              {day.meals.length > 4 ? (
+                <p className="mt-2 pa26-micro text-pa-muted">
+                  ещё{" "}
+                  {pluralRuWithCount(day.meals.length - 4, "блюдо", "блюда", "блюд")}
+                </p>
+              ) : null}
             </Link>
           );
         })}

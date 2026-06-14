@@ -91,10 +91,13 @@ def to_summary(
     fit_level: str | None = None,
 ) -> RecipeSummary:
     shown = public_title(recipe)
+    full = (recipe.title or "").strip()
+    full_title = full if full and full != shown.strip() else None
     return RecipeSummary(
         id=recipe.id,
         title=shown,
-        display_title=recipe.display_title,
+        display_title=recipe.display_title or shown,
+        full_title=full_title,
         description=recipe.description or "",
         meal_type=recipe.meal_type,
         category=recipe.category,

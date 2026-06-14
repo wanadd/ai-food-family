@@ -4,6 +4,7 @@ export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 export type MenuMeal = {
   meal_type: MealType;
   name: string;
+  display_title?: string | null;
   description: string;
   prep_time_minutes: number;
   calories_estimate?: number | null;

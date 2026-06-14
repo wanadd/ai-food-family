@@ -33,6 +33,7 @@ export type RecipeSummary = {
   id: number;
   title: string;
   display_title?: string | null;
+  full_title?: string | null;
   description: string;
   meal_type: string;
   category: string;

@@ -12,11 +12,12 @@ describe("recipe card titles", () => {
     ).toBe("Салат с курицей и яблоком");
   });
 
-  it("uses full title on detail screen", () => {
+  it("uses display_title on detail screen", () => {
     expect(
       recipeDetailHeading({
         title: "Салат с курицей, яблоком и свежими овощами",
+        display_title: "Салат с курицей и яблоком",
       }),
-    ).toBe("Салат с курицей, яблоком и свежими овощами");
+    ).toBe("Салат с курицей и яблоком");
   });
 });

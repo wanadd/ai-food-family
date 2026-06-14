@@ -120,9 +120,13 @@ def _pick_one(candidates: list[Recipe], used_ids: set[int], rng: random.Random) 
 
 
 def _meal_from_recipe(recipe: Recipe, meal_type: str, persons: int) -> MenuMeal:
+    from app.services.recipes.mapper import public_title
+
+    shown = public_title(recipe)
     return MenuMeal(
         meal_type=meal_type,  # type: ignore[arg-type]
-        name=recipe.title,
+        name=shown,
+        display_title=shown,
         description=recipe.description or "",
         prep_time_minutes=recipe.cooking_time_minutes or recipe.prep_time_minutes or 30,
         calories_estimate=int(recipe.calories_per_serving) if recipe.calories_per_serving else None,

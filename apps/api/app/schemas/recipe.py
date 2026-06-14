@@ -64,6 +64,7 @@ class RecipeSummary(BaseModel):
     id: int
     title: str
     display_title: str | None = None
+    full_title: str | None = None
     description: str
     meal_type: str
     category: str

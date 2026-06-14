@@ -10,6 +10,7 @@ MealType = Literal["breakfast", "lunch", "dinner", "snack"]
 class MenuMeal(BaseModel):
     meal_type: MealType
     name: str = Field(min_length=1, max_length=200)
+    display_title: str | None = Field(default=None, max_length=200)
     description: str = ""
     prep_time_minutes: int = Field(ge=0, le=300)
     calories_estimate: int | None = Field(default=None, ge=0)

@@ -53,6 +53,7 @@ import {
   plannedDateForDay,
   type PlanTodayMeal,
 } from "@/lib/plan/plan-today";
+import { menuMealHeading } from "@/lib/menu/meal-heading";
 import { addRecipeToShopping } from "@/lib/recipes/api";
 import { cn } from "@/lib/planam/cn";
 
@@ -204,7 +205,7 @@ export function MenuTodayV2() {
         meal_type: meal.meal.meal_type,
         actual_status: "skipped",
         planned_date: plannedDate || undefined,
-        actual_description: meal.meal.name,
+        actual_description: menuMealHeading(meal.meal),
       });
       invalidateCache(cacheKey.menuOverview(mode));
       showToast("Приём пищи пропущен — КБЖУ не учитываем");
@@ -378,7 +379,7 @@ export function MenuTodayV2() {
             Заменить блюдо
           </V2Button>
           <V2Button variant="ghost" onClick={() => setOutcomeOpen(true)}>
-            Итог дня
+            Показать итог дня
           </V2Button>
         </div>
       </div>
@@ -391,7 +392,7 @@ export function MenuTodayV2() {
         {actionMeal ? (
           <div className="space-y-2 pb-2">
             <p className="pa26-caption -mt-1 text-pa-muted">
-              {actionMeal.meal.name}
+              {menuMealHeading(actionMeal.meal)}
             </p>
             {actionMeal.meal.recipe_id ? (
               <SheetAction
@@ -483,7 +484,7 @@ export function MenuTodayV2() {
           void reloadCheckins();
         }}
         mealType={ateOtherMeal?.meal.meal_type ?? null}
-        mealName={ateOtherMeal?.meal.name ?? null}
+        mealName={ateOtherMeal ? menuMealHeading(ateOtherMeal.meal) : null}
         plannedDate={plannedDate || null}
         initialStep="other"
         title="Ел другое"
@@ -520,6 +521,7 @@ function MealRowV2({
   onQuickActions: () => void;
 }) {
   const { meal, imageUrl, statusLabel } = item;
+  const heading = menuMealHeading(meal);
   const metaParts: string[] = [];
   if (meal.prep_time_minutes > 0) {
     metaParts.push(`${meal.prep_time_minutes} мин`);
@@ -549,7 +551,7 @@ function MealRowV2({
         <div className="relative size-14 shrink-0 overflow-hidden rounded-control">
           <RecipeImage2026
             imageUrl={imageUrl}
-            alt={meal.name}
+            alt={heading}
             variant="thumb"
             mealType={meal.meal_type}
             className="size-full"
@@ -557,7 +559,7 @@ function MealRowV2({
         </div>
         <div className="min-w-0 flex-1">
           <p className="pa26-micro text-pa-muted">{mealTypeLabel(meal.meal_type)}</p>
-          <h3 className="pa26-card-title line-clamp-2 leading-snug">{meal.name}</h3>
+          <h3 className="pa26-card-title line-clamp-2 leading-snug">{heading}</h3>
           {metaParts.length ? (
             <p className="pa26-micro mt-0.5 text-pa-muted">{metaParts.join(" · ")}</p>
           ) : null}

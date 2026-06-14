@@ -22,7 +22,16 @@ MAIN_MEAL_FALLBACK_TYPES = ("lunch", "dinner")
 
 
 def attach_recipe_images(meal: MenuMeal, recipe: Recipe) -> MenuMeal:
-    return meal.model_copy(update=recipe_image_fields(recipe))
+    from app.services.recipes.mapper import public_title
+
+    shown = public_title(recipe)
+    return meal.model_copy(
+        update={
+            **recipe_image_fields(recipe),
+            "name": shown,
+            "display_title": shown,
+        }
+    )
 
 
 def _pick_catalog_recipe(

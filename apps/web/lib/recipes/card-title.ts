@@ -7,7 +7,9 @@ export function recipeCardHeading(recipe: Pick<RecipeSummary, "display_title" | 
   return recipe.title?.trim() || "";
 }
 
-/** Full detail heading — always the canonical recipe title. */
-export function recipeDetailHeading(recipe: Pick<RecipeSummary, "title">): string {
-  return recipe.title?.trim() || "";
+/** Detail heading — same public title as catalog cards (display_title first). */
+export function recipeDetailHeading(
+  recipe: Pick<RecipeSummary, "display_title" | "title">,
+): string {
+  return recipeCardHeading(recipe);
 }

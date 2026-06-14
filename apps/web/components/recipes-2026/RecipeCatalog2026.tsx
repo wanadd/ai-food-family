@@ -16,6 +16,11 @@ import {
   parseReplaceSlot,
 } from "@/lib/menu/replace-slot";
 import { readReturnTo } from "@/lib/navigation/return-to";
+import {
+  restoreScrollPosition,
+  saveScrollPosition,
+} from "@/lib/navigation/scroll-restore";
+import { pluralRuWithCount } from "@/lib/i18n/plural-ru";
 import { PLAN_PATHS } from "@/lib/plan/plan-paths";
 import {
   fetchRecipeFilters,
@@ -32,6 +37,8 @@ function queryFromParams(sp: URLSearchParams): RecipeQuery {
   if (q) query.q = q;
   const meal = sp.get("meal_type");
   if (meal) query.meal_type = meal;
+  const category = sp.get("category");
+  if (category) query.category = category;
   if (sp.get("favorites_only") === "true") query.favorites_only = true;
   return query;
 }
@@ -70,7 +77,7 @@ export function RecipeCatalog2026() {
   const [replacingId, setReplacingId] = useState<number | null>(null);
 
   const isFavorites = Boolean(query.favorites_only);
-  const hasFilters = Boolean(query.q || query.meal_type || isFavorites);
+  const hasFilters = Boolean(query.q || query.meal_type || query.category || isFavorites);
 
   const displayRecipes = useMemo(() => {
     if (!currentRecipeId) {
@@ -134,6 +141,12 @@ export function RecipeCatalog2026() {
   useEffect(() => {
     setSearchInput(query.q ?? "");
   }, [query.q]);
+
+  useEffect(() => {
+    if (!loading && recipes.length > 0) {
+      restoreScrollPosition(pathname, paramString);
+    }
+  }, [loading, recipes.length, pathname, paramString]);
 
   async function handleFavorite(recipeId: number) {
     if (!initData) return;
@@ -265,6 +278,18 @@ export function RecipeCatalog2026() {
               }
             />
           ))}
+          {filters?.categories?.map((f) => (
+            <FilterChip
+              key={f.value}
+              active={query.category === f.value}
+              label={f.label}
+              onClick={() =>
+                updateParams({
+                  category: query.category === f.value ? undefined : f.value,
+                })
+              }
+            />
+          ))}
           <FilterChip
             active={isFavorites}
             label="Избранное"
@@ -304,8 +329,7 @@ export function RecipeCatalog2026() {
         ) : (
           <>
             <p className="pa26-caption mb-3 text-pa-muted">
-              {total} {total === 1 ? "рецепт" : total < 5 ? "рецепта" : "рецептов"}
-              {filters ? "" : ""}
+              {pluralRuWithCount(total, "рецепт", "рецепта", "рецептов")}
             </p>
             <div className="grid grid-cols-2 gap-3">
               {displayRecipes.map((recipe) => (
@@ -330,6 +354,9 @@ export function RecipeCatalog2026() {
                   isCurrentRecipe={currentRecipeId === recipe.id}
                   onReplace={() => void handleReplace(recipe.id)}
                   replacing={replacingId === recipe.id}
+                  onCardOpen={() =>
+                    saveScrollPosition(pathname, paramString, window.scrollY)
+                  }
                 />
               ))}
             </div>

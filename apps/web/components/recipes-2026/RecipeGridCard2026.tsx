@@ -21,6 +21,7 @@ type RecipeGridCard2026Props = {
   isCurrentRecipe?: boolean;
   onReplace?: () => void;
   replacing?: boolean;
+  onCardOpen?: () => void;
 };
 
 export function RecipeGridCard2026({
@@ -32,6 +33,7 @@ export function RecipeGridCard2026({
   isCurrentRecipe = false,
   onReplace,
   replacing = false,
+  onCardOpen,
 }: RecipeGridCard2026Props) {
   const time = recipe.prep_time_minutes ?? recipe.cooking_time_minutes;
   const heading = recipeCardHeading(recipe);
@@ -41,15 +43,36 @@ export function RecipeGridCard2026({
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-card border border-pa-border bg-pa-surface shadow-soft transition active:scale-[0.98] dark:shadow-none">
-      <Link href={href} className="flex flex-1 flex-col">
-        <RecipeImage2026
-          imageSource={recipe}
-          alt={heading}
-          variant="grid"
-          mealType={recipe.meal_type}
-        />
+      <Link href={href} className="flex flex-1 flex-col" onClick={() => onCardOpen?.()}>
+        <div className="relative">
+          <RecipeImage2026
+            imageSource={recipe}
+            alt={heading}
+            variant="grid"
+            mealType={recipe.meal_type}
+          />
+          {onToggleFavorite && !replaceMode ? (
+            <button
+              type="button"
+              disabled={togglingFavorite}
+              aria-label={recipe.is_favorited ? "Убрать из избранного" : "В избранное"}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite();
+              }}
+              className={cn(
+                "absolute right-2 top-2 flex size-9 items-center justify-center rounded-full",
+                "bg-black/35 text-lg backdrop-blur-sm transition hover:bg-black/50",
+                recipe.is_favorited ? "text-amber-300" : "text-white",
+              )}
+            >
+              {recipe.is_favorited ? "★" : "☆"}
+            </button>
+          ) : null}
+        </div>
         <div className="flex flex-1 flex-col p-3">
-          <h3 className="pa26-card-title line-clamp-2 min-h-[2.75rem] leading-snug">
+          <h3 className="pa26-card-title line-clamp-3 min-h-[3.25rem] leading-snug">
             {heading}
           </h3>
           <p className="pa26-caption mt-1 text-pa-muted">
@@ -91,25 +114,6 @@ export function RecipeGridCard2026({
             )}
           >
             {isCurrentRecipe ? "Уже выбрано" : replacing ? "Замена…" : "Заменить"}
-          </button>
-        </div>
-      ) : onToggleFavorite ? (
-        <div className="border-t border-pa-border px-3 py-2">
-          <button
-            type="button"
-            disabled={togglingFavorite}
-            onClick={(e) => {
-              e.preventDefault();
-              onToggleFavorite();
-            }}
-            className={cn(
-              "pa26-micro font-semibold",
-              recipe.is_favorited
-                ? "text-sage-600 dark:text-sage-300"
-                : "text-pa-muted",
-            )}
-          >
-            {recipe.is_favorited ? "★ В избранном" : "☆ В избранное"}
           </button>
         </div>
       ) : null}

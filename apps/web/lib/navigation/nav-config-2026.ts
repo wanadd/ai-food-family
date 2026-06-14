@@ -182,7 +182,7 @@ export const ROUTES_2026: Nav2026RouteMeta[] = [
     title: "Из того, что есть дома",
     sectionId: "leftovers",
   },
-  { href: "/plan", title: "План на неделю", tabId: "plan", sectionId: "plan" },
+  { href: "/plan", title: "План питания", tabId: "plan", sectionId: "plan" },
   { href: "/plan/today", title: "Меню", tabId: "plan", sectionId: "today" },
   { href: "/plan/recipes", title: "Рецепты", tabId: "plan", sectionId: "recipes" },
   { href: "/wellness", title: "Здоровье", tabId: "wellness", sectionId: "wellness" },
