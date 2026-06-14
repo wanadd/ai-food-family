@@ -84,7 +84,9 @@ export function buildConsumptionMemberTargets(
     return [selfTarget];
   }
 
-  const targets = [selfTarget];
+  const targets: Array<{ id: ConsumptionTargetId; label: string }> = [
+    selfTarget,
+  ];
   for (const member of members) {
     if (member.is_you || !member.is_virtual) {
       continue;
@@ -227,6 +229,119 @@ export function canSaveConsumptionDrafts(
   return hasSaveableConsumptionDrafts(drafts);
 }
 
+export type MealConsumptionSaveBlockReason =
+  | "no_user_id"
+  | "no_drafts"
+  | "no_selected_drafts"
+  | "no_entries"
+  | "loading"
+  | "validation_error"
+  | "unknown";
+
+export function resolveEffectiveConsumptionDrafts(
+  mealInputs: Array<{ meal_type: string; mealIndex: number }>,
+  drafts: Record<string, ConsumptionDraft>,
+): Record<string, ConsumptionDraft> {
+  if (mealInputs.length === 0) {
+    return {};
+  }
+  const defaults = buildDefaultConsumptionDrafts(mealInputs);
+  if (Object.keys(drafts).length === 0) {
+    return defaults;
+  }
+  return { ...defaults, ...drafts };
+}
+
+export function getMealConsumptionSaveBlockReason(params: {
+  mode: AppMode;
+  mealInputs: ConsumptionMealInput[];
+  drafts: Record<string, ConsumptionDraft>;
+  targets: ConsumptionMemberRef[];
+  saving?: boolean;
+  loadingLogs?: boolean;
+  hasInitData?: boolean;
+}): MealConsumptionSaveBlockReason | null {
+  if (params.saving) {
+    return "loading";
+  }
+  if (!params.hasInitData) {
+    return "validation_error";
+  }
+  if (params.mealInputs.length === 0) {
+    return "no_drafts";
+  }
+
+  const effectiveDrafts = resolveEffectiveConsumptionDrafts(
+    params.mealInputs,
+    params.drafts,
+  );
+  if (Object.keys(effectiveDrafts).length === 0) {
+    return "no_drafts";
+  }
+  if (!hasSaveableConsumptionDrafts(effectiveDrafts)) {
+    return "no_selected_drafts";
+  }
+
+  const isVirtualTarget = params.targets.some(
+    (t) => t.family_member_id != null,
+  );
+  const needsUserId =
+    params.mode === "personal" && !isVirtualTarget;
+  const hasUserId = params.targets.some((t) => t.user_id != null);
+  if (needsUserId && !hasUserId) {
+    return "no_user_id";
+  }
+
+  if (params.targets.length === 0) {
+    return "validation_error";
+  }
+
+  const entries = buildConsumptionSaveEntries(
+    params.mealInputs,
+    effectiveDrafts,
+    params.targets,
+  );
+  if (entries.length === 0) {
+    return "no_entries";
+  }
+
+  return null;
+}
+
+export function mealConsumptionSaveBlockMessage(
+  reason: MealConsumptionSaveBlockReason | null,
+): string | null {
+  switch (reason) {
+    case "no_user_id":
+      return "Не удалось определить пользователя";
+    case "no_drafts":
+    case "no_entries":
+      return "Нет данных для сохранения";
+    case "no_selected_drafts":
+      return "Выберите хотя бы одно блюдо";
+    case "loading":
+      return "Сохраняем...";
+    case "validation_error":
+      return "Не удалось подготовить сохранение";
+    case "unknown":
+      return "Сохранение временно недоступно";
+    default:
+      return null;
+  }
+}
+
+export function canSaveMealConsumption(params: {
+  mode: AppMode;
+  mealInputs: ConsumptionMealInput[];
+  drafts: Record<string, ConsumptionDraft>;
+  targets: ConsumptionMemberRef[];
+  saving?: boolean;
+  loadingLogs?: boolean;
+  hasInitData?: boolean;
+}): boolean {
+  return getMealConsumptionSaveBlockReason(params) === null;
+}
+
 export function buildConsumptionSaveEntries(
   meals: ConsumptionMealInput[],
   drafts: Record<string, ConsumptionDraft>,
@@ -313,16 +428,19 @@ export function applyConsumptionLogsToDrafts(
       continue;
     }
     const key = mealConsumptionKey(meal.meal_type, meal.mealIndex);
-    const status = log.status as MealConsumptionStatus;
+    const normalizedStatus: MealConsumptionStatus =
+      log.status === "skipped" || log.status === "ate_out"
+        ? log.status
+        : "eaten";
     const portion =
-      status === "ate_out"
+      normalizedStatus === "ate_out"
         ? 1
         : (MEAL_CONSUMPTION_PORTION_OPTIONS.find((o) => o.value === log.portion_multiplier)
             ?.value ?? 1);
     drafts[key] = {
       included: true,
       portion,
-      status: status === "unknown" ? "eaten" : status,
+      status: normalizedStatus,
     };
   }
 

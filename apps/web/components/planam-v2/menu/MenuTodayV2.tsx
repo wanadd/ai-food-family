@@ -78,7 +78,7 @@ type CachedSelected = { menu: MenuVariant | null; selected_at: string | null };
 export function MenuTodayV2() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { initData } = useTelegram();
+  const { initData, user } = useTelegram();
   const { mode, context, loading: modeLoading } = useAppMode();
   const { showToast } = useToast();
 
@@ -561,6 +561,7 @@ export function MenuTodayV2() {
         menuSelectionId={menuSelectionId}
         dayIndex={dayIndex}
         plannedDate={plannedDate || null}
+        currentUserId={user?.id ?? null}
         onClose={() => setConsumptionOpen(false)}
         onSaved={() => {
           showToast(MEAL_CONSUMPTION_SAVED_TOAST);

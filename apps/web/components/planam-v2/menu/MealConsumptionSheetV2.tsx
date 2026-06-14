@@ -21,8 +21,11 @@ import {
   buildConsumptionSaveEntries,
   buildDefaultConsumptionDrafts,
   buildPersonalConsumptionPayload,
-  canSaveConsumptionDrafts,
   consumptionSaveFooterHint,
+  getMealConsumptionSaveBlockReason,
+  mealConsumptionSaveBlockMessage,
+  canSaveMealConsumption,
+  resolveEffectiveConsumptionDrafts,
   MEAL_CONSUMPTION_MEMBER_PROMPT,
   MEAL_CONSUMPTION_PORTION_OPTIONS,
   MEAL_CONSUMPTION_SAVE_BUTTON_LABEL,
@@ -51,6 +54,8 @@ type MealConsumptionSheetV2Props = {
   menuSelectionId: number | null;
   dayIndex: number;
   plannedDate: string | null;
+  /** Authenticated app user id — prefer passing from parent when available. */
+  currentUserId?: number | null;
 };
 
 function MealSelectionToggle({
@@ -93,6 +98,7 @@ export function MealConsumptionSheetV2({
   menuSelectionId,
   dayIndex,
   plannedDate,
+  currentUserId: currentUserIdProp = null,
 }: MealConsumptionSheetV2Props) {
   const { initData, user } = useTelegram();
   const { mode, context } = useAppMode();
@@ -133,17 +139,41 @@ export function MealConsumptionSheetV2({
     [meals],
   );
 
-  const currentUserId = user?.id ?? null;
+  const currentUserId =
+    currentUserIdProp ??
+    user?.id ??
+    familyMembers.find((m) => m.is_you)?.user_id ??
+    null;
 
   const consumptionTargets = useMemo(
     () => resolveConsumptionTargets(targetId, familyMembers, currentUserId),
     [targetId, familyMembers, currentUserId],
   );
 
-  const canSave = canSaveConsumptionDrafts(drafts, {
+  const effectiveDrafts = useMemo(
+    () => resolveEffectiveConsumptionDrafts(mealInputs, drafts),
+    [mealInputs, drafts],
+  );
+
+  const saveBlockReason = getMealConsumptionSaveBlockReason({
+    mode,
+    mealInputs,
+    drafts: effectiveDrafts,
+    targets: consumptionTargets,
     saving,
-    loadingLogs,
+    hasInitData: Boolean(initData),
   });
+
+  const canSave = canSaveMealConsumption({
+    mode,
+    mealInputs,
+    drafts: effectiveDrafts,
+    targets: consumptionTargets,
+    saving,
+    hasInitData: Boolean(initData),
+  });
+
+  const saveBlockMessage = mealConsumptionSaveBlockMessage(saveBlockReason);
 
   const footerHint = consumptionSaveFooterHint(
     familyId,
@@ -188,6 +218,7 @@ export function MealConsumptionSheetV2({
     plannedDate,
     targetId,
     currentUserId,
+    familyMembers,
   ]);
 
   useEffect(() => {
@@ -206,20 +237,21 @@ export function MealConsumptionSheetV2({
 
   useEffect(() => {
     if (!open) {
+      setDrafts({});
       return;
     }
-    const target = consumptionTargets[0] ?? {
-      user_id: null,
-      family_member_id: null,
-    };
-    if (logs.length > 0 && consumptionTargets.length === 1) {
-      setDrafts(applyConsumptionLogsToDrafts(mealInputs, logs, target));
-    } else if (consumptionTargets.length === 1) {
-      setDrafts(buildDefaultConsumptionDrafts(mealInputs));
-    } else {
+    if (mealInputs.length > 0) {
       setDrafts(buildDefaultConsumptionDrafts(mealInputs));
     }
-  }, [open, logs, mealInputs, consumptionTargets, targetId]);
+  }, [open, mealInputs]);
+
+  useEffect(() => {
+    if (!open || logs.length === 0 || consumptionTargets.length !== 1) {
+      return;
+    }
+    const target = consumptionTargets[0];
+    setDrafts(applyConsumptionLogsToDrafts(mealInputs, logs, target));
+  }, [open, logs, mealInputs, consumptionTargets]);
 
   function updateDraft(key: string, patch: Partial<ConsumptionDraft>) {
     setDrafts((prev) => ({
@@ -241,7 +273,11 @@ export function MealConsumptionSheetV2({
       setError(MEAL_CONSUMPTION_PERMISSION_ERROR);
       return;
     }
-    const entries = buildConsumptionSaveEntries(mealInputs, drafts, targets);
+    const entries = buildConsumptionSaveEntries(
+      mealInputs,
+      effectiveDrafts,
+      targets,
+    );
     if (entries.length === 0) {
       setError(MEAL_CONSUMPTION_SAVE_ERROR);
       return;
@@ -283,6 +319,12 @@ export function MealConsumptionSheetV2({
         <p className="pa26-micro text-center text-red-600 dark:text-red-400">
           {error}
         </p>
+      ) : null}
+      {!canSave && saveBlockMessage ? (
+        <p className="pa26-micro text-center text-pa-muted">{saveBlockMessage}</p>
+      ) : null}
+      {loadingLogs && canSave ? (
+        <p className="pa26-micro text-center text-pa-muted">Загружаем отметки…</p>
       ) : null}
       <p className="pa26-micro text-center text-pa-muted">{footerHint}</p>
       <V2Button
@@ -336,7 +378,7 @@ export function MealConsumptionSheetV2({
           <ul className="space-y-3">
             {meals.map((item) => {
               const key = mealConsumptionKey(item.meal.meal_type, item.mealIndex);
-              const draft = drafts[key] ?? {
+              const draft = effectiveDrafts[key] ?? {
                 included: true,
                 portion: 1 as const,
                 status: "eaten" as const,

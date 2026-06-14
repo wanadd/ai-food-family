@@ -114,23 +114,28 @@ export function V2ProgressBar({
 export function V2Chip({
   label,
   active = false,
+  disabled = false,
   onClick,
   className,
 }: {
   label: string;
   active?: boolean;
+  disabled?: boolean;
   onClick?: () => void;
   className?: string;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      disabled={disabled}
+      onClick={disabled ? undefined : onClick}
+      aria-pressed={active}
       className={cn(
         "shrink-0 rounded-pill border px-3 py-1.5 pa26-micro font-semibold transition",
         active
           ? "border-sage-500 bg-sage-500 text-white dark:border-sage-400 dark:bg-sage-400"
           : "border-pa-border bg-pa-surface text-pa-muted hover:bg-sage-50 dark:hover:bg-pa-elevated/40",
+        disabled && "cursor-not-allowed opacity-50 hover:bg-pa-surface dark:hover:bg-pa-surface",
         className,
       )}
     >

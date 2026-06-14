@@ -6,8 +6,11 @@ import {
   buildDefaultConsumptionDrafts,
   buildPersonalConsumptionPayload,
   canSaveConsumptionDrafts,
+  canSaveMealConsumption,
   consumptionSaveFooterHint,
+  getMealConsumptionSaveBlockReason,
   hasSaveableConsumptionDrafts,
+  mealConsumptionSaveBlockMessage,
   MEAL_CONSUMPTION_FORBIDDEN_PHRASES,
   MEAL_CONSUMPTION_PERSONAL_SAVE_HINT,
   MEAL_CONSUMPTION_PORTION_OPTIONS,
@@ -19,6 +22,7 @@ import {
   mealConsumptionKey,
   resolveConsumptionFamilyId,
   resolveConsumptionTargets,
+  resolveEffectiveConsumptionDrafts,
   shouldShowConsumptionMemberPicker,
 } from "./meal-consumption-sheet";
 
@@ -194,5 +198,112 @@ describe("consumption save helpers", () => {
       [{ user_id: 10, family_member_id: null }],
     );
     expect(entries[0].portion_multiplier).toBe(0);
+  });
+});
+
+describe("meal consumption save block reason", () => {
+  const meals = [
+    {
+      meal_type: "lunch",
+      recipe_id: 256,
+      recipe_title: "Суп",
+      mealIndex: 0,
+    },
+  ];
+
+  const personalTargets = [{ user_id: 42, family_member_id: null }];
+
+  function personalSaveParams(
+    overrides: Partial<{
+      drafts: ReturnType<typeof buildDefaultConsumptionDrafts>;
+      currentUserId: number | null;
+      hasInitData: boolean;
+    }> = {},
+  ) {
+    const drafts =
+      overrides.drafts ?? buildDefaultConsumptionDrafts(meals);
+    const userId =
+      overrides.currentUserId !== undefined ? overrides.currentUserId : 42;
+    const targets = resolveConsumptionTargets("self", [], userId);
+    return {
+      mode: "personal" as const,
+      mealInputs: meals,
+      drafts,
+      targets,
+      saving: false,
+      hasInitData: overrides.hasInitData ?? true,
+    };
+  }
+
+  it("personal mode with user and selected meal → canSave true", () => {
+    const params = personalSaveParams();
+    expect(canSaveMealConsumption(params)).toBe(true);
+    expect(getMealConsumptionSaveBlockReason(params)).toBeNull();
+  });
+
+  it("personal mode without currentUserId → no_user_id", () => {
+    const params = personalSaveParams({ currentUserId: null });
+    expect(canSaveMealConsumption(params)).toBe(false);
+    expect(getMealConsumptionSaveBlockReason(params)).toBe("no_user_id");
+    expect(mealConsumptionSaveBlockMessage("no_user_id")).toBe(
+      "Не удалось определить пользователя",
+    );
+  });
+
+  it("personal mode builds entries with user_id without family_id", () => {
+    const drafts = buildDefaultConsumptionDrafts(meals);
+    const entries = buildConsumptionSaveEntries(
+      meals,
+      drafts,
+      personalTargets,
+    );
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      user_id: 42,
+      family_member_id: null,
+      meal_type: "lunch",
+      status: "eaten",
+      portion_multiplier: 1,
+    });
+  });
+
+  it("empty drafts state still resolves effective defaults", () => {
+    const effective = resolveEffectiveConsumptionDrafts(meals, {});
+    expect(hasSaveableConsumptionDrafts(effective)).toBe(true);
+    const entries = buildConsumptionSaveEntries(
+      meals,
+      effective,
+      personalTargets,
+    );
+    expect(entries).toHaveLength(1);
+  });
+
+  it("no selected drafts → no_selected_drafts message", () => {
+    const drafts = buildDefaultConsumptionDrafts(meals);
+    drafts[mealConsumptionKey("lunch", 0)].included = false;
+    const params = personalSaveParams({ drafts });
+    expect(getMealConsumptionSaveBlockReason(params)).toBe("no_selected_drafts");
+    expect(mealConsumptionSaveBlockMessage("no_selected_drafts")).toBe(
+      "Выберите хотя бы одно блюдо",
+    );
+  });
+
+  it("block messages never include legacy family setup hint", () => {
+    const reasons = [
+      "no_user_id",
+      "no_drafts",
+      "no_selected_drafts",
+      "no_entries",
+      "loading",
+      "validation_error",
+      "unknown",
+    ] as const;
+    for (const reason of reasons) {
+      const message = mealConsumptionSaveBlockMessage(reason);
+      expect(message).not.toContain(MEAL_CONSUMPTION_SAVE_DISABLED_HINT);
+    }
+    expect(consumptionSaveFooterHint(null, false, "self")).not.toContain(
+      MEAL_CONSUMPTION_SAVE_DISABLED_HINT,
+    );
   });
 });
