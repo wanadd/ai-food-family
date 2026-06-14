@@ -909,6 +909,7 @@ def _schema_statements() -> list[str]:
         """,
         "CREATE INDEX IF NOT EXISTS ix_meal_consumption_logs_family_day ON meal_consumption_logs (family_id, menu_selection_id, day_index);",
         "CREATE INDEX IF NOT EXISTS ix_meal_consumption_logs_user_date ON meal_consumption_logs (user_id, planned_date);",
+        "ALTER TABLE meal_consumption_logs ALTER COLUMN family_id DROP NOT NULL",
     ]
 
 

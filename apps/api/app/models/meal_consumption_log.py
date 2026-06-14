@@ -10,8 +10,8 @@ class MealConsumptionLog(Base):
     __tablename__ = "meal_consumption_logs"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    family_id: Mapped[int] = mapped_column(
-        ForeignKey("families.id", ondelete="CASCADE"), index=True
+    family_id: Mapped[int | None] = mapped_column(
+        ForeignKey("families.id", ondelete="CASCADE"), index=True, nullable=True
     )
     user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True

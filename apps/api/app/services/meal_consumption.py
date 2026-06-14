@@ -23,7 +23,7 @@ from app.services.meal_nutrition import _macros_from_calories
 
 
 PERMISSION_DENIED = "Нет прав отмечать питание за этого участника"
-FAMILY_REQUIRED = "Сохранение отметок доступно после настройки семьи"
+FAMILY_ACCESS_DENIED = "Нет доступа к отметкам этой семьи"
 
 
 def _caller_membership(db: Session, user: User) -> FamilyMember | None:
@@ -34,38 +34,39 @@ def _is_family_admin(membership: FamilyMember | None) -> bool:
     return membership is not None and membership.role == FamilyRole.ADMIN.value
 
 
+def _is_virtual_member(member: FamilyMember) -> bool:
+    return bool(member.is_virtual) and member.user_id is None
+
+
 def can_log_for_member(
     db: Session,
     *,
     caller: User,
-    family_id: int,
+    family_id: int | None,
     target_user_id: int | None,
     target_family_member_id: int | None,
 ) -> bool:
+    if family_id is None:
+        if target_family_member_id is not None:
+            return False
+        return target_user_id == caller.id
+
     membership = _caller_membership(db, caller)
     if membership is None or membership.family_id != family_id:
         return False
 
-    if target_user_id is not None and target_user_id == caller.id:
-        return True
-
-    if not _is_family_admin(membership):
-        return False
-
     if target_family_member_id is not None:
+        if not _is_family_admin(membership):
+            return False
         member = db.get(FamilyMember, target_family_member_id)
-        return member is not None and member.family_id == family_id
+        return (
+            member is not None
+            and member.family_id == family_id
+            and _is_virtual_member(member)
+        )
 
     if target_user_id is not None:
-        member = (
-            db.query(FamilyMember)
-            .filter(
-                FamilyMember.family_id == family_id,
-                FamilyMember.user_id == target_user_id,
-            )
-            .one_or_none()
-        )
-        return member is not None
+        return target_user_id == caller.id
 
     return False
 
@@ -73,15 +74,25 @@ def can_log_for_member(
 def _resolve_subject(
     db: Session,
     *,
-    family_id: int,
+    family_id: int | None,
     entry: MealConsumptionEntryIn,
     caller: User,
 ) -> tuple[int | None, int | None]:
     user_id = entry.user_id
     family_member_id = entry.family_member_id
 
-    if user_id is None and family_member_id is None:
-        user_id = caller.id
+    if family_id is None:
+        if family_member_id is not None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=PERMISSION_DENIED,
+            )
+        if user_id is not None and user_id != caller.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=PERMISSION_DENIED,
+            )
+        return caller.id, None
 
     if family_member_id is not None:
         member = db.get(FamilyMember, family_member_id)
@@ -90,19 +101,25 @@ def _resolve_subject(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=PERMISSION_DENIED,
             )
-        if member.user_id is not None:
-            user_id = member.user_id
-    elif user_id is not None:
-        member = (
-            db.query(FamilyMember)
-            .filter(
-                FamilyMember.family_id == family_id,
-                FamilyMember.user_id == user_id,
+        if _is_virtual_member(member):
+            user_id = None
+        elif member.user_id == caller.id:
+            user_id = caller.id
+            family_member_id = None
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=PERMISSION_DENIED,
             )
-            .one_or_none()
-        )
-        if member is not None:
-            family_member_id = member.id
+    else:
+        if user_id is None:
+            user_id = caller.id
+        elif user_id != caller.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=PERMISSION_DENIED,
+            )
+        family_member_id = None
 
     if not can_log_for_member(
         db,
@@ -163,7 +180,7 @@ def _estimate_nutrition(
 def _find_existing(
     db: Session,
     *,
-    family_id: int,
+    family_id: int | None,
     user_id: int | None,
     family_member_id: int | None,
     menu_selection_id: int | None,
@@ -174,9 +191,12 @@ def _find_existing(
     recipe_title: str | None,
 ) -> MealConsumptionLog | None:
     q = db.query(MealConsumptionLog).filter(
-        MealConsumptionLog.family_id == family_id,
         MealConsumptionLog.meal_type == meal_type,
     )
+    if family_id is None:
+        q = q.filter(MealConsumptionLog.family_id.is_(None))
+    else:
+        q = q.filter(MealConsumptionLog.family_id == family_id)
 
     if user_id is not None:
         q = q.filter(MealConsumptionLog.user_id == user_id)
@@ -213,18 +233,28 @@ def _entry_to_out(row: MealConsumptionLog) -> MealConsumptionEntryOut:
     )
 
 
+def _validate_family_access(
+    db: Session,
+    caller: User,
+    family_id: int | None,
+) -> None:
+    if family_id is None:
+        return
+    membership = _caller_membership(db, caller)
+    if membership is None or membership.family_id != family_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=FAMILY_ACCESS_DENIED,
+        )
+
+
 def save_meal_consumption_logs(
     db: Session,
     *,
     caller: User,
     payload: MealConsumptionBulkIn,
 ) -> list[MealConsumptionLog]:
-    membership = _caller_membership(db, caller)
-    if membership is None or membership.family_id != payload.family_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=FAMILY_REQUIRED,
-        )
+    _validate_family_access(db, caller, payload.family_id)
 
     saved: list[MealConsumptionLog] = []
 
@@ -310,21 +340,38 @@ def get_meal_consumption_logs(
     db: Session,
     *,
     caller: User,
-    family_id: int,
+    family_id: int | None = None,
+    family_member_id: int | None = None,
     menu_selection_id: int | None = None,
     day_index: int | None = None,
     planned_date: date | None = None,
 ) -> list[MealConsumptionLog]:
-    membership = _caller_membership(db, caller)
-    if membership is None or membership.family_id != family_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=FAMILY_REQUIRED,
-        )
+    _validate_family_access(db, caller, family_id)
 
-    q = db.query(MealConsumptionLog).filter(
-        MealConsumptionLog.family_id == family_id,
-    )
+    q = db.query(MealConsumptionLog)
+    if family_id is None:
+        q = q.filter(MealConsumptionLog.family_id.is_(None))
+    else:
+        q = q.filter(MealConsumptionLog.family_id == family_id)
+
+    if family_member_id is not None:
+        membership = _caller_membership(db, caller)
+        if not _is_family_admin(membership):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=PERMISSION_DENIED,
+            )
+        member = db.get(FamilyMember, family_member_id)
+        if member is None or member.family_id != family_id or not _is_virtual_member(
+            member
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=PERMISSION_DENIED,
+            )
+        q = q.filter(MealConsumptionLog.family_member_id == family_member_id)
+    else:
+        q = q.filter(MealConsumptionLog.user_id == caller.id)
 
     if menu_selection_id is not None:
         q = q.filter(MealConsumptionLog.menu_selection_id == menu_selection_id)

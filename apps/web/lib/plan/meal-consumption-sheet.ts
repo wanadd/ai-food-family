@@ -11,6 +11,12 @@ export const MEAL_CONSUMPTION_SAVE_BUTTON_LABEL = "Сохранить отмет
 export const MEAL_CONSUMPTION_SAVE_DISABLED_HINT =
   "Сохранение будет доступно после настройки семейного учёта";
 
+export const MEAL_CONSUMPTION_PERSONAL_SAVE_HINT =
+  "Отметки сохранятся в вашем дневнике питания";
+
+export const MEAL_CONSUMPTION_VIRTUAL_MEMBER_SAVE_HINT =
+  "Отметки сохранятся для выбранного участника";
+
 export const MEAL_CONSUMPTION_SAVING_LABEL = "Сохраняем...";
 
 export const MEAL_CONSUMPTION_SAVED_TOAST = "Отметки сохранены";
@@ -57,30 +63,32 @@ type MemberPickerInput = {
   id: number;
   display_name: string;
   is_you: boolean;
+  is_virtual?: boolean;
+  user_id?: number | null;
 };
 
-/** Who can be marked in the consumption sheet (UI only). */
+/** Who can be marked in the consumption sheet. */
 export function buildConsumptionMemberTargets(
   members: MemberPickerInput[],
   isAdmin: boolean,
 ): Array<{ id: ConsumptionTargetId; label: string }> {
+  const self = members.find((m) => m.is_you);
+  const selfTarget = {
+    id: "self" as const,
+    label: self?.display_name?.trim() || "Я",
+  };
+
   if (!isAdmin) {
-    const self = members.find((m) => m.is_you);
-    return [{ id: "self", label: self?.display_name?.trim() || "Я" }];
+    return [selfTarget];
   }
 
-  const targets: Array<{ id: ConsumptionTargetId; label: string }> = [];
-  const self = members.find((m) => m.is_you);
-  if (self) {
-    targets.push({ id: "self", label: "Я" });
-  }
+  const targets = [selfTarget];
   for (const member of members) {
-    if (member.is_you) {
+    if (member.is_you || !member.is_virtual) {
       continue;
     }
     targets.push({ id: member.id, label: member.display_name });
   }
-  targets.push({ id: "family", label: "Вся семья" });
   return targets;
 }
 
@@ -105,33 +113,57 @@ export function resolveConsumptionTargets(
   members: MemberForResolve[],
 ): ConsumptionMemberRef[] {
   if (targetId === "family") {
-    return members.map((m) => ({
-      user_id: m.user_id ?? null,
-      family_member_id: m.id,
-    }));
+    return [];
   }
   if (targetId === "self") {
     const self = members.find((m) => m.is_you);
-    if (!self) {
-      return [{ user_id: null, family_member_id: null }];
-    }
     return [
       {
-        user_id: self.user_id ?? null,
-        family_member_id: self.id,
+        user_id: self?.user_id ?? null,
+        family_member_id: null,
       },
     ];
   }
   const member = members.find((m) => m.id === targetId);
-  if (!member) {
+  if (!member || !member.is_virtual) {
     return [];
   }
   return [
     {
-      user_id: member.user_id ?? null,
+      user_id: null,
       family_member_id: member.id,
     },
   ];
+}
+
+export function consumptionSaveFooterHint(
+  familyId: number | null,
+  isAdmin: boolean,
+  targetId: ConsumptionTargetId,
+): string {
+  const isVirtualTarget = typeof targetId === "number";
+  if (isVirtualTarget && isAdmin && familyId != null) {
+    return MEAL_CONSUMPTION_VIRTUAL_MEMBER_SAVE_HINT;
+  }
+  return MEAL_CONSUMPTION_PERSONAL_SAVE_HINT;
+}
+
+export function buildPersonalConsumptionPayload(
+  params: {
+    familyId: number | null;
+    menuSelectionId: number | null;
+    dayIndex: number;
+    plannedDate: string | null;
+  },
+  entries: ReturnType<typeof buildConsumptionSaveEntries>,
+) {
+  return {
+    family_id: params.familyId,
+    menu_selection_id: params.menuSelectionId,
+    day_index: params.dayIndex,
+    planned_date: params.plannedDate,
+    entries,
+  };
 }
 
 export type ConsumptionMealInput = {
@@ -240,9 +272,11 @@ export function applyConsumptionLogsToDrafts(
 
   for (const log of logs) {
     const matchesTarget =
-      (target.user_id != null && log.user_id === target.user_id) ||
       (target.family_member_id != null &&
-        log.family_member_id === target.family_member_id);
+        log.family_member_id === target.family_member_id) ||
+      (target.family_member_id == null &&
+        log.family_member_id == null &&
+        (target.user_id == null || log.user_id === target.user_id));
     if (!matchesTarget || !log.meal_type) {
       continue;
     }

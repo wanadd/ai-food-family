@@ -180,27 +180,20 @@ export function DayNutritionCard2026({
     }
     setLoading(true);
     try {
-      if (familyId != null) {
-        const summary = await fetchMealConsumptionNutritionSummary(initData, mode, {
-          family_id: familyId,
-          menu_selection_id: menuSelectionId,
-          day_index: dayIndex,
-          planned_date: plannedDate,
-        });
-        const target = summary.targets?.kcal ?? null;
-        setTargetKcal(target);
-        setConsumptionLines(buildConsumptionNutritionCardLines(summary, target));
-        if (summary.mode === "planned") {
-          const plannedDay = await fetchMenuDayNutrition(initData, mode, plannedDate);
-          setDay(plannedDay);
-        } else {
-          setDay(null);
-        }
-      } else {
+      const summary = await fetchMealConsumptionNutritionSummary(initData, mode, {
+        family_id: familyId,
+        menu_selection_id: menuSelectionId,
+        day_index: dayIndex,
+        planned_date: plannedDate,
+      });
+      const target = summary.targets?.kcal ?? null;
+      setTargetKcal(target);
+      setConsumptionLines(buildConsumptionNutritionCardLines(summary, target));
+      if (summary.mode === "planned") {
         const plannedDay = await fetchMenuDayNutrition(initData, mode, plannedDate);
         setDay(plannedDay);
-        setConsumptionLines(null);
-        setTargetKcal(plannedDay?.targets.kcal ?? null);
+      } else {
+        setDay(null);
       }
     } catch {
       const plannedDay = await fetchMenuDayNutrition(initData, mode, plannedDate).catch(

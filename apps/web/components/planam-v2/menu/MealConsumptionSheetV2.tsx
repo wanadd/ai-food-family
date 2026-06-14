@@ -20,6 +20,8 @@ import {
   buildConsumptionMemberTargets,
   buildConsumptionSaveEntries,
   buildDefaultConsumptionDrafts,
+  buildPersonalConsumptionPayload,
+  consumptionSaveFooterHint,
   hasSaveableConsumptionDrafts,
   MEAL_CONSUMPTION_MEMBER_PROMPT,
   MEAL_CONSUMPTION_PORTION_OPTIONS,
@@ -135,21 +137,27 @@ export function MealConsumptionSheetV2({
   );
 
   const canSave =
-    familyId != null &&
-    hasSaveableConsumptionDrafts(drafts) &&
-    !saving &&
-    !loadingLogs;
+    hasSaveableConsumptionDrafts(drafts) && !saving && !loadingLogs;
+
+  const footerHint = consumptionSaveFooterHint(
+    familyId,
+    isFamilyAdmin,
+    targetId,
+  );
 
   const loadLogs = useCallback(async () => {
-    if (!initData || !open || familyId == null) {
+    if (!initData || !open) {
       setLogs([]);
       return;
     }
     setLoadingLogs(true);
     setError(null);
     try {
+      const target = resolveConsumptionTargets(targetId, familyMembers)[0];
       const rows = await fetchMealConsumptionLogs(initData, mode, {
         family_id: familyId,
+        family_member_id:
+          target?.family_member_id != null ? target.family_member_id : null,
         menu_selection_id: menuSelectionId,
         day_index: dayIndex,
         planned_date: plannedDate,
@@ -168,6 +176,8 @@ export function MealConsumptionSheetV2({
     menuSelectionId,
     dayIndex,
     plannedDate,
+    targetId,
+    familyMembers,
   ]);
 
   useEffect(() => {
@@ -175,7 +185,7 @@ export function MealConsumptionSheetV2({
       return;
     }
     void loadLogs();
-  }, [open, loadLogs]);
+  }, [open, loadLogs, targetId]);
 
   useEffect(() => {
     if (!open) {
@@ -209,10 +219,13 @@ export function MealConsumptionSheetV2({
   }
 
   async function handleSave() {
-    if (!initData || familyId == null || !canSave) {
+    if (!initData || !canSave) {
       return;
     }
     const targets = resolveConsumptionTargets(targetId, familyMembers);
+    if (targets.length === 0) {
+      return;
+    }
     const entries = buildConsumptionSaveEntries(mealInputs, drafts, targets);
     if (entries.length === 0) {
       return;
@@ -221,13 +234,19 @@ export function MealConsumptionSheetV2({
     setSaving(true);
     setError(null);
     try {
-      await saveMealConsumptionLogs(initData, mode, {
-        family_id: familyId,
-        menu_selection_id: menuSelectionId,
-        day_index: dayIndex,
-        planned_date: plannedDate,
-        entries,
-      });
+      await saveMealConsumptionLogs(
+        initData,
+        mode,
+        buildPersonalConsumptionPayload(
+          {
+            familyId,
+            menuSelectionId,
+            dayIndex,
+            plannedDate,
+          },
+          entries,
+        ),
+      );
       onSaved?.();
       onClose();
     } catch (err) {
@@ -244,11 +263,7 @@ export function MealConsumptionSheetV2({
           {error}
         </p>
       ) : null}
-      {familyId == null ? (
-        <p className="pa26-micro text-center text-pa-muted">
-          Сохранение отметок доступно после настройки семьи
-        </p>
-      ) : null}
+      <p className="pa26-micro text-center text-pa-muted">{footerHint}</p>
       <V2Button
         variant="primary"
         className="w-full"

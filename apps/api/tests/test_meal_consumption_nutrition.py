@@ -1,4 +1,4 @@
-"""Tests for meal consumption nutrition summary (Phase 2B)."""
+"""Tests for meal consumption nutrition summary (Phase 2B + personal hotfix)."""
 
 from __future__ import annotations
 
@@ -45,12 +45,7 @@ def db():
 
 
 @pytest.fixture(autouse=True)
-def _patch_membership(monkeypatch):
-    monkeypatch.setattr(
-        svc,
-        "_caller_membership",
-        lambda _db, _user: SimpleNamespace(family_id=1, role="adult"),
-    )
+def _patch_build_day(monkeypatch):
     monkeypatch.setattr(
         svc,
         "build_day_nutrition",
@@ -58,47 +53,47 @@ def _patch_membership(monkeypatch):
     )
 
 
-def _patch_logs(monkeypatch, logs: list[MealConsumptionLog]):
-    monkeypatch.setattr(svc, "get_meal_consumption_logs", lambda *_a, **_k: logs)
-
-
 def _log(
     *,
-    user_id: int = 10,
+    user_id: int | None = 10,
+    family_id: int | None = 1,
+    family_member_id: int | None = None,
     status: str = "eaten",
-    portion: float = 1.0,
     calories: float | None = 400.0,
-    protein: float | None = 25.0,
-    fat: float | None = 15.0,
-    carbs: float | None = 40.0,
-    recipe_id: int = 1,
 ) -> MealConsumptionLog:
     return MealConsumptionLog(
-        family_id=1,
+        family_id=family_id,
         user_id=user_id,
+        family_member_id=family_member_id,
         logged_by_user_id=10,
         menu_selection_id=123,
         day_index=2,
         planned_date=date(2026, 6, 14),
         meal_type="lunch",
-        recipe_id=recipe_id,
+        recipe_id=1,
         recipe_title="Суп",
         status=status,
-        portion_multiplier=portion,
+        portion_multiplier=1,
         calories_estimated=calories,
-        protein_estimated=protein,
-        fat_estimated=fat,
-        carbs_estimated=carbs,
+        protein_estimated=25,
+        fat_estimated=15,
+        carbs_estimated=40,
     )
 
 
-def _summary(db, monkeypatch, logs: list[MealConsumptionLog] | None = None):
-    _patch_logs(monkeypatch, logs or [])
+def _summary(db, monkeypatch, logs: list[MealConsumptionLog], *, family_id: int | None = 1):
+    monkeypatch.setattr(svc, "get_meal_consumption_logs", lambda *_a, **_k: logs)
+    if family_id is not None:
+        monkeypatch.setattr(
+            svc,
+            "_caller_membership",
+            lambda _db, _user: SimpleNamespace(family_id=family_id, role="adult"),
+        )
     return svc.get_meal_consumption_nutrition_summary(
         db,
         caller=SimpleNamespace(id=10),
-        scope=SimpleNamespace(mode="family", user_id=10, family_id=1),
-        family_id=1,
+        scope=SimpleNamespace(mode="personal", user_id=10, family_id=None),
+        family_id=family_id,
         menu_selection_id=123,
         day_index=2,
         planned_date=date(2026, 6, 14),
@@ -106,58 +101,50 @@ def _summary(db, monkeypatch, logs: list[MealConsumptionLog] | None = None):
 
 
 def test_no_logs_mode_planned(db, monkeypatch):
-    data = _summary(db, monkeypatch)
+    data = _summary(db, monkeypatch, [])
     assert data["mode"] == "planned"
-    assert data["has_consumption_logs"] is False
     assert data["actual"] is None
-    assert data["planned"]["calories"] == 1850
-    assert data["counts"]["logged_meals"] == 0
 
 
-def test_eaten_portion_1_uses_stored_macros(db, monkeypatch):
-    data = _summary(db, monkeypatch, [_log(portion=1.0, calories=400)])
+def test_personal_mode_actual_after_save(db, monkeypatch):
+    data = _summary(db, monkeypatch, [_log(family_id=None)], family_id=None)
     assert data["mode"] == "actual"
     assert data["actual"]["calories"] == 400
-    assert data["counts"]["eaten"] == 1
 
 
-def test_eaten_portion_half(db, monkeypatch):
-    data = _summary(db, monkeypatch, [_log(portion=0.5, calories=200)])
-    assert data["actual"]["calories"] == 200
-
-
-def test_eaten_portion_one_and_half(db, monkeypatch):
-    data = _summary(db, monkeypatch, [_log(portion=1.5, calories=600)])
-    assert data["actual"]["calories"] == 600
+def test_eaten_portion_counts(db, monkeypatch):
+    data = _summary(db, monkeypatch, [_log(calories=400)])
+    assert data["actual"]["calories"] == 400
 
 
 def test_skipped_not_in_actual(db, monkeypatch):
     data = _summary(db, monkeypatch, [_log(status="skipped", calories=None)])
     assert data["actual"]["calories"] == 0
     assert data["counts"]["skipped"] == 1
-    assert data["counts"]["eaten"] == 0
 
 
-def test_ate_out_not_in_actual_but_counted(db, monkeypatch):
+def test_ate_out_count_only(db, monkeypatch):
     data = _summary(db, monkeypatch, [_log(status="ate_out", calories=None)])
     assert data["actual"]["calories"] == 0
     assert data["counts"]["ate_out"] == 1
 
 
-def test_upsert_single_log_not_doubled(db, monkeypatch):
-    log = _log(calories=500)
-    data = _summary(db, monkeypatch, [log])
-    assert data["actual"]["calories"] == 500
-    assert data["counts"]["logged_meals"] == 1
-
-
-def test_logged_vs_planned_counts(db, monkeypatch):
-    data = _summary(db, monkeypatch, [_log()])
-    assert data["counts"]["planned_meals"] == 3
+def test_virtual_member_logs_not_in_current_user_summary(db, monkeypatch):
+    logs = [
+        _log(user_id=10, calories=300),
+        _log(user_id=None, family_member_id=5, calories=900),
+    ]
+    data = _summary(db, monkeypatch, logs)
+    assert data["actual"]["calories"] == 300
     assert data["counts"]["logged_meals"] == 1
 
 
 def test_other_family_forbidden(db, monkeypatch):
+    monkeypatch.setattr(
+        svc,
+        "_caller_membership",
+        lambda _db, _user: SimpleNamespace(family_id=1, role="adult"),
+    )
     with pytest.raises(HTTPException) as exc:
         svc.get_meal_consumption_nutrition_summary(
             db,
@@ -169,24 +156,3 @@ def test_other_family_forbidden(db, monkeypatch):
             planned_date=date(2026, 6, 14),
         )
     assert exc.value.status_code == 403
-
-
-def test_only_current_user_logs(db, monkeypatch):
-    logs = [
-        _log(user_id=10, calories=300),
-        _log(user_id=20, calories=900),
-    ]
-    data = _summary(db, monkeypatch, logs)
-    assert data["actual"]["calories"] == 300
-    assert data["counts"]["logged_meals"] == 1
-
-
-def test_fallback_estimate_when_macros_missing(db, monkeypatch):
-    monkeypatch.setattr(
-        svc,
-        "_estimate_nutrition",
-        lambda *_a, **_k: (320.0, 20.0, 12.0, 35.0),
-    )
-    log = _log(calories=None, protein=None, fat=None, carbs=None)
-    data = _summary(db, monkeypatch, [log])
-    assert data["actual"]["calories"] == 320

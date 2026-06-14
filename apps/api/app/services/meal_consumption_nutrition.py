@@ -11,7 +11,7 @@ from app.models.meal_consumption_log import MealConsumptionLog
 from app.models.user import User
 from app.services.app_scope import AppScope
 from app.services.meal_consumption import (
-    FAMILY_REQUIRED,
+    FAMILY_ACCESS_DENIED,
     _caller_membership,
     _estimate_nutrition,
     get_meal_consumption_logs,
@@ -79,17 +79,18 @@ def get_meal_consumption_nutrition_summary(
     *,
     caller: User,
     scope: AppScope,
-    family_id: int,
+    family_id: int | None = None,
     menu_selection_id: int | None = None,
     day_index: int | None = None,
     planned_date: date | None = None,
 ) -> dict:
-    membership = _caller_membership(db, caller)
-    if membership is None or membership.family_id != family_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=FAMILY_REQUIRED,
-        )
+    if family_id is not None:
+        membership = _caller_membership(db, caller)
+        if membership is None or membership.family_id != family_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=FAMILY_ACCESS_DENIED,
+            )
 
     plan_date_str = planned_date.isoformat() if planned_date else None
     day_plan = build_day_nutrition(db, caller.id, scope, plan_date_str)

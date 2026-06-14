@@ -1,4 +1,4 @@
-"""Tests for meal consumption logs (Phase 2A)."""
+"""Tests for meal consumption logs (Phase 2A + personal hotfix)."""
 
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def _membership(family_id: int = 1, role: str = "adult") -> SimpleNamespace:
 
 
 def _bulk_payload(
-    family_id: int = 1,
+    family_id: int | None = 1,
     *,
     user_id: int | None = 10,
     family_member_id: int | None = None,
@@ -78,88 +78,134 @@ def _bulk_payload(
 def _allow_save(monkeypatch):
     monkeypatch.setattr(
         svc,
-        "_caller_membership",
-        lambda _db, _user: _membership(),
-    )
-    monkeypatch.setattr(
-        svc,
         "_estimate_nutrition",
         lambda *_args, **_kwargs: (None, None, None, None),
     )
 
 
-@pytest.fixture()
-def simple_resolve(monkeypatch):
-    monkeypatch.setattr(
-        svc,
-        "_resolve_subject",
-        lambda _db, *, family_id, entry, caller: (
-            entry.user_id or caller.id,
-            entry.family_member_id,
-        ),
-    )
-
-
-def test_user_saves_for_self(db, simple_resolve):
+def test_personal_save_without_family_id(db):
     rows = svc.save_meal_consumption_logs(
-        db, caller=_user(10), payload=_bulk_payload(user_id=10)
+        db, caller=_user(10), payload=_bulk_payload(family_id=None, user_id=10)
+    )
+    assert len(rows) == 1
+    assert rows[0].family_id is None
+    assert rows[0].user_id == 10
+    assert rows[0].family_member_id is None
+
+
+def test_personal_get_without_family_id(db):
+    svc.save_meal_consumption_logs(
+        db, caller=_user(10), payload=_bulk_payload(family_id=None, user_id=10)
+    )
+    rows = svc.get_meal_consumption_logs(
+        db,
+        caller=_user(10),
+        family_id=None,
+        menu_selection_id=123,
+        day_index=2,
     )
     assert len(rows) == 1
     assert rows[0].user_id == 10
-    assert rows[0].status == "eaten"
 
 
-def test_admin_saves_for_child_member(db, monkeypatch, simple_resolve):
-    monkeypatch.setattr(
-        svc,
-        "_resolve_subject",
-        lambda _db, *, family_id, entry, caller: (None, 3),
+def test_personal_upsert_without_family_id(db):
+    svc.save_meal_consumption_logs(
+        db, caller=_user(10), payload=_bulk_payload(family_id=None, user_id=10, portion=1.0)
     )
-    rows = svc.save_meal_consumption_logs(
-        db,
-        caller=_user(1),
-        payload=_bulk_payload(user_id=None, family_member_id=3),
+    svc.save_meal_consumption_logs(
+        db, caller=_user(10), payload=_bulk_payload(family_id=None, user_id=10, portion=1.5)
     )
-    assert len(rows) == 1
-    assert rows[0].family_member_id == 3
+    assert db.query(MealConsumptionLog).count() == 1
+    assert db.query(MealConsumptionLog).one().portion_multiplier == 1.5
 
 
-def test_adult_cannot_save_for_other_member(db, monkeypatch):
-    def deny_other(_db, *, caller, family_id, target_user_id, target_family_member_id):
-        return target_user_id == caller.id
-
-    monkeypatch.setattr(svc, "can_log_for_member", deny_other)
-
-    other_member = SimpleNamespace(id=2, family_id=1, user_id=20)
-
-    class FakeQuery:
-        def filter(self, *_args, **_kwargs):
-            return self
-
-        def one_or_none(self):
-            return other_member
-
-    monkeypatch.setattr(db, "query", lambda _model: FakeQuery())
-
+def test_personal_cannot_save_for_other_user(db):
     with pytest.raises(HTTPException) as exc:
         svc.save_meal_consumption_logs(
-            db, caller=_user(10), payload=_bulk_payload(user_id=20)
+            db, caller=_user(10), payload=_bulk_payload(family_id=None, user_id=20)
         )
     assert exc.value.status_code == 403
     assert exc.value.detail == svc.PERMISSION_DENIED
 
 
+def test_personal_cannot_save_family_member_id(db):
+    with pytest.raises(HTTPException) as exc:
+        svc.save_meal_consumption_logs(
+            db,
+            caller=_user(10),
+            payload=_bulk_payload(family_id=None, user_id=None, family_member_id=3),
+        )
+    assert exc.value.status_code == 403
+
+
+def test_user_saves_for_self_in_family(db, monkeypatch):
+    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: _membership())
+    rows = svc.save_meal_consumption_logs(
+        db, caller=_user(10), payload=_bulk_payload(user_id=10)
+    )
+    assert rows[0].user_id == 10
+    assert rows[0].family_id == 1
+
+
+def test_admin_saves_for_virtual_member(db, monkeypatch):
+    virtual = SimpleNamespace(
+        id=3, family_id=1, user_id=None, is_virtual=True, role="child"
+    )
+    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: _membership(role="admin"))
+    monkeypatch.setattr(
+        "sqlalchemy.orm.session.Session.get",
+        lambda _self, model, pk: virtual if pk == 3 else None,
+    )
+
+    rows = svc.save_meal_consumption_logs(
+        db,
+        caller=_user(1),
+        payload=_bulk_payload(user_id=None, family_member_id=3),
+    )
+    assert rows[0].family_member_id == 3
+    assert rows[0].user_id is None
+
+
+def test_admin_cannot_save_for_other_real_user(db, monkeypatch):
+    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: _membership(role="admin"))
+    with pytest.raises(HTTPException) as exc:
+        svc.save_meal_consumption_logs(
+            db, caller=_user(1), payload=_bulk_payload(user_id=20)
+        )
+    assert exc.value.status_code == 403
+    assert exc.value.detail == svc.PERMISSION_DENIED
+
+
+def test_adult_cannot_save_virtual_member(db, monkeypatch):
+    virtual = SimpleNamespace(
+        id=3, family_id=1, user_id=None, is_virtual=True, role="child"
+    )
+    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: _membership(role="adult"))
+    monkeypatch.setattr(
+        "sqlalchemy.orm.session.Session.get",
+        lambda _self, model, pk: virtual if pk == 3 else None,
+    )
+    with pytest.raises(HTTPException) as exc:
+        svc.save_meal_consumption_logs(
+            db,
+            caller=_user(10),
+            payload=_bulk_payload(user_id=None, family_member_id=3),
+        )
+    assert exc.value.status_code == 403
+
+
 def test_user_cannot_save_outside_family(db, monkeypatch):
-    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: None)
+    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: _membership())
     with pytest.raises(HTTPException) as exc:
         svc.save_meal_consumption_logs(
             db, caller=_user(10), payload=_bulk_payload(family_id=99, user_id=10)
         )
     assert exc.value.status_code == 403
-    assert exc.value.detail == svc.FAMILY_REQUIRED
+    assert exc.value.detail == svc.FAMILY_ACCESS_DENIED
 
 
-def test_upsert_updates_not_duplicates(db, simple_resolve):
+def test_upsert_updates_not_duplicates(db, monkeypatch):
+    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: _membership())
     svc.save_meal_consumption_logs(
         db, caller=_user(10), payload=_bulk_payload(user_id=10, portion=1.0)
     )
@@ -167,10 +213,10 @@ def test_upsert_updates_not_duplicates(db, simple_resolve):
         db, caller=_user(10), payload=_bulk_payload(user_id=10, portion=1.5)
     )
     assert db.query(MealConsumptionLog).count() == 1
-    assert db.query(MealConsumptionLog).one().portion_multiplier == 1.5
 
 
-def test_ate_out_status_and_zero_portion(db, simple_resolve):
+def test_ate_out_status_and_zero_portion(db, monkeypatch):
+    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: _membership())
     rows = svc.save_meal_consumption_logs(
         db,
         caller=_user(10),
@@ -181,7 +227,8 @@ def test_ate_out_status_and_zero_portion(db, simple_resolve):
 
 
 @pytest.mark.parametrize("portion", [0.5, 1.0, 1.5, 2.0])
-def test_portion_multipliers(db, simple_resolve, portion: float):
+def test_portion_multipliers(db, monkeypatch, portion: float):
+    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: _membership())
     rows = svc.save_meal_consumption_logs(
         db,
         caller=_user(10),
@@ -190,44 +237,41 @@ def test_portion_multipliers(db, simple_resolve, portion: float):
     assert rows[0].portion_multiplier == portion
 
 
-def test_get_returns_saved_logs(db, simple_resolve):
+def test_get_returns_only_current_user_logs(db, monkeypatch):
+    monkeypatch.setattr(svc, "_caller_membership", lambda _db, _user: _membership())
     svc.save_meal_consumption_logs(
         db, caller=_user(10), payload=_bulk_payload(user_id=10)
     )
-    rows = svc.get_meal_consumption_logs(
-        db,
-        caller=_user(10),
+    other = MealConsumptionLog(
         family_id=1,
-        menu_selection_id=123,
-        day_index=2,
+        user_id=20,
+        logged_by_user_id=1,
+        meal_type="dinner",
+        status="eaten",
+        portion_multiplier=1,
     )
+    db.add(other)
+    db.commit()
+
+    rows = svc.get_meal_consumption_logs(db, caller=_user(10), family_id=1)
     assert len(rows) == 1
-    assert rows[0].meal_type == "lunch"
+    assert rows[0].user_id == 10
 
 
 def test_can_log_for_member_rules(db, monkeypatch):
     adult_member = _membership(role="adult")
     admin_member = _membership(role="admin")
+    virtual = SimpleNamespace(
+        id=5, family_id=1, user_id=None, is_virtual=True, role="child"
+    )
 
     def membership_for(user):
         return admin_member if user.id == 1 else adult_member
 
     monkeypatch.setattr(svc, "_caller_membership", lambda _db, user: membership_for(user))
-
-    target_member = SimpleNamespace(id=5, family_id=1, user_id=10)
-
-    class FakeQuery:
-        def filter(self, *_args, **_kwargs):
-            return self
-
-        def one_or_none(self):
-            return target_member
-
-    monkeypatch.setattr(db, "query", lambda _model: FakeQuery())
     monkeypatch.setattr(
-        db,
-        "get",
-        lambda _model, _pk: target_member if _pk == 5 else None,
+        "sqlalchemy.orm.session.Session.get",
+        lambda _self, model, pk: virtual if pk == 5 else None,
     )
 
     assert svc.can_log_for_member(
@@ -244,10 +288,24 @@ def test_can_log_for_member_rules(db, monkeypatch):
         target_user_id=20,
         target_family_member_id=None,
     )
+    assert not svc.can_log_for_member(
+        db,
+        caller=_user(1),
+        family_id=1,
+        target_user_id=10,
+        target_family_member_id=None,
+    )
     assert svc.can_log_for_member(
         db,
         caller=_user(1),
         family_id=1,
+        target_user_id=None,
+        target_family_member_id=5,
+    )
+    assert svc.can_log_for_member(
+        db,
+        caller=_user(10),
+        family_id=None,
         target_user_id=10,
         target_family_member_id=None,
     )

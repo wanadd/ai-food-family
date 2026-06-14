@@ -15,7 +15,7 @@ export type MealConsumptionLogEntry = {
 };
 
 export type MealConsumptionBulkPayload = {
-  family_id: number;
+  family_id: number | null;
   menu_selection_id?: number | null;
   day_index?: number | null;
   planned_date?: string | null;
@@ -71,14 +71,16 @@ export async function fetchMealConsumptionNutritionSummary(
   initData: string,
   mode: AppMode,
   params: {
-    family_id: number;
+    family_id?: number | null;
     menu_selection_id?: number | null;
     day_index?: number | null;
     planned_date?: string | null;
   },
 ): Promise<MealConsumptionNutritionSummary> {
   const qs = new URLSearchParams();
-  qs.set("family_id", String(params.family_id));
+  if (params.family_id != null) {
+    qs.set("family_id", String(params.family_id));
+  }
   if (params.menu_selection_id != null) {
     qs.set("menu_selection_id", String(params.menu_selection_id));
   }
@@ -103,14 +105,20 @@ export async function fetchMealConsumptionLogs(
   initData: string,
   mode: AppMode,
   params: {
-    family_id: number;
+    family_id?: number | null;
+    family_member_id?: number | null;
     menu_selection_id?: number | null;
     day_index?: number | null;
     planned_date?: string | null;
   },
 ): Promise<MealConsumptionLogEntry[]> {
   const qs = new URLSearchParams();
-  qs.set("family_id", String(params.family_id));
+  if (params.family_id != null) {
+    qs.set("family_id", String(params.family_id));
+  }
+  if (params.family_member_id != null) {
+    qs.set("family_member_id", String(params.family_member_id));
+  }
   if (params.menu_selection_id != null) {
     qs.set("menu_selection_id", String(params.menu_selection_id));
   }
@@ -151,7 +159,7 @@ export const MEAL_CONSUMPTION_PERMISSION_ERROR =
   "Нет прав отмечать питание за этого участника";
 
 export const MEAL_CONSUMPTION_FAMILY_REQUIRED_ERROR =
-  "Сохранение отметок доступно после настройки семьи";
+  "Нет доступа к отметкам этой семьи";
 
 export function mealConsumptionErrorMessage(err: unknown): string {
   const message =

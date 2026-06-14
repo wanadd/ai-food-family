@@ -19,7 +19,7 @@ class MealConsumptionEntryIn(BaseModel):
 
 
 class MealConsumptionBulkIn(BaseModel):
-    family_id: int
+    family_id: int | None = None
     menu_selection_id: int | None = None
     day_index: int | None = None
     planned_date: date | None = None

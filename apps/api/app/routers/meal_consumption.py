@@ -27,7 +27,8 @@ router = APIRouter(prefix="/meal-consumption", tags=["meal-consumption"])
 
 @router.get("", response_model=MealConsumptionListOut)
 def list_meal_consumption(
-    family_id: int = Query(...),
+    family_id: int | None = Query(default=None),
+    family_member_id: int | None = Query(default=None),
     menu_selection_id: int | None = Query(default=None),
     day_index: int | None = Query(default=None),
     planned_date: date | None = Query(default=None),
@@ -38,6 +39,7 @@ def list_meal_consumption(
         db,
         caller=user,
         family_id=family_id,
+        family_member_id=family_member_id,
         menu_selection_id=menu_selection_id,
         day_index=day_index,
         planned_date=planned_date,
@@ -58,7 +60,7 @@ def bulk_save_meal_consumption(
 
 @router.get("/nutrition-summary", response_model=MealConsumptionNutritionSummaryOut)
 def get_meal_consumption_nutrition_summary_endpoint(
-    family_id: int = Query(...),
+    family_id: int | None = Query(default=None),
     menu_selection_id: int | None = Query(default=None),
     day_index: int | None = Query(default=None),
     planned_date: date | None = Query(default=None),
