@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -46,3 +47,27 @@ class MealConsumptionBulkOut(BaseModel):
 
 class MealConsumptionListOut(BaseModel):
     entries: list[MealConsumptionEntryOut]
+
+
+class NutritionTotalsOut(BaseModel):
+    calories: int
+    protein: int
+    fat: int
+    carbs: int
+
+
+class ConsumptionNutritionCountsOut(BaseModel):
+    planned_meals: int
+    logged_meals: int
+    eaten: int
+    skipped: int
+    ate_out: int
+
+
+class MealConsumptionNutritionSummaryOut(BaseModel):
+    mode: Literal["planned", "actual"]
+    has_consumption_logs: bool
+    planned: NutritionTotalsOut
+    actual: NutritionTotalsOut | None = None
+    counts: ConsumptionNutritionCountsOut
+    targets: dict[str, int | None] | None = None

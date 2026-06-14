@@ -4,17 +4,22 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_verified_user
+from app.deps import get_app_scope, get_verified_user
 from app.models.user import User
 from app.schemas.meal_consumption import (
     MealConsumptionBulkIn,
     MealConsumptionBulkOut,
     MealConsumptionListOut,
+    MealConsumptionNutritionSummaryOut,
 )
+from app.services.app_scope import AppScope
 from app.services.meal_consumption import (
     get_meal_consumption_logs,
     logs_to_entries,
     save_meal_consumption_logs,
+)
+from app.services.meal_consumption_nutrition import (
+    get_meal_consumption_nutrition_summary,
 )
 
 router = APIRouter(prefix="/meal-consumption", tags=["meal-consumption"])
@@ -49,3 +54,25 @@ def bulk_save_meal_consumption(
     rows = save_meal_consumption_logs(db, caller=user, payload=payload)
     entries = logs_to_entries(rows)
     return MealConsumptionBulkOut(saved=len(entries), entries=entries)
+
+
+@router.get("/nutrition-summary", response_model=MealConsumptionNutritionSummaryOut)
+def get_meal_consumption_nutrition_summary_endpoint(
+    family_id: int = Query(...),
+    menu_selection_id: int | None = Query(default=None),
+    day_index: int | None = Query(default=None),
+    planned_date: date | None = Query(default=None),
+    user: User = Depends(get_verified_user),
+    scope: AppScope = Depends(get_app_scope),
+    db: Session = Depends(get_db),
+) -> MealConsumptionNutritionSummaryOut:
+    data = get_meal_consumption_nutrition_summary(
+        db,
+        caller=user,
+        scope=scope,
+        family_id=family_id,
+        menu_selection_id=menu_selection_id,
+        day_index=day_index,
+        planned_date=planned_date,
+    )
+    return MealConsumptionNutritionSummaryOut(**data)

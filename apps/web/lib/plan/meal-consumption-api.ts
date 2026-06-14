@@ -40,6 +40,65 @@ export type MealConsumptionListResponse = {
   entries: MealConsumptionLogEntry[];
 };
 
+export type NutritionTotals = {
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+};
+
+export type MealConsumptionNutritionSummary = {
+  mode: "planned" | "actual";
+  has_consumption_logs: boolean;
+  planned: NutritionTotals;
+  actual: NutritionTotals | null;
+  counts: {
+    planned_meals: number;
+    logged_meals: number;
+    eaten: number;
+    skipped: number;
+    ate_out: number;
+  };
+  targets?: {
+    kcal: number | null;
+    protein: number | null;
+    fat: number | null;
+    carbs: number | null;
+  } | null;
+};
+
+export async function fetchMealConsumptionNutritionSummary(
+  initData: string,
+  mode: AppMode,
+  params: {
+    family_id: number;
+    menu_selection_id?: number | null;
+    day_index?: number | null;
+    planned_date?: string | null;
+  },
+): Promise<MealConsumptionNutritionSummary> {
+  const qs = new URLSearchParams();
+  qs.set("family_id", String(params.family_id));
+  if (params.menu_selection_id != null) {
+    qs.set("menu_selection_id", String(params.menu_selection_id));
+  }
+  if (params.day_index != null) {
+    qs.set("day_index", String(params.day_index));
+  }
+  if (params.planned_date) {
+    qs.set("planned_date", params.planned_date);
+  }
+  const data = await apiGet<MealConsumptionNutritionSummary>(
+    initData,
+    mode,
+    `/meal-consumption/nutrition-summary?${qs.toString()}`,
+  );
+  if (!data) {
+    throw new Error("Не удалось загрузить сводку питания");
+  }
+  return data;
+}
+
 export async function fetchMealConsumptionLogs(
   initData: string,
   mode: AppMode,

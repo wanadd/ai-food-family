@@ -90,6 +90,7 @@ export function MenuTodayV2() {
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [replaceMealIndex, setReplaceMealIndex] = useState<number | null>(null);
   const [consumptionOpen, setConsumptionOpen] = useState(false);
+  const [nutritionRefreshKey, setNutritionRefreshKey] = useState(0);
   const [outcomeOpen, setOutcomeOpen] = useState(false);
   const [outcomeMealIndex, setOutcomeMealIndex] = useState<number | null>(null);
   const [actionMeal, setActionMeal] = useState<PlanTodayMeal | null>(null);
@@ -364,7 +365,15 @@ export function MenuTodayV2() {
           <p className="pa26-caption mt-2 capitalize text-pa-muted">{dateLabel}</p>
         )}
 
-        {plannedDate ? <DayNutritionCard2026 plannedDate={plannedDate} /> : null}
+        {plannedDate ? (
+          <DayNutritionCard2026
+            plannedDate={plannedDate}
+            familyId={menuFamilyId ?? context?.family?.id ?? null}
+            menuSelectionId={menuSelectionId}
+            dayIndex={dayIndex}
+            refreshKey={nutritionRefreshKey}
+          />
+        ) : null}
       </div>
 
       <div className="mt-3 px-4">
@@ -544,7 +553,10 @@ export function MenuTodayV2() {
         dayIndex={dayIndex}
         plannedDate={plannedDate || null}
         onClose={() => setConsumptionOpen(false)}
-        onSaved={() => showToast(MEAL_CONSUMPTION_SAVED_TOAST)}
+        onSaved={() => {
+          showToast(MEAL_CONSUMPTION_SAVED_TOAST);
+          setNutritionRefreshKey((k) => k + 1);
+        }}
       />
 
       <MealOutcomeSheet2026
