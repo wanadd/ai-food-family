@@ -11,7 +11,6 @@ import {
 import { menuMealHeading } from "@/lib/menu/meal-heading";
 import {
   buildConsumptionMemberTargets,
-  formatConsumptionPortion,
   MEAL_CONSUMPTION_MEMBER_PROMPT,
   MEAL_CONSUMPTION_PORTION_OPTIONS,
   MEAL_CONSUMPTION_SAVE_BUTTON_LABEL,
@@ -205,12 +204,12 @@ export function MealConsumptionSheetV2({
                       <div>
                         <p className="pa26-micro mb-1 text-pa-muted">Порция</p>
                         <div className="flex flex-wrap gap-2">
-                          {MEAL_CONSUMPTION_PORTION_OPTIONS.map((portion) => (
+                          {MEAL_CONSUMPTION_PORTION_OPTIONS.map((option) => (
                             <V2Chip
-                              key={portion}
-                              label={formatConsumptionPortion(portion)}
-                              active={draft.portion === portion}
-                              onClick={() => updateDraft(key, { portion })}
+                              key={option.value}
+                              label={option.label}
+                              active={draft.portion === option.value}
+                              onClick={() => updateDraft(key, { portion: option.value })}
                             />
                           ))}
                         </div>

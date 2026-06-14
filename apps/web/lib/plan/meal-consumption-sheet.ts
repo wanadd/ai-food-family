@@ -20,7 +20,15 @@ export const MEAL_CONSUMPTION_FORBIDDEN_PHRASES = [
   "Показать итог дня",
 ] as const;
 
-export const MEAL_CONSUMPTION_PORTION_OPTIONS = [0.5, 1, 1.5, 2] as const;
+export const MEAL_CONSUMPTION_PORTION_OPTIONS = [
+  { value: 0.5, label: "0,5" },
+  { value: 1, label: "1" },
+  { value: 1.5, label: "1,5" },
+  { value: 2, label: "2" },
+] as const;
+
+export type MealConsumptionPortionValue =
+  (typeof MEAL_CONSUMPTION_PORTION_OPTIONS)[number]["value"];
 
 export type MealConsumptionStatus = "eaten" | "skipped" | "ate_out";
 
@@ -34,13 +42,6 @@ export const MEAL_CONSUMPTION_STATUS_OPTIONS: ReadonlyArray<{
 ];
 
 export type ConsumptionTargetId = "self" | "family" | number;
-
-export function formatConsumptionPortion(value: number): string {
-  if (value === 0.5) {
-    return "½";
-  }
-  return String(value);
-}
 
 type MemberPickerInput = {
   id: number;

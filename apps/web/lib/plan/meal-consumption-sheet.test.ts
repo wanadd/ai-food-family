@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildConsumptionMemberTargets,
   MEAL_CONSUMPTION_FORBIDDEN_PHRASES,
+  MEAL_CONSUMPTION_PORTION_OPTIONS,
   MEAL_CONSUMPTION_SAVE_BUTTON_LABEL,
   MEAL_CONSUMPTION_SAVE_DISABLED_HINT,
   MEAL_CONSUMPTION_SHEET_SUBTITLE,
@@ -45,6 +46,23 @@ describe("meal consumption sheet copy", () => {
   it("avoids cooking-oriented question in subtitle", () => {
     expect(MEAL_CONSUMPTION_SHEET_SUBTITLE).not.toContain("приготовили");
     expect(MEAL_CONSUMPTION_SHEET_SUBTITLE).toContain("блюда");
+  });
+
+  it("uses Russian portion labels with comma decimal", () => {
+    expect(MEAL_CONSUMPTION_PORTION_OPTIONS.map((o) => o.label)).toEqual([
+      "0,5",
+      "1",
+      "1,5",
+      "2",
+    ]);
+    expect(MEAL_CONSUMPTION_PORTION_OPTIONS.map((o) => o.value)).toEqual([
+      0.5, 1, 1.5, 2,
+    ]);
+    const labels = MEAL_CONSUMPTION_PORTION_OPTIONS.map((o) => o.label).join(" ");
+    expect(labels).not.toContain("½");
+    expect(labels).not.toContain("1.5");
+    expect(labels).not.toContain("0.5");
+    expect(labels).not.toContain("2.0");
   });
 });
 
