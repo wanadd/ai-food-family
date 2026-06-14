@@ -279,7 +279,7 @@ def select_menu(
     db.commit()
     db.refresh(selection)
     shopping_list_service.sync_from_menu(db, scope, finalized_menu, selection.id)
-    return selection_response(selection, scope, db=db)
+    return _selection_response(selection, scope, db=db)
 
 
 def get_selected_menu(
@@ -309,7 +309,7 @@ def _selection_response(
 ) -> SelectedMenuResponse:
     from app.services.menu_selection import selection_response
 
-    return selection_response(selection, scope, db=db)
+    return _selection_response(selection, scope, db=db)
 
 
 async def run_quick_action(
