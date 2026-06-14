@@ -5,6 +5,7 @@ import {
   buildConsumptionSaveEntries,
   buildDefaultConsumptionDrafts,
   buildPersonalConsumptionPayload,
+  canSaveConsumptionDrafts,
   consumptionSaveFooterHint,
   hasSaveableConsumptionDrafts,
   MEAL_CONSUMPTION_FORBIDDEN_PHRASES,
@@ -16,6 +17,7 @@ import {
   MEAL_CONSUMPTION_VIRTUAL_MEMBER_SAVE_HINT,
   MENU_TODAY_MARK_CONSUMPTION_BUTTON,
   mealConsumptionKey,
+  resolveConsumptionFamilyId,
   resolveConsumptionTargets,
   shouldShowConsumptionMemberPicker,
 } from "./meal-consumption-sheet";
@@ -93,6 +95,21 @@ describe("consumption save helpers", () => {
   it("save enabled with selected meal regardless of family_id", () => {
     const drafts = buildDefaultConsumptionDrafts(meals);
     expect(hasSaveableConsumptionDrafts(drafts)).toBe(true);
+    expect(
+      canSaveConsumptionDrafts(drafts, { saving: false, loadingLogs: false }),
+    ).toBe(true);
+  });
+
+  it("personal mode family_id is always null even with context family", () => {
+    expect(resolveConsumptionFamilyId("personal", null, 5)).toBeNull();
+    expect(resolveConsumptionFamilyId("family", 3, 5)).toBe(3);
+    expect(resolveConsumptionFamilyId("family", null, 5)).toBe(5);
+  });
+
+  it("self target uses currentUserId when members list is empty", () => {
+    expect(resolveConsumptionTargets("self", [], 42)).toEqual([
+      { user_id: 42, family_member_id: null },
+    ]);
   });
 
   it("personal payload uses null family_id", () => {

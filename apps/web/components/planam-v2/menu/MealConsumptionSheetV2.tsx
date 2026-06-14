@@ -21,11 +21,13 @@ import {
   buildConsumptionSaveEntries,
   buildDefaultConsumptionDrafts,
   buildPersonalConsumptionPayload,
+  canSaveConsumptionDrafts,
   consumptionSaveFooterHint,
-  hasSaveableConsumptionDrafts,
   MEAL_CONSUMPTION_MEMBER_PROMPT,
   MEAL_CONSUMPTION_PORTION_OPTIONS,
   MEAL_CONSUMPTION_SAVE_BUTTON_LABEL,
+  MEAL_CONSUMPTION_PERMISSION_ERROR,
+  MEAL_CONSUMPTION_SAVE_ERROR,
   MEAL_CONSUMPTION_SAVING_LABEL,
   MEAL_CONSUMPTION_SHEET_SUBTITLE,
   MEAL_CONSUMPTION_SHEET_TITLE,
@@ -92,7 +94,7 @@ export function MealConsumptionSheetV2({
   dayIndex,
   plannedDate,
 }: MealConsumptionSheetV2Props) {
-  const { initData } = useTelegram();
+  const { initData, user } = useTelegram();
   const { mode, context } = useAppMode();
   const [targetId, setTargetId] = useState<ConsumptionTargetId>("self");
   const [drafts, setDrafts] = useState<Record<string, ConsumptionDraft>>({});
@@ -131,13 +133,17 @@ export function MealConsumptionSheetV2({
     [meals],
   );
 
+  const currentUserId = user?.id ?? null;
+
   const consumptionTargets = useMemo(
-    () => resolveConsumptionTargets(targetId, familyMembers),
-    [targetId, familyMembers],
+    () => resolveConsumptionTargets(targetId, familyMembers, currentUserId),
+    [targetId, familyMembers, currentUserId],
   );
 
-  const canSave =
-    hasSaveableConsumptionDrafts(drafts) && !saving && !loadingLogs;
+  const canSave = canSaveConsumptionDrafts(drafts, {
+    saving,
+    loadingLogs,
+  });
 
   const footerHint = consumptionSaveFooterHint(
     familyId,
@@ -153,7 +159,11 @@ export function MealConsumptionSheetV2({
     setLoadingLogs(true);
     setError(null);
     try {
-      const target = resolveConsumptionTargets(targetId, familyMembers)[0];
+      const target = resolveConsumptionTargets(
+        targetId,
+        familyMembers,
+        currentUserId,
+      )[0];
       const rows = await fetchMealConsumptionLogs(initData, mode, {
         family_id: familyId,
         family_member_id:
@@ -177,7 +187,7 @@ export function MealConsumptionSheetV2({
     dayIndex,
     plannedDate,
     targetId,
-    familyMembers,
+    currentUserId,
   ]);
 
   useEffect(() => {
@@ -222,19 +232,25 @@ export function MealConsumptionSheetV2({
     if (!initData || !canSave) {
       return;
     }
-    const targets = resolveConsumptionTargets(targetId, familyMembers);
+    const targets = resolveConsumptionTargets(
+      targetId,
+      familyMembers,
+      currentUserId,
+    );
     if (targets.length === 0) {
+      setError(MEAL_CONSUMPTION_PERMISSION_ERROR);
       return;
     }
     const entries = buildConsumptionSaveEntries(mealInputs, drafts, targets);
     if (entries.length === 0) {
+      setError(MEAL_CONSUMPTION_SAVE_ERROR);
       return;
     }
 
     setSaving(true);
     setError(null);
     try {
-      await saveMealConsumptionLogs(
+      const result = await saveMealConsumptionLogs(
         initData,
         mode,
         buildPersonalConsumptionPayload(
@@ -247,6 +263,11 @@ export function MealConsumptionSheetV2({
           entries,
         ),
       );
+      if (!result?.saved) {
+        setError(MEAL_CONSUMPTION_SAVE_ERROR);
+        return;
+      }
+      await loadLogs();
       onSaved?.();
       onClose();
     } catch (err) {

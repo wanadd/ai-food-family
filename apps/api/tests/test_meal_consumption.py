@@ -93,6 +93,14 @@ def test_personal_save_without_family_id(db):
     assert rows[0].family_member_id is None
 
 
+def test_personal_save_defaults_caller_user_id(db):
+    payload = _bulk_payload(family_id=None, user_id=10)
+    payload.entries[0].user_id = None
+    rows = svc.save_meal_consumption_logs(db, caller=_user(10), payload=payload)
+    assert rows[0].user_id == 10
+    assert rows[0].family_id is None
+
+
 def test_personal_get_without_family_id(db):
     svc.save_meal_consumption_logs(
         db, caller=_user(10), payload=_bulk_payload(family_id=None, user_id=10)

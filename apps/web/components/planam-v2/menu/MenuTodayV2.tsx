@@ -67,6 +67,7 @@ import {
 import {
   MENU_TODAY_MARK_CONSUMPTION_BUTTON,
   MEAL_CONSUMPTION_SAVED_TOAST,
+  resolveConsumptionFamilyId,
 } from "@/lib/plan/meal-consumption-sheet";
 import { menuMealHeading } from "@/lib/menu/meal-heading";
 import { addRecipeToShopping } from "@/lib/recipes/api";
@@ -249,6 +250,11 @@ export function MenuTodayV2() {
 
   const multiDay = menu ? menuHasMultipleDays(menu) : false;
   const days = menu ? getMenuDays(menu) : [];
+  const consumptionFamilyId = resolveConsumptionFamilyId(
+    mode,
+    menuFamilyId,
+    context?.family?.id ?? null,
+  );
 
   async function handleSkipMeal(meal: PlanTodayMeal) {
     if (!initData || skipBusy) {
@@ -371,7 +377,7 @@ export function MenuTodayV2() {
         {plannedDate ? (
           <DayNutritionCard2026
             plannedDate={plannedDate}
-            familyId={menuFamilyId ?? context?.family?.id ?? null}
+            familyId={consumptionFamilyId}
             menuSelectionId={menuSelectionId}
             dayIndex={dayIndex}
             refreshKey={nutritionRefreshKey}
@@ -551,7 +557,7 @@ export function MenuTodayV2() {
       <MealConsumptionSheetV2
         open={consumptionOpen}
         meals={flatMeals}
-        familyId={menuFamilyId ?? context?.family?.id ?? null}
+        familyId={consumptionFamilyId}
         menuSelectionId={menuSelectionId}
         dayIndex={dayIndex}
         plannedDate={plannedDate || null}

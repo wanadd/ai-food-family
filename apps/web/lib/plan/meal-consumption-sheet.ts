@@ -1,3 +1,5 @@
+import type { AppMode } from "@/lib/app-mode/types";
+
 export const MENU_TODAY_MARK_CONSUMPTION_BUTTON = "Отметить съеденное";
 
 export const MEAL_CONSUMPTION_SHEET_TITLE = "Что вы съели?";
@@ -108,9 +110,21 @@ type MemberForResolve = MemberPickerInput & {
   user_id?: number | null;
 };
 
+export function resolveConsumptionFamilyId(
+  mode: AppMode,
+  menuFamilyId: number | null,
+  contextFamilyId: number | null,
+): number | null {
+  if (mode === "personal") {
+    return null;
+  }
+  return menuFamilyId ?? contextFamilyId ?? null;
+}
+
 export function resolveConsumptionTargets(
   targetId: ConsumptionTargetId,
   members: MemberForResolve[],
+  currentUserId?: number | null,
 ): ConsumptionMemberRef[] {
   if (targetId === "family") {
     return [];
@@ -119,7 +133,7 @@ export function resolveConsumptionTargets(
     const self = members.find((m) => m.is_you);
     return [
       {
-        user_id: self?.user_id ?? null,
+        user_id: self?.user_id ?? currentUserId ?? null,
         family_member_id: null,
       },
     ];
@@ -201,6 +215,16 @@ export function hasSaveableConsumptionDrafts(
   drafts: Record<string, ConsumptionDraft>,
 ): boolean {
   return Object.values(drafts).some((d) => d.included);
+}
+
+export function canSaveConsumptionDrafts(
+  drafts: Record<string, ConsumptionDraft>,
+  options?: { saving?: boolean; loadingLogs?: boolean },
+): boolean {
+  if (options?.saving || options?.loadingLogs) {
+    return false;
+  }
+  return hasSaveableConsumptionDrafts(drafts);
 }
 
 export function buildConsumptionSaveEntries(
