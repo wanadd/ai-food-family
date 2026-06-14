@@ -1,16 +1,27 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildConsumptionMemberTargets,
+  applyConsumptionLogsToDrafts,
+  buildConsumptionSaveEntries,
+  buildDefaultConsumptionDrafts,
+  hasSaveableConsumptionDrafts,
   MEAL_CONSUMPTION_FORBIDDEN_PHRASES,
   MEAL_CONSUMPTION_PORTION_OPTIONS,
   MEAL_CONSUMPTION_SAVE_BUTTON_LABEL,
-  MEAL_CONSUMPTION_SAVE_DISABLED_HINT,
+  MEAL_CONSUMPTION_SAVE_ERROR,
+  MEAL_CONSUMPTION_SAVING_LABEL,
+  MEAL_CONSUMPTION_PERMISSION_ERROR,
   MEAL_CONSUMPTION_SHEET_SUBTITLE,
   MEAL_CONSUMPTION_SHEET_TITLE,
   MENU_TODAY_MARK_CONSUMPTION_BUTTON,
+  mealConsumptionKey,
+  resolveConsumptionTargets,
   shouldShowConsumptionMemberPicker,
 } from "./meal-consumption-sheet";
+import {
+  mealConsumptionErrorMessage,
+  MEAL_CONSUMPTION_PERMISSION_ERROR as API_PERMISSION_ERROR,
+} from "./meal-consumption-api";
 
 describe("meal consumption sheet copy", () => {
   it("uses Отметить съеденное button label", () => {
@@ -22,11 +33,9 @@ describe("meal consumption sheet copy", () => {
     expect(MEAL_CONSUMPTION_SHEET_TITLE).toBe("Что вы съели?");
   });
 
-  it("exposes sticky footer copy", () => {
+  it("exposes save button and loading labels", () => {
     expect(MEAL_CONSUMPTION_SAVE_BUTTON_LABEL).toBe("Сохранить отметки");
-    expect(MEAL_CONSUMPTION_SAVE_DISABLED_HINT).toBe(
-      "Сохранение будет доступно после настройки семейного учёта",
-    );
+    expect(MEAL_CONSUMPTION_SAVING_LABEL).toBe("Сохраняем...");
   });
 
   it("does not include legacy summary phrases", () => {
@@ -35,7 +44,8 @@ describe("meal consumption sheet copy", () => {
       MEAL_CONSUMPTION_SHEET_SUBTITLE,
       MENU_TODAY_MARK_CONSUMPTION_BUTTON,
       MEAL_CONSUMPTION_SAVE_BUTTON_LABEL,
-      MEAL_CONSUMPTION_SAVE_DISABLED_HINT,
+      MEAL_CONSUMPTION_SAVE_ERROR,
+      MEAL_CONSUMPTION_SAVING_LABEL,
     ].join(" ");
 
     for (const phrase of MEAL_CONSUMPTION_FORBIDDEN_PHRASES) {
@@ -67,29 +77,104 @@ describe("meal consumption sheet copy", () => {
 });
 
 describe("consumption member picker", () => {
-  const ivan = { id: 1, display_name: "Иван", is_you: true };
-  const maria = { id: 2, display_name: "Мария", is_you: false };
+  const ivan = { id: 1, display_name: "Иван", is_you: true, user_id: 10 };
+  const maria = { id: 2, display_name: "Мария", is_you: false, user_id: 11 };
 
   it("hides picker for non-admin (single self target)", () => {
     expect(shouldShowConsumptionMemberPicker([ivan, maria], false)).toBe(false);
-    expect(buildConsumptionMemberTargets([ivan, maria], false)).toHaveLength(1);
   });
 
   it("shows picker for family admin with members", () => {
     expect(shouldShowConsumptionMemberPicker([ivan, maria], true)).toBe(true);
-    const targets = buildConsumptionMemberTargets([ivan, maria], true);
-    expect(targets.map((t) => t.label)).toEqual(["Я", "Мария", "Вся семья"]);
+  });
+});
+
+describe("consumption save helpers", () => {
+  const meals = [
+    {
+      meal_type: "lunch",
+      recipe_id: 256,
+      recipe_title: "Суп",
+      mealIndex: 0,
+    },
+  ];
+
+  it("save button active when meal included", () => {
+    const drafts = buildDefaultConsumptionDrafts(meals);
+    expect(hasSaveableConsumptionDrafts(drafts)).toBe(true);
+    drafts[mealConsumptionKey("lunch", 0)].included = false;
+    expect(hasSaveableConsumptionDrafts(drafts)).toBe(false);
   });
 
-  it("hides picker in personal mode (no members)", () => {
-    expect(shouldShowConsumptionMemberPicker([], false)).toBe(false);
+  it("builds bulk entries for self target", () => {
+    const drafts = buildDefaultConsumptionDrafts(meals);
+    const entries = buildConsumptionSaveEntries(
+      meals,
+      drafts,
+      [{ user_id: 10, family_member_id: 1 }],
+    );
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      user_id: 10,
+      meal_type: "lunch",
+      status: "eaten",
+      portion_multiplier: 1,
+    });
   });
 
-  it("shows picker for admin even when alone in family", () => {
-    expect(shouldShowConsumptionMemberPicker([ivan], true)).toBe(true);
-    expect(buildConsumptionMemberTargets([ivan], true).map((t) => t.label)).toEqual([
-      "Я",
-      "Вся семья",
-    ]);
+  it("ate_out sends zero portion in payload", () => {
+    const drafts = buildDefaultConsumptionDrafts(meals);
+    drafts[mealConsumptionKey("lunch", 0)].status = "ate_out";
+    const entries = buildConsumptionSaveEntries(
+      meals,
+      drafts,
+      [{ user_id: 10, family_member_id: 1 }],
+    );
+    expect(entries[0].portion_multiplier).toBe(0);
+  });
+
+  it("expands family target to all members", () => {
+    const members = [
+      { id: 1, display_name: "Я", is_you: true, user_id: 10 },
+      { id: 2, display_name: "Мария", is_you: false, user_id: 11 },
+    ];
+    const targets = resolveConsumptionTargets("family", members);
+    expect(targets).toHaveLength(2);
+  });
+
+  it("restores saved logs into drafts", () => {
+    const logs = [
+      {
+        user_id: 10,
+        family_member_id: 1,
+        meal_type: "lunch",
+        recipe_id: 256,
+        status: "eaten",
+        portion_multiplier: 1.5,
+      },
+    ];
+    const drafts = applyConsumptionLogsToDrafts(
+      meals,
+      logs,
+      { user_id: 10, family_member_id: 1 },
+    );
+    expect(drafts[mealConsumptionKey("lunch", 0)]).toMatchObject({
+      included: true,
+      portion: 1.5,
+      status: "eaten",
+    });
+  });
+
+  it("maps permission error message", () => {
+    expect(
+      mealConsumptionErrorMessage(new Error("Нет прав отмечать питание за этого участника")),
+    ).toBe(API_PERMISSION_ERROR);
+    expect(MEAL_CONSUMPTION_PERMISSION_ERROR).toBe(API_PERMISSION_ERROR);
+  });
+
+  it("maps generic save error", () => {
+    expect(mealConsumptionErrorMessage(new Error("500"))).toBe(
+      MEAL_CONSUMPTION_SAVE_ERROR,
+    );
   });
 });

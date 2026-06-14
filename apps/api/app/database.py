@@ -26,6 +26,7 @@ def init_db() -> None:
     from app.models import (  # noqa: F401
         family,
         meal_checkin,
+        meal_consumption_log,
         meal_eating_schedule,
         meal_leftover,
         menu_selection,

@@ -881,6 +881,34 @@ def _schema_statements() -> list[str]:
         ON shopping_categories (family_id, slug)
         WHERE is_system = FALSE AND family_id IS NOT NULL;
         """,
+        """
+        CREATE TABLE IF NOT EXISTS meal_consumption_logs (
+            id SERIAL PRIMARY KEY,
+            family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            family_member_id INTEGER REFERENCES family_members(id) ON DELETE SET NULL,
+            logged_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            menu_selection_id INTEGER REFERENCES family_menu_selections(id) ON DELETE SET NULL,
+            day_index INTEGER,
+            planned_date DATE,
+            meal_type VARCHAR(16),
+            recipe_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL,
+            recipe_title VARCHAR(300),
+            status VARCHAR(16) NOT NULL DEFAULT 'unknown',
+            portion_multiplier DOUBLE PRECISION NOT NULL DEFAULT 1,
+            quantity DOUBLE PRECISION,
+            unit VARCHAR(32),
+            calories_estimated DOUBLE PRECISION,
+            protein_estimated DOUBLE PRECISION,
+            fat_estimated DOUBLE PRECISION,
+            carbs_estimated DOUBLE PRECISION,
+            note VARCHAR(500),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_meal_consumption_logs_family_day ON meal_consumption_logs (family_id, menu_selection_id, day_index);",
+        "CREATE INDEX IF NOT EXISTS ix_meal_consumption_logs_user_date ON meal_consumption_logs (user_id, planned_date);",
     ]
 
 

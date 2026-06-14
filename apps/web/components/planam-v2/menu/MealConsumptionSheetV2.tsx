@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { useTelegram } from "@/components/TelegramProvider";
 import {
   V2BottomSheet,
   V2Button,
@@ -10,17 +11,28 @@ import {
 } from "@/components/planam-v2/ui/V2Primitives";
 import { menuMealHeading } from "@/lib/menu/meal-heading";
 import {
+  fetchMealConsumptionLogs,
+  mealConsumptionErrorMessage,
+  saveMealConsumptionLogs,
+} from "@/lib/plan/meal-consumption-api";
+import {
+  applyConsumptionLogsToDrafts,
   buildConsumptionMemberTargets,
+  buildConsumptionSaveEntries,
+  buildDefaultConsumptionDrafts,
+  hasSaveableConsumptionDrafts,
   MEAL_CONSUMPTION_MEMBER_PROMPT,
   MEAL_CONSUMPTION_PORTION_OPTIONS,
   MEAL_CONSUMPTION_SAVE_BUTTON_LABEL,
-  MEAL_CONSUMPTION_SAVE_DISABLED_HINT,
+  MEAL_CONSUMPTION_SAVING_LABEL,
   MEAL_CONSUMPTION_SHEET_SUBTITLE,
   MEAL_CONSUMPTION_SHEET_TITLE,
   MEAL_CONSUMPTION_STATUS_OPTIONS,
+  mealConsumptionKey,
+  resolveConsumptionTargets,
   shouldShowConsumptionMemberPicker,
+  type ConsumptionDraft,
   type ConsumptionTargetId,
-  type MealConsumptionStatus,
 } from "@/lib/plan/meal-consumption-sheet";
 import { mealTypeLabel } from "@/lib/plan/plan-today";
 import type { PlanTodayMeal } from "@/lib/plan/plan-today";
@@ -29,30 +41,13 @@ import { cn } from "@/lib/planam/cn";
 type MealConsumptionSheetV2Props = {
   open: boolean;
   onClose: () => void;
+  onSaved?: () => void;
   meals: PlanTodayMeal[];
+  familyId: number | null;
+  menuSelectionId: number | null;
+  dayIndex: number;
+  plannedDate: string | null;
 };
-
-type MealDraft = {
-  included: boolean;
-  portion: number;
-  status: MealConsumptionStatus;
-};
-
-function mealKey(item: PlanTodayMeal): string {
-  return `${item.meal.meal_type}-${item.mealIndex}`;
-}
-
-function buildDefaultDrafts(meals: PlanTodayMeal[]): Record<string, MealDraft> {
-  const drafts: Record<string, MealDraft> = {};
-  for (const item of meals) {
-    drafts[mealKey(item)] = {
-      included: true,
-      portion: 1,
-      status: "eaten",
-    };
-  }
-  return drafts;
-}
 
 function MealSelectionToggle({
   checked,
@@ -88,18 +83,30 @@ function MealSelectionToggle({
 export function MealConsumptionSheetV2({
   open,
   onClose,
+  onSaved,
   meals,
+  familyId,
+  menuSelectionId,
+  dayIndex,
+  plannedDate,
 }: MealConsumptionSheetV2Props) {
+  const { initData } = useTelegram();
   const { mode, context } = useAppMode();
   const [targetId, setTargetId] = useState<ConsumptionTargetId>("self");
-  const [drafts, setDrafts] = useState<Record<string, MealDraft>>({});
+  const [drafts, setDrafts] = useState<Record<string, ConsumptionDraft>>({});
+  const [logs, setLogs] = useState<
+    Awaited<ReturnType<typeof fetchMealConsumptionLogs>>
+  >([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const familyMembers = useMemo(() => {
-    if (mode !== "family" || !context?.family?.members?.length) {
+    if (!context?.family?.members?.length) {
       return [];
     }
     return context.family.members;
-  }, [mode, context]);
+  }, [context]);
 
   const isFamilyAdmin = context?.family?.your_role === "admin";
   const memberTargets = useMemo(
@@ -111,29 +118,145 @@ export function MealConsumptionSheetV2({
     isFamilyAdmin,
   );
 
+  const mealInputs = useMemo(
+    () =>
+      meals.map((item) => ({
+        meal_type: item.meal.meal_type,
+        recipe_id: item.meal.recipe_id ?? null,
+        recipe_title: menuMealHeading(item.meal),
+        mealIndex: item.mealIndex,
+      })),
+    [meals],
+  );
+
+  const consumptionTargets = useMemo(
+    () => resolveConsumptionTargets(targetId, familyMembers),
+    [targetId, familyMembers],
+  );
+
+  const canSave =
+    familyId != null &&
+    hasSaveableConsumptionDrafts(drafts) &&
+    !saving &&
+    !loadingLogs;
+
+  const loadLogs = useCallback(async () => {
+    if (!initData || !open || familyId == null) {
+      setLogs([]);
+      return;
+    }
+    setLoadingLogs(true);
+    setError(null);
+    try {
+      const rows = await fetchMealConsumptionLogs(initData, mode, {
+        family_id: familyId,
+        menu_selection_id: menuSelectionId,
+        day_index: dayIndex,
+        planned_date: plannedDate,
+      });
+      setLogs(rows);
+    } catch {
+      setLogs([]);
+    } finally {
+      setLoadingLogs(false);
+    }
+  }, [
+    initData,
+    open,
+    familyId,
+    mode,
+    menuSelectionId,
+    dayIndex,
+    plannedDate,
+  ]);
+
   useEffect(() => {
     if (!open) {
       return;
     }
-    setDrafts(buildDefaultDrafts(meals));
-    setTargetId(memberTargets[0]?.id ?? "self");
-  }, [open, meals, memberTargets]);
+    void loadLogs();
+  }, [open, loadLogs]);
 
-  function updateDraft(key: string, patch: Partial<MealDraft>) {
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setTargetId(memberTargets[0]?.id ?? "self");
+  }, [open, memberTargets]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const target = consumptionTargets[0] ?? {
+      user_id: null,
+      family_member_id: null,
+    };
+    if (logs.length > 0 && consumptionTargets.length === 1) {
+      setDrafts(applyConsumptionLogsToDrafts(mealInputs, logs, target));
+    } else if (consumptionTargets.length === 1) {
+      setDrafts(buildDefaultConsumptionDrafts(mealInputs));
+    } else {
+      setDrafts(buildDefaultConsumptionDrafts(mealInputs));
+    }
+  }, [open, logs, mealInputs, consumptionTargets, targetId]);
+
+  function updateDraft(key: string, patch: Partial<ConsumptionDraft>) {
     setDrafts((prev) => ({
       ...prev,
       [key]: { ...prev[key], ...patch },
     }));
   }
 
+  async function handleSave() {
+    if (!initData || familyId == null || !canSave) {
+      return;
+    }
+    const targets = resolveConsumptionTargets(targetId, familyMembers);
+    const entries = buildConsumptionSaveEntries(mealInputs, drafts, targets);
+    if (entries.length === 0) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      await saveMealConsumptionLogs(initData, mode, {
+        family_id: familyId,
+        menu_selection_id: menuSelectionId,
+        day_index: dayIndex,
+        planned_date: plannedDate,
+        entries,
+      });
+      onSaved?.();
+      onClose();
+    } catch (err) {
+      setError(mealConsumptionErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const footer = (
     <div className="space-y-2">
-      <V2Button variant="primary" className="w-full" disabled>
-        {MEAL_CONSUMPTION_SAVE_BUTTON_LABEL}
+      {error ? (
+        <p className="pa26-micro text-center text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      ) : null}
+      {familyId == null ? (
+        <p className="pa26-micro text-center text-pa-muted">
+          Сохранение отметок доступно после настройки семьи
+        </p>
+      ) : null}
+      <V2Button
+        variant="primary"
+        className="w-full"
+        disabled={!canSave}
+        onClick={() => void handleSave()}
+      >
+        {saving ? MEAL_CONSUMPTION_SAVING_LABEL : MEAL_CONSUMPTION_SAVE_BUTTON_LABEL}
       </V2Button>
-      <p className="pa26-micro text-center text-pa-muted">
-        {MEAL_CONSUMPTION_SAVE_DISABLED_HINT}
-      </p>
     </div>
   );
 
@@ -167,15 +290,19 @@ export function MealConsumptionSheetV2({
           </div>
         ) : null}
 
+        {loadingLogs ? (
+          <p className="pa26-caption text-pa-muted">Загружаем отметки…</p>
+        ) : null}
+
         {meals.length === 0 ? (
           <p className="pa26-body text-pa-muted">На этот день блюд в плане нет.</p>
         ) : (
           <ul className="space-y-3">
             {meals.map((item) => {
-              const key = mealKey(item);
+              const key = mealConsumptionKey(item.meal.meal_type, item.mealIndex);
               const draft = drafts[key] ?? {
                 included: true,
-                portion: 1,
+                portion: 1 as const,
                 status: "eaten" as const,
               };
               const heading = menuMealHeading(item.meal);
@@ -209,7 +336,10 @@ export function MealConsumptionSheetV2({
                               key={option.value}
                               label={option.label}
                               active={draft.portion === option.value}
-                              onClick={() => updateDraft(key, { portion: option.value })}
+                              disabled={draft.status === "ate_out"}
+                              onClick={() =>
+                                updateDraft(key, { portion: option.value })
+                              }
                             />
                           ))}
                         </div>
@@ -222,7 +352,9 @@ export function MealConsumptionSheetV2({
                               key={option.id}
                               label={option.label}
                               active={draft.status === option.id}
-                              onClick={() => updateDraft(key, { status: option.id })}
+                              onClick={() =>
+                                updateDraft(key, { status: option.id })
+                              }
                             />
                           ))}
                         </div>

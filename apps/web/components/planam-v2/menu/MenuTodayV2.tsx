@@ -64,7 +64,10 @@ import {
   plannedDateForDay,
   type PlanTodayMeal,
 } from "@/lib/plan/plan-today";
-import { MENU_TODAY_MARK_CONSUMPTION_BUTTON } from "@/lib/plan/meal-consumption-sheet";
+import {
+  MENU_TODAY_MARK_CONSUMPTION_BUTTON,
+  MEAL_CONSUMPTION_SAVED_TOAST,
+} from "@/lib/plan/meal-consumption-sheet";
 import { menuMealHeading } from "@/lib/menu/meal-heading";
 import { addRecipeToShopping } from "@/lib/recipes/api";
 import { cn } from "@/lib/planam/cn";
@@ -75,10 +78,12 @@ export function MenuTodayV2() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { initData } = useTelegram();
-  const { mode, loading: modeLoading } = useAppMode();
+  const { mode, context, loading: modeLoading } = useAppMode();
   const { showToast } = useToast();
 
   const [menu, setMenu] = useState<MenuVariant | null>(null);
+  const [menuSelectionId, setMenuSelectionId] = useState<number | null>(null);
+  const [menuFamilyId, setMenuFamilyId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dayIndex, setDayIndex] = useState(1);
@@ -111,6 +116,8 @@ export function MenuTodayV2() {
         fetchMenuOverview(initData, mode).catch(() => null),
       ]);
       const loaded = selected?.menu ?? null;
+      setMenuSelectionId(selected?.id ?? null);
+      setMenuFamilyId(selected?.family_id ?? null);
       setCached<CachedSelected>(cacheKey.selectedMenu(mode), {
         menu: loaded,
         selected_at: selected?.selected_at ?? null,
@@ -532,7 +539,12 @@ export function MenuTodayV2() {
       <MealConsumptionSheetV2
         open={consumptionOpen}
         meals={flatMeals}
+        familyId={menuFamilyId ?? context?.family?.id ?? null}
+        menuSelectionId={menuSelectionId}
+        dayIndex={dayIndex}
+        plannedDate={plannedDate || null}
         onClose={() => setConsumptionOpen(false)}
+        onSaved={() => showToast(MEAL_CONSUMPTION_SAVED_TOAST)}
       />
 
       <MealOutcomeSheet2026
