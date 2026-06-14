@@ -910,6 +910,28 @@ def _schema_statements() -> list[str]:
         "CREATE INDEX IF NOT EXISTS ix_meal_consumption_logs_family_day ON meal_consumption_logs (family_id, menu_selection_id, day_index);",
         "CREATE INDEX IF NOT EXISTS ix_meal_consumption_logs_user_date ON meal_consumption_logs (user_id, planned_date);",
         "ALTER TABLE meal_consumption_logs ALTER COLUMN family_id DROP NOT NULL",
+        """
+        CREATE TABLE IF NOT EXISTS meal_consumption_reminder_events (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            menu_selection_id INTEGER REFERENCES family_menu_selections(id) ON DELETE SET NULL,
+            day_index INTEGER,
+            planned_date DATE,
+            meal_type VARCHAR(16) NOT NULL,
+            reminder_kind VARCHAR(64) NOT NULL DEFAULT 'meal_consumption_missing',
+            status VARCHAR(32) NOT NULL DEFAULT 'planned',
+            due_at TIMESTAMPTZ,
+            sent_at TIMESTAMPTZ,
+            skipped_reason VARCHAR(100),
+            telegram_message_id INTEGER,
+            error_message VARCHAR(500),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_meal_consumption_reminder_events_user_date ON meal_consumption_reminder_events (user_id, planned_date, meal_type);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_meal_consumption_reminder_events_idempotency ON meal_consumption_reminder_events (user_id, planned_date, meal_type, COALESCE(menu_selection_id, 0), COALESCE(day_index, -1), reminder_kind);",
     ]
 
 

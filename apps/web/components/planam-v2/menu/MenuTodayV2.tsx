@@ -180,7 +180,10 @@ export function MenuTodayV2() {
       setReplaceOpen(true);
       setReplaceMealIndex(null);
     }
-    if (searchParams.get("outcome") === "1") {
+    if (
+      searchParams.get("outcome") === "1" ||
+      searchParams.get("openMealConsumption") === "1"
+    ) {
       setConsumptionOpen(true);
     }
   }, [searchParams, menu]);

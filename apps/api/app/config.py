@@ -41,6 +41,22 @@ class Settings(BaseSettings):
     # Stage 2A: catalog/menu/search use only gold V2 recipes by default.
     recipe_gold_v2_only: bool = True
 
+    # Phase 3A: automatic meal consumption reminders (off by default).
+    meal_consumption_reminders_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices(
+            "MEAL_CONSUMPTION_REMINDERS_ENABLED",
+            "meal_consumption_reminders_enabled",
+        ),
+    )
+    meal_consumption_reminders_dry_run: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "MEAL_CONSUMPTION_REMINDERS_DRY_RUN",
+            "meal_consumption_reminders_dry_run",
+        ),
+    )
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property
