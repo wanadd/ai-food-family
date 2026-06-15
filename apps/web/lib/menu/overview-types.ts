@@ -40,6 +40,7 @@ export type MenuOverview = {
   next_action?: HomeNextAction | null;
   shopping_unchecked_count?: number;
   pantry_items_count?: number;
+  prepared_dishes_count?: number;
   pantry_expiring_preview?: PantryExpiringPreview | null;
   home_attendance: {
     breakfast_home: number;

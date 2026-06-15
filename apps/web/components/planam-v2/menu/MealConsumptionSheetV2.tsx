@@ -413,7 +413,6 @@ export function MealConsumptionSheetV2({
             batchesByKey[key] ?? null,
           );
         }
-        invalidateCache(cacheKey.stocksOverview(mode));
         invalidateCache(cacheKey.pantry(mode));
         invalidateCache(cacheKey.menuOverview(mode));
       }

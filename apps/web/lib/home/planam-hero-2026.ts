@@ -332,14 +332,22 @@ export function leftoversStatusLabel(overview: MenuOverview | null): string {
 
 /** Pantry stock label for the home "Остатки" block (real pantry_items_count). */
 export function pantryStatusLabel(overview: MenuOverview | null): string {
-  if (!overview || overview.pantry_items_count == null) {
+  if (!overview) {
     return "Пока пусто";
   }
-  const count = overview.pantry_items_count;
-  if (count <= 0) {
+  const products = overview.pantry_items_count ?? 0;
+  const prepared = overview.prepared_dishes_count ?? 0;
+  if (products <= 0 && prepared <= 0) {
     return "Пока пусто";
   }
-  return `${count} ${productsLabel(count)}`;
+  const parts: string[] = [];
+  if (products > 0) {
+    parts.push(`${products} ${productsLabel(products)}`);
+  }
+  if (prepared > 0) {
+    parts.push(`${prepared} ${preparedDishesLabel(prepared)}`);
+  }
+  return parts.join(" · ");
 }
 
 function productsLabel(count: number): string {
@@ -352,6 +360,18 @@ function productsLabel(count: number): string {
     return "продукта";
   }
   return "продуктов";
+}
+
+function preparedDishesLabel(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) {
+    return "готовое блюдо";
+  }
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+    return "готовых блюда";
+  }
+  return "готовых блюд";
 }
 
 export function shoppingStatusLabel(unchecked: number): string {

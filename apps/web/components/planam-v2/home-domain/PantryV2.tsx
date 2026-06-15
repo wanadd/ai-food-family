@@ -35,6 +35,11 @@ import {
 } from "@/lib/planam/productTaxonomy";
 import { PLANAM_ROUTES } from "@/lib/planam/routes";
 import {
+  fetchStocksOverview,
+  formatPreparedLeftoverAmount,
+  type PreparedDish,
+} from "@/lib/plan/leftovers-api";
+import {
   addPantryItem,
   deletePantryItem,
   fetchPantry,
@@ -63,6 +68,9 @@ export function PantryV2() {
   const [items, setItems] = useState<PantryItem[]>(
     () => getCached<{ items: PantryItem[] }>(cacheK)?.items ?? [],
   );
+  const [preparedDishes, setPreparedDishes] = useState<PreparedDish[]>(
+    () => getCached<{ prepared_dishes?: PreparedDish[] }>(cacheK)?.prepared_dishes ?? [],
+  );
   const [loading, setLoading] = useState(items.length === 0);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<ShoppingCategory[]>([]);
@@ -72,6 +80,7 @@ export function PantryV2() {
   const [busy, setBusy] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [draft, setDraft] = useState<PantryItemDraft>(EMPTY_PANTRY_DRAFT);
+  const [preparedLoadError, setPreparedLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -85,9 +94,32 @@ export function PantryV2() {
         fetchPantry(initData, mode),
         fetchShoppingCategories(initData, mode).catch(() => []),
       ]);
-      setCached(cacheK, { items: data.items, active_count: data.active_count });
+      setCached(cacheK, {
+        items: data.items,
+        active_count: data.active_count,
+      });
       setItems(data.items);
       setCategories(cats);
+
+      try {
+        const stocks = await fetchStocksOverview(initData, mode, {
+          include_prepared: true,
+        });
+        setCached(cacheK, {
+          items: data.items,
+          active_count: data.active_count,
+          prepared_dishes: stocks.prepared_dishes,
+        });
+        setPreparedDishes(stocks.prepared_dishes);
+        setPreparedLoadError(null);
+      } catch (stocksErr) {
+        setPreparedDishes([]);
+        setPreparedLoadError(
+          stocksErr instanceof Error
+            ? stocksErr.message
+            : "Не удалось загрузить готовую еду",
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось загрузить запасы");
     } finally {
@@ -97,6 +129,16 @@ export function PantryV2() {
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") {
+        void load();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [load]);
 
   const filtered = useMemo(() => {
@@ -227,10 +269,12 @@ export function PantryV2() {
           </p>
         ) : null}
 
+        <h2 className="pa26-section-title">Продукты</h2>
+
         {items.length === 0 ? (
           <V2EmptyState
             icon={<span aria-hidden>📦</span>}
-            title="Запасы пока пустые"
+            title="Продуктов пока нет"
             description="Добавьте продукты — и PLANAM будет учитывать их в меню."
             actionLabel="Добавить продукт"
             onAction={() => setAddOpen(true)}
@@ -254,6 +298,44 @@ export function PantryV2() {
                 divider={idx > 0}
                 onClick={() => setSelected(item)}
               />
+            ))}
+          </ul>
+        )}
+
+        <h2 className="pa26-section-title mt-6">Готовая еда</h2>
+
+        {preparedLoadError ? (
+          <p className="mb-2 rounded-card border border-pa-error/30 bg-pa-error/5 px-3 py-2 pa26-caption text-pa-error">
+            {preparedLoadError}
+          </p>
+        ) : null}
+
+        {preparedDishes.length === 0 ? (
+          <p className="rounded-card border border-pa-border bg-pa-surface px-4 py-3 pa26-caption text-pa-muted">
+            Готовой еды пока нет
+          </p>
+        ) : (
+          <ul className="overflow-hidden rounded-card border border-pa-border bg-pa-surface">
+            {preparedDishes.map((dish, idx) => (
+              <li
+                key={dish.id}
+                className={cn(
+                  "px-4 py-3",
+                  idx > 0 && "border-t border-pa-border",
+                )}
+              >
+                <p className="pa26-body font-medium">
+                  {dish.recipe_title ?? "Блюдо"}
+                </p>
+                <p className="pa26-caption text-pa-muted">
+                  {formatPreparedLeftoverAmount(
+                    dish.remaining_servings,
+                    dish.total_servings,
+                    dish.serving_unit,
+                    dish,
+                  )}
+                </p>
+              </li>
             ))}
           </ul>
         )}

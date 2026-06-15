@@ -11,6 +11,15 @@ export type MenuMeal = {
   recipe_id?: number | null;
   slot_id?: string | null;
   servings?: number | null;
+  planned_yield_amount?: number | null;
+  planned_yield_unit?: string | null;
+  planned_serving_size_amount?: number | null;
+  planned_serving_size_unit?: string | null;
+  planned_servings?: number | null;
+  expected_leftover_amount?: number | null;
+  expected_leftover_unit?: string | null;
+  cook_strategy?: string | null;
+  yield_type?: string | null;
   image_url?: string | null;
   hero_image_url?: string | null;
   thumbnail_url?: string | null;

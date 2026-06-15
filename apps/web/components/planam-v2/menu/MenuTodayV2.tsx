@@ -569,7 +569,6 @@ export function MenuTodayV2() {
         onClose={() => setConsumptionOpen(false)}
         onSaved={() => {
           invalidateCache(cacheKey.menuOverview(mode));
-          invalidateCache(cacheKey.stocksOverview(mode));
           invalidateCache(cacheKey.pantry(mode));
           showToast(MEAL_CONSUMPTION_SAVED_TOAST);
           setNutritionRefreshKey((k) => k + 1);
