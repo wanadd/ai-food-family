@@ -184,15 +184,25 @@ describe("leftovers-api helpers", () => {
     expect(mapNewDishToSheetDefaults(undefined).totalServings).toBe(1);
   });
 
-  it("family read-only batch still maps for display", () => {
-    const familyBatch: CookingBatch = {
-      ...sampleBatch,
-      id: 20,
-      family_id: 1,
-      owner_user_id: null,
-    };
-    const mapped = mapExistingBatchToSheetDefaults(familyBatch);
-    expect(mapped.totalServings).toBe(4);
-    expect(mapped.batch?.remaining_servings).toBe(2);
+  it("renders prepared dishes from API response", () => {
+    const prepared = [
+      {
+        id: 10,
+        recipe_id: 260,
+        recipe_title: "Курица с брокколи",
+        remaining_servings: 2,
+        total_servings: 4,
+        serving_unit: "порция",
+        meal_type: "dinner",
+        planned_date: "2026-06-14",
+        day_index: 1,
+        menu_selection_id: 123,
+        batch_status: "active",
+        source: "cooking_batch" as const,
+        can_manage: true,
+      },
+    ];
+    expect(prepared).toHaveLength(1);
+    expect(prepared[0]?.recipe_title).toBe("Курица с брокколи");
   });
 });

@@ -971,6 +971,45 @@ def _schema_statements() -> list[str]:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_cooking_batch_events_batch_id ON cooking_batch_events (batch_id);",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS recipe_yield_amount DOUBLE PRECISION;",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS recipe_yield_unit VARCHAR(32);",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS serving_size_amount DOUBLE PRECISION;",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS serving_size_unit VARCHAR(32);",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS estimated_servings DOUBLE PRECISION;",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS yield_type VARCHAR(32);",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS total_amount_value DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS total_amount_unit VARCHAR(32);",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS remaining_amount_value DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS remaining_amount_unit VARCHAR(32);",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS serving_size_value DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS serving_size_unit VARCHAR(32);",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS estimated_total_servings DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS estimated_remaining_servings DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS yield_type VARCHAR(32);",
+        """
+        CREATE TABLE IF NOT EXISTS external_food_logs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            meal_type VARCHAR(16),
+            planned_date DATE NOT NULL,
+            source_type VARCHAR(32) NOT NULL DEFAULT 'manual',
+            input_text VARCHAR(2000),
+            input_media_id VARCHAR(128),
+            parsed_title VARCHAR(300),
+            calories_estimated DOUBLE PRECISION,
+            protein_estimated DOUBLE PRECISION,
+            fat_estimated DOUBLE PRECISION,
+            carbs_estimated DOUBLE PRECISION,
+            confidence DOUBLE PRECISION,
+            status VARCHAR(32) NOT NULL DEFAULT 'draft',
+            linked_meal_consumption_log_id INTEGER REFERENCES meal_consumption_logs(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_external_food_logs_user_date ON external_food_logs (user_id, planned_date);",
+        "CREATE INDEX IF NOT EXISTS ix_external_food_logs_family_date ON external_food_logs (family_id, planned_date);",
     ]
 
 

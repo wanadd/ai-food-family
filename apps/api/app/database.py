@@ -29,6 +29,7 @@ def init_db() -> None:
         meal_consumption_log,
         meal_consumption_reminder_event,
         cooking_batch,
+        external_food_log,
         meal_eating_schedule,
         meal_leftover,
         menu_selection,

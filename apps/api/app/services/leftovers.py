@@ -28,6 +28,7 @@ from app.schemas.leftovers import (
 from app.services import family as family_service
 from app.services.app_scope import AppScope
 from app.services.pantry import get_active_items_for_scope, list_pantry
+from app.services.recipe_yield import sync_batch_physical_from_payload
 
 ACTIVE_BATCH_STATUSES = frozenset({"active"})
 TERMINAL_BATCH_STATUSES = frozenset({"finished", "discarded"})
@@ -211,6 +212,20 @@ def create_or_get_cooking_batch(
         serving_unit=payload.serving_unit or "порция",
         cooked_at=now,
     )
+    sync_batch_physical_from_payload(
+        batch,
+        total_amount_value=payload.total_amount_value,
+        total_amount_unit=payload.total_amount_unit,
+        remaining_amount_value=payload.remaining_amount_value or payload.total_amount_value,
+        remaining_amount_unit=payload.remaining_amount_unit or payload.total_amount_unit,
+        serving_size_value=payload.serving_size_value,
+        serving_size_unit=payload.serving_size_unit,
+        yield_type=payload.yield_type,
+        estimated_total_servings=payload.estimated_total_servings or total,
+        estimated_remaining_servings=payload.estimated_remaining_servings
+        or payload.remaining_amount_value
+        or total,
+    )
     db.add(batch)
     db.flush()
     _record_event(
@@ -277,8 +292,24 @@ def adjust_cooking_batch_remaining(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Остаток не может превышать приготовленное количество",
         )
+    if (
+        payload.remaining_amount_value is not None
+        and batch.total_amount_value is not None
+        and payload.remaining_amount_value > batch.total_amount_value
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Остаток не может превышать приготовленное количество",
+        )
 
     batch.remaining_servings = payload.remaining_servings
+    sync_batch_physical_from_payload(
+        batch,
+        remaining_amount_value=payload.remaining_amount_value,
+        remaining_amount_unit=payload.remaining_amount_unit,
+        estimated_remaining_servings=payload.estimated_remaining_servings
+        or payload.remaining_servings,
+    )
     if payload.remaining_servings <= 0:
         batch.batch_status = "finished"
     elif batch.batch_status != "discarded":
@@ -401,6 +432,15 @@ def list_stock_overview(
                     can_manage=can_manage_prepared_leftovers(
                         db, caller=user, batch=batch
                     ),
+                    total_amount_value=batch.total_amount_value,
+                    total_amount_unit=batch.total_amount_unit,
+                    remaining_amount_value=batch.remaining_amount_value,
+                    remaining_amount_unit=batch.remaining_amount_unit,
+                    serving_size_value=batch.serving_size_value,
+                    serving_size_unit=batch.serving_size_unit,
+                    estimated_total_servings=batch.estimated_total_servings,
+                    estimated_remaining_servings=batch.estimated_remaining_servings,
+                    yield_type=batch.yield_type,
                 )
             )
 

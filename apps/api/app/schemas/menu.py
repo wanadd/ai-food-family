@@ -20,6 +20,15 @@ class MenuMeal(BaseModel):
     image_url: str | None = None
     hero_image_url: str | None = None
     thumbnail_url: str | None = None
+    planned_yield_amount: float | None = Field(default=None, ge=0)
+    planned_yield_unit: str | None = Field(default=None, max_length=32)
+    planned_serving_size_amount: float | None = Field(default=None, ge=0)
+    planned_serving_size_unit: str | None = Field(default=None, max_length=32)
+    planned_servings: float | None = Field(default=None, ge=0)
+    expected_leftover_amount: float | None = Field(default=None, ge=0)
+    expected_leftover_unit: str | None = Field(default=None, max_length=32)
+    cook_strategy: str | None = Field(default=None, max_length=32)
+    yield_type: str | None = Field(default=None, max_length=32)
 
 
 class MenuDayPlan(BaseModel):

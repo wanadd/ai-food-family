@@ -14,6 +14,7 @@ from app.schemas.menu_overview import (
 from app.services import family as family_service
 from app.services.app_scope import AppScope
 from app.services.family_member_nutrition import member_is_virtual, virtual_nutrition_from_member
+from app.services.leftovers import count_active_prepared_dishes
 from app.services.meal_leftovers import list_active_leftovers
 from app.services.menu import _get_latest_selection
 from app.services.menu_selection import get_selected_menu
@@ -400,4 +401,5 @@ def get_menu_overview(db: Session, user: User, scope: AppScope) -> MenuOverviewR
         shopping_unchecked_count=shopping_unchecked,
         pantry_items_count=len(pantry_items),
         pantry_expiring_preview=pantry_preview,
+        prepared_dishes_count=count_active_prepared_dishes(db, scope),
     )

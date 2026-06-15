@@ -46,7 +46,7 @@ describe("meal consumption nutrition card", () => {
     const lines = buildConsumptionNutritionCardLines(plannedSummary(), 2200);
     expect(lines.mode).toBe("planned");
     expect(lines.headlineKcal).toBe("1850 / 2200 ккал");
-    expect(lines.loggedLine).toBeNull();
+    expect(lines.loggedLine).toBe("Факт: пока нет отметок");
     expect(lines.plannedReferenceLine).toBeNull();
   });
 

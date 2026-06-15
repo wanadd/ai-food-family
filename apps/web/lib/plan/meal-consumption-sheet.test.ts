@@ -18,6 +18,7 @@ import {
   MEAL_CONSUMPTION_SAVE_DISABLED_HINT,
   MEAL_CONSUMPTION_SAVING_LABEL,
   MEAL_CONSUMPTION_VIRTUAL_MEMBER_SAVE_HINT,
+  MEAL_CONSUMPTION_SHEET_SUBTITLE,
   MENU_TODAY_MARK_CONSUMPTION_BUTTON,
   mealConsumptionKey,
   resolveConsumptionFamilyId,
@@ -29,6 +30,10 @@ import {
 describe("meal consumption sheet copy", () => {
   it("uses Отметить съеденное button label", () => {
     expect(MENU_TODAY_MARK_CONSUMPTION_BUTTON).toBe("Отметить съеденное");
+  });
+
+  it("mentions leftovers in unified sheet subtitle", () => {
+    expect(MEAL_CONSUMPTION_SHEET_SUBTITLE).toContain("остатки");
   });
 
   it("does not include legacy summary phrases in active copy", () => {

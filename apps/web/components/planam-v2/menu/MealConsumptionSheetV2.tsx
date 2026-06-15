@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { PreparedLeftoversInlineV2 } from "@/components/planam-v2/menu/PreparedLeftoversInlineV2";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
   V2BottomSheet,
   V2Button,
   V2Chip,
 } from "@/components/planam-v2/ui/V2Primitives";
+import { cacheKey, invalidate as invalidateCache } from "@/lib/cache/session-cache";
 import { menuMealHeading } from "@/lib/menu/meal-heading";
 import {
   fetchMealConsumptionLogs,
@@ -41,6 +43,15 @@ import {
   type ConsumptionDraft,
   type ConsumptionTargetId,
 } from "@/lib/plan/meal-consumption-sheet";
+import {
+  buildDefaultLeftoversDraft,
+  hasTouchedLeftoversDrafts,
+  mapBatchesByMealKey,
+  persistLeftoversDraft,
+  shouldShowLeftoversSection,
+  type LeftoversDraft,
+} from "@/lib/plan/meal-leftovers-unified";
+import { fetchPreparedLeftovers, type CookingBatch } from "@/lib/plan/leftovers-api";
 import { mealTypeLabel } from "@/lib/plan/plan-today";
 import type { PlanTodayMeal } from "@/lib/plan/plan-today";
 import { cn } from "@/lib/planam/cn";
@@ -54,8 +65,8 @@ type MealConsumptionSheetV2Props = {
   menuSelectionId: number | null;
   dayIndex: number;
   plannedDate: string | null;
-  /** Authenticated app user id — prefer passing from parent when available. */
   currentUserId?: number | null;
+  canManagePreparedLeftovers?: boolean;
 };
 
 function MealSelectionToggle({
@@ -99,15 +110,23 @@ export function MealConsumptionSheetV2({
   dayIndex,
   plannedDate,
   currentUserId: currentUserIdProp = null,
+  canManagePreparedLeftovers = true,
 }: MealConsumptionSheetV2Props) {
   const { initData, user } = useTelegram();
   const { mode, context } = useAppMode();
   const [targetId, setTargetId] = useState<ConsumptionTargetId>("self");
   const [drafts, setDrafts] = useState<Record<string, ConsumptionDraft>>({});
+  const [leftoversDrafts, setLeftoversDrafts] = useState<
+    Record<string, LeftoversDraft>
+  >({});
+  const [batchesByKey, setBatchesByKey] = useState<
+    Record<string, CookingBatch | null>
+  >({});
   const [logs, setLogs] = useState<
     Awaited<ReturnType<typeof fetchMealConsumptionLogs>>
   >([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [loadingLeftovers, setLoadingLeftovers] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -135,6 +154,7 @@ export function MealConsumptionSheetV2({
         recipe_id: item.meal.recipe_id ?? null,
         recipe_title: menuMealHeading(item.meal),
         mealIndex: item.mealIndex,
+        servings: item.meal.servings ?? null,
       })),
     [meals],
   );
@@ -155,7 +175,7 @@ export function MealConsumptionSheetV2({
     [mealInputs, drafts],
   );
 
-  const saveBlockReason = getMealConsumptionSaveBlockReason({
+  const consumptionSaveBlockReason = getMealConsumptionSaveBlockReason({
     mode,
     mealInputs,
     drafts: effectiveDrafts,
@@ -164,7 +184,7 @@ export function MealConsumptionSheetV2({
     hasInitData: Boolean(initData),
   });
 
-  const canSave = canSaveMealConsumption({
+  const canSaveConsumption = canSaveMealConsumption({
     mode,
     mealInputs,
     drafts: effectiveDrafts,
@@ -173,13 +193,59 @@ export function MealConsumptionSheetV2({
     hasInitData: Boolean(initData),
   });
 
-  const saveBlockMessage = mealConsumptionSaveBlockMessage(saveBlockReason);
+  const hasLeftoversToSave = hasTouchedLeftoversDrafts(leftoversDrafts);
+  const canSave =
+    (canSaveConsumption || hasLeftoversToSave) &&
+    Boolean(initData) &&
+    !saving &&
+    !loadingLogs;
+
+  const saveBlockMessage = mealConsumptionSaveBlockMessage(
+    canSave ? null : consumptionSaveBlockReason,
+  );
 
   const footerHint = consumptionSaveFooterHint(
     familyId,
     isFamilyAdmin,
     targetId,
   );
+
+  const loadLeftovers = useCallback(async () => {
+    if (!initData || !open) {
+      setBatchesByKey({});
+      return;
+    }
+    setLoadingLeftovers(true);
+    try {
+      const batches = await fetchPreparedLeftovers(initData, mode);
+      const mealKeys = mealInputs.map((m) => ({
+        key: mealConsumptionKey(m.meal_type, m.mealIndex),
+        meal_type: m.meal_type,
+        recipe_id: m.recipe_id,
+      }));
+      const mapped = mapBatchesByMealKey(
+        batches,
+        mealKeys,
+        menuSelectionId,
+        dayIndex,
+        plannedDate,
+      );
+      setBatchesByKey(mapped);
+      const nextDrafts: Record<string, LeftoversDraft> = {};
+      for (const meal of mealInputs) {
+        const key = mealConsumptionKey(meal.meal_type, meal.mealIndex);
+        nextDrafts[key] = buildDefaultLeftoversDraft(
+          mapped[key] ?? null,
+          meal.servings,
+        );
+      }
+      setLeftoversDrafts(nextDrafts);
+    } catch {
+      setBatchesByKey({});
+    } finally {
+      setLoadingLeftovers(false);
+    }
+  }, [initData, open, mode, mealInputs, menuSelectionId, dayIndex, plannedDate]);
 
   const loadLogs = useCallback(async () => {
     if (!initData || !open) {
@@ -226,7 +292,8 @@ export function MealConsumptionSheetV2({
       return;
     }
     void loadLogs();
-  }, [open, loadLogs, targetId]);
+    void loadLeftovers();
+  }, [open, loadLogs, loadLeftovers, targetId]);
 
   useEffect(() => {
     if (!open) {
@@ -260,50 +327,99 @@ export function MealConsumptionSheetV2({
     }));
   }
 
+  function updateLeftoversDraft(key: string, patch: Partial<LeftoversDraft>) {
+    setLeftoversDrafts((prev) => ({
+      ...prev,
+      [key]: { ...(prev[key] ?? buildDefaultLeftoversDraft(null)), ...patch },
+    }));
+  }
+
   async function handleSave() {
     if (!initData || !canSave) {
-      return;
-    }
-    const targets = resolveConsumptionTargets(
-      targetId,
-      familyMembers,
-      currentUserId,
-    );
-    if (targets.length === 0) {
-      setError(MEAL_CONSUMPTION_PERMISSION_ERROR);
-      return;
-    }
-    const entries = buildConsumptionSaveEntries(
-      mealInputs,
-      effectiveDrafts,
-      targets,
-    );
-    if (entries.length === 0) {
-      setError(MEAL_CONSUMPTION_SAVE_ERROR);
       return;
     }
 
     setSaving(true);
     setError(null);
+
     try {
-      const result = await saveMealConsumptionLogs(
-        initData,
-        mode,
-        buildPersonalConsumptionPayload(
-          {
-            familyId,
-            menuSelectionId,
-            dayIndex,
-            plannedDate,
-          },
-          entries,
-        ),
-      );
-      if (!result?.saved) {
-        setError(MEAL_CONSUMPTION_SAVE_ERROR);
-        return;
+      if (canSaveConsumption) {
+        const targets = resolveConsumptionTargets(
+          targetId,
+          familyMembers,
+          currentUserId,
+        );
+        if (targets.length === 0) {
+          setError(MEAL_CONSUMPTION_PERMISSION_ERROR);
+          return;
+        }
+        const entries = buildConsumptionSaveEntries(
+          mealInputs,
+          effectiveDrafts,
+          targets,
+        );
+        if (entries.length > 0) {
+          const result = await saveMealConsumptionLogs(
+            initData,
+            mode,
+            buildPersonalConsumptionPayload(
+              {
+                familyId,
+                menuSelectionId,
+                dayIndex,
+                plannedDate,
+              },
+              entries,
+            ),
+          );
+          if (!result?.saved) {
+            setError(MEAL_CONSUMPTION_SAVE_ERROR);
+            return;
+          }
+        }
       }
+
+      if (hasLeftoversToSave) {
+        for (const meal of mealInputs) {
+          const key = mealConsumptionKey(meal.meal_type, meal.mealIndex);
+          const leftoversDraft = leftoversDrafts[key];
+          if (!leftoversDraft?.touched || meal.recipe_id == null) {
+            continue;
+          }
+          if (
+            !shouldShowLeftoversSection({
+              recipeId: meal.recipe_id,
+              included: effectiveDrafts[key]?.included ?? false,
+              status: effectiveDrafts[key]?.status ?? "eaten",
+              existingBatch: batchesByKey[key] ?? null,
+            })
+          ) {
+            continue;
+          }
+          await persistLeftoversDraft(
+            initData,
+            mode,
+            {
+              familyId,
+              menuSelectionId,
+              dayIndex,
+              plannedDate,
+              recipeId: meal.recipe_id,
+              recipeTitle: meal.recipe_title,
+              mealType: meal.meal_type,
+              recipeServings: meal.servings,
+            },
+            leftoversDraft,
+            batchesByKey[key] ?? null,
+          );
+        }
+        invalidateCache(cacheKey.stocksOverview(mode));
+        invalidateCache(cacheKey.pantry(mode));
+        invalidateCache(cacheKey.menuOverview(mode));
+      }
+
       await loadLogs();
+      await loadLeftovers();
       onSaved?.();
       onClose();
     } catch (err) {
@@ -320,17 +436,17 @@ export function MealConsumptionSheetV2({
           {error}
         </p>
       ) : null}
-      {!canSave && saveBlockMessage ? (
+      {!canSave && saveBlockMessage && !hasLeftoversToSave ? (
         <p className="pa26-micro text-center text-pa-muted">{saveBlockMessage}</p>
       ) : null}
-      {loadingLogs && canSave ? (
+      {(loadingLogs || loadingLeftovers) && canSave ? (
         <p className="pa26-micro text-center text-pa-muted">Загружаем отметки…</p>
       ) : null}
       <p className="pa26-micro text-center text-pa-muted">{footerHint}</p>
       <V2Button
         variant="primary"
         className="w-full"
-        disabled={!canSave}
+        disabled={!canSave || loadingLogs || loadingLeftovers}
         onClick={() => void handleSave()}
       >
         {saving ? MEAL_CONSUMPTION_SAVING_LABEL : MEAL_CONSUMPTION_SAVE_BUTTON_LABEL}
@@ -368,7 +484,7 @@ export function MealConsumptionSheetV2({
           </div>
         ) : null}
 
-        {loadingLogs ? (
+        {loadingLogs || loadingLeftovers ? (
           <p className="pa26-caption text-pa-muted">Загружаем отметки…</p>
         ) : null}
 
@@ -383,6 +499,26 @@ export function MealConsumptionSheetV2({
                 portion: 1 as const,
                 status: "eaten" as const,
               };
+              const leftoversDraft =
+                leftoversDrafts[key] ??
+                buildDefaultLeftoversDraft(
+                  batchesByKey[key] ?? null,
+                  item.meal.servings,
+                );
+              const existingBatch = batchesByKey[key] ?? null;
+              const showLeftovers = shouldShowLeftoversSection({
+                recipeId: item.meal.recipe_id ?? null,
+                included: draft.included,
+                status: draft.status,
+                existingBatch,
+                leftoversExpanded: draft.leftoversExpanded,
+              });
+              const canExpandLeftovers =
+                Boolean(item.meal.recipe_id) &&
+                draft.included &&
+                draft.status === "eaten" &&
+                !existingBatch &&
+                !draft.leftoversExpanded;
               const heading = menuMealHeading(item.meal);
               const type = mealTypeLabel(item.meal.meal_type);
               return (
@@ -437,6 +573,37 @@ export function MealConsumptionSheetV2({
                           ))}
                         </div>
                       </div>
+                      {draft.status === "ate_out" ? (
+                        <input
+                          type="text"
+                          value={draft.externalFoodNote ?? ""}
+                          onChange={(e) =>
+                            updateDraft(key, {
+                              externalFoodNote: e.target.value,
+                            })
+                          }
+                          placeholder="Что ели? (без AI, вручную)"
+                          className="w-full rounded-control border border-pa-border bg-pa-surface px-3 py-2 pa26-body"
+                        />
+                      ) : null}
+                      {canExpandLeftovers ? (
+                        <V2Chip
+                          label="Уточнить остатки"
+                          active={false}
+                          onClick={() =>
+                            updateDraft(key, { leftoversExpanded: true })
+                          }
+                        />
+                      ) : null}
+                      {showLeftovers ? (
+                        <PreparedLeftoversInlineV2
+                          batch={existingBatch}
+                          draft={leftoversDraft}
+                          canManage={canManagePreparedLeftovers}
+                          disabled={saving || loadingLeftovers}
+                          onChange={(patch) => updateLeftoversDraft(key, patch)}
+                        />
+                      ) : null}
                     </div>
                   ) : null}
                 </li>

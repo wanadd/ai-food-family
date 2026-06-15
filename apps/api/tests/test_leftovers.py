@@ -312,6 +312,43 @@ def test_lookup_returns_none_when_finished(db):
     assert found is None
 
 
+def test_adjust_physical_amount_cannot_exceed_total(db):
+    from app.schemas.leftovers import CookingBatchCreateIn, CookingBatchAdjustIn
+
+    batch = svc.create_or_get_cooking_batch(
+        db,
+        caller=_user(10),
+        scope=_scope_personal(10),
+        payload=CookingBatchCreateIn(
+            family_id=None,
+            recipe_id=260,
+            recipe_title="Суп",
+            menu_selection_id=123,
+            day_index=1,
+            planned_date=date(2026, 6, 14),
+            meal_type="dinner",
+            total_servings=14,
+            total_amount_value=5,
+            total_amount_unit="л",
+            remaining_amount_value=5,
+            remaining_amount_unit="л",
+            yield_type="volume",
+        ),
+    )
+    with pytest.raises(HTTPException):
+        svc.adjust_cooking_batch_remaining(
+            db,
+            caller=_user(10),
+            scope=_scope_personal(10),
+            batch_id=batch.id,
+            payload=CookingBatchAdjustIn(
+                remaining_servings=10,
+                remaining_amount_value=6,
+                remaining_amount_unit="л",
+            ),
+        )
+
+
 def test_family_admin_creates_batch(db, monkeypatch):
     monkeypatch.setattr(svc, "_membership", lambda _db, _u: _membership(role="admin"))
     batch = svc.create_or_get_cooking_batch(

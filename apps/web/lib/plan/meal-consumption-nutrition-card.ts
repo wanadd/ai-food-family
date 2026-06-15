@@ -30,7 +30,7 @@ export function buildConsumptionNutritionCardLines(
       mode: "planned",
       headlineKcal: headline,
       macroLine: `Б ${summary.planned.protein} г · Ж ${summary.planned.fat} г · У ${summary.planned.carbs} г`,
-      loggedLine: null,
+      loggedLine: "Факт: пока нет отметок",
       plannedReferenceLine: null,
       ateOutLine: null,
       skippedLine: null,

@@ -78,6 +78,12 @@ class Recipe(Base):
     nutrition_needs_review: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
+    recipe_yield_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    recipe_yield_unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    serving_size_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    serving_size_unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    estimated_servings: Mapped[float | None] = mapped_column(Float, nullable=True)
+    yield_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
     nutrition_review_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

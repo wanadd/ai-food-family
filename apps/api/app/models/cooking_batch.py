@@ -39,6 +39,15 @@ class CookingBatch(Base):
     serving_unit: Mapped[str] = mapped_column(
         String(32), default="порция", server_default="порция"
     )
+    total_amount_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    total_amount_unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    remaining_amount_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    remaining_amount_unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    serving_size_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    serving_size_unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    estimated_total_servings: Mapped[float | None] = mapped_column(Float, nullable=True)
+    estimated_remaining_servings: Mapped[float | None] = mapped_column(Float, nullable=True)
+    yield_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
     cooked_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

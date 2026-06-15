@@ -110,6 +110,7 @@ class MenuOverviewResponse(BaseModel):
     shopping_unchecked_count: int = 0
     pantry_items_count: int = 0
     pantry_expiring_preview: PantryExpiringPreview | None = None
+    prepared_dishes_count: int = 0
 
 
 class MenuQuickActionRequest(BaseModel):

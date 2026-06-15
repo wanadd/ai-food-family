@@ -22,6 +22,13 @@ export type PreparedDish = {
   day_index: number | null;
   menu_selection_id: number | null;
   batch_status: string;
+  yield_type?: string | null;
+  total_amount_value?: number | null;
+  total_amount_unit?: string | null;
+  remaining_amount_value?: number | null;
+  remaining_amount_unit?: string | null;
+  serving_size_value?: number | null;
+  serving_size_unit?: string | null;
   source: "cooking_batch";
   can_manage: boolean;
 };
@@ -52,6 +59,15 @@ export type CookingBatch = {
   total_servings: number;
   remaining_servings: number;
   serving_unit: string;
+  total_amount_value?: number | null;
+  total_amount_unit?: string | null;
+  remaining_amount_value?: number | null;
+  remaining_amount_unit?: string | null;
+  serving_size_value?: number | null;
+  serving_size_unit?: string | null;
+  estimated_total_servings?: number | null;
+  estimated_remaining_servings?: number | null;
+  yield_type?: string | null;
 };
 
 export type BatchLookupParams = {
@@ -169,8 +185,8 @@ export async function fetchStocksOverview(
 export async function fetchPreparedLeftovers(
   initData: string,
   mode: AppMode,
-): Promise<PreparedDish[]> {
-  const data = await apiGet<PreparedDish[]>(
+): Promise<CookingBatch[]> {
+  const data = await apiGet<CookingBatch[]>(
     initData,
     mode,
     "/leftovers/prepared",
@@ -191,6 +207,15 @@ export async function createCookingBatch(
     meal_type?: string | null;
     total_servings?: number;
     serving_unit?: string;
+    total_amount_value?: number | null;
+    total_amount_unit?: string | null;
+    remaining_amount_value?: number | null;
+    remaining_amount_unit?: string | null;
+    serving_size_value?: number | null;
+    serving_size_unit?: string | null;
+    estimated_total_servings?: number | null;
+    estimated_remaining_servings?: number | null;
+    yield_type?: string | null;
   },
 ): Promise<CookingBatch> {
   return apiFetch(initData, mode, "/leftovers/batches", {
@@ -215,7 +240,13 @@ export async function adjustCookingBatchRemaining(
   initData: string,
   mode: AppMode,
   batchId: number,
-  payload: { remaining_servings: number; note?: string | null },
+  payload: {
+    remaining_servings: number;
+    note?: string | null;
+    remaining_amount_value?: number | null;
+    remaining_amount_unit?: string | null;
+    estimated_remaining_servings?: number | null;
+  },
 ): Promise<CookingBatch> {
   return apiFetch(initData, mode, `/leftovers/batches/${batchId}/adjust`, {
     method: "POST",
@@ -245,18 +276,36 @@ export async function discardCookingBatch(
   });
 }
 
-/** «осталось 2 из 4 порций» */
+import { formatPreparedAmount } from "@/lib/plan/yield-format";
+
+/** «осталось 2 из 4 порций» / «2 л из 5 л» */
 export function formatPreparedLeftoverAmount(
   remaining: number,
   total: number,
   unit: string,
+  physical?: {
+    remaining_amount_value?: number | null;
+    remaining_amount_unit?: string | null;
+    total_amount_value?: number | null;
+    total_amount_unit?: string | null;
+  },
 ): string {
-  const fmt = (n: number) =>
-    Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ",");
-  if (unit === "порция" || unit === "порции" || unit === "порций") {
-    return `осталось ${fmt(remaining)} из ${fmt(total)} порций`;
-  }
-  return `осталось ${fmt(remaining)} из ${fmt(total)} ${unit}`;
+  return formatPreparedAmount({
+    remaining,
+    total,
+    unit,
+    remainingAmount:
+      physical?.remaining_amount_value != null && physical.remaining_amount_unit
+        ? {
+            value: physical.remaining_amount_value,
+            unit: physical.remaining_amount_unit,
+          }
+        : null,
+    totalAmount:
+      physical?.total_amount_value != null && physical.total_amount_unit
+        ? { value: physical.total_amount_value, unit: physical.total_amount_unit }
+        : null,
+  });
 }
 
 export function formatStocksSummaryLabel(summary: StocksSummary): string {

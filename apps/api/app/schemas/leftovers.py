@@ -17,6 +17,15 @@ class PreparedDishOut(BaseModel):
     batch_status: str
     source: str = "cooking_batch"
     can_manage: bool = False
+    total_amount_value: float | None = None
+    total_amount_unit: str | None = None
+    remaining_amount_value: float | None = None
+    remaining_amount_unit: str | None = None
+    serving_size_value: float | None = None
+    serving_size_unit: str | None = None
+    estimated_total_servings: float | None = None
+    estimated_remaining_servings: float | None = None
+    yield_type: str | None = None
 
 
 class StockProductOut(BaseModel):
@@ -50,15 +59,27 @@ class CookingBatchCreateIn(BaseModel):
     meal_type: str | None = None
     total_servings: float = Field(default=1.0, ge=0)
     serving_unit: str = Field(default="порция", max_length=32)
-
-
-class CookingBatchUseIn(BaseModel):
-    servings_used: float = Field(gt=0)
-    note: str | None = Field(default=None, max_length=500)
+    total_amount_value: float | None = Field(default=None, ge=0)
+    total_amount_unit: str | None = Field(default=None, max_length=32)
+    remaining_amount_value: float | None = Field(default=None, ge=0)
+    remaining_amount_unit: str | None = Field(default=None, max_length=32)
+    serving_size_value: float | None = Field(default=None, ge=0)
+    serving_size_unit: str | None = Field(default=None, max_length=32)
+    estimated_total_servings: float | None = Field(default=None, ge=0)
+    estimated_remaining_servings: float | None = Field(default=None, ge=0)
+    yield_type: str | None = Field(default=None, max_length=32)
 
 
 class CookingBatchAdjustIn(BaseModel):
     remaining_servings: float = Field(ge=0)
+    note: str | None = Field(default=None, max_length=500)
+    remaining_amount_value: float | None = Field(default=None, ge=0)
+    remaining_amount_unit: str | None = Field(default=None, max_length=32)
+    estimated_remaining_servings: float | None = Field(default=None, ge=0)
+
+
+class CookingBatchUseIn(BaseModel):
+    servings_used: float = Field(gt=0)
     note: str | None = Field(default=None, max_length=500)
 
 
@@ -76,6 +97,15 @@ class CookingBatchOut(BaseModel):
     total_servings: float
     remaining_servings: float
     serving_unit: str
+    total_amount_value: float | None = None
+    total_amount_unit: str | None = None
+    remaining_amount_value: float | None = None
+    remaining_amount_unit: str | None = None
+    serving_size_value: float | None = None
+    serving_size_unit: str | None = None
+    estimated_total_servings: float | None = None
+    estimated_remaining_servings: float | None = None
+    yield_type: str | None = None
     cooked_at: datetime | None
     created_at: datetime
     updated_at: datetime

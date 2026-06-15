@@ -4,7 +4,7 @@ export const MENU_TODAY_MARK_CONSUMPTION_BUTTON = "Отметить съеден
 
 export const MEAL_CONSUMPTION_SHEET_TITLE = "Что вы съели?";
 export const MEAL_CONSUMPTION_SHEET_SUBTITLE =
-  "Отметьте блюда и порции для себя или членов семьи";
+  "Отметьте, что съели, и при необходимости уточните остатки готового блюда";
 
 export const MEAL_CONSUMPTION_MEMBER_PROMPT = "Кого отмечаем?";
 
@@ -48,15 +48,16 @@ export const MEAL_CONSUMPTION_PORTION_OPTIONS = [
 export type MealConsumptionPortionValue =
   (typeof MEAL_CONSUMPTION_PORTION_OPTIONS)[number]["value"];
 
-export type MealConsumptionStatus = "eaten" | "skipped" | "ate_out";
+export type MealConsumptionStatus = "eaten" | "skipped" | "ate_out" | "later";
 
 export const MEAL_CONSUMPTION_STATUS_OPTIONS: ReadonlyArray<{
   id: MealConsumptionStatus;
   label: string;
 }> = [
-  { id: "eaten", label: "Съел" },
-  { id: "skipped", label: "Не ел" },
-  { id: "ate_out", label: "Ел вне дома" },
+  { id: "eaten", label: "Съел по плану" },
+  { id: "later", label: "Съем позже" },
+  { id: "ate_out", label: "Ел другое" },
+  { id: "skipped", label: "Пропустил приём пищи" },
 ];
 
 export type ConsumptionTargetId = "self" | "family" | number;
@@ -193,6 +194,8 @@ export type ConsumptionDraft = {
   included: boolean;
   portion: MealConsumptionPortionValue;
   status: MealConsumptionStatus;
+  externalFoodNote?: string;
+  leftoversExpanded?: boolean;
 };
 
 export function mealConsumptionKey(mealType: string, mealIndex: number): string {
@@ -372,6 +375,13 @@ export function buildConsumptionSaveEntries(
       if (!draft?.included) {
         continue;
       }
+      if (draft.status === "later") {
+        continue;
+      }
+      const apiStatus =
+        draft.status === "ate_out" || draft.status === "skipped"
+          ? draft.status
+          : "eaten";
       const portion =
         draft.status === "ate_out" ? 0 : draft.portion;
       entries.push({
@@ -380,7 +390,7 @@ export function buildConsumptionSaveEntries(
         meal_type: meal.meal_type,
         recipe_id: meal.recipe_id ?? null,
         recipe_title: meal.recipe_title,
-        status: draft.status,
+        status: apiStatus,
         portion_multiplier: portion,
       });
     }

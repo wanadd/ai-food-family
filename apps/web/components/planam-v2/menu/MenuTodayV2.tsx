@@ -12,7 +12,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { MealOutcomeSheet2026 } from "@/components/dom-2026/MealOutcomeSheet2026";
 import { MealConsumptionSheetV2 } from "@/components/planam-v2/menu/MealConsumptionSheetV2";
 import { MealEatenSheetV2 } from "@/components/planam-v2/menu/MealEatenSheetV2";
-import { PreparedLeftoversSheetV2 } from "@/components/planam-v2/menu/PreparedLeftoversSheetV2";
 import { DayNutritionCard2026 } from "@/components/plan-2026/DayNutritionCard2026";
 import { ReplaceDishSheet2026 } from "@/components/plan-2026/ReplaceDishSheet2026";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -72,6 +71,7 @@ import {
 } from "@/lib/plan/meal-consumption-sheet";
 import { menuMealHeading } from "@/lib/menu/meal-heading";
 import { addRecipeToShopping } from "@/lib/recipes/api";
+import { formatPlannedYieldLine } from "@/lib/plan/yield-format";
 import { cn } from "@/lib/planam/cn";
 
 type CachedSelected = { menu: MenuVariant | null; selected_at: string | null };
@@ -99,7 +99,6 @@ export function MenuTodayV2() {
   const [shoppingBusy, setShoppingBusy] = useState(false);
   const [ateOtherMeal, setAteOtherMeal] = useState<PlanTodayMeal | null>(null);
   const [skipBusy, setSkipBusy] = useState(false);
-  const [leftoversMeal, setLeftoversMeal] = useState<PlanTodayMeal | null>(null);
 
   const mealQuery = searchParams.get("meal");
   const recipeIdQuery = searchParams.get("recipeId");
@@ -487,15 +486,6 @@ export function MenuTodayV2() {
                 }
               }}
             />
-            {actionMeal.meal.recipe_id ? (
-              <SheetAction
-                label="Остатки"
-                onClick={() => {
-                  setLeftoversMeal(actionMeal);
-                  setActionMeal(null);
-                }}
-              />
-            ) : null}
             <SheetAction
               label="Ел другое"
               onClick={() => {
@@ -575,26 +565,15 @@ export function MenuTodayV2() {
         dayIndex={dayIndex}
         plannedDate={plannedDate || null}
         currentUserId={user?.id ?? null}
+        canManagePreparedLeftovers={canManagePreparedLeftovers}
         onClose={() => setConsumptionOpen(false)}
         onSaved={() => {
+          invalidateCache(cacheKey.menuOverview(mode));
+          invalidateCache(cacheKey.stocksOverview(mode));
+          invalidateCache(cacheKey.pantry(mode));
           showToast(MEAL_CONSUMPTION_SAVED_TOAST);
           setNutritionRefreshKey((k) => k + 1);
         }}
-      />
-
-      <PreparedLeftoversSheetV2
-        open={leftoversMeal != null}
-        onClose={() => setLeftoversMeal(null)}
-        onSaved={() => {
-          invalidateCache(cacheKey.menuOverview(mode));
-          showToast("Остатки сохранены");
-        }}
-        meal={leftoversMeal}
-        familyId={consumptionFamilyId}
-        menuSelectionId={menuSelectionId}
-        dayIndex={dayIndex}
-        plannedDate={plannedDate || null}
-        canManage={canManagePreparedLeftovers}
       />
 
       <MealOutcomeSheet2026
@@ -635,6 +614,10 @@ function MealRowV2({
   }
   if (meal.calories_estimate != null && meal.calories_estimate > 0) {
     metaParts.push(`${Math.round(meal.calories_estimate)} ккал`);
+  }
+  const yieldLine = formatPlannedYieldLine(meal);
+  if (yieldLine) {
+    metaParts.push(yieldLine);
   }
 
   return (

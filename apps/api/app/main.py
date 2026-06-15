@@ -22,6 +22,7 @@ from app.routers import (
     meal_leftovers,
     leftovers,
     legal,
+    health_intelligence,
     menus,
     notifications,
     nutrition_profile,
@@ -117,6 +118,7 @@ app.include_router(meal_checkins.router)
 app.include_router(meal_consumption.router)
 app.include_router(meal_leftovers.router)
 app.include_router(leftovers.router)
+app.include_router(health_intelligence.router)
 app.include_router(shopping_lists.router)
 app.include_router(subscriptions.router)
 app.include_router(shopping_categories.router)
