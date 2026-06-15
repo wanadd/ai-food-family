@@ -20,6 +20,7 @@ from app.routers import (
     meal_checkins,
     meal_consumption,
     meal_leftovers,
+    leftovers,
     legal,
     menus,
     notifications,
@@ -115,6 +116,7 @@ app.include_router(menus.router)
 app.include_router(meal_checkins.router)
 app.include_router(meal_consumption.router)
 app.include_router(meal_leftovers.router)
+app.include_router(leftovers.router)
 app.include_router(shopping_lists.router)
 app.include_router(subscriptions.router)
 app.include_router(shopping_categories.router)

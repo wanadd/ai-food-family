@@ -932,6 +932,45 @@ def _schema_statements() -> list[str]:
         """,
         "CREATE INDEX IF NOT EXISTS ix_meal_consumption_reminder_events_user_date ON meal_consumption_reminder_events (user_id, planned_date, meal_type);",
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_meal_consumption_reminder_events_idempotency ON meal_consumption_reminder_events (user_id, planned_date, meal_type, COALESCE(menu_selection_id, 0), COALESCE(day_index, -1), reminder_kind);",
+        """
+        CREATE TABLE IF NOT EXISTS cooking_batches (
+            id SERIAL PRIMARY KEY,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            owner_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            created_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            recipe_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL,
+            recipe_title VARCHAR(300),
+            menu_selection_id INTEGER REFERENCES family_menu_selections(id) ON DELETE SET NULL,
+            day_index INTEGER,
+            planned_date DATE,
+            meal_type VARCHAR(16),
+            batch_status VARCHAR(32) NOT NULL DEFAULT 'active',
+            total_servings DOUBLE PRECISION NOT NULL DEFAULT 1,
+            remaining_servings DOUBLE PRECISION NOT NULL DEFAULT 1,
+            serving_unit VARCHAR(32) NOT NULL DEFAULT 'порция',
+            cooked_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_family_id ON cooking_batches (family_id);",
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_owner_user_id ON cooking_batches (owner_user_id);",
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_recipe_id ON cooking_batches (recipe_id);",
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_menu_day ON cooking_batches (menu_selection_id, day_index);",
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_planned_date ON cooking_batches (planned_date);",
+        """
+        CREATE TABLE IF NOT EXISTS cooking_batch_events (
+            id SERIAL PRIMARY KEY,
+            batch_id INTEGER NOT NULL REFERENCES cooking_batches(id) ON DELETE CASCADE,
+            event_type VARCHAR(32) NOT NULL,
+            actor_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            servings_delta DOUBLE PRECISION,
+            remaining_after DOUBLE PRECISION,
+            note VARCHAR(500),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batch_events_batch_id ON cooking_batch_events (batch_id);",
     ]
 
 

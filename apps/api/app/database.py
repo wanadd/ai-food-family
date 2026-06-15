@@ -28,6 +28,7 @@ def init_db() -> None:
         meal_checkin,
         meal_consumption_log,
         meal_consumption_reminder_event,
+        cooking_batch,
         meal_eating_schedule,
         meal_leftover,
         menu_selection,
