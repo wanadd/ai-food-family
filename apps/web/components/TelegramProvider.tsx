@@ -20,6 +20,7 @@ import { prefetchAppContext } from "@/lib/app-mode/api";
 import {
   auditPersonaSkipsOnboarding,
   getStoredAuditPersona,
+  isAuditAuthReady,
   isAuditModeEnabled,
   storeAuditPersona,
   syncAuditPersonaFromUrl,
@@ -34,6 +35,7 @@ type TelegramContextValue = {
   isDevMode: boolean;
   isAuditMode: boolean;
   auditPersona: string | null;
+  auditAuthReady: boolean;
   initData: string;
   platform: string;
   colorScheme: string;
@@ -51,6 +53,7 @@ const defaultContext: TelegramContextValue = {
   isDevMode: false,
   isAuditMode: false,
   auditPersona: null,
+  auditAuthReady: false,
   initData: "",
   platform: "unknown",
   colorScheme: "light",
@@ -75,7 +78,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authAttempt, setAuthAttempt] = useState(0);
   const [initData, setInitData] = useState("");
@@ -249,6 +252,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       isDevMode,
       isAuditMode,
       auditPersona,
+      auditAuthReady: isAuditAuthReady(initData, user, isAuthenticating),
       initData,
       platform,
       colorScheme,
@@ -275,8 +279,10 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 
   if (!mounted) {
     return (
-      <TelegramContext.Provider value={defaultContext}>
-        {children}
+      <TelegramContext.Provider
+        value={{ ...defaultContext, isAuthenticating: true }}
+      >
+        {null}
       </TelegramContext.Provider>
     );
   }

@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/api";
+import { buildProtectedRequestHeaders } from "@/lib/audit/audit-mode";
 
 import type { OnboardingData } from "./types";
 
@@ -49,7 +50,7 @@ export async function fetchRemoteOnboarding(
   initData: string,
 ): Promise<OnboardingData | null> {
   const response = await fetch(`${apiUrl}/onboarding/me`, {
-    headers: { "X-Telegram-Init-Data": initData },
+    headers: buildProtectedRequestHeaders(initData),
   });
 
   if (response.status === 404) {
@@ -72,7 +73,7 @@ export async function saveRemoteOnboarding(
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
+      ...buildProtectedRequestHeaders(initData),
     },
     body: JSON.stringify(toApi(data)),
   });

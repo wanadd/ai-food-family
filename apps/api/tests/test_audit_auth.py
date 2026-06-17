@@ -6,6 +6,8 @@ import os
 import sys
 from pathlib import Path
 
+from unittest.mock import MagicMock
+
 import pytest
 from fastapi import HTTPException
 
@@ -21,6 +23,16 @@ from app.models.user import User  # noqa: E402
 from app.services import audit_auth  # noqa: E402
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+
+@pytest.fixture()
+def mock_request():
+    request = MagicMock()
+    request.url.path = "/test"
+    request.headers.get = lambda key, default=None: (
+        "http://localhost:3002" if key == "origin" else default
+    )
+    return request
 
 
 @pytest.fixture()
@@ -114,10 +126,11 @@ def test_audit_user_from_request_success(db, monkeypatch):
     assert user.username == "audit_athlete"
 
 
-def test_get_current_user_audit_path(db, monkeypatch):
+def test_get_current_user_audit_path(db, monkeypatch, mock_request):
     monkeypatch.setattr(settings, "planam_audit_mode", True)
     init = audit_auth.audit_init_data_for_persona("audit_healthy_eating")
     user = deps.get_current_user(
+        mock_request,
         x_telegram_init_data=init,
         x_planam_audit_persona="audit_healthy_eating",
         x_planam_audit_user="audit_healthy_eating",
@@ -127,11 +140,12 @@ def test_get_current_user_audit_path(db, monkeypatch):
     assert user.username == "audit_healthy_eating"
 
 
-def test_get_current_user_rejects_audit_init_when_disabled(db, monkeypatch):
+def test_get_current_user_rejects_audit_init_when_disabled(db, monkeypatch, mock_request):
     monkeypatch.setattr(settings, "planam_audit_mode", False)
     init = audit_auth.audit_init_data_for_persona("audit_new_user")
     with pytest.raises(HTTPException) as exc:
         deps.get_current_user(
+            mock_request,
             x_telegram_init_data=init,
             x_planam_audit_persona=None,
             x_planam_audit_user=None,
@@ -151,3 +165,22 @@ def test_cannot_impersonate_arbitrary_user_id_via_headers(db, monkeypatch):
         header_secret=None,
     )
     assert result is None
+
+
+def test_audit_cors_origins_added_in_development(monkeypatch):
+    monkeypatch.setattr(settings, "environment", "development")
+    monkeypatch.setattr(settings, "planam_audit_mode", True)
+    monkeypatch.setattr(settings, "backend_cors_origins", "http://localhost:3000")
+    origins = settings.effective_cors_origins
+    assert "http://localhost:3000" in origins
+    assert "http://localhost:3002" in origins
+    assert "http://127.0.0.1:3002" in origins
+
+
+def test_audit_cors_origins_not_added_in_production(monkeypatch):
+    monkeypatch.setattr(settings, "environment", "production")
+    monkeypatch.setattr(settings, "planam_audit_mode", True)
+    monkeypatch.setattr(settings, "backend_cors_origins", "http://localhost:3000")
+    origins = settings.effective_cors_origins
+    assert origins == ["http://localhost:3000"]
+    assert "http://localhost:3002" not in origins

@@ -80,6 +80,54 @@ export function buildAuditHeaders(persona: AuditPersona): Record<string, string>
   return headers;
 }
 
+/** Audit-only headers for a persona (used by auth/login and API clients). */
+export function getAuditHeaders(persona?: AuditPersona | null): Record<string, string> {
+  if (!isAuditModeEnabled()) {
+    return {};
+  }
+  const resolved =
+    persona ??
+    (typeof window !== "undefined" ? getStoredAuditPersona() : DEFAULT_AUDIT_PERSONA);
+  return buildAuditHeaders(resolved);
+}
+
+/** Standard protected API headers including audit auth when audit mode is on. */
+export function buildProtectedRequestHeaders(
+  initData: string,
+  mode: string = "personal",
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    "X-Telegram-Init-Data": initData,
+    "X-App-Mode": mode,
+  };
+  if (!isAuditModeEnabled()) {
+    return headers;
+  }
+  const persona =
+    personaFromAuditInitData(initData) ??
+    (typeof window !== "undefined" ? getStoredAuditPersona() : DEFAULT_AUDIT_PERSONA);
+  Object.assign(headers, buildAuditHeaders(persona));
+  if (!isAuditInitData(initData)) {
+    headers["X-Telegram-Init-Data"] = auditInitDataForPersona(persona);
+  }
+  return headers;
+}
+
+/** True when audit login finished and initData is ready for API calls. */
+export function isAuditAuthReady(
+  initData: string,
+  user: unknown,
+  isAuthenticating: boolean,
+): boolean {
+  return (
+    isAuditModeEnabled() &&
+    !isAuthenticating &&
+    Boolean(user) &&
+    Boolean(initData) &&
+    isAuditInitData(initData)
+  );
+}
+
 /** Audit personas that should skip onboarding redirect (pre-seeded / returning). */
 export function auditPersonaSkipsOnboarding(persona: AuditPersona): boolean {
   return persona !== "audit_new_user";

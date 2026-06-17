@@ -39,6 +39,15 @@ class Settings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("PLANAM_AUDIT_SECRET", "planam_audit_secret"),
     )
+    planam_audit_cors_origins: str = Field(
+        default=(
+            "http://localhost:3000,http://localhost:3001,http://localhost:3002,"
+            "http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002"
+        ),
+        validation_alias=AliasChoices(
+            "PLANAM_AUDIT_CORS_ORIGINS", "planam_audit_cors_origins"
+        ),
+    )
 
     # Recipe Engine feature flags — enabled by default after Phase 1 activation.
     # Set individual flags to false via env to disable without redeploying code.
@@ -72,6 +81,24 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.environment.strip().lower() == "development"
+
+    @property
+    def effective_cors_origins(self) -> list[str]:
+        """Base CORS origins plus audit dev ports when audit mode is active."""
+        origins: list[str] = []
+        seen: set[str] = set()
+        for part in self.backend_cors_origins.split(","):
+            origin = part.strip()
+            if origin and origin not in seen:
+                seen.add(origin)
+                origins.append(origin)
+        if self.is_development and self.planam_audit_mode:
+            for part in self.planam_audit_cors_origins.split(","):
+                origin = part.strip()
+                if origin and origin not in seen:
+                    seen.add(origin)
+                    origins.append(origin)
+        return origins
 
     @property
     def effective_image_openai_api_key(self) -> str:

@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/api";
+import { buildProtectedRequestHeaders } from "@/lib/audit/audit-mode";
 
 import type { NutritionProfileData } from "./types";
 
@@ -80,7 +81,7 @@ export async function fetchNutritionProfile(
   initData: string,
 ): Promise<NutritionProfileData> {
   const response = await fetch(`${apiUrl}/nutrition-profile/me`, {
-    headers: { "X-Telegram-Init-Data": initData },
+    headers: buildProtectedRequestHeaders(initData),
   });
 
   if (!response.ok) {
@@ -99,7 +100,7 @@ export async function saveNutritionProfile(
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
+      ...buildProtectedRequestHeaders(initData),
     },
     body: JSON.stringify(toApi(data)),
   });

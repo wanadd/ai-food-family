@@ -47,6 +47,99 @@ from app.schemas.leftovers import CookingBatchCreateIn  # noqa: E402
 from app.services.app_scope import AppScope  # noqa: E402
 
 
+def _seed_nutrition_profile(db, user: User) -> None:
+    from app.models.user_profile import UserProfile
+
+    profile = (
+        db.query(UserProfile).filter(UserProfile.user_id == user.id).one_or_none()
+    )
+    if profile is None:
+        profile = UserProfile(user_id=user.id)
+        db.add(profile)
+    profile.completed = True
+    profile.age = 34
+    profile.gender = "female"
+    profile.height_cm = 168
+    profile.weight_kg = 62.0
+    profile.nutrition_goal = "healthy"
+    profile.activity_level = "moderate"
+    profile.goals = ["healthy_eating"]
+    db.commit()
+
+
+def _seed_audit_menu(db, user: User, *, family_id: int | None = None) -> None:
+    from datetime import timedelta
+
+    from app.schemas.menu import (
+        MenuDayPlan,
+        MenuIngredient,
+        MenuMeal,
+        MenuVariant,
+        SelectMenuRequest,
+    )
+    from app.services.menu import select_menu
+
+    today = date.today()
+    meals = [
+        MenuMeal(
+            meal_type="breakfast",
+            name="Овсянка (audit)",
+            description="Seeded breakfast",
+            prep_time_minutes=15,
+            calories_estimate=320,
+        ),
+        MenuMeal(
+            meal_type="lunch",
+            name="Курица с овощами (audit)",
+            description="Seeded lunch",
+            prep_time_minutes=40,
+            calories_estimate=520,
+        ),
+        MenuMeal(
+            meal_type="dinner",
+            name="Рыба с салатом (audit)",
+            description="Seeded dinner",
+            prep_time_minutes=35,
+            calories_estimate=410,
+        ),
+    ]
+    days = [
+        MenuDayPlan(
+            day_index=day_index,
+            label=f"День {day_index}",
+            date_iso=(today + timedelta(days=day_index - 5)).isoformat(),
+            meals=meals,
+        )
+        for day_index in range(1, 8)
+    ]
+    menu = MenuVariant(
+        variant="balanced",
+        title="Audit Week Menu",
+        explanation="Seeded menu for local UX audit harness",
+        total_prep_minutes=90,
+        meals=meals,
+        ingredients=[
+            MenuIngredient(name="Овсянка", amount="200 г", category="крупы"),
+            MenuIngredient(name="Курица", amount="400 г", category="мясо"),
+        ],
+        plan_days=7,
+        days=days,
+    )
+    scope = AppScope(
+        mode="family" if family_id else "personal",
+        user_id=user.id,
+        family_id=family_id,
+    )
+    select_menu(
+        db,
+        user,
+        scope,
+        SelectMenuRequest(menu=menu),
+        plan_mode="healthy",
+        persons_count=1,
+    )
+
+
 def _guard() -> None:
     if not is_audit_mode_enabled():
         print("ERROR: PLANAM_AUDIT_MODE must be true and environment=development")
@@ -119,10 +212,12 @@ def _seed_consumption_marks(db, user: User) -> None:
         )
         if existing:
             existing.status = status
+            existing.logged_by_user_id = user.id
         else:
             db.add(
                 MealConsumptionLog(
                     user_id=user.id,
+                    logged_by_user_id=user.id,
                     family_id=None,
                     meal_type=meal_type,
                     recipe_title=f"Audit {meal_type}",
@@ -135,6 +230,7 @@ def _seed_consumption_marks(db, user: User) -> None:
     db.add(
         MealConsumptionLog(
             user_id=user.id,
+            logged_by_user_id=user.id,
             family_id=None,
             meal_type="snack",
             recipe_title="Кофе с печеньем",
@@ -145,6 +241,21 @@ def _seed_consumption_marks(db, user: User) -> None:
         )
     )
     db.commit()
+    _assert_consumption_logs_have_actor(db, user)
+
+
+def _assert_consumption_logs_have_actor(db, user: User) -> None:
+    logs = (
+        db.query(MealConsumptionLog)
+        .filter(MealConsumptionLog.user_id == user.id)
+        .all()
+    )
+    for log in logs:
+        if log.logged_by_user_id is None:
+            raise ValueError(
+                f"meal_consumption_log id={log.id} for user {user.id} "
+                "missing logged_by_user_id"
+            )
 
 
 def _seed_prepared_dish(db, user: User, *, family_id: int | None = None) -> None:
@@ -263,14 +374,21 @@ def seed_all() -> dict[str, int]:
         _clear_personal_pantry(db, day5)
         _add_pantry_items(db, day5)
         _seed_consumption_marks(db, day5)
+        _seed_nutrition_profile(db, day5)
         try:
             _seed_prepared_dish(db, day5)
+            _seed_audit_menu(db, day5)
         except Exception as exc:  # noqa: BLE001
-            print(f"  warn: personal prepared dish: {exc}")
+            print(f"  warn: personal prepared dish/menu: {exc}")
         counts["audit_personal_day5"] = 1
 
         # 4.3–4.4 Family
-        _ensure_audit_family(db)
+        family, admin, _adult = _ensure_audit_family(db)
+        try:
+            _seed_nutrition_profile(db, admin)
+            _seed_audit_menu(db, admin, family_id=family.id)
+        except Exception as exc:  # noqa: BLE001
+            print(f"  warn: family admin menu/profile: {exc}")
         counts["audit_family_admin"] = 1
         counts["audit_family_adult"] = 1
         counts["audit_family_child"] = 1

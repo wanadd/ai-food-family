@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/api";
+import { buildProtectedRequestHeaders } from "@/lib/audit/audit-mode";
 
 import type {
   NotificationSettings,
@@ -14,7 +15,7 @@ async function notificationFetch<T>(
     ...init,
     headers: {
       "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
+      ...buildProtectedRequestHeaders(initData),
       ...init?.headers,
     },
   });

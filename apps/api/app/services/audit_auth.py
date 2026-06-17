@@ -80,11 +80,29 @@ def _validate_persona_slug(persona: str) -> str:
     return persona
 
 
-def verify_audit_secret(provided: str | None) -> None:
+def verify_audit_secret(
+    provided: str | None,
+    *,
+    persona: str | None = None,
+    path: str | None = None,
+    origin: str | None = None,
+) -> None:
+    import logging
+
     required = (settings.planam_audit_secret or "").strip()
     if not required:
         return
     if (provided or "").strip() != required:
+        if is_audit_mode_enabled():
+            logging.getLogger(__name__).warning(
+                "audit_auth_secret_rejected persona=%s has_secret_header=%s "
+                "expected_secret_present=%s path=%s origin=%s",
+                persona or "?",
+                bool((provided or "").strip()),
+                bool(required),
+                path or "?",
+                origin or "?",
+            )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid audit secret",
@@ -151,6 +169,8 @@ def get_audit_user_from_request(
     header_persona: str | None,
     header_user: str | None,
     header_secret: str | None,
+    path: str | None = None,
+    origin: str | None = None,
 ) -> User | None:
     if not is_audit_mode_enabled():
         return None
@@ -168,6 +188,6 @@ def get_audit_user_from_request(
             )
         return None
 
-    verify_audit_secret(header_secret)
+    verify_audit_secret(header_secret, persona=persona, path=path, origin=origin)
     user, _ = get_or_create_audit_user(db, persona)
     return user

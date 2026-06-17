@@ -4,6 +4,8 @@ import {
   auditInitDataForPersona,
   auditPersonaSkipsOnboarding,
   buildAuditHeaders,
+  buildProtectedRequestHeaders,
+  getAuditHeaders,
   getStoredAuditPersona,
   isAuditInitData,
   isAuditModeEnabled,
@@ -86,5 +88,28 @@ describe("audit-mode", () => {
   it("storeAuditPersona persists", () => {
     storeAuditPersona("audit_pair");
     expect(getStoredAuditPersona()).toBe("audit_pair");
+  });
+
+  it("getAuditHeaders uses stored persona in audit mode", () => {
+    process.env.NODE_ENV = "development";
+    process.env.NEXT_PUBLIC_PLANAM_AUDIT_MODE = "true";
+    process.env.NEXT_PUBLIC_PLANAM_AUDIT_SECRET = "local-secret";
+    storeAuditPersona("audit_personal_day5");
+    const headers = getAuditHeaders();
+    expect(headers["X-Planam-Audit-Persona"]).toBe("audit_personal_day5");
+    expect(headers["X-Planam-Audit-Secret"]).toBe("local-secret");
+  });
+
+  it("buildProtectedRequestHeaders adds audit init data and secret", () => {
+    process.env.NODE_ENV = "development";
+    process.env.NEXT_PUBLIC_PLANAM_AUDIT_MODE = "true";
+    process.env.NEXT_PUBLIC_PLANAM_AUDIT_SECRET = "local-secret";
+    storeAuditPersona("audit_personal_day5");
+    const headers = buildProtectedRequestHeaders("", "personal");
+    expect(headers["X-Telegram-Init-Data"]).toBe(
+      auditInitDataForPersona("audit_personal_day5"),
+    );
+    expect(headers["X-Planam-Audit-Secret"]).toBe("local-secret");
+    expect(headers["X-App-Mode"]).toBe("personal");
   });
 });

@@ -8,7 +8,7 @@ import { PhoneRequiredScreen } from "@/components/auth/PhoneRequiredScreen";
 import { TelegramRequiredScreen } from "@/components/auth/TelegramRequiredScreen";
 import { useTelegram } from "@/components/TelegramProvider";
 import { isClientDevMode } from "@/lib/dev-auth";
-import { isAuditModeEnabled } from "@/lib/audit/audit-mode";
+import { isAuditModeEnabled, isAuditAuthReady } from "@/lib/audit/audit-mode";
 import { captureAdminSessionFromUrl } from "@/lib/admin/session";
 import { shouldBlockForPhone } from "@/lib/planam/onboarding-gate";
 
@@ -28,22 +28,50 @@ function isPlanamAuditDevRoute(pathname: string | null): boolean {
   return Boolean(pathname?.startsWith("/dev/audit"));
 }
 
+function isExemptRoute(pathname: string | null): boolean {
+  return (
+    isAdminRoute(pathname) ||
+    isPlanamDevPreviewRoute(pathname) ||
+    isPlanamAuditDevRoute(pathname) ||
+    isOnboarding2026Route(pathname)
+  );
+}
+
 export function AppGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { isTelegram, isDevMode, isAuditMode, user, isAuthenticating, initData, authError } =
-    useTelegram();
+  const {
+    isTelegram,
+    isDevMode,
+    isAuditMode,
+    user,
+    isAuthenticating,
+    initData,
+    authError,
+    auditAuthReady,
+  } = useTelegram();
 
   if (typeof window !== "undefined") {
     captureAdminSessionFromUrl();
   }
 
-  if (
-    isAdminRoute(pathname) ||
-    isPlanamDevPreviewRoute(pathname) ||
-    isPlanamAuditDevRoute(pathname) ||
-    isOnboarding2026Route(pathname)
-  ) {
+  if (isExemptRoute(pathname)) {
     return <>{children}</>;
+  }
+
+  if (isAuthenticating) {
+    return null;
+  }
+
+  if (isAuditModeEnabled() && !auditAuthReady && !authError) {
+    return null;
+  }
+
+  if (
+    isAuditModeEnabled() &&
+    !isAuditAuthReady(initData, user, isAuthenticating) &&
+    authError
+  ) {
+    return <TelegramRequiredScreen message={authError} />;
   }
 
   if (

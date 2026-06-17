@@ -1,4 +1,6 @@
 import { getApiBaseUrl } from "@/lib/api-base";
+import { getAuditHeaders } from "@/lib/audit/audit-mode";
+import { isAuditPersona } from "@/lib/audit/personas";
 
 const apiUrl = getApiBaseUrl();
 
@@ -41,11 +43,13 @@ export type AuditLoginResponse = TelegramAuthResponse & {
 export async function authenticateAuditLogin(
   persona: string,
 ): Promise<AuditLoginResponse> {
-  const secret = process.env.NEXT_PUBLIC_PLANAM_AUDIT_SECRET ?? "";
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (secret) {
-    headers["X-Planam-Audit-Secret"] = secret;
+  if (!isAuditPersona(persona)) {
+    throw new Error(`Unknown audit persona: ${persona}`);
   }
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...getAuditHeaders(persona),
+  };
 
   const response = await fetch(
     `${apiUrl}/auth/audit-login?persona=${encodeURIComponent(persona)}`,

@@ -28,7 +28,10 @@ Additionally:
 environment=development
 PLANAM_AUDIT_MODE=true
 PLANAM_AUDIT_SECRET=local-audit-secret
+PLANAM_AUDIT_CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002
 ```
+
+When audit mode is active in development, these origins are merged into CORS automatically (never in production).
 
 ### Frontend (`apps/web/.env.local`)
 
@@ -36,7 +39,10 @@ PLANAM_AUDIT_SECRET=local-audit-secret
 NEXT_PUBLIC_PLANAM_UI_2026=true
 NEXT_PUBLIC_PLANAM_AUDIT_MODE=true
 NEXT_PUBLIC_PLANAM_AUDIT_SECRET=local-audit-secret
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
+
+Restart `next dev` after changing `.env.local` — `NEXT_PUBLIC_*` values are baked into the client bundle at startup.
 
 ## Seed audit personas
 
@@ -76,8 +82,11 @@ cd C:\Projects\ai-food-family\apps\web
 npm run dev
 
 # another terminal — API must be running with audit mode
+$env:PLANAM_AUDIT_BASE_URL="http://localhost:3002"
 node scripts/audit-walkthrough.mjs
 ```
+
+The runner fails (exit code 1) if auth/CORS errors appear in the browser console. Check `reports/ux_audit/AUDIT_RUN_STATUS.md` for `valid: true/false`.
 
 Output:
 
@@ -85,6 +94,7 @@ Output:
 reports/ux_audit/screenshots/audit_<persona>_<route>.png
 reports/ux_audit/network/findings.json
 reports/ux_audit/logs/console.json
+reports/ux_audit/AUDIT_RUN_STATUS.md
 ```
 
 ## Personas

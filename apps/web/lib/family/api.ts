@@ -1,6 +1,5 @@
 import { apiUrl } from "@/lib/api";
-
-import type { FamilyInvite } from "./invite-types";
+import { buildProtectedRequestHeaders } from "@/lib/audit/audit-mode";
 import type {
   Family,
   FamilyMember,
@@ -18,7 +17,7 @@ async function familyFetch<T>(
     ...init,
     headers: {
       "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
+      ...buildProtectedRequestHeaders(initData),
       ...init?.headers,
     },
   });
@@ -39,7 +38,7 @@ async function familyFetch<T>(
 
 export async function fetchMyFamily(initData: string): Promise<Family | null> {
   const response = await fetch(`${apiUrl}/families/me`, {
-    headers: { "X-Telegram-Init-Data": initData },
+    headers: buildProtectedRequestHeaders(initData),
   });
 
   if (response.status === 404) {

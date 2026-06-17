@@ -1,5 +1,6 @@
 import { apiUrl } from "@/lib/api";
 import { apiFetch, apiGet } from "@/lib/api-client";
+import { buildProtectedRequestHeaders } from "@/lib/audit/audit-mode";
 import type { AppMode } from "@/lib/app-mode/types";
 
 import type {
@@ -27,7 +28,7 @@ async function recipeFetch<T>(
     ...init,
     headers: {
       "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
+      ...buildProtectedRequestHeaders(initData),
       ...init?.headers,
     },
   });

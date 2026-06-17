@@ -1,4 +1,4 @@
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -21,6 +21,7 @@ from app.telegram.validate import TelegramAuthError, validate_init_data
 
 
 def get_current_user(
+    request: Request,
     x_telegram_init_data: str | None = Header(default=None, alias="X-Telegram-Init-Data"),
     x_planam_audit_persona: str | None = Header(
         default=None, alias="X-Planam-Audit-Persona"
@@ -39,6 +40,8 @@ def get_current_user(
         header_persona=x_planam_audit_persona,
         header_user=x_planam_audit_user,
         header_secret=x_planam_audit_secret,
+        path=str(request.url.path),
+        origin=request.headers.get("origin"),
     )
     if audit_user is not None:
         return audit_user
