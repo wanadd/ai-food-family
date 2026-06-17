@@ -1,5 +1,11 @@
 import { buildApiUrl } from "@/lib/api-base";
 import { ApiRequestError, parseApiErrorDetail } from "@/lib/api-errors";
+import {
+  buildAuditHeaders,
+  isAuditInitData,
+  isAuditModeEnabled,
+  personaFromAuditInitData,
+} from "@/lib/audit/audit-mode";
 
 import type { AppMode } from "@/lib/app-mode/types";
 
@@ -119,6 +125,21 @@ async function fetchWithRetry(
   );
 }
 
+function authHeaders(initData: string, mode: AppMode): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Telegram-Init-Data": initData,
+    "X-App-Mode": mode,
+  };
+  if (isAuditModeEnabled() && isAuditInitData(initData)) {
+    const persona = personaFromAuditInitData(initData);
+    if (persona) {
+      Object.assign(headers, buildAuditHeaders(persona));
+    }
+  }
+  return headers;
+}
+
 export async function apiFetch<T>(
   initData: string,
   mode: AppMode,
@@ -128,9 +149,7 @@ export async function apiFetch<T>(
   const response = await fetchWithRetry(buildApiUrl(path), {
     ...init,
     headers: {
-      "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
-      "X-App-Mode": mode,
+      ...authHeaders(initData, mode),
       ...init?.headers,
     },
   });
@@ -170,10 +189,7 @@ export async function apiGet<T>(
   path: string,
 ): Promise<T | null> {
   const response = await fetchWithRetry(buildApiUrl(path), {
-    headers: {
-      "X-Telegram-Init-Data": initData,
-      "X-App-Mode": mode,
-    },
+    headers: authHeaders(initData, mode),
   });
 
   if (!response.ok) {

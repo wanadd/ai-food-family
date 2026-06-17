@@ -10,13 +10,19 @@ import { ToastProvider } from "@/components/ui/ToastProvider";
 import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
 import { isPlanamDevPreviewPath } from "@/lib/planam/theme";
 
+function isAuditDevPath(pathname: string | null): boolean {
+  return Boolean(pathname?.startsWith("/dev/audit"));
+}
+
 export function AppShellBridge({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isDevPreview = isPlanamDevPreviewPath(pathname);
+  const isAuditDev = isAuditDevPath(pathname);
   const isOnboarding = Boolean(pathname?.startsWith("/onboarding"));
-  const use2026Shell = isPlanamUi2026Enabled() && !isDevPreview && !isOnboarding;
+  const use2026Shell =
+    isPlanamUi2026Enabled() && !isDevPreview && !isAuditDev && !isOnboarding;
 
-  if (isDevPreview || isOnboarding) {
+  if (isDevPreview || isAuditDev || isOnboarding) {
     return (
       <ToastProvider>
         <ThemeProvider active scope2026>

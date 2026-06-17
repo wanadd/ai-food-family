@@ -33,6 +33,35 @@ export type DevLoginResponse = TelegramAuthResponse & {
   dev_init_data: string;
 };
 
+export type AuditLoginResponse = TelegramAuthResponse & {
+  audit_init_data: string;
+  audit_persona: string;
+};
+
+export async function authenticateAuditLogin(
+  persona: string,
+): Promise<AuditLoginResponse> {
+  const secret = process.env.NEXT_PUBLIC_PLANAM_AUDIT_SECRET ?? "";
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (secret) {
+    headers["X-Planam-Audit-Secret"] = secret;
+  }
+
+  const response = await fetch(
+    `${apiUrl}/auth/audit-login?persona=${encodeURIComponent(persona)}`,
+    { method: "POST", headers },
+  );
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { detail?: string }
+      | null;
+    throw new Error(payload?.detail ?? `HTTP ${response.status}`);
+  }
+
+  return response.json() as Promise<AuditLoginResponse>;
+}
+
 export async function authenticateDevLogin(): Promise<DevLoginResponse> {
   const response = await fetch(`${apiUrl}/auth/dev-login`, {
     method: "POST",

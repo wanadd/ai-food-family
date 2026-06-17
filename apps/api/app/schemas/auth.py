@@ -38,3 +38,8 @@ class TelegramAuthResponse(BaseModel):
 
 class DevLoginResponse(TelegramAuthResponse):
     dev_init_data: str
+
+
+class AuditLoginResponse(TelegramAuthResponse):
+    audit_init_data: str
+    audit_persona: str

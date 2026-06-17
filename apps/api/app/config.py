@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     backup_root: str = "backups"
     environment: str = "development"
 
+    # Local audit harness — never active when environment != development.
+    planam_audit_mode: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("PLANAM_AUDIT_MODE", "planam_audit_mode"),
+    )
+    planam_audit_secret: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("PLANAM_AUDIT_SECRET", "planam_audit_secret"),
+    )
+
     # Recipe Engine feature flags — enabled by default after Phase 1 activation.
     # Set individual flags to false via env to disable without redeploying code.
     recipe_engine_v1: bool = False

@@ -22,8 +22,33 @@ from app.telegram.validate import TelegramAuthError, validate_init_data
 
 def get_current_user(
     x_telegram_init_data: str | None = Header(default=None, alias="X-Telegram-Init-Data"),
+    x_planam_audit_persona: str | None = Header(
+        default=None, alias="X-Planam-Audit-Persona"
+    ),
+    x_planam_audit_user: str | None = Header(default=None, alias="X-Planam-Audit-User"),
+    x_planam_audit_secret: str | None = Header(
+        default=None, alias="X-Planam-Audit-Secret"
+    ),
     db: Session = Depends(get_db),
 ) -> User:
+    from app.services.audit_auth import get_audit_user_from_request, is_audit_init_data
+
+    audit_user = get_audit_user_from_request(
+        db,
+        init_data=x_telegram_init_data,
+        header_persona=x_planam_audit_persona,
+        header_user=x_planam_audit_user,
+        header_secret=x_planam_audit_secret,
+    )
+    if audit_user is not None:
+        return audit_user
+
+    if is_audit_init_data(x_telegram_init_data):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Audit auth is disabled",
+        )
+
     if not x_telegram_init_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
