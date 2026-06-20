@@ -16,12 +16,12 @@ import { chromium } from "playwright";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../../..");
-const RUN_DIR = path.join(ROOT, "reports", "ultimate_full_ux_audit_2026_06_20");
+const RUN_DIR = path.join(ROOT, "reports", "ultimate_full_ux_audit_sprint_1_2");
 const SCREEN_DIR = path.join(RUN_DIR, "screenshots");
 const SHEET_DIR = path.join(RUN_DIR, "sheets");
 const VIDEO_DIR = path.join(RUN_DIR, "videos");
 const LOG_DIR = path.join(RUN_DIR, "logs");
-const ZIP_PATH = path.join(ROOT, "reports", "PLANAM_ULTIMATE_FULL_UX_AUDIT_2026_06_20.zip");
+const ZIP_PATH = path.join(ROOT, "reports", "PLANAM_ULTIMATE_FULL_UX_AUDIT_SPRINT_1_2.zip");
 
 const BASE_URL = process.env.PLANAM_AUDIT_BASE_URL ?? process.env.BASE_URL ?? "http://localhost:3002";
 const API_URL =
@@ -32,6 +32,8 @@ const API_URL =
 
 const VIEWPORT = { width: 390, height: 844 };
 const FORBIDDEN_STRINGS = [
+  "audit",
+  "test",
   "undefined",
   "null",
   "NaN",
