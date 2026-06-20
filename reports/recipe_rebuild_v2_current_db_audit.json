@@ -1,0 +1,9 @@
+{
+  "generated_at": "2026-06-10T13:14:37.642077+00:00",
+  "git": {
+    "branch": "rebuild/recipe-rebuild-v2",
+    "commit": "6e642fa"
+  },
+  "error": "(psycopg2.OperationalError) connection to server at \"localhost\" (::1), port 5432 failed: Permission denied (0x0000271D/10013)\n\tIs the server running on that host and accepting TCP/IP connections?\nconnection to server at \"localhost\" (127.0.0.1), port 5432 failed: Connection refused (0x0000274D/10061)\n\tIs the server running on that host and accepting TCP/IP connections?\n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "note": "Run on VPS with DATABASE_URL to populate live audit."
+}

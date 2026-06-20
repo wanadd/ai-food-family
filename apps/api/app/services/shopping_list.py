@@ -28,9 +28,11 @@ from app.services.shopping_item_utils import (
     item_from_menu_ingredient,
     make_item_id,
     normalize_item,
+    predict_menu_item_id,
+    should_skip_menu_ingredient_for_shopping,
+    sum_menu_items,
 )
-from app.services.amount_parser import parse_amount
-from app.services.shopping_categories import CATEGORY_ORDER, infer_category
+from app.services.shopping_categories import CATEGORY_ORDER
 
 
 def _sort_items(items: list[ShoppingListItem]) -> list[ShoppingListItem]:
@@ -165,16 +167,23 @@ def build_items_from_ingredients(
     by_id: dict[str, ShoppingListItem] = {}
 
     for ingredient in ingredients:
-        name = ingredient.name.strip()
-        if not name:
+        name = (ingredient.name or "").strip()
+        amount_str = (ingredient.amount or "").strip()
+        category_hint = getattr(ingredient, "category", None)
+        if should_skip_menu_ingredient_for_shopping(name, amount_str, category_hint):
             continue
-        amount_str = ingredient.amount.strip()
-        _, unit = parse_amount(amount_str)
-        category = infer_category(name, ingredient.category)
-        pid = make_item_id(name, category, unit or "шт")
-        prev = previous_map.get(pid)
-        item = item_from_menu_ingredient(name, amount_str, ingredient.category, prev)
-        by_id[item.id] = item
+
+        item_id = predict_menu_item_id(name, amount_str, category_hint)
+        existing = by_id.get(item_id)
+        if existing is not None:
+            # Same product+unit in the same menu — sum instead of overwriting.
+            fresh = item_from_menu_ingredient(name, amount_str, category_hint, None)
+            by_id[item_id] = sum_menu_items(existing, fresh)
+        else:
+            prev = previous_map.get(item_id)
+            by_id[item_id] = item_from_menu_ingredient(
+                name, amount_str, category_hint, prev
+            )
 
     return _sort_items(list(by_id.values()))
 

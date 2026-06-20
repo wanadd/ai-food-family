@@ -15,10 +15,14 @@ from app.routers import (
     admin,
     auth,
     care,
+    collections,
     families,
     meal_checkins,
+    meal_consumption,
     meal_leftovers,
+    leftovers,
     legal,
+    health_intelligence,
     menus,
     notifications,
     nutrition_profile,
@@ -35,11 +39,12 @@ from app.routers import (
     users,
 )
 from app.services.notification_scheduler import run_notification_scheduler
-from app.telegram.bot import setup_menu_button, setup_webhook
+from app.telegram.bot import setup_bot_commands, setup_menu_button, setup_webhook
 
 
 async def _startup_telegram() -> None:
     await setup_menu_button()
+    await setup_bot_commands()
     await setup_webhook()
 
 
@@ -84,15 +89,9 @@ class AdminErrorLoggingMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(AdminErrorLoggingMiddleware)
 
-origins = [
-    origin.strip()
-    for origin in settings.backend_cors_origins.split(",")
-    if origin.strip()
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.effective_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -102,6 +101,7 @@ app.include_router(admin.router)
 app.include_router(auth.router)
 app.include_router(legal.router)
 app.include_router(care.router)
+app.include_router(collections.router)
 app.include_router(users.router)
 app.include_router(onboarding.router)
 app.include_router(nutrition_profile.router)
@@ -109,7 +109,10 @@ app.include_router(nutritionist_router.router)
 app.include_router(families.router)
 app.include_router(menus.router)
 app.include_router(meal_checkins.router)
+app.include_router(meal_consumption.router)
 app.include_router(meal_leftovers.router)
+app.include_router(leftovers.router)
+app.include_router(health_intelligence.router)
 app.include_router(shopping_lists.router)
 app.include_router(subscriptions.router)
 app.include_router(shopping_categories.router)

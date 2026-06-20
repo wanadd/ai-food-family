@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from zoneinfo import ZoneInfo
 
 from app.config import settings
@@ -16,6 +16,9 @@ from app.telegram.messages import send_telegram_message
 logger = logging.getLogger(__name__)
 
 POLL_INTERVAL_SECONDS = 30
+MEAL_CONSUMPTION_REMINDER_INTERVAL_SECONDS = 15 * 60
+
+_last_meal_consumption_reminder_run: datetime | None = None
 
 MEAL_REMINDERS = (
     ("breakfast", "cook_breakfast_enabled", "cook_breakfast_time", "last_breakfast_sent_date"),
@@ -62,6 +65,20 @@ async def _process_due_reminders() -> None:
         from app.services.care import process_all_care_reminders
 
         await process_all_care_reminders(db)
+
+        global _last_meal_consumption_reminder_run
+        now_utc = datetime.now(timezone.utc)
+        if (
+            _last_meal_consumption_reminder_run is None
+            or (now_utc - _last_meal_consumption_reminder_run).total_seconds()
+            >= MEAL_CONSUMPTION_REMINDER_INTERVAL_SECONDS
+        ):
+            from app.services.meal_consumption_reminders import (
+                process_meal_consumption_reminders,
+            )
+
+            await process_meal_consumption_reminders(db)
+            _last_meal_consumption_reminder_run = now_utc
 
         db.commit()
     finally:

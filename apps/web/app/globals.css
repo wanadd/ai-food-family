@@ -1,3 +1,153 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * PlanAm design foundation (legacy .pa-* + PLANAM 2026 semantic tokens).
+ * @see docs/PLANAM_DESIGN_SYSTEM_2026.md
+ */
+
+@layer base {
+  :root {
+    --pa-cream: #ffffff;
+    --pa-surface: #ffffff;
+    --pa-border: #e2e8e0;
+    --pa-sage: #2f9e44;
+    --pa-graphite: #1a1f1c;
+
+    /* PLANAM V1 — Light (fresh, high contrast) */
+    --pa-bg-canvas: #ffffff;
+    --pa-bg-surface: #ffffff;
+    --pa-bg-elevated: #f6faf6;
+    --pa-text-primary: #1a1f1c;
+    --pa-text-secondary: #5c665c;
+    --pa-brand-primary: #2f9e44;
+    --pa-brand-secondary: #248a38;
+    --pa-accent: #e07b39;
+    --pa-success: #248a38;
+    --pa-warning: #d97706;
+    --pa-error: #dc2626;
+    --pa-border: #e2e8e0;
+  }
+
+  .dark {
+    --pa-bg-canvas: #121412;
+    --pa-bg-surface: #1a1d1a;
+    --pa-bg-elevated: #242824;
+    --pa-text-primary: #f4faf4;
+    --pa-text-secondary: #a8b4a8;
+    --pa-brand-primary: #4ade80;
+    --pa-brand-secondary: #86efac;
+    --pa-accent: #fb923c;
+    --pa-success: #4ade80;
+    --pa-warning: #fbbf24;
+    --pa-error: #f87171;
+    --pa-border: #2f352f;
+  }
+
+  html:not([data-planam-ui="2026"]) body {
+    @apply bg-cream text-graphite-900;
+  }
+
+  html[data-planam-ui="2026"] body {
+    @apply bg-pa-canvas text-pa-foreground;
+  }
+}
+
+@layer components {
+  .pa-card {
+    @apply rounded-card border border-cream-border bg-cream-surface shadow-soft;
+  }
+
+  .pa-surface {
+    @apply bg-cream-surface;
+  }
+
+  .pa-title {
+    @apply font-bold text-graphite-900;
+  }
+
+  .pa-subtle {
+    @apply text-graphite-500;
+  }
+
+  .pa-btn {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-control px-4 text-sm font-semibold transition active:scale-[0.99];
+  }
+
+  .pa-btn-primary {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-control bg-sage-500 px-4 text-sm font-semibold text-white shadow-soft transition active:scale-[0.99];
+  }
+
+  .pa-btn-ghost {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-control border border-sage-200 bg-cream-surface px-4 text-sm font-semibold text-sage-700 transition active:scale-[0.99];
+  }
+
+  .pa-chip {
+    @apply inline-flex items-center rounded-pill bg-sage-50 px-3 py-1.5 text-xs font-semibold text-sage-700;
+  }
+
+  /* PLANAM 2026 typography tokens */
+  .pa26-hero {
+    @apply text-[28px] font-semibold leading-[34px] tracking-[-0.02em] text-pa-foreground;
+  }
+
+  .pa26-page-title {
+    @apply text-[22px] font-semibold leading-[28px] tracking-[-0.01em] text-pa-foreground;
+  }
+
+  .pa26-section-title {
+    @apply text-[17px] font-semibold leading-[24px] text-pa-foreground;
+  }
+
+  .pa26-card-title {
+    @apply text-[17px] font-medium leading-[22px] text-pa-foreground;
+  }
+
+  .pa26-body {
+    @apply text-[15px] font-normal leading-[22px] text-pa-foreground;
+  }
+
+  .pa26-caption {
+    @apply text-[13px] font-normal leading-[18px] text-pa-muted;
+  }
+
+  .pa26-micro {
+    @apply text-[11px] font-medium leading-[14px] tracking-[0.02em] text-pa-muted;
+  }
+
+  /* Legacy .pa-* helpers embedded in 2026 screens → semantic tokens */
+  html[data-planam-ui="2026"] .pa-card {
+    @apply border-pa-border bg-pa-surface shadow-soft dark:shadow-none;
+  }
+
+  html[data-planam-ui="2026"] .pa-surface {
+    @apply bg-pa-surface;
+  }
+
+  html[data-planam-ui="2026"] .pa-title {
+    @apply text-pa-foreground;
+  }
+
+  html[data-planam-ui="2026"] .pa-subtle {
+    @apply text-pa-muted;
+  }
+
+  html[data-planam-ui="2026"] .pa-btn-ghost {
+    @apply border-pa-border bg-pa-surface text-sage-700 dark:text-sage-300;
+  }
+
+  html[data-planam-ui="2026"] .pa-chip {
+    @apply bg-sage-50 text-sage-700 dark:bg-sage-700/30 dark:text-sage-300;
+  }
+}
+
+@layer utilities {
+  .pa26-hover-row {
+    @apply hover:bg-sage-50;
+  }
+
+  html.dark .pa26-hover-row:hover {
+    background-color: color-mix(in srgb, var(--pa-bg-elevated) 40%, transparent);
+  }
+}

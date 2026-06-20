@@ -38,23 +38,23 @@ export function ShoppingCategorySection({
   const hiddenCount = items.length - VISIBLE_LIMIT;
 
   return (
-    <section className="rounded-xl border border-stone-100 bg-white">
+    <section className="pa-card overflow-hidden">
       <button
         type="button"
         onClick={onToggleExpand}
         className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
       >
-        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-stone-800">
+        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-graphite-900">
           <span aria-hidden>{meta.emoji}</span>
           <span className="truncate">{meta.label}</span>
         </span>
-        <span className="shrink-0 text-xs font-medium text-stone-400">
+        <span className="shrink-0 text-xs font-medium text-graphite-400">
           {checkedCount}/{items.length}
         </span>
       </button>
 
       {expanded ? (
-        <div className="space-y-1.5 border-t border-stone-50 px-2 pb-2 pt-1">
+        <div className="space-y-1.5 border-t border-cream-border px-2 pb-2 pt-1">
           {visibleItems.map((item) => (
             <ShoppingItemRow
               key={item.id}
@@ -69,7 +69,7 @@ export function ShoppingCategorySection({
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              className="w-full py-1.5 text-center text-xs font-semibold text-emerald-700"
+              className="w-full py-1.5 text-center text-xs font-semibold text-sage-700"
             >
               Показать ещё {hiddenCount}
             </button>

@@ -1,10 +1,22 @@
 import { apiUrl } from "@/lib/api";
+import { apiFetch, apiGet } from "@/lib/api-client";
+import { buildProtectedRequestHeaders } from "@/lib/audit/audit-mode";
+import type { AppMode } from "@/lib/app-mode/types";
 
 import type {
+  CookingEvent,
+  FromPantryList,
+  MarkCookedPayload,
+  RecipeCollection,
+  RecipeCollectionDetail,
   RecipeDetail,
   RecipeFilters,
+  RecipeHistory,
   RecipeList,
   RecipeQuery,
+  RecipeRatePayload,
+  RecipeRateResult,
+  RecipeWhy,
 } from "./types";
 
 async function recipeFetch<T>(
@@ -16,7 +28,7 @@ async function recipeFetch<T>(
     ...init,
     headers: {
       "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
+      ...buildProtectedRequestHeaders(initData),
       ...init?.headers,
     },
   });
@@ -31,10 +43,17 @@ async function recipeFetch<T>(
   return response.json() as Promise<T>;
 }
 
+const DEFAULT_RECIPE_LIST_LIMIT = 200;
+
 function buildQuery(params: RecipeQuery): string {
   const search = new URLSearchParams();
   if (params.q) {
     search.set("q", params.q);
+  }
+  const limit = params.limit ?? DEFAULT_RECIPE_LIST_LIMIT;
+  search.set("limit", String(limit));
+  if (params.offset !== undefined && params.offset > 0) {
+    search.set("offset", String(params.offset));
   }
   if (params.meal_type) {
     search.set("meal_type", params.meal_type);
@@ -74,6 +93,9 @@ function buildQuery(params: RecipeQuery): string {
   if (params.goal) {
     search.set("goal", params.goal);
   }
+  if (params.scenario) {
+    search.set("scenario", params.scenario);
+  }
   const query = search.toString();
   return query ? `?${query}` : "";
 }
@@ -98,6 +120,126 @@ export async function fetchRecipe(
   return recipeFetch<RecipeDetail>(`/recipes/${recipeId}`, initData);
 }
 
+export async function fetchRecipeWhy(
+  initData: string,
+  mode: AppMode,
+  recipeId: number,
+): Promise<RecipeWhy | null> {
+  return apiGet<RecipeWhy>(initData, mode, `/recipes/${recipeId}/why`);
+}
+
+export async function markRecipeCooked(
+  initData: string,
+  mode: AppMode,
+  recipeId: number,
+  payload: MarkCookedPayload = {},
+): Promise<CookingEvent> {
+  const result = await recipeFetch<CookingEvent>(
+    `/recipes/${recipeId}/cooked`,
+    initData,
+    {
+      method: "POST",
+      headers: { "X-App-Mode": mode },
+      body: JSON.stringify({ source: "manual", ...payload }),
+    },
+  );
+  return result;
+}
+
+export async function fetchRecipeHistory(
+  initData: string,
+  mode: AppMode,
+  recipeId: number,
+): Promise<RecipeHistory | null> {
+  return apiGet<RecipeHistory>(initData, mode, `/recipes/${recipeId}/history`);
+}
+
+export async function fetchRecipeCollections(
+  initData: string,
+  mode: AppMode,
+): Promise<RecipeCollection[]> {
+  const result = await apiGet<RecipeCollection[]>(initData, mode, "/collections");
+  return result ?? [];
+}
+
+/**
+ * Деталь коллекции через существующий GET /collections/{id}.
+ * Возвращает мету коллекции и recipe_ids (без N+1 — карточки рецептов не
+ * подгружаются). Backend в Этапе 2 не меняется.
+ */
+export async function fetchRecipeCollectionDetail(
+  initData: string,
+  mode: AppMode,
+  collectionId: number,
+): Promise<RecipeCollectionDetail | null> {
+  return apiGet<RecipeCollectionDetail>(
+    initData,
+    mode,
+    `/collections/${collectionId}`,
+  );
+}
+
+export async function fetchRecipesFromPantry(
+  initData: string,
+  mode: AppMode,
+): Promise<FromPantryList> {
+  return apiFetch<FromPantryList>(
+    initData,
+    mode,
+    "/recipes/from-pantry?max_missing=3&limit=6",
+  );
+}
+
+export async function createRecipeCollection(
+  initData: string,
+  mode: AppMode,
+  payload: {
+    name: string;
+    visibility: "personal" | "family";
+    description?: string;
+  },
+): Promise<RecipeCollection> {
+  return recipeFetch<RecipeCollection>("/collections", initData, {
+    method: "POST",
+    headers: { "X-App-Mode": mode },
+    body: JSON.stringify({
+      name: payload.name,
+      visibility: payload.visibility,
+      description: payload.description ?? "",
+    }),
+  });
+}
+
+export async function addRecipeToCollection(
+  initData: string,
+  mode: AppMode,
+  collectionId: number,
+  recipeId: number,
+): Promise<RecipeCollectionDetail> {
+  return recipeFetch<RecipeCollectionDetail>(
+    `/collections/${collectionId}/recipes`,
+    initData,
+    {
+      method: "POST",
+      headers: { "X-App-Mode": mode },
+      body: JSON.stringify({ recipe_ids: [recipeId] }),
+    },
+  );
+}
+
+export async function rateRecipeForFamily(
+  initData: string,
+  mode: AppMode,
+  recipeId: number,
+  payload: RecipeRatePayload,
+): Promise<RecipeRateResult> {
+  return recipeFetch<RecipeRateResult>(`/recipes/${recipeId}/rate`, initData, {
+    method: "POST",
+    headers: { "X-App-Mode": mode },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function toggleRecipeFavorite(
   initData: string,
   recipeId: number,
@@ -111,9 +253,11 @@ export async function addRecipeToShopping(
   initData: string,
   recipeId: number,
   servings?: number,
+  mode: AppMode = "personal",
 ): Promise<void> {
   await recipeFetch(`/recipes/${recipeId}/add-to-shopping`, initData, {
     method: "POST",
+    headers: { "X-App-Mode": mode },
     body: JSON.stringify({ servings: servings ?? null }),
   });
 }

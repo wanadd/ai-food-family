@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models.recipe import Recipe
 from app.models.user import User
+from app.recipes.gold_filter import apply_gold_recipe_filter
 from app.services.app_scope import AppScope
 from app.services.meal_leftovers import (
     format_meal_leftovers_for_prompt,
@@ -17,6 +18,7 @@ from app.services.meal_leftovers import (
 )
 from app.services.menu_context import build_menu_context
 from app.services.menu_context import MenuGenerationContext
+from app.nutrition.restriction_safety import filter_recipes_for_profile
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import format_leftovers_for_prompt, get_active_items_for_scope
 from app.services.recipe_storage import get_structured_ingredients
@@ -42,14 +44,23 @@ class AiUserContext:
     extras: dict[str, Any] = field(default_factory=dict)
 
 
-def _recipe_catalog_slice(db: Session, *, limit: int = 40) -> list[dict[str, Any]]:
+def _recipe_catalog_slice(
+    db: Session,
+    *,
+    limit: int = 40,
+    profile: Any | None = None,
+) -> list[dict[str, Any]]:
     rows = (
-        db.query(Recipe)
-        .filter(Recipe.is_active.is_(True))
+        apply_gold_recipe_filter(
+            db.query(Recipe).filter(Recipe.is_active.is_(True)),
+        )
         .order_by(Recipe.title.asc())
-        .limit(limit)
+        .limit(limit * 3 if profile else limit)
         .all()
     )
+    if profile is not None:
+        rows = filter_recipes_for_profile(rows, profile)
+    rows = rows[:limit]
     catalog: list[dict[str, Any]] = []
     for r in rows:
         catalog.append(
@@ -109,7 +120,7 @@ def build_ai_user_context(
         pantry_summary="\n".join(pantry_lines),
         meal_leftovers_summary="\n".join(leftover_lines),
         menu_summary=menu_summary,
-        recipe_catalog=_recipe_catalog_slice(db),
+        recipe_catalog=_recipe_catalog_slice(db, profile=profile),
         persons_count=persons,
         drink_mode=drink_mode,
         allow_alcohol=allow_alcohol,

@@ -25,10 +25,10 @@ export function MenuDayPicker({ menu, dayIndex, onDayIndexChange }: Props) {
             key={day.day_index}
             type="button"
             onClick={() => onDayIndexChange(day.day_index)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+            className={`shrink-0 rounded-pill px-3 py-1.5 text-xs font-semibold transition ${
               active
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "bg-white text-stone-700 ring-1 ring-stone-200"
+                ? "bg-sage-600 text-white shadow-soft"
+                : "bg-cream-surface text-graphite-700 ring-1 ring-cream-border"
             }`}
           >
             {day.label}

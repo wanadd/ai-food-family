@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
+
 import { RecipeCard } from "@/components/recipes/RecipeCard";
+import { RecipeListSkeleton } from "@/components/recipes/RecipeListSkeleton";
 import { fetchRecipes } from "@/lib/recipes/api";
 import {
-  RECIPE_CATALOG_SECTIONS,
+  RECIPE_HOME_SECTIONS,
   RECIPE_SECTION_PAGE_SIZE,
 } from "@/lib/recipes/catalog-sections";
 import type { RecipeQuery, RecipeSummary } from "@/lib/recipes/types";
@@ -53,7 +56,10 @@ export function RecipeCatalogSections({
             loading: false,
           },
         }));
-      } catch {
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[RecipeCatalogSections] load failed", id, query, err);
+        }
         setSections((prev) => ({
           ...prev,
           [id]: {
@@ -69,7 +75,7 @@ export function RecipeCatalogSections({
   );
 
   useEffect(() => {
-    for (const section of RECIPE_CATALOG_SECTIONS) {
+    for (const section of RECIPE_HOME_SECTIONS) {
       void loadSection(section.id, section.query);
     }
   }, [loadSection]);
@@ -88,15 +94,51 @@ export function RecipeCatalogSections({
     });
   }
 
+  const allLoaded = RECIPE_HOME_SECTIONS.every(
+    (def) => sections[def.id] && !sections[def.id].loading,
+  );
+  const noResults =
+    allLoaded &&
+    RECIPE_HOME_SECTIONS.every(
+      (def) => (sections[def.id]?.items.length ?? 0) === 0,
+    );
+
+  if (noResults) {
+    return (
+      <div className="pa-card p-6 text-center">
+        <p className="text-2xl" aria-hidden>
+          🍳
+        </p>
+        <p className="mt-2 font-semibold text-graphite-900">
+          Подберём рецепты вместе
+        </p>
+        <p className="mt-1.5 text-sm text-graphite-500">
+          Найдите блюдо через поиск или составьте меню — ПланАм предложит
+          подходящие рецепты.
+        </p>
+        <Link
+          href="/menu/generate"
+          className="pa-btn-primary mt-5 inline-flex"
+        >
+          Составить меню
+        </Link>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8 pb-24">
-      {RECIPE_CATALOG_SECTIONS.map((def) => {
+    <div className="space-y-7 pb-24">
+      {RECIPE_HOME_SECTIONS.map((def) => {
         const state = sections[def.id];
         if (!state || state.loading) {
           return (
             <section key={def.id}>
-              <h2 className="text-base font-bold text-stone-900">{def.title}</h2>
-              <p className="mt-2 text-sm text-stone-400">Загрузка…</p>
+              <h2 className="text-base font-bold text-graphite-900">
+                {def.title}
+              </h2>
+              <div className="mt-3">
+                <RecipeListSkeleton count={2} />
+              </div>
             </section>
           );
         }
@@ -108,7 +150,9 @@ export function RecipeCatalogSections({
 
         return (
           <section key={def.id}>
-            <h2 className="text-base font-bold text-stone-900">{def.title}</h2>
+            <h2 className="text-base font-bold text-graphite-900">
+              {def.title}
+            </h2>
             <div className="mt-3 space-y-3">
               {visibleItems.map((recipe) => (
                 <RecipeCard
@@ -124,7 +168,7 @@ export function RecipeCatalogSections({
               <button
                 type="button"
                 onClick={() => showMore(def.id)}
-                className="mt-3 w-full rounded-xl border border-stone-200 py-2.5 text-sm font-semibold text-stone-700"
+                className="mt-3 w-full rounded-control border border-cream-border py-2.5 text-sm font-semibold text-graphite-700"
               >
                 Показать ещё
               </button>

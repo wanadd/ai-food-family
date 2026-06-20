@@ -108,8 +108,10 @@ def ensure_user_billing(db: Session, user: User) -> UserSubscription:
     db.commit()
     db.refresh(sub)
 
+    from app.services.subscription_catalog import TRIAL_WELCOME_AMS
+
     trial_plan = get_plan(db, "trial")
-    initial_ams = trial_plan.monthly_ams if trial_plan else 200
+    initial_ams = trial_plan.monthly_ams if trial_plan else TRIAL_WELCOME_AMS
     wallet = _get_or_create_user_wallet(db, user.id)
     if wallet.balance == 0:
         add_ams(

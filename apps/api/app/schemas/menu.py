@@ -10,10 +10,25 @@ MealType = Literal["breakfast", "lunch", "dinner", "snack"]
 class MenuMeal(BaseModel):
     meal_type: MealType
     name: str = Field(min_length=1, max_length=200)
+    display_title: str | None = Field(default=None, max_length=200)
     description: str = ""
     prep_time_minutes: int = Field(ge=0, le=300)
     calories_estimate: int | None = Field(default=None, ge=0)
     recipe_id: int | None = None
+    slot_id: str | None = Field(default=None, max_length=64)
+    servings: int | None = Field(default=None, ge=1, le=50)
+    image_url: str | None = None
+    hero_image_url: str | None = None
+    thumbnail_url: str | None = None
+    planned_yield_amount: float | None = Field(default=None, ge=0)
+    planned_yield_unit: str | None = Field(default=None, max_length=32)
+    planned_serving_size_amount: float | None = Field(default=None, ge=0)
+    planned_serving_size_unit: str | None = Field(default=None, max_length=32)
+    planned_servings: float | None = Field(default=None, ge=0)
+    expected_leftover_amount: float | None = Field(default=None, ge=0)
+    expected_leftover_unit: str | None = Field(default=None, max_length=32)
+    cook_strategy: str | None = Field(default=None, max_length=32)
+    yield_type: str | None = Field(default=None, max_length=32)
 
 
 class MenuDayPlan(BaseModel):
@@ -54,6 +69,7 @@ class MenuGenerateResponse(BaseModel):
 class ReplaceDishRequest(BaseModel):
     menu: MenuVariant
     meal_index: int = Field(ge=0)
+    day_index: int | None = Field(default=None, ge=1, le=30)
     hint: str | None = Field(default=None, max_length=300)
 
 

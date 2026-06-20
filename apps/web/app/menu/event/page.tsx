@@ -76,7 +76,7 @@ export default function EventPlanWizardPage() {
   if (!initData) {
     return (
       <ScreenLayout title="Event Plan" back={{ label: "Меню", href: "/menu" }}>
-        <p className="text-sm text-stone-600">Доступно в Telegram Mini App.</p>
+        <p className="text-sm text-graphite-600">Доступно в Telegram Mini App.</p>
       </ScreenLayout>
     );
   }
@@ -84,8 +84,8 @@ export default function EventPlanWizardPage() {
   if (plan && step >= 7) {
     return (
       <ScreenLayout title={plan.title} back={{ label: "Меню", href: "/menu" }}>
-        <p className="text-sm text-stone-600">{plan.nutrition_note}</p>
-        <p className="mt-2 text-sm font-semibold text-stone-800">
+        <p className="text-sm text-graphite-600">{plan.nutrition_note}</p>
+        <p className="mt-2 text-sm font-semibold text-graphite-800">
           Гостей: {plan.guests_count}
           {plan.estimated_cost_rub
             ? ` · ~${plan.estimated_cost_rub} ₽`
@@ -93,7 +93,7 @@ export default function EventPlanWizardPage() {
         </p>
         <ul className="mt-4 space-y-2">
           {plan.dishes.map((d) => (
-            <li key={d.recipe_id} className="rounded-xl bg-white p-3 text-sm ring-1 ring-stone-100">
+            <li key={d.recipe_id} className="pa-card p-3 text-sm">
               {d.title}
             </li>
           ))}
@@ -102,11 +102,11 @@ export default function EventPlanWizardPage() {
           type="button"
           disabled={loading}
           onClick={() => void handleShopping()}
-          className="mt-6 w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white"
+          className="pa-btn-primary mt-6 w-full py-3 text-sm"
         >
           Создать список покупок
         </button>
-        <Link href="/menu" className="mt-4 block text-center text-sm text-emerald-700">
+        <Link href="/menu" className="mt-4 block text-center text-sm text-sage-700">
           ← К меню
         </Link>
       </ScreenLayout>
@@ -130,10 +130,10 @@ export default function EventPlanWizardPage() {
               key={t.value}
               type="button"
               onClick={() => setEventType(t.value)}
-              className={`w-full rounded-xl px-4 py-3 text-left text-sm font-semibold ${
+              className={`w-full rounded-control px-4 py-3 text-left text-sm font-semibold ${
                 eventType === t.value
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white ring-1 ring-stone-200"
+                  ? "bg-sage-600 text-white"
+                  : "bg-cream-surface ring-1 ring-cream-border text-graphite-800"
               }`}
             >
               {t.label}
@@ -151,7 +151,7 @@ export default function EventPlanWizardPage() {
             max={100}
             value={guests}
             onChange={(e) => setGuests(Number(e.target.value))}
-            className="mt-2 w-full rounded-xl border border-stone-200 px-4 py-3"
+            className="mt-2 w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
           />
         </label>
       ) : null}
@@ -160,7 +160,7 @@ export default function EventPlanWizardPage() {
         <select
           value={budget}
           onChange={(e) => setBudget(e.target.value)}
-          className="w-full rounded-xl border border-stone-200 px-4 py-3"
+          className="w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
         >
           <option value="low">Эконом</option>
           <option value="medium">Средний</option>
@@ -172,7 +172,7 @@ export default function EventPlanWizardPage() {
         <input
           type="text"
           placeholder="Тематика (необязательно)"
-          className="w-full rounded-xl border border-stone-200 px-4 py-3"
+          className="w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
         />
       ) : null}
 
@@ -181,7 +181,7 @@ export default function EventPlanWizardPage() {
           <select
             value={religious}
             onChange={(e) => setReligious(e.target.value)}
-            className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm"
+            className="w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-sm text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
           >
             <option value="none">Религия: не учитывать</option>
             <option value="orthodox">Православие</option>
@@ -193,7 +193,7 @@ export default function EventPlanWizardPage() {
           <select
             value={fasting}
             onChange={(e) => setFasting(e.target.value)}
-            className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm"
+            className="w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-sm text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
           >
             <option value="none">Пост: нет</option>
             <option value="great_lent">Великий пост</option>
@@ -208,7 +208,7 @@ export default function EventPlanWizardPage() {
           <select
             value={drinks}
             onChange={(e) => setDrinks(e.target.value)}
-            className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm"
+            className="w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-sm text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
           >
             <option value="none">Без напитков</option>
             <option value="non_alcoholic">Только безалкогольные</option>
@@ -226,7 +226,7 @@ export default function EventPlanWizardPage() {
       ) : null}
 
       {step === 6 ? (
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-graphite-600">
           ПланАм подберёт блюда из базы рецептов, пересчитает порции на {guests}{" "}
           гостей и сформирует покупки с учётом запасов.
         </p>
@@ -237,7 +237,7 @@ export default function EventPlanWizardPage() {
           <button
             type="button"
             onClick={() => setStep((s) => s - 1)}
-            className="flex-1 rounded-xl border border-stone-200 py-3 text-sm font-semibold"
+            className="flex-1 pa-btn py-3 text-sm"
           >
             Назад
           </button>
@@ -246,7 +246,7 @@ export default function EventPlanWizardPage() {
           <button
             type="button"
             onClick={() => setStep((s) => s + 1)}
-            className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white"
+            className="flex-1 pa-btn-primary py-3 text-sm"
           >
             Далее
           </button>
@@ -255,7 +255,7 @@ export default function EventPlanWizardPage() {
             type="button"
             disabled={loading}
             onClick={() => void handleCreate()}
-            className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            className="flex-1 pa-btn-primary py-3 text-sm disabled:opacity-50"
           >
             {loading ? "…" : "Создать план"}
           </button>

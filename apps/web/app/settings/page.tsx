@@ -2,8 +2,10 @@ import {
   SettingsHub,
   SettingsMenuItem,
 } from "@/components/settings/SettingsScaffold";
+import { redirectLegacyToPlanam2026 } from "@/lib/planam/planam-2026-page";
 
 export default function SettingsPage() {
+  redirectLegacyToPlanam2026("/account/settings");
   return (
     <SettingsHub>
       <SettingsMenuItem

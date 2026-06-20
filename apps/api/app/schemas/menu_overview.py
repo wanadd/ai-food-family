@@ -48,6 +48,33 @@ class MenuTodayMeal(BaseModel):
     meal_type: str
     label: str
     name: str | None = None
+    recipe_id: int | None = None
+    image_url: str | None = None
+
+
+HomeNextActionId = Literal[
+    "complete_nutrition",
+    "generate_menu",
+    "shopping",
+    "use_pantry_item",
+    "meal_outcome",
+    "open_today",
+]
+
+
+class HomeNextAction(BaseModel):
+    """Primary CTA for Home 2026 (rule engine P0–P5)."""
+
+    id: HomeNextActionId
+    cta_label: str
+    redirect_path: str
+    subtitle: str | None = None
+    metadata: dict = Field(default_factory=dict)
+
+
+class PantryExpiringPreview(BaseModel):
+    name: str
+    days_until_expiry: int
 
 
 class MenuHomeAttendance(BaseModel):
@@ -79,6 +106,11 @@ class MenuOverviewResponse(BaseModel):
     home_attendance: MenuHomeAttendance | None = None
     settings_summary: MenuSettingsSummary | None = None
     nutritionist_advice_error: str | None = None
+    next_action: HomeNextAction | None = None
+    shopping_unchecked_count: int = 0
+    pantry_items_count: int = 0
+    pantry_expiring_preview: PantryExpiringPreview | None = None
+    prepared_dishes_count: int = 0
 
 
 class MenuQuickActionRequest(BaseModel):
@@ -98,9 +130,44 @@ class MenuQuickActionResponse(BaseModel):
     message: str | None = None
 
 
+class MenuPlanItem(BaseModel):
+    slot_id: str
+    date: str
+    meal_type: str
+    recipe_id: int | None = None
+    name: str
+    servings: int = 2
+    prep_time_minutes: int = 0
+    calories_estimate: int | None = None
+
+
 class AddRecipeToMenuRequest(BaseModel):
+    date: str | None = Field(default=None, max_length=10)
     meal_type: str = Field(default="lunch", max_length=16)
+    servings: int | None = Field(default=None, ge=1, le=50)
     replace_meal_index: int | None = Field(default=None, ge=0)
+
+
+class AddRecipeToMenuResponse(BaseModel):
+    item: MenuPlanItem
+    created: bool = True
+    menu: MenuVariant
+
+
+class MenuTodayResponse(BaseModel):
+    date: str
+    items: list[MenuPlanItem]
+    menu: MenuVariant | None = None
+
+
+class ReplaceMenuSlotRequest(BaseModel):
+    recipe_id: int = Field(ge=1)
+    servings: int | None = Field(default=None, ge=1, le=50)
+
+
+class ReplaceMenuSlotResponse(BaseModel):
+    item: MenuPlanItem
+    menu: MenuVariant
 
 
 RecipeFitLevel = Literal["good", "partial", "not_recommended"]

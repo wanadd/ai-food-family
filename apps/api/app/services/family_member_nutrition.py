@@ -6,6 +6,7 @@ from app.models.user import User
 from app.models.user_profile import UserProfile
 from app.schemas.family_member_nutrition import VirtualNutritionProfile
 from app.services.member_age import format_age_short_ru, normalize_age_months
+from app.services.normalization.profile import normalize_member_nutrition
 from app.services.nutrition_profile import is_profile_complete
 from app.services.nutrition_profile_labels import (
     NUTRITION_GOAL_LABELS,
@@ -81,7 +82,8 @@ def apply_virtual_nutrition_to_member(
     stored["age_months"] = nutrition.age_months
     stored["age"] = nutrition.age_months // 12 if nutrition.age_months else None
 
-    member.nutrition_profile = stored
+    # Unified normalization: dedupe allergies/restrictions, trim notes.
+    member.nutrition_profile = normalize_member_nutrition(stored)
     if goal and goal != "other":
         member.goals = NUTRITION_GOAL_TO_LEGACY_GOALS.get(goal, ["health"])
     else:

@@ -33,7 +33,7 @@ def panel_enabled() -> bool:
 
 
 def admin_webapp_url(session_token: str) -> str:
-    base = (settings.telegram_webapp_url or "").rstrip("/")
+    base = (settings.telegram_webapp_url or "https://planam.ru").rstrip("/")
     return f"{base}/admin?admin_session={session_token}"
 
 
@@ -89,6 +89,38 @@ def create_admin_session(db: Session, user: User) -> AdminSession:
         target_type="user",
         target_id=user.id,
     )
+    return row
+
+
+def validate_admin_session_token(
+    db: Session, session_token: str | None
+) -> AdminSession | None:
+    """Resolve an admin bearer session without requiring Telegram initData."""
+    if not session_token or not panel_enabled():
+        return None
+    now = _now()
+    row = (
+        db.query(AdminSession)
+        .filter(
+            AdminSession.session_token == session_token,
+            AdminSession.is_active.is_(True),
+            AdminSession.expires_at > now,
+        )
+        .one_or_none()
+    )
+    if row is None:
+        return None
+    user = db.query(User).filter(User.id == row.user_id).one_or_none()
+    if user is None:
+        return None
+    if getattr(user, "is_deleted", False) or getattr(user, "is_blocked", False):
+        return None
+    if not is_admin_telegram_id(user.telegram_id):
+        return None
+    if user.telegram_id != row.telegram_id:
+        return None
+    row.last_used_at = now
+    db.commit()
     return row
 
 

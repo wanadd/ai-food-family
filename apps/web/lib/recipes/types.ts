@@ -1,11 +1,39 @@
 export type RecipeIngredient = {
   name: string;
   amount: string;
+  quantity?: string | null;
+  unit?: string | null;
+  is_optional?: boolean;
+};
+
+export type NutritionConfidence =
+  | "exact"
+  | "estimated"
+  | "low_confidence"
+  | "unavailable";
+
+export type NutritionSummary = {
+  kcal_total?: number | null;
+  protein_total?: number | null;
+  fat_total?: number | null;
+  carbs_total?: number | null;
+  kcal_per_serving?: number | null;
+  protein_per_serving?: number | null;
+  fat_per_serving?: number | null;
+  carbs_per_serving?: number | null;
+  servings?: number | null;
+  serving_size_text?: string | null;
+  confidence?: NutritionConfidence | null;
+  needs_review?: boolean;
+  review_reason?: string | null;
+  calculated_at?: string | null;
 };
 
 export type RecipeSummary = {
   id: number;
   title: string;
+  display_title?: string | null;
+  full_title?: string | null;
   description: string;
   meal_type: string;
   category: string;
@@ -20,13 +48,20 @@ export type RecipeSummary = {
   is_alcoholic?: boolean;
   calories_per_serving?: number | null;
   protein_g?: number | null;
+  fat_g?: number | null;
+  carbs_g?: number | null;
   suitable_for_children?: boolean;
   suitable_for_sport?: boolean;
   suitable_for_event?: boolean;
   fit_level?: "good" | "partial" | "not_recommended" | null;
+  image_url?: string | null;
+  hero_image_url?: string | null;
+  thumbnail_url?: string | null;
+  nutrition_summary?: NutritionSummary | null;
 };
 
 export type RecipeDetail = RecipeSummary & {
+  original_title?: string | null;
   ingredients: RecipeIngredient[];
   steps: string[];
   allergens?: string[];
@@ -58,6 +93,8 @@ export type RecipeFilters = {
 
 export type RecipeQuery = {
   q?: string;
+  limit?: number;
+  offset?: number;
   meal_type?: string;
   category?: string;
   diet?: string;
@@ -75,4 +112,126 @@ export type RecipeQuery = {
   smoothie_only?: boolean;
   tea_coffee_only?: boolean;
   goal?: string;
+  scenario?: string;
+};
+
+export type RecommendationReasonCode =
+  | "in_pantry"
+  | "kids_like"
+  | "goal_match"
+  | "quick_cooking"
+  | "budget_friendly"
+  | "high_protein"
+  | "low_calorie"
+  | "family_approved";
+
+export type RecommendationReason = {
+  code: RecommendationReasonCode;
+  label: string;
+  kind: "positive" | "warning" | "hard_block";
+  weight: number;
+};
+
+export type RecipeWhy = {
+  recipe_id: number;
+  summary: string;
+  positives: RecommendationReason[];
+  warnings: RecommendationReason[];
+  hard_blocks: RecommendationReason[];
+  score_total: number;
+  uses_ai: boolean;
+  uses_ama: boolean;
+};
+
+export type MarkCookedPayload = {
+  cooked_on?: string | null;
+  servings?: number | null;
+  notes?: string | null;
+  family_member_id?: number | null;
+  source?: "manual" | "menu" | "bot" | "checkin";
+};
+
+export type CookingEvent = {
+  id: number;
+  recipe_id: number;
+  cooked_on: string;
+  servings?: number | null;
+  source: string;
+  notes?: string | null;
+  user_id?: number | null;
+  family_id?: number | null;
+  family_member_id?: number | null;
+  created_at?: string | null;
+};
+
+export type CookingStats = {
+  recipe_id: number;
+  cooked_count: number;
+  last_cooked_on?: string | null;
+};
+
+export type RecipeHistory = {
+  items: CookingEvent[];
+  total: number;
+  stats?: CookingStats | null;
+};
+
+export type RecipeCollection = {
+  id: number;
+  name: string;
+  visibility: "system" | "personal" | "family";
+  description: string;
+  emoji?: string | null;
+  color?: string | null;
+  is_pinned: boolean;
+  is_dynamic: boolean;
+  recipes_count: number;
+  owner_user_id?: number | null;
+  owner_family_id?: number | null;
+};
+
+export type RecipeCollectionDetail = {
+  collection: RecipeCollection;
+  recipe_ids: number[];
+};
+
+export type RecipeRatePayload = {
+  family_member_id: number;
+  liked?: boolean | null;
+  disliked?: boolean | null;
+  is_loved?: boolean | null;
+  rating?: "disliked" | "liked" | "loved" | null;
+  note?: string | null;
+};
+
+export type RecipeRateResult = {
+  recipe_id: number;
+  family_member_id: number;
+  liked: boolean;
+  disliked: boolean;
+  is_loved: boolean;
+  note?: string | null;
+};
+
+export type FromPantryRecipe = {
+  recipe_id: number;
+  title: string;
+  have: number;
+  total: number;
+  missing_ingredients: string[];
+  coverage_ratio: number;
+  summary?: {
+    id: number;
+    title: string;
+    meal_type: string;
+    category: string;
+    cooking_time_minutes: number;
+  } | null;
+};
+
+export type FromPantryList = {
+  items: FromPantryRecipe[];
+  total: number;
+  uses_ai: boolean;
+  uses_ama: boolean;
 };

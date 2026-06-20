@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.recipe import Recipe
 from app.models.user import User
+from app.services.menu_catalog_pool import meal_from_catalog_recipe, query_menu_catalog_recipes
 from app.schemas.menu import MenuIngredient, MenuMeal, MenuVariant
 from app.services.menu_context import MenuGenerationContext
 from app.services.menu_labels import VARIANT_META
@@ -21,6 +22,10 @@ from app.services.recipe_storage import (
 )
 from app.services.app_scope import AppScope
 from app.services.meal_leftovers import list_active_leftovers
+from app.services.menu_restriction_safety import (
+    MIN_RECIPE_POOL_SIZE,
+    apply_pre_ai_recipe_filter,
+)
 
 MealSlot = Literal["breakfast", "lunch", "dinner", "snack"]
 DrinkMode = Literal[
@@ -115,9 +120,13 @@ def _pick_one(candidates: list[Recipe], used_ids: set[int], rng: random.Random) 
 
 
 def _meal_from_recipe(recipe: Recipe, meal_type: str, persons: int) -> MenuMeal:
+    from app.services.recipes.mapper import public_title
+
+    shown = public_title(recipe)
     return MenuMeal(
         meal_type=meal_type,  # type: ignore[arg-type]
-        name=recipe.title,
+        name=shown,
+        display_title=shown,
         description=recipe.description or "",
         prep_time_minutes=recipe.cooking_time_minutes or recipe.prep_time_minutes or 30,
         calories_estimate=int(recipe.calories_per_serving) if recipe.calories_per_serving else None,
@@ -167,25 +176,26 @@ def build_menus_from_recipes(
     plan_mode: str = "healthy",
 ) -> list[MenuVariant] | None:
     recipes = (
-        db.query(Recipe)
+        query_menu_catalog_recipes(db)
         .options(
             joinedload(Recipe.ingredient_rows),
             joinedload(Recipe.step_rows),
         )
-        .filter(Recipe.is_active.is_(True))
         .all()
     )
-    if len(recipes) < 6:
+    from app.services.onboarding import get_or_create_profile
+
+    profile = get_or_create_profile(db, user)
+    recipes, pool_warnings = apply_pre_ai_recipe_filter(recipes, profile)
+    if len(recipes) < MIN_RECIPE_POOL_SIZE:
         return None
 
     pantry_items = get_active_items_for_scope(db, scope)
     pantry = _pantry_names(pantry_items)
     leftovers = _leftover_titles(list_active_leftovers(db, scope))
 
-    from app.services.onboarding import get_or_create_profile
-
-    profile = get_or_create_profile(db, user)
     profile_allergies = {str(a).lower() for a in (profile.allergies or [])}
+    safety_suffix = "\n".join(pool_warnings) if pool_warnings else ""
 
     rng = random.Random(hash(context.context_label) % 2**32)
 
@@ -240,7 +250,7 @@ def build_menus_from_recipes(
         if len(meals_recipes) < 3:
             return None
 
-        meals = [_meal_from_recipe(r, slot, persons) for slot, r in meals_recipes]
+        meals = [meal_from_catalog_recipe(r, slot, persons) for slot, r in meals_recipes]
         ingredients = _ingredients_for_variant(meals_recipes, persons, pantry, leftovers)
         total_prep = sum(m.prep_time_minutes for m in meals)
 
@@ -253,6 +263,7 @@ def build_menus_from_recipes(
                     f"Меню собрано из базы ПланАм ({len(meals_recipes)} блюд). "
                     "Рецепты подобраны под ваш профиль; порции пересчитаны на "
                     f"{persons} чел."
+                    + (f"\n{safety_suffix}" if safety_suffix else "")
                 ),
                 total_prep_minutes=total_prep,
                 meals=meals,

@@ -16,7 +16,21 @@ from app.models.recipe import (
     RecipeTagRow,
 )
 from app.services.amount_parser import parse_amount
+from app.services.ingredient_format import (
+    format_ingredient_amount,
+    is_to_taste,
+    normalize_unit_display,
+    sanitize_amount_text,
+)
 from app.services.shopping_categories import infer_category
+from app.recipes.product_taxonomy import SHOPPING_CATEGORIES_V2, legacy_shopping_slug
+
+
+def _resolve_ingredient_category(name: str, category_hint: str | None) -> str:
+    hint = (category_hint or "").strip()
+    if hint in SHOPPING_CATEGORIES_V2:
+        return legacy_shopping_slug(hint)
+    return infer_category(name, hint or None)
 
 
 def _parse_legacy_amount(amount_str: str) -> tuple[str, str]:
@@ -33,11 +47,22 @@ def get_structured_ingredients(recipe: Recipe) -> list[dict[str, Any]]:
             {
                 "name": row.name,
                 "quantity": row.quantity,
-                "unit": row.unit,
-                "category": row.category,
+                "unit": normalize_unit_display(row.unit),
+                "category": _resolve_ingredient_category(row.name, row.category),
                 "is_optional": row.is_optional,
                 "notes": row.notes,
-                "amount": f"{row.quantity} {row.unit}".strip(),
+                "is_to_taste": is_to_taste(
+                    row.quantity,
+                    quantity_mode=getattr(row, "quantity_mode", None),
+                    is_to_taste_flag=bool(getattr(row, "is_to_taste", False)),
+                ),
+                "amount": format_ingredient_amount(
+                    row.quantity,
+                    row.unit,
+                    quantity_mode=getattr(row, "quantity_mode", None),
+                    is_to_taste_flag=bool(getattr(row, "is_to_taste", False)),
+                    quantity_text=getattr(row, "quantity_text", None),
+                ),
             }
             for row in recipe.ingredient_rows
         ]
@@ -45,9 +70,11 @@ def get_structured_ingredients(recipe: Recipe) -> list[dict[str, Any]]:
     for raw in recipe.ingredients or []:
         if isinstance(raw, dict):
             name = str(raw.get("name", "")).strip()
-            amount = str(raw.get("amount", "1 шт"))
-            qty, unit = _parse_legacy_amount(amount)
-            category = infer_category(name, raw.get("category"))
+            # Legacy JSONB usually only has name + amount; use it as-is,
+            # only sanitising wrongly-appended "шт" (e.g. "по вкусу шт").
+            amount = sanitize_amount_text(str(raw.get("amount", "")))
+            qty, unit = _parse_legacy_amount(amount or "1")
+            category = _resolve_ingredient_category(name, raw.get("category"))
             result.append(
                 {
                     "name": name,
@@ -98,6 +125,10 @@ def scale_ingredients(
     factor = target_servings / base
     scaled: list[dict[str, Any]] = []
     for ing in get_structured_ingredients(recipe):
+        if ing.get("is_to_taste"):
+            # Don't scale or re-unit "по вкусу" — keep the honest amount.
+            scaled.append({**ing})
+            continue
         try:
             qty_val = float(str(ing["quantity"]).replace(",", "."))
             new_qty = qty_val * factor
@@ -113,7 +144,7 @@ def scale_ingredients(
             {
                 **ing,
                 "quantity": qty_str,
-                "amount": f"{qty_str} {unit}".strip(),
+                "amount": format_ingredient_amount(qty_str, unit),
             }
         )
     return scaled
@@ -160,7 +191,16 @@ def persist_recipe_structure(
                 )
             )
         recipe.ingredients = [
-            {"name": i.name, "amount": f"{i.quantity} {i.unit}".strip()}
+            {
+                "name": i.name,
+                "amount": format_ingredient_amount(
+                    i.quantity,
+                    i.unit,
+                    quantity_mode=getattr(i, "quantity_mode", None),
+                    is_to_taste_flag=bool(getattr(i, "is_to_taste", False)),
+                    quantity_text=getattr(i, "quantity_text", None),
+                ),
+            }
             for i in recipe.ingredient_rows
         ]
 

@@ -3,6 +3,7 @@ import logging
 import httpx
 
 from app.config import settings
+from app.telegram.api_urls import telegram_bot_api_url, telegram_file_url
 
 logger = logging.getLogger(__name__)
 
@@ -11,12 +12,10 @@ async def download_telegram_file(file_id: str) -> bytes | None:
     if not settings.telegram_bot_token or not file_id:
         return None
 
-    base = f"https://api.telegram.org/bot{settings.telegram_bot_token}"
-
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             meta_resp = await client.get(
-                f"{base}/getFile",
+                telegram_bot_api_url("getFile"),
                 params={"file_id": file_id},
             )
             meta = meta_resp.json()
@@ -24,9 +23,7 @@ async def download_telegram_file(file_id: str) -> bytes | None:
                 logger.warning("getFile failed: %s", meta)
                 return None
             file_path = meta["result"]["file_path"]
-            file_resp = await client.get(
-                f"https://api.telegram.org/file/bot{settings.telegram_bot_token}/{file_path}",
-            )
+            file_resp = await client.get(telegram_file_url(file_path))
             file_resp.raise_for_status()
             return file_resp.content
     except Exception:

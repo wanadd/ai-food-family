@@ -1,4 +1,6 @@
 import { getApiBaseUrl } from "@/lib/api-base";
+import { getAuditHeaders } from "@/lib/audit/audit-mode";
+import { isAuditPersona } from "@/lib/audit/personas";
 
 const apiUrl = getApiBaseUrl();
 
@@ -32,6 +34,37 @@ export type TelegramAuthResponse = {
 export type DevLoginResponse = TelegramAuthResponse & {
   dev_init_data: string;
 };
+
+export type AuditLoginResponse = TelegramAuthResponse & {
+  audit_init_data: string;
+  audit_persona: string;
+};
+
+export async function authenticateAuditLogin(
+  persona: string,
+): Promise<AuditLoginResponse> {
+  if (!isAuditPersona(persona)) {
+    throw new Error(`Unknown audit persona: ${persona}`);
+  }
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...getAuditHeaders(persona),
+  };
+
+  const response = await fetch(
+    `${apiUrl}/auth/audit-login?persona=${encodeURIComponent(persona)}`,
+    { method: "POST", headers },
+  );
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { detail?: string }
+      | null;
+    throw new Error(payload?.detail ?? `HTTP ${response.status}`);
+  }
+
+  return response.json() as Promise<AuditLoginResponse>;
+}
 
 export async function authenticateDevLogin(): Promise<DevLoginResponse> {
   const response = await fetch(`${apiUrl}/auth/dev-login`, {

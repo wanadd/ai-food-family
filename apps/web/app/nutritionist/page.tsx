@@ -1,5 +1,7 @@
-import { NutritionistDashboard } from "@/components/nutritionist/NutritionistDashboard";
+import { redirect } from "next/navigation";
 
-export default function NutritionistPage() {
-  return <NutritionistDashboard />;
+// Раздел «Нутрициолог» переименован в «Здоровье». Мягкий redirect
+// сохраняет работоспособность старых ссылок и Telegram deep-links.
+export default function NutritionistRedirectPage() {
+  redirect("/health");
 }

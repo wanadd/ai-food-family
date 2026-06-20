@@ -1,0 +1,458 @@
+import type { AppMode } from "@/lib/app-mode/types";
+
+export const MENU_TODAY_MARK_CONSUMPTION_BUTTON = "Отметить съеденное";
+
+export const MEAL_CONSUMPTION_SHEET_TITLE = "Что вы съели?";
+export const MEAL_CONSUMPTION_SHEET_SUBTITLE =
+  "Отметьте, что съели, и при необходимости уточните остатки готового блюда";
+
+export const MEAL_CONSUMPTION_MEMBER_PROMPT = "Кого отмечаем?";
+
+export const MEAL_CONSUMPTION_SAVE_BUTTON_LABEL = "Сохранить отметки";
+
+export const MEAL_CONSUMPTION_SAVE_DISABLED_HINT =
+  "Сохранение будет доступно после настройки семейного учёта";
+
+export const MEAL_CONSUMPTION_PERSONAL_SAVE_HINT =
+  "Отметки сохранятся в вашем дневнике питания";
+
+export const MEAL_CONSUMPTION_VIRTUAL_MEMBER_SAVE_HINT =
+  "Отметки сохранятся для выбранного участника";
+
+export const MEAL_CONSUMPTION_SAVING_LABEL = "Сохраняем...";
+
+export const MEAL_CONSUMPTION_SAVED_TOAST = "Отметки сохранены";
+
+export const MEAL_CONSUMPTION_SAVE_ERROR =
+  "Не удалось сохранить отметки. Попробуйте ещё раз.";
+
+export const MEAL_CONSUMPTION_PERMISSION_ERROR =
+  "Нет прав отмечать питание за этого участника";
+
+/** Must not appear in the consumption marking sheet. */
+export const MEAL_CONSUMPTION_FORBIDDEN_PHRASES = [
+  "Итог дня",
+  "Результат дня",
+  "Что приготовили?",
+  "План на день и КБЖУ",
+  "Показать итог дня",
+] as const;
+
+export const MEAL_CONSUMPTION_PORTION_OPTIONS = [
+  { value: 0.5, label: "0,5" },
+  { value: 1, label: "1" },
+  { value: 1.5, label: "1,5" },
+  { value: 2, label: "2" },
+] as const;
+
+export type MealConsumptionPortionValue =
+  (typeof MEAL_CONSUMPTION_PORTION_OPTIONS)[number]["value"];
+
+export type MealConsumptionStatus = "eaten" | "skipped" | "ate_out" | "later";
+
+export const MEAL_CONSUMPTION_STATUS_OPTIONS: ReadonlyArray<{
+  id: MealConsumptionStatus;
+  label: string;
+}> = [
+  { id: "eaten", label: "Съел по плану" },
+  { id: "later", label: "Съем позже" },
+  { id: "ate_out", label: "Ел другое" },
+  { id: "skipped", label: "Пропустил приём пищи" },
+];
+
+export type ConsumptionTargetId = "self" | "family" | number;
+
+type MemberPickerInput = {
+  id: number;
+  display_name: string;
+  is_you: boolean;
+  is_virtual?: boolean;
+  user_id?: number | null;
+};
+
+/** Who can be marked in the consumption sheet. */
+export function buildConsumptionMemberTargets(
+  members: MemberPickerInput[],
+  isAdmin: boolean,
+): Array<{ id: ConsumptionTargetId; label: string }> {
+  const self = members.find((m) => m.is_you);
+  const selfTarget = {
+    id: "self" as const,
+    label: self?.display_name?.trim() || "Я",
+  };
+
+  if (!isAdmin) {
+    return [selfTarget];
+  }
+
+  const targets: Array<{ id: ConsumptionTargetId; label: string }> = [
+    selfTarget,
+  ];
+  for (const member of members) {
+    if (member.is_you || !member.is_virtual) {
+      continue;
+    }
+    targets.push({ id: member.id, label: member.display_name });
+  }
+  return targets;
+}
+
+export function shouldShowConsumptionMemberPicker(
+  members: MemberPickerInput[],
+  isAdmin: boolean,
+): boolean {
+  return buildConsumptionMemberTargets(members, isAdmin).length > 1;
+}
+
+export type ConsumptionMemberRef = {
+  user_id: number | null;
+  family_member_id: number | null;
+};
+
+type MemberForResolve = MemberPickerInput & {
+  user_id?: number | null;
+};
+
+export function resolveConsumptionFamilyId(
+  mode: AppMode,
+  menuFamilyId: number | null,
+  contextFamilyId: number | null,
+): number | null {
+  if (mode === "personal") {
+    return null;
+  }
+  return menuFamilyId ?? contextFamilyId ?? null;
+}
+
+export function resolveConsumptionTargets(
+  targetId: ConsumptionTargetId,
+  members: MemberForResolve[],
+  currentUserId?: number | null,
+): ConsumptionMemberRef[] {
+  if (targetId === "family") {
+    return [];
+  }
+  if (targetId === "self") {
+    const self = members.find((m) => m.is_you);
+    return [
+      {
+        user_id: self?.user_id ?? currentUserId ?? null,
+        family_member_id: null,
+      },
+    ];
+  }
+  const member = members.find((m) => m.id === targetId);
+  if (!member || !member.is_virtual) {
+    return [];
+  }
+  return [
+    {
+      user_id: null,
+      family_member_id: member.id,
+    },
+  ];
+}
+
+export function consumptionSaveFooterHint(
+  familyId: number | null,
+  isAdmin: boolean,
+  targetId: ConsumptionTargetId,
+): string {
+  const isVirtualTarget = typeof targetId === "number";
+  if (isVirtualTarget && isAdmin && familyId != null) {
+    return MEAL_CONSUMPTION_VIRTUAL_MEMBER_SAVE_HINT;
+  }
+  return MEAL_CONSUMPTION_PERSONAL_SAVE_HINT;
+}
+
+export function buildPersonalConsumptionPayload(
+  params: {
+    familyId: number | null;
+    menuSelectionId: number | null;
+    dayIndex: number;
+    plannedDate: string | null;
+  },
+  entries: ReturnType<typeof buildConsumptionSaveEntries>,
+) {
+  return {
+    family_id: params.familyId,
+    menu_selection_id: params.menuSelectionId,
+    day_index: params.dayIndex,
+    planned_date: params.plannedDate,
+    entries,
+  };
+}
+
+export type ConsumptionMealInput = {
+  meal_type: string;
+  recipe_id?: number | null;
+  recipe_title: string;
+  mealIndex: number;
+};
+
+export type ConsumptionDraft = {
+  included: boolean;
+  portion: MealConsumptionPortionValue;
+  status: MealConsumptionStatus;
+  externalFoodNote?: string;
+  leftoversExpanded?: boolean;
+};
+
+export function mealConsumptionKey(mealType: string, mealIndex: number): string {
+  return `${mealType}-${mealIndex}`;
+}
+
+export function buildDefaultConsumptionDrafts(
+  meals: Array<{ meal_type: string; mealIndex: number }>,
+): Record<string, ConsumptionDraft> {
+  const drafts: Record<string, ConsumptionDraft> = {};
+  for (const meal of meals) {
+    drafts[mealConsumptionKey(meal.meal_type, meal.mealIndex)] = {
+      included: true,
+      portion: 1,
+      status: "eaten",
+    };
+  }
+  return drafts;
+}
+
+export function hasSaveableConsumptionDrafts(
+  drafts: Record<string, ConsumptionDraft>,
+): boolean {
+  return Object.values(drafts).some((d) => d.included);
+}
+
+export function canSaveConsumptionDrafts(
+  drafts: Record<string, ConsumptionDraft>,
+  options?: { saving?: boolean; loadingLogs?: boolean },
+): boolean {
+  if (options?.saving || options?.loadingLogs) {
+    return false;
+  }
+  return hasSaveableConsumptionDrafts(drafts);
+}
+
+export type MealConsumptionSaveBlockReason =
+  | "no_user_id"
+  | "no_drafts"
+  | "no_selected_drafts"
+  | "no_entries"
+  | "loading"
+  | "validation_error"
+  | "unknown";
+
+export function resolveEffectiveConsumptionDrafts(
+  mealInputs: Array<{ meal_type: string; mealIndex: number }>,
+  drafts: Record<string, ConsumptionDraft>,
+): Record<string, ConsumptionDraft> {
+  if (mealInputs.length === 0) {
+    return {};
+  }
+  const defaults = buildDefaultConsumptionDrafts(mealInputs);
+  if (Object.keys(drafts).length === 0) {
+    return defaults;
+  }
+  return { ...defaults, ...drafts };
+}
+
+export function getMealConsumptionSaveBlockReason(params: {
+  mode: AppMode;
+  mealInputs: ConsumptionMealInput[];
+  drafts: Record<string, ConsumptionDraft>;
+  targets: ConsumptionMemberRef[];
+  saving?: boolean;
+  loadingLogs?: boolean;
+  hasInitData?: boolean;
+}): MealConsumptionSaveBlockReason | null {
+  if (params.saving) {
+    return "loading";
+  }
+  if (!params.hasInitData) {
+    return "validation_error";
+  }
+  if (params.mealInputs.length === 0) {
+    return "no_drafts";
+  }
+
+  const effectiveDrafts = resolveEffectiveConsumptionDrafts(
+    params.mealInputs,
+    params.drafts,
+  );
+  if (Object.keys(effectiveDrafts).length === 0) {
+    return "no_drafts";
+  }
+  if (!hasSaveableConsumptionDrafts(effectiveDrafts)) {
+    return "no_selected_drafts";
+  }
+
+  const isVirtualTarget = params.targets.some(
+    (t) => t.family_member_id != null,
+  );
+  const needsUserId =
+    params.mode === "personal" && !isVirtualTarget;
+  const hasUserId = params.targets.some((t) => t.user_id != null);
+  if (needsUserId && !hasUserId) {
+    return "no_user_id";
+  }
+
+  if (params.targets.length === 0) {
+    return "validation_error";
+  }
+
+  const entries = buildConsumptionSaveEntries(
+    params.mealInputs,
+    effectiveDrafts,
+    params.targets,
+  );
+  if (entries.length === 0) {
+    return "no_entries";
+  }
+
+  return null;
+}
+
+export function mealConsumptionSaveBlockMessage(
+  reason: MealConsumptionSaveBlockReason | null,
+): string | null {
+  switch (reason) {
+    case "no_user_id":
+      return "Не удалось определить пользователя";
+    case "no_drafts":
+    case "no_entries":
+      return "Нет данных для сохранения";
+    case "no_selected_drafts":
+      return "Выберите хотя бы одно блюдо";
+    case "loading":
+      return "Сохраняем...";
+    case "validation_error":
+      return "Не удалось подготовить сохранение";
+    case "unknown":
+      return "Сохранение временно недоступно";
+    default:
+      return null;
+  }
+}
+
+export function canSaveMealConsumption(params: {
+  mode: AppMode;
+  mealInputs: ConsumptionMealInput[];
+  drafts: Record<string, ConsumptionDraft>;
+  targets: ConsumptionMemberRef[];
+  saving?: boolean;
+  loadingLogs?: boolean;
+  hasInitData?: boolean;
+}): boolean {
+  return getMealConsumptionSaveBlockReason(params) === null;
+}
+
+export function buildConsumptionSaveEntries(
+  meals: ConsumptionMealInput[],
+  drafts: Record<string, ConsumptionDraft>,
+  targets: ConsumptionMemberRef[],
+): Array<{
+  user_id?: number | null;
+  family_member_id?: number | null;
+  meal_type: string;
+  recipe_id?: number | null;
+  recipe_title: string;
+  status: MealConsumptionStatus;
+  portion_multiplier: number;
+}> {
+  const entries: Array<{
+    user_id?: number | null;
+    family_member_id?: number | null;
+    meal_type: string;
+    recipe_id?: number | null;
+    recipe_title: string;
+    status: MealConsumptionStatus;
+    portion_multiplier: number;
+  }> = [];
+
+  for (const target of targets) {
+    for (const meal of meals) {
+      const key = mealConsumptionKey(meal.meal_type, meal.mealIndex);
+      const draft = drafts[key];
+      if (!draft?.included) {
+        continue;
+      }
+      if (draft.status === "later") {
+        continue;
+      }
+      const apiStatus =
+        draft.status === "ate_out" || draft.status === "skipped"
+          ? draft.status
+          : "eaten";
+      const portion =
+        draft.status === "ate_out" ? 0 : draft.portion;
+      entries.push({
+        user_id: target.user_id,
+        family_member_id: target.family_member_id,
+        meal_type: meal.meal_type,
+        recipe_id: meal.recipe_id ?? null,
+        recipe_title: meal.recipe_title,
+        status: apiStatus,
+        portion_multiplier: portion,
+      });
+    }
+  }
+
+  return entries;
+}
+
+export type ConsumptionLogLike = {
+  user_id: number | null;
+  family_member_id?: number | null;
+  meal_type: string | null;
+  recipe_id: number | null;
+  status: string;
+  portion_multiplier: number;
+};
+
+export function applyConsumptionLogsToDrafts(
+  meals: ConsumptionMealInput[],
+  logs: ConsumptionLogLike[],
+  target: ConsumptionMemberRef,
+  defaults: ConsumptionDraft = { included: true, portion: 1, status: "eaten" },
+): Record<string, ConsumptionDraft> {
+  const drafts: Record<string, ConsumptionDraft> = {};
+  for (const meal of meals) {
+    drafts[mealConsumptionKey(meal.meal_type, meal.mealIndex)] = { ...defaults };
+  }
+
+  for (const log of logs) {
+    const matchesTarget =
+      (target.family_member_id != null &&
+        log.family_member_id === target.family_member_id) ||
+      (target.family_member_id == null &&
+        log.family_member_id == null &&
+        (target.user_id == null || log.user_id === target.user_id));
+    if (!matchesTarget || !log.meal_type) {
+      continue;
+    }
+    const meal = meals.find(
+      (m) =>
+        m.meal_type === log.meal_type &&
+        (log.recipe_id == null || m.recipe_id === log.recipe_id),
+    );
+    if (!meal) {
+      continue;
+    }
+    const key = mealConsumptionKey(meal.meal_type, meal.mealIndex);
+    const normalizedStatus: MealConsumptionStatus =
+      log.status === "skipped" || log.status === "ate_out"
+        ? log.status
+        : "eaten";
+    const portion =
+      normalizedStatus === "ate_out"
+        ? 1
+        : (MEAL_CONSUMPTION_PORTION_OPTIONS.find((o) => o.value === log.portion_multiplier)
+            ?.value ?? 1);
+    drafts[key] = {
+      included: true,
+      portion,
+      status: normalizedStatus,
+    };
+  }
+
+  return drafts;
+}

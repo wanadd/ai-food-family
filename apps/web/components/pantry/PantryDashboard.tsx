@@ -9,9 +9,16 @@ import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallba
 import { useProtectedScreen } from "@/lib/use-protected-screen";
 import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { ShoppingSectionLayout } from "@/components/shopping/ShoppingSectionLayout";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { PantryCategorySection } from "@/components/pantry/PantryCategorySection";
 import { PantryItemForm } from "@/components/pantry/PantryItemForm";
+import {
+  cacheKey,
+  getCached,
+  invalidate as invalidateCache,
+  setCached,
+} from "@/lib/cache/session-cache";
 import {
   addPantryItem,
   deletePantryItem,
@@ -41,9 +48,16 @@ const RECENT_DAYS = 7;
 export function PantryDashboard() {
   const { mode } = useAppMode();
   const { initData, state: authState } = useProtectedScreen();
-  const [items, setItems] = useState<PantryItem[]>([]);
-  const [activeCount, setActiveCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const cachedPantry = initData
+    ? getCached<{ items: PantryItem[]; active_count: number }>(
+        cacheKey.pantry(mode),
+      )
+    : null;
+  const [items, setItems] = useState<PantryItem[]>(cachedPantry?.items ?? []);
+  const [activeCount, setActiveCount] = useState(
+    cachedPantry?.active_count ?? 0,
+  );
+  const [loading, setLoading] = useState(cachedPantry == null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PantryFilter>("all");
@@ -56,13 +70,26 @@ export function PantryDashboard() {
 
   const loadPantry = useCallback(
     async (telegramInitData: string, appMode: typeof mode) => {
-      setLoading(true);
+      const cached = getCached<{ items: PantryItem[]; active_count: number }>(
+        cacheKey.pantry(appMode),
+      );
+      if (cached) {
+        setItems(cached.items);
+        setActiveCount(cached.active_count);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       try {
         const [data, cats] = await Promise.all([
           fetchPantry(telegramInitData, appMode),
           fetchShoppingCategories(telegramInitData, appMode).catch(() => []),
         ]);
+        setCached(cacheKey.pantry(appMode), {
+          items: data.items,
+          active_count: data.active_count,
+        });
         setItems(data.items);
         setActiveCount(data.active_count);
         setCategories(cats);
@@ -108,7 +135,7 @@ export function PantryDashboard() {
   const grouped = useMemo(() => {
     const buckets = new Map<string, PantryItem[]>();
     for (const item of filteredItems) {
-      const cat = item.category || "продукты";
+      const cat = item.category || "другое";
       const existing = buckets.get(cat) ?? [];
       existing.push(item);
       buckets.set(cat, existing);
@@ -132,7 +159,7 @@ export function PantryDashboard() {
     setEditingItem(item);
     setDraft({
       name: item.name,
-      category: item.category || "продукты",
+      category: item.category || "другое",
       quantity: item.quantity,
       unit: item.unit || "шт",
       expires_at: item.expires_at ?? "",
@@ -152,7 +179,7 @@ export function PantryDashboard() {
     const payload: PantryItemDraft = {
       ...draft,
       name,
-      category: draft.category?.trim() || suggestCategorySlug(name) || "продукты",
+      category: draft.category?.trim() || suggestCategorySlug(name) || "другое",
       quantity: draft.quantity?.trim() || "1",
       unit: draft.unit?.trim() || "шт",
     };
@@ -177,6 +204,8 @@ export function PantryDashboard() {
           80,
         );
       }
+      invalidateCache("pantry");
+      invalidateCache("shopping-list");
       await loadPantry(initData, mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось сохранить");
@@ -195,6 +224,8 @@ export function PantryDashboard() {
     setError(null);
     try {
       await deletePantryItem(initData, mode, item.id);
+      invalidateCache("pantry");
+      invalidateCache("shopping-list");
       await loadPantry(initData, mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось удалить");
@@ -223,33 +254,29 @@ export function PantryDashboard() {
   }
 
   if (loading) {
-    return <PageLoading message="Загружаем запасы..." />;
+    return (
+      <ShoppingSectionLayout subtitle="Запасы дома · что уже есть">
+        <SkeletonList count={3} />
+      </ShoppingSectionLayout>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 px-4 py-4 backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold text-stone-900">Запасы дома</h1>
-            <p className="mt-0.5 text-xs text-stone-500">
-              ПланАм учитывает их при составлении меню
-            </p>
-            <p className="mt-1 text-xs font-medium text-teal-700">
-              {activeCount} {activeCount === 1 ? "товар" : "товаров"} в запасах
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={openAdd}
-            className="shrink-0 rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white"
-          >
-            + Добавить
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
+    <ShoppingSectionLayout
+      subtitle="Запасы дома · количество и срок можно изменить в любой момент"
+      action={
+        <button
+          type="button"
+          onClick={openAdd}
+          className="shrink-0 rounded-control bg-sage-500 px-3 py-2 text-xs font-semibold text-white shadow-soft"
+        >
+          + Добавить
+        </button>
+      }
+    >
+        <p className="text-xs font-medium text-sage-700">
+          {activeCount} {activeCount === 1 ? "товар" : "товаров"} в запасах
+        </p>
         <BotQuickInputHint />
         <ModeBanner />
 
@@ -265,10 +292,10 @@ export function PantryDashboard() {
               key={item.id}
               type="button"
               onClick={() => setFilter(item.id)}
-              className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+              className={`shrink-0 rounded-pill border px-2.5 py-1 text-[11px] font-semibold ${
                 filter === item.id
-                  ? "border-teal-200 bg-teal-50 text-teal-800"
-                  : "border-stone-200 bg-white text-stone-600"
+                  ? "border-sage-200 bg-sage-50 text-sage-700"
+                  : "border-cream-border bg-cream-surface text-graphite-700"
               }`}
             >
               {item.label}
@@ -277,24 +304,34 @@ export function PantryDashboard() {
         </div>
 
         {items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-teal-200 bg-teal-50/50 px-5 py-10 text-center">
-            <p className="text-base font-semibold text-stone-800">
+          <div className="pa-card border-dashed border-sage-200 bg-sage-50/50 px-5 py-10 text-center">
+            <p className="text-base font-semibold text-graphite-900">
               Запасов пока нет
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-600">
-              Отмечайте продукты купленными — они появятся здесь автоматически
+            <p className="mt-2 text-sm leading-relaxed text-graphite-500">
+              Отметьте продукты купленными — они сразу появятся здесь.
+              Или добавьте сами, если что-то уже есть дома.
             </p>
-            <Link
-              href="/shopping"
-              className="mt-4 inline-block text-sm font-semibold text-emerald-700"
-            >
-              Перейти к покупкам →
-            </Link>
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <Link
+                href="/shopping"
+                className="text-sm font-semibold text-sage-700"
+              >
+                Перейти к покупкам →
+              </Link>
+              <button
+                type="button"
+                onClick={openAdd}
+                className="text-sm font-semibold text-sage-700"
+              >
+                Добавить вручную
+              </button>
+            </div>
           </div>
         ) : null}
 
         {items.length > 0 && filteredItems.length === 0 ? (
-          <p className="py-8 text-center text-sm text-stone-400">
+          <p className="py-8 text-center text-sm text-graphite-400">
             Нет товаров по выбранному фильтру
           </p>
         ) : null}
@@ -313,7 +350,6 @@ export function PantryDashboard() {
             />
           ))}
         </div>
-      </main>
 
       <PantryItemForm
         open={formOpen}
@@ -331,6 +367,6 @@ export function PantryDashboard() {
         successMessage={saveSuccess}
         nameInputId="pantry-item-name"
       />
-    </div>
+    </ShoppingSectionLayout>
   );
 }

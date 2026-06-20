@@ -7,8 +7,10 @@ import { useEffect, useState } from "react";
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
 import { pingAdmin } from "@/lib/admin/api";
-
-import { AdminSessionCapture } from "./AdminSessionCapture";
+import {
+  captureAdminSessionFromUrl,
+  getAdminSessionToken,
+} from "@/lib/admin/session";
 
 const NAV = [
   { href: "/admin", label: "Дашборд", exact: true },
@@ -22,28 +24,55 @@ const NAV = [
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { initData } = useTelegram();
+  const { initData, isAuthenticating } = useTelegram();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      if (!initData) {
-        setAllowed(false);
-        setChecking(false);
-        return;
-      }
-      const ok = await pingAdmin(initData);
+
+    captureAdminSessionFromUrl();
+    const token = getAdminSessionToken();
+
+    const finish = (ok: boolean) => {
       if (!cancelled) {
         setAllowed(ok);
         setChecking(false);
       }
-    })();
+    };
+
+    if (token) {
+      (async () => {
+        const ok = await pingAdmin(initData || null);
+        finish(ok);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (isAuthenticating) {
+      setChecking(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (initData) {
+      (async () => {
+        const ok = await pingAdmin(initData);
+        finish(ok);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    finish(false);
     return () => {
       cancelled = true;
     };
-  }, [initData]);
+  }, [initData, isAuthenticating]);
 
   if (checking) {
     return <PageLoading message="Проверяем доступ..." />;
@@ -52,7 +81,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   if (!allowed) {
     return (
       <div className="mx-auto max-w-lg px-4 py-10 text-center">
-        <AdminSessionCapture />
         <h1 className="text-lg font-bold text-stone-900">Нет доступа</h1>
         <p className="mt-2 text-sm text-stone-600">
           Откройте Telegram-бота, выполните команду /admin и подтвердите PIN. После
@@ -64,7 +92,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-stone-100 pb-8">
-      <AdminSessionCapture />
       <header className="sticky top-0 z-10 border-b border-stone-200 bg-white px-4 py-3">
         <h1 className="text-lg font-bold text-stone-900">ПланАм · панель</h1>
         <nav className="mt-2 flex gap-1 overflow-x-auto pb-1">

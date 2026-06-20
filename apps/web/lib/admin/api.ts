@@ -25,18 +25,25 @@ import type {
 
 const MODE: AppMode = "personal";
 
-function adminHeaders(initData: string, extra?: HeadersInit): HeadersInit {
+function adminHeaders(initData?: string | null, extra?: HeadersInit): HeadersInit {
   const token = getAdminSessionToken();
-  return {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-Telegram-Init-Data": initData,
     "X-App-Mode": MODE,
-    ...(token ? { "X-Admin-Session": token } : {}),
-    ...extra,
   };
+  if (token) {
+    headers["X-Admin-Session"] = token;
+  }
+  if (initData) {
+    headers["X-Telegram-Init-Data"] = initData;
+  }
+  return { ...headers, ...extra };
 }
 
-async function adminGet<T>(initData: string, path: string): Promise<T | null> {
+async function adminGet<T>(
+  initData: string | null | undefined,
+  path: string,
+): Promise<T | null> {
   const response = await fetch(`${apiUrl}${path}`, {
     headers: adminHeaders(initData),
   });
@@ -47,7 +54,7 @@ async function adminGet<T>(initData: string, path: string): Promise<T | null> {
 }
 
 async function adminFetch<T>(
-  initData: string,
+  initData: string | null | undefined,
   path: string,
   init?: RequestInit,
 ): Promise<T> {
@@ -66,19 +73,19 @@ async function adminFetch<T>(
   return response.json() as Promise<T>;
 }
 
-export async function pingAdmin(initData: string): Promise<boolean> {
+export async function pingAdmin(initData: string | null = null): Promise<boolean> {
   const data = await adminGet<{ ok: boolean }>(initData, "/admin/ping");
   return Boolean(data?.ok);
 }
 
 export async function fetchAdminSummary(
-  initData: string,
+  initData: string | null = null,
 ): Promise<AdminSummary | null> {
   return adminGet<AdminSummary>(initData, "/admin/summary");
 }
 
 export async function fetchAdminUsers(
-  initData: string,
+  initData: string | null = null,
   params?: { q?: string; filter?: string },
 ): Promise<AdminUserRow[]> {
   const search = new URLSearchParams();
@@ -93,14 +100,14 @@ export async function fetchAdminUsers(
 }
 
 export async function fetchAdminFamilies(
-  initData: string,
+  initData: string | null = null,
 ): Promise<AdminFamilyRow[]> {
   const data = await adminGet<AdminFamilyRow[]>(initData, "/admin/families");
   return data ?? [];
 }
 
 export async function fetchAdminSubscriptions(
-  initData: string,
+  initData: string | null = null,
 ): Promise<AdminSubscriptionRow[]> {
   const data = await adminGet<AdminSubscriptionRow[]>(
     initData,
@@ -109,20 +116,22 @@ export async function fetchAdminSubscriptions(
   return data ?? [];
 }
 
-export async function fetchAdminPlans(initData: string): Promise<AdminPlanOption[]> {
+export async function fetchAdminPlans(
+  initData: string | null = null,
+): Promise<AdminPlanOption[]> {
   const data = await adminGet<AdminPlanOption[]>(initData, "/admin/plans");
   return data ?? [];
 }
 
 export async function fetchAdminAiUsage(
-  initData: string,
+  initData: string | null = null,
 ): Promise<AdminAiUsageRow[]> {
   const data = await adminGet<AdminAiUsageRow[]>(initData, "/admin/ai-usage");
   return data ?? [];
 }
 
 export async function fetchAdminOpenAi(
-  initData: string,
+  initData: string | null = null,
   period: string,
 ): Promise<AdminOpenAiStats | null> {
   return adminGet<AdminOpenAiStats>(
@@ -132,13 +141,13 @@ export async function fetchAdminOpenAi(
 }
 
 export async function fetchAdminAmsSummary(
-  initData: string,
+  initData: string | null = null,
 ): Promise<AdminAmsSummary | null> {
   return adminGet<AdminAmsSummary>(initData, "/admin/ams/summary");
 }
 
 export async function fetchAdminAmaTransactions(
-  initData: string,
+  initData: string | null = null,
 ): Promise<AdminAmaTransactionRow[]> {
   const data = await adminGet<AdminAmaTransactionRow[]>(
     initData,
@@ -148,19 +157,21 @@ export async function fetchAdminAmaTransactions(
 }
 
 export async function fetchAdminErrors(
-  initData: string,
+  initData: string | null = null,
 ): Promise<AdminErrorRow[]> {
   const data = await adminGet<AdminErrorRow[]>(initData, "/admin/errors");
   return data ?? [];
 }
 
-export async function fetchAdminBackups(initData: string): Promise<AdminBackupRow[]> {
+export async function fetchAdminBackups(
+  initData: string | null = null,
+): Promise<AdminBackupRow[]> {
   const data = await adminGet<AdminBackupRow[]>(initData, "/admin/backups");
   return data ?? [];
 }
 
 export async function grantAdminSubscription(
-  initData: string,
+  initData: string | null = null,
   body: {
     user_id: number;
     plan_code: string;
@@ -175,7 +186,7 @@ export async function grantAdminSubscription(
 }
 
 export async function grantAdminAms(
-  initData: string,
+  initData: string | null = null,
   body: { user_id: number; amount: number; reason?: string },
 ): Promise<AdminGrantResponse> {
   return adminFetch(initData, "/admin/ams/grant", {
@@ -185,7 +196,7 @@ export async function grantAdminAms(
 }
 
 export async function grantAdminFamilyAms(
-  initData: string,
+  initData: string | null = null,
   body: { family_id: number; amount: number; reason?: string },
 ): Promise<AdminGrantResponse> {
   return adminFetch(initData, "/admin/ams/grant-family", {
@@ -195,7 +206,7 @@ export async function grantAdminFamilyAms(
 }
 
 export async function deductAdminAms(
-  initData: string,
+  initData: string | null = null,
   body: { user_id: number; amount: number; reason?: string },
 ): Promise<AdminGrantResponse> {
   return adminFetch(initData, "/admin/ams/deduct", {
@@ -205,21 +216,21 @@ export async function deductAdminAms(
 }
 
 export async function fetchAdminUserCard(
-  initData: string,
+  initData: string | null = null,
   userId: number,
 ): Promise<AdminUserCard | null> {
   return adminGet<AdminUserCard>(initData, `/admin/users/${userId}`);
 }
 
 export async function fetchAdminFamilyCard(
-  initData: string,
+  initData: string | null = null,
   familyId: number,
 ): Promise<AdminFamilyCard | null> {
   return adminGet<AdminFamilyCard>(initData, `/admin/families/${familyId}`);
 }
 
 export async function adminUserAction(
-  initData: string,
+  initData: string | null = null,
   userId: number,
   path: string,
   method: "POST" | "DELETE" = "POST",
@@ -232,7 +243,7 @@ export async function adminUserAction(
 }
 
 export async function adminFamilyAction(
-  initData: string,
+  initData: string | null = null,
   familyId: number,
   path: string,
   method: "POST" | "DELETE" | "PATCH" = "POST",
@@ -245,7 +256,7 @@ export async function adminFamilyAction(
 }
 
 export async function adminUserSubscription(
-  initData: string,
+  initData: string | null = null,
   userId: number,
   action: "grant" | "extend" | "disable" | "change-plan",
   body?: AdminSubscriptionActionBody | { days?: number; reason?: string },
@@ -254,7 +265,7 @@ export async function adminUserSubscription(
 }
 
 export async function adminUserAms(
-  initData: string,
+  initData: string | null = null,
   userId: number,
   action: "add" | "remove" | "reset",
   body?: AdminAmsActionBody,
@@ -263,7 +274,7 @@ export async function adminUserAms(
 }
 
 export async function adminFamilySubscription(
-  initData: string,
+  initData: string | null = null,
   familyId: number,
   action: "grant" | "extend" | "disable" | "change-plan",
   body?: AdminSubscriptionActionBody | { days?: number; reason?: string },
@@ -278,7 +289,7 @@ export async function adminFamilySubscription(
 }
 
 export async function adminFamilyAms(
-  initData: string,
+  initData: string | null = null,
   familyId: number,
   action: "add" | "remove" | "reset",
   body?: AdminAmsActionBody,
@@ -287,7 +298,7 @@ export async function adminFamilyAms(
 }
 
 export async function adminRemoveFamilyMember(
-  initData: string,
+  initData: string | null = null,
   familyId: number,
   memberId: number,
 ): Promise<AdminGrantResponse> {
@@ -299,7 +310,7 @@ export async function adminRemoveFamilyMember(
 }
 
 export async function adminRenameFamily(
-  initData: string,
+  initData: string | null = null,
   familyId: number,
   name: string,
 ): Promise<AdminGrantResponse> {
@@ -309,7 +320,7 @@ export async function adminRenameFamily(
   });
 }
 
-export async function createAdminBackup(initData: string): Promise<{
+export async function createAdminBackup(initData: string | null = null): Promise<{
   id: string;
   message: string;
 }> {

@@ -123,14 +123,47 @@ def extract_today_meals(menu_data: dict | None) -> list[MenuTodayMeal]:
         meal_type = str(item.get("meal_type") or "lunch")
         name = item.get("name")
         if isinstance(name, str) and name.strip():
+            recipe_id: int | None = None
+            raw_rid = item.get("recipe_id")
+            if raw_rid is not None:
+                try:
+                    recipe_id = int(raw_rid)
+                except (TypeError, ValueError):
+                    recipe_id = None
+            image_url = item.get("image_url") or item.get("hero_image_url")
+            if isinstance(image_url, str):
+                image_url = image_url.strip() or None
+            else:
+                image_url = None
             result.append(
                 MenuTodayMeal(
                     meal_type=meal_type,
                     label=MEAL_LABELS.get(meal_type, meal_type),
                     name=name.strip(),
+                    recipe_id=recipe_id,
+                    image_url=image_url,
                 )
             )
     return result[:6]
+
+
+def _recipe_hero_image_url(recipe) -> str | None:
+    return recipe.hero_image_url or recipe.image_url or recipe.thumbnail_url
+
+
+def enrich_today_meals_images(db: Session, meals: list[MenuTodayMeal]) -> list[MenuTodayMeal]:
+    """Attach image_url from recipes table (PLANAM 2026 Home rail)."""
+    from app.models.recipe import Recipe
+
+    enriched: list[MenuTodayMeal] = []
+    for meal in meals:
+        image_url: str | None = meal.image_url
+        if meal.recipe_id is not None and not image_url:
+            recipe = db.get(Recipe, meal.recipe_id)
+            if recipe:
+                image_url = _recipe_hero_image_url(recipe)
+        enriched.append(meal.model_copy(update={"image_url": image_url}))
+    return enriched
 
 
 def resolve_persons_count_for_meal(

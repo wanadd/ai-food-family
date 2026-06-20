@@ -18,16 +18,16 @@ export function AddPersonSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-graphite-900/40 p-0 sm:items-center sm:p-4">
       <button
         type="button"
         className="absolute inset-0"
         aria-label="Закрыть"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-3xl">
-        <h2 className="text-lg font-bold text-stone-900">Добавить человека</h2>
-        <p className="mt-1 text-sm text-stone-500">Выберите способ</p>
+      <div className="relative w-full max-w-lg rounded-t-card bg-cream-surface p-5 shadow-lift sm:rounded-card">
+        <h2 className="text-lg font-bold text-graphite-900">Добавить человека</h2>
+        <p className="mt-1 text-sm text-graphite-500">Выберите способ</p>
 
         <div className="mt-4 space-y-2">
           <button
@@ -36,12 +36,12 @@ export function AddPersonSheet({
               onClose();
               onInviteTelegram();
             }}
-            className="flex w-full min-h-[56px] flex-col items-start rounded-2xl border border-stone-100 bg-white px-4 py-3.5 text-left shadow-sm transition hover:border-violet-200 active:scale-[0.99]"
+            className="pa-card flex w-full min-h-[56px] flex-col items-start px-4 py-3.5 text-left transition hover:border-sage-200 active:scale-[0.99]"
           >
-            <span className="font-semibold text-stone-900">
+            <span className="font-semibold text-graphite-900">
               Пригласить в Telegram
             </span>
-            <span className="mt-0.5 text-sm text-stone-500">
+            <span className="mt-0.5 text-sm text-graphite-500">
               Человек сам настроит профиль питания
             </span>
           </button>
@@ -51,12 +51,12 @@ export function AddPersonSheet({
               onClose();
               onAddVirtual();
             }}
-            className="flex w-full min-h-[56px] flex-col items-start rounded-2xl border border-stone-100 bg-white px-4 py-3.5 text-left shadow-sm transition hover:border-emerald-200 active:scale-[0.99]"
+            className="pa-card flex w-full min-h-[56px] flex-col items-start px-4 py-3.5 text-left transition hover:border-sage-200 active:scale-[0.99]"
           >
-            <span className="font-semibold text-stone-900">
+            <span className="font-semibold text-graphite-900">
               Без аккаунта Telegram
             </span>
-            <span className="mt-0.5 text-sm text-stone-500">
+            <span className="mt-0.5 text-sm text-graphite-500">
               Ребёнок, родственник — профиль заполняет админ
             </span>
           </button>
@@ -65,7 +65,7 @@ export function AddPersonSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 w-full rounded-2xl border border-stone-200 py-3 text-sm font-semibold text-stone-700"
+          className="pa-btn-ghost mt-4 w-full"
         >
           Отмена
         </button>

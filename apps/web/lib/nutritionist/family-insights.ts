@@ -7,17 +7,17 @@ export type FamilyMemberInsight = {
 
 function insightForMember(member: FamilyMember): string {
   if (!member.nutrition_profile_complete) {
-    return "нужно заполнить профиль питания";
+    return "можно дополнить профиль питания";
   }
 
   const goal = member.nutrition_goal_label?.toLowerCase() ?? "";
 
   if (member.is_virtual && member.virtual_kind === "child") {
-    return "норма питания по возрасту";
+    return "питание подобрано по возрасту";
   }
 
   if (member.is_virtual && member.virtual_kind === "elder") {
-    return "соблюдает ограничения";
+    return "учтены ограничения";
   }
 
   if (goal.includes("похуд")) {
@@ -25,16 +25,16 @@ function insightForMember(member: FamilyMember): string {
   }
 
   if (goal.includes("набор") || goal.includes("спорт")) {
-    return "не добирает белок";
+    return "можно добавить белка";
   }
 
   const vn = member.virtual_nutrition;
   if (vn?.disliked_foods?.toLowerCase().includes("рыб")) {
-    return "избегает рыбу — учтём в меню";
+    return "избегает рыбу — ПланАм учтёт";
   }
 
   if (vn && (vn.allergies?.length ?? 0) > 1) {
-    return "есть аллергии — меню адаптировано";
+    return "учтены аллергии";
   }
 
   return "идёт по плану";

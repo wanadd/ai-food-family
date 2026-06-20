@@ -3,6 +3,10 @@
 import { SettingsScaffold } from "@/components/settings/SettingsScaffold";
 import { HealthStatus } from "@/components/HealthStatus";
 import { useTelegram } from "@/components/TelegramProvider";
+import {
+  formatAccountDisplayName,
+  formatAccountUsernameLabel,
+} from "@/lib/display/sanitize-label";
 import { apiUrl } from "@/lib/api";
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
@@ -21,9 +25,11 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 export default function SettingsAccountPage() {
   const { user, isTelegram, isAuthenticating } = useTelegram();
 
-  const fullName =
-    [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
-    "—";
+  const fullName = formatAccountDisplayName(
+    user?.first_name,
+    user?.last_name,
+    user?.username,
+  );
 
   return (
     <SettingsScaffold title="Аккаунт" subtitle="Данные Telegram и ПланАм">
@@ -39,7 +45,7 @@ export default function SettingsAccountPage() {
             <InfoRow label="Имя" value={fullName} />
             <InfoRow
               label="Username"
-              value={user.username ? `@${user.username}` : "Не указан"}
+              value={formatAccountUsernameLabel(user.username)}
             />
             <InfoRow
               label="Телефон"

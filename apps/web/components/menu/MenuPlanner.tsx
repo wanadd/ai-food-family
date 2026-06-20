@@ -213,10 +213,10 @@ export function MenuPlanner() {
   if (!initData && !isTelegram && !loading) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-graphite-600">
           План питания доступен в Telegram Mini App.
         </p>
-        <Link href="/" className="mt-4 inline-block text-sm font-semibold text-emerald-700">
+        <Link href="/" className="mt-4 inline-block text-sm font-semibold text-sage-700">
           На главную
         </Link>
       </div>
@@ -225,7 +225,7 @@ export function MenuPlanner() {
 
   if (loading || modeLoading) {
     return (
-      <div className="min-h-screen bg-stone-50">
+      <div className="min-h-screen bg-cream">
         <PageLoading message="Загрузка…" />
       </div>
     );
@@ -240,15 +240,15 @@ export function MenuPlanner() {
 
   return (
     <div
-      className="min-h-screen bg-stone-50"
+      className="min-h-screen bg-cream"
       style={{
         paddingBottom:
           "calc(4.75rem + env(safe-area-inset-bottom, 0px) + 5.25rem)",
       }}
     >
-      <header className="border-b border-stone-100 bg-white px-4 py-4">
+      <header className="border-b border-cream-border bg-cream-surface px-4 py-4">
         <div className="mx-auto max-w-lg">
-          <Link href="/menu" className="text-sm font-semibold text-emerald-700">
+          <Link href="/menu" className="text-sm font-semibold text-sage-700">
             ← Меню
           </Link>
           {phase === "choose" ? (
@@ -258,13 +258,13 @@ export function MenuPlanner() {
                 setPhase("setup");
                 setGeneratedMenus([]);
               }}
-              className="mt-2 block text-sm font-semibold text-emerald-700"
+              className="mt-2 block text-sm font-semibold text-sage-700"
             >
               ← Назад к настройкам
             </button>
           ) : null}
-          <h1 className="mt-1 text-xl font-bold text-stone-900">Составить меню</h1>
-          <p className="mt-0.5 text-sm text-stone-500">
+          <h1 className="mt-1 text-xl font-bold text-graphite-900">Составить меню</h1>
+          <p className="mt-0.5 text-sm text-graphite-500">
             {effectivePersons === 1
               ? "На 1 человека"
               : `На ${effectivePersons} человек`}
@@ -276,12 +276,12 @@ export function MenuPlanner() {
 
       <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
         {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <p>{error}</p>
             {error.includes("Лимит") || error.includes("Пробный") ? (
               <Link
                 href="/subscription"
-                className="mt-2 inline-block font-semibold text-emerald-800"
+                className="mt-2 inline-block font-semibold text-sage-800"
               >
                 Тариф и Амы →
               </Link>
@@ -292,7 +292,7 @@ export function MenuPlanner() {
         {phase === "choose" ? (
           <>
             {generateSuccess ? (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              <div className="rounded-control border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-graphite-900">
                 <p className="font-semibold">Меню готово</p>
                 <p className="mt-1">
                   Выберите вариант ниже. Если что-то не подходит — любое блюдо
@@ -300,7 +300,7 @@ export function MenuPlanner() {
                 </p>
                 <Link
                   href="/menu/current"
-                  className="mt-2 inline-block font-semibold text-emerald-800"
+                  className="mt-2 inline-block font-semibold text-sage-800"
                 >
                   Открыть план →
                 </Link>
@@ -312,11 +312,11 @@ export function MenuPlanner() {
               onSelect={(menu) => void handleSelect(menu)}
               onPreview={setPreviewMenu}
             />
-            <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-bold text-stone-900">
+            <section className="pa-card p-4">
+              <h2 className="text-sm font-bold text-graphite-900">
                 Свой вариант
               </h2>
-              <p className="mt-1 text-sm text-stone-600">
+              <p className="mt-1 text-sm text-graphite-600">
                 Если ни один не подошёл — выберите ближайший, а потом замените
                 любое блюдо в плане под себя. ПланАм пересчитает покупки.
               </p>
@@ -334,10 +334,10 @@ export function MenuPlanner() {
                       setWizardGoal(opt.value);
                       setGoalError(null);
                     }}
-                    className={`rounded-xl border px-4 py-3 text-left text-sm font-medium ${
+                    className={`rounded-control border px-4 py-3 text-left text-sm font-medium ${
                       wizardGoal === opt.value
-                        ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                        : "border-stone-200 bg-white text-stone-800"
+                        ? "border-sage-500 bg-sage-50 text-sage-900"
+                        : "border-cream-border bg-cream-surface text-graphite-800"
                     }`}
                   >
                     {opt.label}
@@ -358,10 +358,10 @@ export function MenuPlanner() {
                     key={d}
                     type="button"
                     onClick={() => setWizardDays(d)}
-                    className={`min-h-[44px] rounded-xl border text-sm font-semibold ${
+                    className={`min-h-[44px] rounded-control border text-sm font-semibold ${
                       wizardDays === d
-                        ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                        : "border-stone-200 bg-white"
+                        ? "border-sage-500 bg-sage-50 text-sage-900"
+                        : "border-cream-border bg-cream-surface"
                     }`}
                   >
                     {d}
@@ -370,27 +370,27 @@ export function MenuPlanner() {
               </div>
             </MenuPlannerSection>
 
-            <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-bold text-stone-900">ПланАм учтёт</h2>
+            <section className="pa-card p-4">
+              <h2 className="text-sm font-bold text-graphite-900">ПланАм учтёт</h2>
               {accountedItems.length > 0 ? (
                 <ul className="mt-2 flex flex-wrap gap-1.5">
                   {accountedItems.map((item) => (
                     <li
                       key={item.id}
-                      className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800"
+                      className="rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-semibold text-sage-800"
                     >
                       {item.label}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-sm text-stone-600">
+                <p className="mt-2 text-sm text-graphite-600">
                   Пока опираемся на цель и количество дней. Можно дополнить
                   профиль ниже — план станет точнее.
                 </p>
               )}
               {missingItems.length > 0 ? (
-                <p className="mt-3 text-xs text-stone-500">
+                <p className="mt-3 text-xs text-graphite-500">
                   Можно дополнить:{" "}
                   {missingItems
                     .map((item) => {
@@ -399,7 +399,7 @@ export function MenuPlanner() {
                         <Link
                           key={item.id}
                           href={href}
-                          className="font-semibold text-emerald-700"
+                          className="font-semibold text-sage-700"
                         >
                           {item.label}
                         </Link>
@@ -418,28 +418,28 @@ export function MenuPlanner() {
             </section>
 
             <details
-              className="group rounded-2xl border border-stone-100 bg-white shadow-sm"
+              className="group pa-card"
               open={advancedOpen}
               onToggle={(e) => setAdvancedOpen((e.target as HTMLDetailsElement).open)}
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3.5 text-sm font-semibold text-stone-900">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3.5 text-sm font-semibold text-graphite-900">
                 <span>Настроить подробнее</span>
                 <span
                   aria-hidden
-                  className="text-stone-400 transition group-open:rotate-180"
+                  className="text-graphite-400 transition group-open:rotate-180"
                 >
                   ▾
                 </span>
               </summary>
 
-              <div className="space-y-5 border-t border-stone-100 px-4 py-4">
+              <div className="space-y-5 border-t border-cream-border px-4 py-4">
                 {isFamily ? (
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-graphite-500">
                       Количество человек
                     </p>
                     {context?.family?.name ? (
-                      <p className="mt-1 text-xs text-stone-500">
+                      <p className="mt-1 text-xs text-graphite-500">
                         Семья: {context.family.name}
                       </p>
                     ) : null}
@@ -449,10 +449,10 @@ export function MenuPlanner() {
                           key={n}
                           type="button"
                           onClick={() => setPersonsCount(n)}
-                          className={`min-h-[40px] min-w-[40px] rounded-xl border text-sm font-semibold ${
+                          className={`min-h-[40px] min-w-[40px] rounded-control border text-sm font-semibold ${
                             personsCount === n
-                              ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                              : "border-stone-200 bg-white"
+                              ? "border-sage-500 bg-sage-50 text-sage-900"
+                              : "border-cream-border bg-cream-surface"
                           }`}
                         >
                           {n}
@@ -463,7 +463,7 @@ export function MenuPlanner() {
                 ) : null}
 
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-graphite-500">
                     Бюджет
                   </p>
                   <div className="mt-2 grid gap-2">
@@ -472,10 +472,10 @@ export function MenuPlanner() {
                         key={opt.value}
                         type="button"
                         onClick={() => setWizardBudget(opt.value)}
-                        className={`rounded-xl border px-3 py-2.5 text-left text-sm font-medium ${
+                        className={`rounded-control border px-3 py-2.5 text-left text-sm font-medium ${
                           wizardBudget === opt.value
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                            : "border-stone-200 bg-white text-stone-800"
+                            ? "border-sage-500 bg-sage-50 text-sage-900"
+                            : "border-cream-border bg-cream-surface text-graphite-800"
                         }`}
                       >
                         {opt.label}
@@ -485,7 +485,7 @@ export function MenuPlanner() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-graphite-500">
                     Режим плана
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -496,8 +496,8 @@ export function MenuPlanner() {
                         onClick={() => changePlanMode(opt.value)}
                         className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
                           planMode === opt.value
-                            ? "border-emerald-600 bg-emerald-50 font-semibold"
-                            : "border-stone-200"
+                            ? "border-sage-500 bg-sage-50 font-semibold"
+                            : "border-cream-border"
                         }`}
                         title={opt.hint}
                       >
@@ -505,14 +505,14 @@ export function MenuPlanner() {
                       </button>
                     ))}
                   </div>
-                  <p className="mt-1.5 text-[11px] text-stone-500">
+                  <p className="mt-1.5 text-[11px] text-graphite-500">
                     {PLAN_MODE_OPTIONS.find((o) => o.value === planMode)?.hint}
                   </p>
                 </div>
 
                 {missingItems.length > 0 ? (
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-graphite-500">
                       Что можно дополнить в профиле
                     </p>
                     <ul className="mt-2 space-y-1.5">
@@ -523,16 +523,16 @@ export function MenuPlanner() {
                             key={item.id}
                             className="flex items-center justify-between gap-2 text-sm"
                           >
-                            <span className="text-stone-700">{item.label}</span>
+                            <span className="text-graphite-700">{item.label}</span>
                             {href ? (
                               <Link
                                 href={href}
-                                className="shrink-0 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800"
+                                className="shrink-0 rounded-full bg-cream-deep px-2.5 py-0.5 text-xs font-semibold text-sage-800"
                               >
                                 Дополнить
                               </Link>
                             ) : (
-                              <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs text-stone-500">
+                              <span className="shrink-0 rounded-full bg-cream-deep px-2.5 py-0.5 text-xs text-graphite-500">
                                 нет
                               </span>
                             )}
@@ -547,15 +547,15 @@ export function MenuPlanner() {
 
             {hasPlan && selectedMenu ? (
               <MenuPlannerSection title="Текущий план">
-                <p className="text-sm font-semibold text-stone-900">
+                <p className="text-sm font-semibold text-graphite-900">
                   {selectedMenu.menu.title}
                 </p>
                 {selectedDate ? (
-                  <p className="mt-1 text-xs text-stone-500">Создан: {selectedDate}</p>
+                  <p className="mt-1 text-xs text-graphite-500">Создан: {selectedDate}</p>
                 ) : null}
                 <Link
                   href="/menu/current"
-                  className="mt-3 inline-block text-sm font-semibold text-emerald-700"
+                  className="mt-3 inline-block text-sm font-semibold text-sage-700"
                 >
                   Открыть план →
                 </Link>
@@ -571,7 +571,7 @@ export function MenuPlanner() {
             type="button"
             disabled={generating || !initData}
             onClick={handleGenerate}
-            className="w-full min-h-[48px] rounded-2xl bg-emerald-600 py-3.5 text-base font-semibold text-white shadow-md shadow-emerald-200/40 disabled:opacity-50"
+            className="pa-btn-primary w-full min-h-[48px] py-3.5 text-base disabled:opacity-50"
           >
             {generating ? "Составляем…" : "Сгенерировать меню"}
           </button>
@@ -579,12 +579,12 @@ export function MenuPlanner() {
       ) : null}
 
       {previewMenu ? (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-50">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-cream">
           <div className="mx-auto max-w-lg px-4 py-4">
             <button
               type="button"
               onClick={() => setPreviewMenu(null)}
-              className="text-sm font-semibold text-emerald-700"
+              className="text-sm font-semibold text-sage-700"
             >
               ← Назад к выбору
             </button>

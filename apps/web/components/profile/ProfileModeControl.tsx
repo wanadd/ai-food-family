@@ -8,7 +8,7 @@ export function ProfileModeControl() {
 
   if (loading) {
     return (
-      <p className="text-sm text-stone-500" aria-live="polite">
+      <p className="text-sm text-graphite-500" aria-live="polite">
         Загрузка режима…
       </p>
     );
@@ -20,16 +20,14 @@ export function ProfileModeControl() {
   if (!context?.can_use_family_mode) {
     return (
       <div className="inline-flex items-center gap-2">
-        <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800">
-          {modeLabel}
-        </span>
+        <span className="pa-chip">{modeLabel}</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      <div className="flex rounded-xl bg-stone-100/90 p-1">
+      <div className="flex rounded-control bg-cream-deep p-1">
         {(["personal", "family"] as AppMode[]).map((option) => {
           const isActive = mode === option;
           return (
@@ -37,12 +35,10 @@ export function ProfileModeControl() {
               key={option}
               type="button"
               onClick={() => void setMode(option)}
-              className={`min-h-[40px] flex-1 rounded-lg text-sm font-semibold transition active:scale-[0.98] ${
+              className={`min-h-[40px] flex-1 rounded-control text-sm font-semibold transition active:scale-[0.98] ${
                 isActive
-                  ? option === "family"
-                    ? "bg-violet-600 text-white shadow-sm"
-                    : "bg-emerald-600 text-white shadow-sm"
-                  : "text-stone-600"
+                  ? "bg-sage-500 text-white shadow-soft"
+                  : "text-graphite-600"
               }`}
             >
               {option === "personal" ? "Личный" : "Семейный"}
@@ -51,7 +47,7 @@ export function ProfileModeControl() {
         })}
       </div>
       {familyName ? (
-        <p className="text-center text-xs text-stone-500">Семья «{familyName}»</p>
+        <p className="text-center text-xs text-graphite-500">Семья «{familyName}»</p>
       ) : null}
     </div>
   );

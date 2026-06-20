@@ -1,10 +1,49 @@
 """Lightweight schema upgrades for databases created before personal mode."""
 
-from sqlalchemy import Engine, text
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+from sqlalchemy import Connection, Engine, text
+
+# Recipe Engine v1 tables are created only via SQL below (not SQLAlchemy create_all).
+RECIPE_ENGINE_TABLES: frozenset[str] = frozenset(
+    {
+        "recipe_collections",
+        "collection_recipes",
+        "recipe_history",
+        "family_recipe_preferences",
+        "recipe_scenarios",
+        "recipe_explanations",
+    }
+)
+
+# Stable advisory lock id for multi-worker startup (uvicorn --workers N).
+SCHEMA_ADVISORY_LOCK_ID = 739_284_651
 
 
-def run_schema_migrations(engine: Engine) -> None:
-    statements = [
+def _create_table_if_missing(table_name: str, create_sql: str) -> str:
+    """Idempotent CREATE TABLE (avoids SERIAL sequence errors on duplicate DDL)."""
+    body = create_sql.strip()
+    if body.endswith(";"):
+        body = body[:-1]
+    return f"""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                  AND table_name = '{table_name}'
+            ) THEN
+                {body};
+            END IF;
+        END $$;
+        """
+
+
+def _schema_statements() -> list[str]:
+    return [
         # Menu selections: personal scope uses user_id + family_id IS NULL
         "ALTER TABLE family_menu_selections ADD COLUMN IF NOT EXISTS user_id INTEGER",
         """
@@ -110,7 +149,8 @@ def run_schema_migrations(engine: Engine) -> None:
         """,
         "CREATE INDEX IF NOT EXISTS ix_shopping_categories_user ON shopping_categories (user_id);",
         "CREATE INDEX IF NOT EXISTS ix_shopping_categories_family ON shopping_categories (family_id);",
-        "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS category VARCHAR(64) NOT NULL DEFAULT 'продукты';",
+        "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS category VARCHAR(64) NOT NULL DEFAULT 'другое';",
+        "ALTER TABLE family_pantry_items ALTER COLUMN category SET DEFAULT 'другое';",
         "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS note VARCHAR(200);",
         "ALTER TABLE family_pantry_items ALTER COLUMN expires_at DROP NOT NULL;",
         """
@@ -367,6 +407,8 @@ def run_schema_migrations(engine: Engine) -> None:
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS source_type VARCHAR(16) NOT NULL DEFAULT 'manual'",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS source_url VARCHAR(512)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS image_url VARCHAR(512)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS hero_image_url VARCHAR(512)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS thumbnail_url VARCHAR(512)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_drink BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_alcoholic BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS alcohol_percent DOUBLE PRECISION",
@@ -376,6 +418,34 @@ def run_schema_migrations(engine: Engine) -> None:
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS suitable_for_event BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+        # Recipe-level nutrition summary (additive; populated by
+        # calculate_recipe_nutrition_summary.py). All nullable / defaulted.
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_kcal_total DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_protein_total DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_fat_total DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_carbs_total DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_kcal_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_protein_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_fat_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_carbs_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_servings DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_serving_size_text TEXT",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_confidence VARCHAR(24)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_coverage_json JSONB",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_calculated_at TIMESTAMPTZ",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_source VARCHAR(64)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_needs_review BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_review_reason VARCHAR(64)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS original_title VARCHAR(200)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS normalized_title VARCHAR(200)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS display_title VARCHAR(200)",
+        "UPDATE recipes SET original_title = title WHERE original_title IS NULL",
+        """
+        UPDATE recipes
+        SET normalized_title = lower(trim(regexp_replace(title, '\\s+', ' ', 'g')))
+        WHERE normalized_title IS NULL AND title IS NOT NULL
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_recipes_normalized_title ON recipes (normalized_title)",
         "UPDATE recipes SET cooking_time_minutes = prep_time_minutes WHERE cooking_time_minutes IS NULL OR cooking_time_minutes = 30",
         """
         CREATE TABLE IF NOT EXISTS recipe_ingredients (
@@ -390,6 +460,16 @@ def run_schema_migrations(engine: Engine) -> None:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_recipe_ingredients_recipe_id ON recipe_ingredients (recipe_id);",
+        # Ingredient quality model (to_taste / nutrition / shopping / photo); all nullable/defaulted.
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS quantity_mode VARCHAR(16)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS quantity_text VARCHAR(64)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS is_to_taste BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS nutrition_precision VARCHAR(24)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS shopping_priority VARCHAR(16)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS needs_review BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS needs_review_reason VARCHAR(64)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS photo_visibility VARCHAR(16)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS manual_review_status VARCHAR(16)",
         """
         CREATE TABLE IF NOT EXISTS recipe_steps (
             id SERIAL PRIMARY KEY,
@@ -598,8 +678,378 @@ def run_schema_migrations(engine: Engine) -> None:
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_water_intake_user_date ON water_intake_logs (user_id, log_date);",
+        # Recipe Engine v1 — Sprint 2 tables (additive; sole DDL path — see RECIPE_ENGINE_TABLES)
+        _create_table_if_missing(
+            "recipe_collections",
+            """
+            CREATE TABLE recipe_collections (
+                id SERIAL PRIMARY KEY,
+                owner_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                owner_family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+                visibility VARCHAR(16) NOT NULL DEFAULT 'personal',
+                name VARCHAR(120) NOT NULL,
+                description VARCHAR(500) NOT NULL DEFAULT '',
+                emoji VARCHAR(8),
+                color VARCHAR(16),
+                is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+                is_dynamic BOOLEAN NOT NULL DEFAULT FALSE,
+                position INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        ),
+        "CREATE INDEX IF NOT EXISTS ix_recipe_collections_visibility ON recipe_collections (visibility);",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_collections_owner_user ON recipe_collections (owner_user_id) WHERE owner_user_id IS NOT NULL;",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_collections_owner_family ON recipe_collections (owner_family_id) WHERE owner_family_id IS NOT NULL;",
+        _create_table_if_missing(
+            "collection_recipes",
+            """
+            CREATE TABLE collection_recipes (
+                id SERIAL PRIMARY KEY,
+                collection_id INTEGER NOT NULL REFERENCES recipe_collections(id) ON DELETE CASCADE,
+                recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+                position INTEGER NOT NULL DEFAULT 0,
+                added_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                note VARCHAR(200),
+                CONSTRAINT uq_collection_recipes_collection_recipe UNIQUE (collection_id, recipe_id)
+            )
+            """,
+        ),
+        "CREATE INDEX IF NOT EXISTS ix_collection_recipes_collection ON collection_recipes (collection_id);",
+        "CREATE INDEX IF NOT EXISTS ix_collection_recipes_recipe ON collection_recipes (recipe_id);",
+        _create_table_if_missing(
+            "recipe_history",
+            """
+            CREATE TABLE recipe_history (
+                id SERIAL PRIMARY KEY,
+                recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                family_id INTEGER REFERENCES families(id) ON DELETE SET NULL,
+                family_member_id INTEGER REFERENCES family_members(id) ON DELETE SET NULL,
+                servings INTEGER,
+                cooked_on DATE NOT NULL DEFAULT CURRENT_DATE,
+                source VARCHAR(16) NOT NULL DEFAULT 'manual',
+                notes VARCHAR(200),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """,
+        ),
+        "CREATE INDEX IF NOT EXISTS ix_recipe_history_recipe_cooked ON recipe_history (recipe_id, cooked_on DESC);",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_history_user_cooked ON recipe_history (user_id, cooked_on DESC) WHERE user_id IS NOT NULL;",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_history_family_cooked ON recipe_history (family_id, cooked_on DESC) WHERE family_id IS NOT NULL;",
+        _create_table_if_missing(
+            "family_recipe_preferences",
+            """
+            CREATE TABLE family_recipe_preferences (
+                id SERIAL PRIMARY KEY,
+                recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+                family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+                family_member_id INTEGER NOT NULL REFERENCES family_members(id) ON DELETE CASCADE,
+                liked BOOLEAN NOT NULL DEFAULT FALSE,
+                disliked BOOLEAN NOT NULL DEFAULT FALSE,
+                is_loved BOOLEAN NOT NULL DEFAULT FALSE,
+                note VARCHAR(200),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uq_family_recipe_preferences_member_recipe UNIQUE (family_member_id, recipe_id)
+            )
+            """,
+        ),
+        "CREATE INDEX IF NOT EXISTS ix_family_recipe_preferences_recipe ON family_recipe_preferences (recipe_id);",
+        "CREATE INDEX IF NOT EXISTS ix_family_recipe_preferences_family ON family_recipe_preferences (family_id);",
+        _create_table_if_missing(
+            "recipe_scenarios",
+            """
+            CREATE TABLE recipe_scenarios (
+                id SERIAL PRIMARY KEY,
+                recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+                scenario VARCHAR(32) NOT NULL,
+                score DOUBLE PRECISION NOT NULL DEFAULT 1.0,
+                source VARCHAR(16) NOT NULL DEFAULT 'auto',
+                CONSTRAINT uq_recipe_scenarios_recipe_scenario UNIQUE (recipe_id, scenario)
+            )
+            """,
+        ),
+        "CREATE INDEX IF NOT EXISTS ix_recipe_scenarios_scenario ON recipe_scenarios (scenario);",
+        _create_table_if_missing(
+            "recipe_explanations",
+            """
+            CREATE TABLE recipe_explanations (
+                id SERIAL PRIMARY KEY,
+                recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+                summary VARCHAR(500) NOT NULL DEFAULT '',
+                reasons_json JSONB NOT NULL DEFAULT '{}',
+                score_total DOUBLE PRECISION NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uq_recipe_explanations_scope UNIQUE (recipe_id, user_id, family_id)
+            )
+            """,
+        ),
+        "CREATE INDEX IF NOT EXISTS ix_recipe_explanations_recipe ON recipe_explanations (recipe_id);",
+        # shopping_categories: remove duplicate system/user rows (HTTP 500 on menu select)
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = TRUE
+          AND a.user_id IS NOT NULL
+          AND b.is_system = TRUE
+          AND b.user_id = a.user_id
+          AND b.name = a.name
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = TRUE
+          AND a.family_id IS NOT NULL
+          AND b.is_system = TRUE
+          AND b.family_id = a.family_id
+          AND b.name = a.name
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = TRUE
+          AND a.user_id IS NOT NULL
+          AND b.is_system = TRUE
+          AND b.user_id = a.user_id
+          AND b.slug = a.slug
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = TRUE
+          AND a.family_id IS NOT NULL
+          AND b.is_system = TRUE
+          AND b.family_id = a.family_id
+          AND b.slug = a.slug
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = FALSE
+          AND a.user_id IS NOT NULL
+          AND b.is_system = FALSE
+          AND b.user_id = a.user_id
+          AND b.slug = a.slug
+          AND a.id > b.id;
+        """,
+        """
+        DELETE FROM shopping_categories AS a
+        USING shopping_categories AS b
+        WHERE a.is_system = FALSE
+          AND a.family_id IS NOT NULL
+          AND b.is_system = FALSE
+          AND b.family_id = a.family_id
+          AND b.slug = a.slug
+          AND a.id > b.id;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_system_user_slug
+        ON shopping_categories (user_id, slug)
+        WHERE is_system = TRUE AND user_id IS NOT NULL;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_system_user_name
+        ON shopping_categories (user_id, name)
+        WHERE is_system = TRUE AND user_id IS NOT NULL;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_system_family_slug
+        ON shopping_categories (family_id, slug)
+        WHERE is_system = TRUE AND family_id IS NOT NULL;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_system_family_name
+        ON shopping_categories (family_id, name)
+        WHERE is_system = TRUE AND family_id IS NOT NULL;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_user_slug
+        ON shopping_categories (user_id, slug)
+        WHERE is_system = FALSE AND user_id IS NOT NULL;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_shopping_categories_family_slug
+        ON shopping_categories (family_id, slug)
+        WHERE is_system = FALSE AND family_id IS NOT NULL;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS meal_consumption_logs (
+            id SERIAL PRIMARY KEY,
+            family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            family_member_id INTEGER REFERENCES family_members(id) ON DELETE SET NULL,
+            logged_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            menu_selection_id INTEGER REFERENCES family_menu_selections(id) ON DELETE SET NULL,
+            day_index INTEGER,
+            planned_date DATE,
+            meal_type VARCHAR(16),
+            recipe_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL,
+            recipe_title VARCHAR(300),
+            status VARCHAR(16) NOT NULL DEFAULT 'unknown',
+            portion_multiplier DOUBLE PRECISION NOT NULL DEFAULT 1,
+            quantity DOUBLE PRECISION,
+            unit VARCHAR(32),
+            calories_estimated DOUBLE PRECISION,
+            protein_estimated DOUBLE PRECISION,
+            fat_estimated DOUBLE PRECISION,
+            carbs_estimated DOUBLE PRECISION,
+            note VARCHAR(500),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_meal_consumption_logs_family_day ON meal_consumption_logs (family_id, menu_selection_id, day_index);",
+        "CREATE INDEX IF NOT EXISTS ix_meal_consumption_logs_user_date ON meal_consumption_logs (user_id, planned_date);",
+        "ALTER TABLE meal_consumption_logs ALTER COLUMN family_id DROP NOT NULL",
+        """
+        CREATE TABLE IF NOT EXISTS meal_consumption_reminder_events (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            menu_selection_id INTEGER REFERENCES family_menu_selections(id) ON DELETE SET NULL,
+            day_index INTEGER,
+            planned_date DATE,
+            meal_type VARCHAR(16) NOT NULL,
+            reminder_kind VARCHAR(64) NOT NULL DEFAULT 'meal_consumption_missing',
+            status VARCHAR(32) NOT NULL DEFAULT 'planned',
+            due_at TIMESTAMPTZ,
+            sent_at TIMESTAMPTZ,
+            skipped_reason VARCHAR(100),
+            telegram_message_id INTEGER,
+            error_message VARCHAR(500),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_meal_consumption_reminder_events_user_date ON meal_consumption_reminder_events (user_id, planned_date, meal_type);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_meal_consumption_reminder_events_idempotency ON meal_consumption_reminder_events (user_id, planned_date, meal_type, COALESCE(menu_selection_id, 0), COALESCE(day_index, -1), reminder_kind);",
+        """
+        CREATE TABLE IF NOT EXISTS cooking_batches (
+            id SERIAL PRIMARY KEY,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            owner_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            created_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            recipe_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL,
+            recipe_title VARCHAR(300),
+            menu_selection_id INTEGER REFERENCES family_menu_selections(id) ON DELETE SET NULL,
+            day_index INTEGER,
+            planned_date DATE,
+            meal_type VARCHAR(16),
+            batch_status VARCHAR(32) NOT NULL DEFAULT 'active',
+            total_servings DOUBLE PRECISION NOT NULL DEFAULT 1,
+            remaining_servings DOUBLE PRECISION NOT NULL DEFAULT 1,
+            serving_unit VARCHAR(32) NOT NULL DEFAULT 'порция',
+            cooked_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_family_id ON cooking_batches (family_id);",
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_owner_user_id ON cooking_batches (owner_user_id);",
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_recipe_id ON cooking_batches (recipe_id);",
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_menu_day ON cooking_batches (menu_selection_id, day_index);",
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batches_planned_date ON cooking_batches (planned_date);",
+        """
+        CREATE TABLE IF NOT EXISTS cooking_batch_events (
+            id SERIAL PRIMARY KEY,
+            batch_id INTEGER NOT NULL REFERENCES cooking_batches(id) ON DELETE CASCADE,
+            event_type VARCHAR(32) NOT NULL,
+            actor_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            servings_delta DOUBLE PRECISION,
+            remaining_after DOUBLE PRECISION,
+            note VARCHAR(500),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batch_events_batch_id ON cooking_batch_events (batch_id);",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS recipe_yield_amount DOUBLE PRECISION;",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS recipe_yield_unit VARCHAR(32);",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS serving_size_amount DOUBLE PRECISION;",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS serving_size_unit VARCHAR(32);",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS estimated_servings DOUBLE PRECISION;",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS yield_type VARCHAR(32);",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS total_amount_value DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS total_amount_unit VARCHAR(32);",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS remaining_amount_value DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS remaining_amount_unit VARCHAR(32);",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS serving_size_value DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS serving_size_unit VARCHAR(32);",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS estimated_total_servings DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS estimated_remaining_servings DOUBLE PRECISION;",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS yield_type VARCHAR(32);",
+        """
+        CREATE TABLE IF NOT EXISTS external_food_logs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+            meal_type VARCHAR(16),
+            planned_date DATE NOT NULL,
+            source_type VARCHAR(32) NOT NULL DEFAULT 'manual',
+            input_text VARCHAR(2000),
+            input_media_id VARCHAR(128),
+            parsed_title VARCHAR(300),
+            calories_estimated DOUBLE PRECISION,
+            protein_estimated DOUBLE PRECISION,
+            fat_estimated DOUBLE PRECISION,
+            carbs_estimated DOUBLE PRECISION,
+            confidence DOUBLE PRECISION,
+            status VARCHAR(32) NOT NULL DEFAULT 'draft',
+            linked_meal_consumption_log_id INTEGER REFERENCES meal_consumption_logs(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_external_food_logs_user_date ON external_food_logs (user_id, planned_date);",
+        "CREATE INDEX IF NOT EXISTS ix_external_food_logs_family_date ON external_food_logs (family_id, planned_date);",
     ]
 
+
+def _execute_statements(connection: Connection, statements: Sequence[str]) -> None:
+    for statement in statements:
+        connection.execute(text(statement))
+
+
+def ensure_database_schema(engine: Engine, base: type) -> None:
+    """Create/upgrade schema once per startup cluster (safe with multiple uvicorn workers)."""
+    legacy_tables = [
+        table
+        for table in base.metadata.sorted_tables
+        if table.name not in RECIPE_ENGINE_TABLES
+    ]
     with engine.begin() as connection:
-        for statement in statements:
-            connection.execute(text(statement))
+        connection.execute(
+            text("SELECT pg_advisory_lock(:lock_id)"),
+            {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
+        )
+        try:
+            base.metadata.create_all(
+                bind=connection,
+                tables=legacy_tables,
+                checkfirst=True,
+            )
+            _execute_statements(connection, _schema_statements())
+            from app.services.shopping_category_migration import (  # noqa: PLC0415
+                migrate_shopping_categories_v1,
+            )
+
+            migrate_shopping_categories_v1(connection)
+        finally:
+            connection.execute(
+                text("SELECT pg_advisory_unlock(:lock_id)"),
+                {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
+            )
+
+
+def run_schema_migrations(engine: Engine) -> None:
+    """Backward-compatible entry point (prefer ``ensure_database_schema``)."""
+    with engine.begin() as connection:
+        _execute_statements(connection, _schema_statements())

@@ -22,6 +22,9 @@ class Recipe(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(200), index=True)
+    original_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    normalized_title: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
+    display_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
     description: Mapped[str] = mapped_column(Text, default="")
     meal_type: Mapped[str] = mapped_column(String(32), index=True)
     category: Mapped[str] = mapped_column(String(32), index=True, default="main")
@@ -39,6 +42,8 @@ class Recipe(Base):
     source_type: Mapped[str] = mapped_column(String(16), default="manual")
     source_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    hero_image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    thumbnail_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     is_drink: Mapped[bool] = mapped_column(Boolean, default=False)
     is_alcoholic: Mapped[bool] = mapped_column(Boolean, default=False)
     alcohol_percent: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -51,6 +56,35 @@ class Recipe(Base):
     tags: Mapped[list] = mapped_column(JSONB, default=list)
     ingredients: Mapped[list] = mapped_column(JSONB, default=list)
     steps: Mapped[list] = mapped_column(JSONB, default=list)
+    # Recipe-level nutrition summary (nullable; computed by
+    # calculate_recipe_nutrition_summary.py). Additive — does NOT replace the
+    # legacy calories_per_serving / protein_g / fat_g / carbs_g fields.
+    nutrition_kcal_total: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_protein_total: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_fat_total: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_carbs_total: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_kcal_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_protein_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_fat_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_carbs_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_servings: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nutrition_serving_size_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    nutrition_confidence: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    nutrition_coverage_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    nutrition_calculated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    nutrition_source: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    nutrition_needs_review: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    recipe_yield_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    recipe_yield_unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    serving_size_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    serving_size_unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    estimated_servings: Mapped[float | None] = mapped_column(Float, nullable=True)
+    yield_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    nutrition_review_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -96,6 +130,17 @@ class RecipeIngredientRow(Base):
     category: Mapped[str] = mapped_column(String(32), default="other")
     is_optional: Mapped[bool] = mapped_column(Boolean, default=False)
     notes: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Ingredient quality model (nullable; populated by migrate_to_taste_ingredients.py).
+    # Not exposed by API serializers yet — added for shopping/nutrition/photo pipelines.
+    quantity_mode: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    quantity_text: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    is_to_taste: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    nutrition_precision: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    shopping_priority: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    needs_review_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    photo_visibility: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    manual_review_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     recipe = relationship("Recipe", back_populates="ingredient_rows")
 

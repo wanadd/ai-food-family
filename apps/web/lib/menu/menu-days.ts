@@ -41,3 +41,36 @@ export function menuViewForDay(menu: MenuVariant, dayIndex: number): MenuVariant
   const meals = mealsForDayIndex(menu, dayIndex);
   return { ...menu, meals };
 }
+
+/** Merge replace-dish API result back into the full multi-day menu. */
+export function mergeReplaceResult(
+  fullMenu: MenuVariant,
+  replaceResult: MenuVariant,
+  dayIndex: number,
+): MenuVariant {
+  if (!fullMenu.days?.length) {
+    return replaceResult;
+  }
+
+  const replacedDayMeals = replaceResult.meals;
+  const days = fullMenu.days.map((day) =>
+    day.day_index === dayIndex ? { ...day, meals: replacedDayMeals } : day,
+  );
+
+  return {
+    ...fullMenu,
+    title: replaceResult.title,
+    tagline: replaceResult.tagline,
+    explanation: replaceResult.explanation,
+    estimated_daily_cost: replaceResult.estimated_daily_cost,
+    total_prep_minutes: replaceResult.total_prep_minutes,
+    ingredients:
+      replaceResult.ingredients.length > 0
+        ? replaceResult.ingredients
+        : fullMenu.ingredients,
+    days,
+    meals: days[0]?.meals ?? fullMenu.meals,
+    plan_days: fullMenu.plan_days,
+    variant: replaceResult.variant,
+  };
+}

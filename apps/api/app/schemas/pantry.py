@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class PantryItemCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
-    category: str = Field(default="продукты", max_length=64)
+    category: str = Field(default="другое", max_length=64)
     quantity: str = Field(min_length=1, max_length=80)
     unit: str = ""
     expires_at: date | None = None
@@ -28,7 +28,7 @@ class PantryItemResponse(BaseModel):
     user_id: int | None = None
     family_id: int | None = None
     name: str
-    category: str = "продукты"
+    category: str = "другое"
     quantity: str
     unit: str = ""
     source: str = "manual"

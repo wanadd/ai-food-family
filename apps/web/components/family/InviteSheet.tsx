@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   createFamilyInviteLink,
@@ -8,15 +8,23 @@ import {
 } from "@/lib/family/api";
 import type { FamilyInvite } from "@/lib/family/invite-types";
 
+const INPUT_CLS =
+  "w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200 dark:border-pa-border dark:bg-pa-surface dark:text-pa-foreground dark:focus:border-sage-500 dark:focus:ring-sage-700/40";
+
 type InviteSheetProps = {
   open: boolean;
   familyId: number;
   initData: string;
   onClose: () => void;
+  /** Вызывается только после завершения flow: бот уведомил или пользователь отправил share. */
   onSuccess: (invite: FamilyInvite) => void;
 };
 
-type Step = "menu" | "phone";
+type Step = "menu" | "phone" | "loading" | "share" | "sent";
+
+function needsTelegramShare(invite: FamilyInvite): boolean {
+  return invite.is_link_invite || !invite.invitee_notified;
+}
 
 export function InviteSheet({
   open,
@@ -27,9 +35,17 @@ export function InviteSheet({
 }: InviteSheetProps) {
   const [step, setStep] = useState<Step>("menu");
   const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastInvite, setLastInvite] = useState<FamilyInvite | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setStep("menu");
+      setPhone("");
+      setError(null);
+      setLastInvite(null);
+    }
+  }, [open]);
 
   if (!open) {
     return null;
@@ -39,7 +55,7 @@ export function InviteSheet({
     if (!phone.trim()) {
       return;
     }
-    setLoading(true);
+    setStep("loading");
     setError(null);
     try {
       const invite = await inviteFamilyMemberByPhone(
@@ -48,61 +64,88 @@ export function InviteSheet({
         phone.trim(),
       );
       setLastInvite(invite);
-      onSuccess(invite);
+      if (needsTelegramShare(invite)) {
+        setStep("share");
+      } else {
+        setStep("sent");
+        onSuccess(invite);
+      }
     } catch (err) {
+      setStep("phone");
       setError(err instanceof Error ? err.message : "Не удалось пригласить");
-    } finally {
-      setLoading(false);
     }
   }
 
   async function handleLinkInvite() {
-    setLoading(true);
+    setStep("loading");
     setError(null);
     try {
       const invite = await createFamilyInviteLink(initData, familyId);
       setLastInvite(invite);
-      onSuccess(invite);
+      setStep("share");
     } catch (err) {
+      setStep("menu");
       setError(
         err instanceof Error ? err.message : "Не удалось создать ссылку",
       );
-    } finally {
-      setLoading(false);
     }
   }
 
-  function shareInvite(invite: FamilyInvite) {
-    window.open(invite.share_url, "_blank", "noopener,noreferrer");
+  function handleShare() {
+    if (!lastInvite) {
+      return;
+    }
+    window.open(lastInvite.share_url, "_blank", "noopener,noreferrer");
+    onSuccess(lastInvite);
+    setStep("sent");
   }
 
-  const showShare =
-    lastInvite && (lastInvite.is_link_invite || !lastInvite.invitee_notified);
+  function handleClose() {
+    if (step === "loading") {
+      return;
+    }
+    onClose();
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-graphite-900/40 p-4 dark:bg-black/50">
       <div
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-[24px] bg-white p-6 shadow-xl"
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-card bg-cream-surface p-6 shadow-lift dark:border dark:border-pa-border dark:bg-pa-surface"
         role="dialog"
         aria-labelledby="invite-title"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 id="invite-title" className="text-lg font-bold text-stone-900">
+          <h2
+            id="invite-title"
+            className="text-lg font-bold text-graphite-900 dark:text-pa-foreground"
+          >
             Пригласить в семью
           </h2>
           <button
             type="button"
-            onClick={onClose}
-            className="text-sm font-semibold text-stone-500"
+            onClick={handleClose}
+            disabled={step === "loading"}
+            className="text-sm font-semibold text-graphite-500 disabled:opacity-40 dark:text-pa-muted"
           >
             Закрыть
           </button>
         </div>
 
         {error ? (
-          <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="mb-4 rounded-control border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-pa-error/30 dark:bg-pa-error/10 dark:text-pa-error">
             {error}
           </p>
+        ) : null}
+
+        {step === "loading" ? (
+          <div className="py-8 text-center">
+            <p className="text-sm font-semibold text-graphite-900 dark:text-pa-foreground">
+              Готовим приглашение…
+            </p>
+            <p className="mt-1 text-sm text-graphite-500 dark:text-pa-muted">
+              Создаём ссылку для Telegram
+            </p>
+          </div>
         ) : null}
 
         {step === "menu" ? (
@@ -110,18 +153,16 @@ export function InviteSheet({
             <button
               type="button"
               onClick={() => setStep("phone")}
-              disabled={loading}
-              className="w-full rounded-2xl border border-stone-200 px-4 py-4 text-left text-sm font-semibold text-stone-900 hover:border-emerald-300 disabled:opacity-50"
+              className="pa-card w-full px-4 py-4 text-left text-sm font-semibold text-graphite-900 hover:border-sage-200 dark:text-pa-foreground dark:hover:border-sage-700/50"
             >
               Ввести номер телефона
             </button>
             <button
               type="button"
-              onClick={handleLinkInvite}
-              disabled={loading}
-              className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-left text-sm font-semibold text-emerald-900 disabled:opacity-50"
+              onClick={() => void handleLinkInvite()}
+              className="w-full rounded-card border border-sage-200 bg-sage-50 px-4 py-4 text-left text-sm font-semibold text-sage-700 hover:bg-sage-100 dark:border-sage-700/50 dark:bg-sage-900/30 dark:text-sage-300 dark:hover:bg-sage-800/40"
             >
-              {loading ? "Создание ссылки…" : "Отправить ссылку-приглашение"}
+              Отправить ссылку-приглашение
             </button>
           </div>
         ) : null}
@@ -131,7 +172,7 @@ export function InviteSheet({
             <button
               type="button"
               onClick={() => setStep("menu")}
-              className="text-sm font-semibold text-emerald-700"
+              className="text-sm font-semibold text-sage-700 dark:text-sage-300"
             >
               ← Назад
             </button>
@@ -139,44 +180,67 @@ export function InviteSheet({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+79001234567"
-              className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              className={INPUT_CLS}
             />
             <button
               type="button"
-              onClick={handlePhoneInvite}
-              disabled={loading || !phone.trim()}
-              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              onClick={() => void handlePhoneInvite()}
+              disabled={!phone.trim()}
+              className="pa-btn-primary w-full disabled:opacity-50"
             >
-              {loading ? "Отправка…" : "Пригласить по номеру"}
+              Пригласить по номеру
             </button>
           </div>
         ) : null}
 
-        {showShare && lastInvite ? (
-          <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <p className="text-xs font-bold uppercase text-amber-800">
-              {lastInvite.invitee_notified
-                ? "Приглашение в боте"
-                : "Ожидает подтверждения"}
+        {step === "share" && lastInvite ? (
+          <section className="space-y-4">
+            <p className="text-sm text-graphite-700 dark:text-pa-muted">
+              Ссылка готова. Отправьте её человеку в Telegram — он сможет
+              принять приглашение в боте.
             </p>
-            <p className="mt-2 break-all text-xs text-amber-900">
-              {lastInvite.deep_link}
-            </p>
+            <div className="rounded-card border border-warm/30 bg-warm/10 p-4 dark:border-food/30 dark:bg-food-soft/40">
+              <p className="text-xs font-bold uppercase text-graphite-700 dark:text-pa-muted">
+                Ссылка-приглашение
+              </p>
+              <p className="mt-2 break-all text-xs text-graphite-700 dark:text-pa-foreground">
+                {lastInvite.deep_link}
+              </p>
+            </div>
             <button
               type="button"
-              onClick={() => shareInvite(lastInvite)}
-              className="mt-3 w-full rounded-xl border border-amber-300 bg-white py-3 text-sm font-semibold text-amber-900"
+              onClick={handleShare}
+              className="pa-btn-primary w-full"
             >
               Отправить приглашение в Telegram
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep("menu")}
+              className="pa-btn-ghost w-full"
+            >
+              Создать другое приглашение
             </button>
           </section>
         ) : null}
 
-        {lastInvite?.invitee_notified && lastInvite.invited_phone_masked ? (
-          <p className="mt-4 text-center text-sm text-emerald-700">
-            Приглашение отправлено в бот ({lastInvite.invited_phone_masked}).
-            Ожидаем ответ.
-          </p>
+        {step === "sent" && lastInvite ? (
+          <section className="space-y-4 py-2 text-center">
+            {lastInvite.invitee_notified && lastInvite.invited_phone_masked ? (
+              <p className="text-sm text-sage-700 dark:text-sage-300">
+                Приглашение отправлено в бот ({lastInvite.invited_phone_masked}
+                ). Ожидаем ответ.
+              </p>
+            ) : (
+              <p className="text-sm text-sage-700 dark:text-sage-300">
+                Ссылка отправлена — ожидаем, когда человек примет приглашение
+                в Telegram.
+              </p>
+            )}
+            <button type="button" onClick={handleClose} className="pa-btn-primary w-full">
+              Готово
+            </button>
+          </section>
         ) : null}
       </div>
     </div>

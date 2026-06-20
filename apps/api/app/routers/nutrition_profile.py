@@ -12,6 +12,7 @@ from app.services.nutrition_profile import (
     save_nutrition_profile,
 )
 from app.services import family as family_service
+from app.nutrition.restrictions_catalog import list_restrictions_for_ui
 from app.services.onboarding import get_or_create_profile
 
 router = APIRouter(prefix="/nutrition-profile", tags=["nutrition-profile"])
@@ -26,6 +27,12 @@ async def _notify_admin_background(user_id: int) -> None:
         await notify_family_admins_profile_updated(db, user)
     finally:
         db.close()
+
+
+@router.get("/restrictions-catalog")
+def get_restrictions_catalog() -> list[dict]:
+    """Canonical restriction keys for onboarding/profile UI (read-only)."""
+    return list_restrictions_for_ui()
 
 
 @router.get("/me", response_model=NutritionProfileResponse)

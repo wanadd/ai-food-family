@@ -2,8 +2,10 @@
 
 from typing import Any
 
-TRIAL_DAYS = 14
-TRIAL_MENU_GENERATIONS = 20
+# PLANAM 2026 (DR-001): 3-day trial, 50 welcome AMS — see docs/PLANAM_2026_DECISION_RECORD.md
+TRIAL_DAYS = 3
+TRIAL_MENU_GENERATIONS = 5
+TRIAL_WELCOME_AMS = 50
 
 # AMA costs for expensive AI actions (not navigation / CRUD views).
 AMA_COSTS: dict[str, int] = {
@@ -28,7 +30,7 @@ PLAN_SEEDS: list[dict[str, Any]] = [
         "price_rub": 0,
         "max_profiles": 1,
         "monthly_menu_generations": TRIAL_MENU_GENERATIONS,
-        "monthly_ams": 200,
+        "monthly_ams": TRIAL_WELCOME_AMS,
         "sort_order": 0,
         "features": {
             "shopping": True,

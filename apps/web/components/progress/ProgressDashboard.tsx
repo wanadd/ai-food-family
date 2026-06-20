@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ProgressProLocked } from "@/components/progress/ProgressProLocked";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
   createProgressEntry,
@@ -29,18 +29,18 @@ import type { ProgressOverview } from "@/lib/progress/types";
 
 function MacroCard({ label, value }: { label: string; value: string }) {
   return (
-    <article className="rounded-2xl border border-stone-100 bg-white p-3 shadow-sm">
-      <p className="text-xs text-stone-500">{label}</p>
-      <p className="mt-1 text-lg font-bold text-stone-900">{value}</p>
+    <article className="pa-card p-3">
+      <p className="text-xs text-graphite-500">{label}</p>
+      <p className="mt-1 text-lg font-bold text-graphite-900">{value}</p>
     </article>
   );
 }
 
 function statusColor(status: string): string {
-  if (status === "improving") return "text-emerald-700 bg-emerald-50";
-  if (status === "attention") return "text-amber-800 bg-amber-50";
-  if (status === "hidden") return "text-stone-500 bg-stone-100";
-  return "text-stone-600 bg-stone-100";
+  if (status === "improving") return "text-sage-700 bg-sage-50";
+  if (status === "attention") return "text-warm bg-warm/10";
+  if (status === "hidden") return "text-graphite-500 bg-cream-deep";
+  return "text-graphite-600 bg-cream-deep";
 }
 
 export function ProgressDashboard() {
@@ -165,7 +165,7 @@ export function ProgressDashboard() {
 
   if (!initData && !isTelegram && !loading) {
     return (
-      <div className="px-4 py-16 text-center text-sm text-stone-600">
+      <div className="px-4 py-16 text-center text-sm text-graphite-600">
         Откройте приложение в Telegram
       </div>
     );
@@ -173,9 +173,9 @@ export function ProgressDashboard() {
 
   if (loading || !data) {
     return (
-      <div className="min-h-screen bg-stone-50">
-        <PageLoading message="Загрузка прогресса…" />
-      </div>
+      <ScreenLayout title="Прогресс" contentClassName="space-y-3 pb-24">
+        <SkeletonList count={3} />
+      </ScreenLayout>
     );
   }
 
@@ -198,24 +198,24 @@ export function ProgressDashboard() {
           <ProgressProLocked goalLabel={data.goal_label} />
         ) : (
           <>
-            <section className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+            <section className="pa-card border-sage-200 bg-sage-50/40 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sage-800">
                 Цель
               </p>
-              <p className="mt-1 text-xl font-bold text-stone-900">
+              <p className="mt-1 text-xl font-bold text-graphite-900">
                 {data.goal_label ?? "Не задана"}
               </p>
               {data.goal_progress_percent != null ? (
                 <div className="mt-3">
-                  <div className="flex justify-between text-sm text-stone-600">
+                  <div className="flex justify-between text-sm text-graphite-600">
                     <span>Прогресс к цели</span>
-                    <span className="font-semibold text-emerald-800">
+                    <span className="font-semibold text-sage-800">
                       {data.goal_progress_percent}%
                     </span>
                   </div>
-                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white">
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-pill bg-cream-deep">
                     <div
-                      className="h-full rounded-full bg-emerald-500 transition-all"
+                      className="h-full rounded-pill bg-sage-500 transition-all"
                       style={{ width: `${data.goal_progress_percent}%` }}
                     />
                   </div>
@@ -236,7 +236,7 @@ export function ProgressDashboard() {
 
             {t ? (
               <section>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-graphite-500">
                   Питание в день
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -273,11 +273,11 @@ export function ProgressDashboard() {
             ) : null}
 
             {data.pro_recommendation ? (
-              <section className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-amber-900">
+              <section className="pa-card border-warm/30 bg-warm/10 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-warm">
                   Совет ПланАм
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-stone-800">
+                <p className="mt-2 text-sm leading-relaxed text-graphite-800">
                   {data.pro_recommendation}
                 </p>
               </section>
@@ -287,22 +287,22 @@ export function ProgressDashboard() {
               <button
                 type="button"
                 onClick={() => setShowWeightForm(true)}
-                className="min-h-[44px] rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white"
+                className="pa-btn-primary min-h-[44px] py-3 text-sm"
               >
                 Добавить вес
               </button>
               <button
                 type="button"
                 onClick={() => setShowTrainingForm(true)}
-                className="min-h-[44px] rounded-xl border border-emerald-200 bg-white py-3 text-sm font-semibold text-emerald-800"
+                className="pa-btn min-h-[44px] border-sage-200 py-3 text-sm text-sage-800"
               >
                 Добавить тренировку
               </button>
             </div>
 
-            <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+            <section className="pa-card p-4">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium text-stone-800">
+                <p className="text-sm font-medium text-graphite-800">
                   Показывать прогресс семье
                 </p>
                 <label className="relative inline-flex cursor-pointer items-center">
@@ -313,40 +313,40 @@ export function ProgressDashboard() {
                     onChange={() => void toggleFamilyVisibility()}
                     className="peer sr-only"
                   />
-                  <span className="h-6 w-10 rounded-full bg-stone-200 transition peer-checked:bg-emerald-500" />
-                  <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-4" />
+                  <span className="h-6 w-10 rounded-pill bg-cream-deep transition peer-checked:bg-sage-500" />
+                  <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-pill bg-cream-surface shadow-soft transition peer-checked:translate-x-4" />
                 </label>
               </div>
             </section>
 
             {data.family_progress.length > 0 ? (
-              <section className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
-                <h2 className="text-sm font-bold text-stone-900">Прогресс семьи</h2>
+              <section className="pa-card p-4">
+                <h2 className="text-sm font-bold text-graphite-900">Прогресс семьи</h2>
                 <ul className="mt-3 space-y-2">
                   {data.family_progress.map((member) => (
                     <li
                       key={member.member_id}
-                      className="rounded-xl border border-stone-100 bg-stone-50/80 p-3"
+                      className="rounded-control border border-cream-border bg-cream-deep/40 p-3"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="font-semibold text-stone-900">
+                          <p className="font-semibold text-graphite-900">
                             {member.name}
                             {member.is_you ? " (вы)" : ""}
                           </p>
                           {member.goal_label ? (
-                            <p className="text-xs text-stone-500">
+                            <p className="text-xs text-graphite-500">
                               {member.goal_label}
                             </p>
                           ) : null}
                         </div>
                         <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${statusColor(member.status)}`}
+                          className={`shrink-0 rounded-pill px-2 py-0.5 text-[10px] font-bold ${statusColor(member.status)}`}
                         >
                           {STATUS_LABELS[member.status]}
                         </span>
                       </div>
-                      <p className="mt-1.5 text-sm text-stone-600">
+                      <p className="mt-1.5 text-sm text-graphite-600">
                         {member.progress_summary}
                       </p>
                     </li>
@@ -361,57 +361,57 @@ export function ProgressDashboard() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
           <form
             onSubmit={(e) => void handleAddWeight(e)}
-            className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl"
+            className="w-full max-w-lg rounded-card bg-cream-surface p-4 shadow-lift"
           >
-            <h3 className="text-lg font-bold text-stone-900">Добавить вес</h3>
+            <h3 className="text-lg font-bold text-graphite-900">Добавить вес</h3>
             <div className="mt-3 space-y-3">
               <label className="block text-sm">
-                <span className="text-stone-600">Вес, кг</span>
+                <span className="text-graphite-600">Вес, кг</span>
                 <input
                   type="number"
                   step="0.1"
                   value={weightKg}
                   onChange={(e) => setWeightKg(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2.5"
+                  className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                   required
                 />
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <label className="block text-sm">
-                  <span className="text-stone-600">Талия</span>
+                  <span className="text-graphite-600">Талия</span>
                   <input
                     type="number"
                     value={waist}
                     onChange={(e) => setWaist(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-stone-200 px-2 py-2"
+                    className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-2 py-2 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                   />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-stone-600">Грудь</span>
+                  <span className="text-graphite-600">Грудь</span>
                   <input
                     type="number"
                     value={chest}
                     onChange={(e) => setChest(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-stone-200 px-2 py-2"
+                    className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-2 py-2 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                   />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-stone-600">Бёдра</span>
+                  <span className="text-graphite-600">Бёдра</span>
                   <input
                     type="number"
                     value={hips}
                     onChange={(e) => setHips(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-stone-200 px-2 py-2"
+                    className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-2 py-2 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                   />
                 </label>
               </div>
               <label className="block text-sm">
-                <span className="text-stone-600">Заметка</span>
+                <span className="text-graphite-600">Заметка</span>
                 <input
                   type="text"
                   value={weightNote}
                   onChange={(e) => setWeightNote(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2.5"
+                  className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                 />
               </label>
             </div>
@@ -419,14 +419,14 @@ export function ProgressDashboard() {
               <button
                 type="button"
                 onClick={() => setShowWeightForm(false)}
-                className="flex-1 rounded-xl border border-stone-200 py-3 text-sm font-semibold"
+                className="pa-btn flex-1 py-3 text-sm"
               >
                 Отмена
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                className="pa-btn-primary flex-1 py-3 text-sm disabled:opacity-50"
               >
                 {saving ? "…" : "Сохранить"}
               </button>
@@ -439,16 +439,16 @@ export function ProgressDashboard() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
           <form
             onSubmit={(e) => void handleAddTraining(e)}
-            className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl"
+            className="w-full max-w-lg rounded-card bg-cream-surface p-4 shadow-lift"
           >
-            <h3 className="text-lg font-bold text-stone-900">Добавить тренировку</h3>
+            <h3 className="text-lg font-bold text-graphite-900">Добавить тренировку</h3>
             <div className="mt-3 space-y-3">
               <label className="block text-sm">
-                <span className="text-stone-600">Тип</span>
+                <span className="text-graphite-600">Тип</span>
                 <select
                   value={trainingType}
                   onChange={(e) => setTrainingType(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2.5"
+                  className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                 >
                   <option>Силовая</option>
                   <option>Кардио</option>
@@ -458,16 +458,16 @@ export function ProgressDashboard() {
                 </select>
               </label>
               <label className="block text-sm">
-                <span className="text-stone-600">Длительность, мин</span>
+                <span className="text-graphite-600">Длительность, мин</span>
                 <input
                   type="number"
                   value={trainingMin}
                   onChange={(e) => setTrainingMin(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2.5"
+                  className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-stone-600">Интенсивность</span>
+                <span className="text-graphite-600">Интенсивность</span>
                 <select
                   value={trainingIntensity}
                   onChange={(e) =>
@@ -475,7 +475,7 @@ export function ProgressDashboard() {
                       e.target.value as "low" | "medium" | "high",
                     )
                   }
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2.5"
+                  className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                 >
                   <option value="low">Низкая</option>
                   <option value="medium">Средняя</option>
@@ -483,12 +483,12 @@ export function ProgressDashboard() {
                 </select>
               </label>
               <label className="block text-sm">
-                <span className="text-stone-600">Заметка</span>
+                <span className="text-graphite-600">Заметка</span>
                 <input
                   type="text"
                   value={trainingNote}
                   onChange={(e) => setTrainingNote(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2.5"
+                  className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                 />
               </label>
             </div>
@@ -496,14 +496,14 @@ export function ProgressDashboard() {
               <button
                 type="button"
                 onClick={() => setShowTrainingForm(false)}
-                className="flex-1 rounded-xl border border-stone-200 py-3 text-sm font-semibold"
+                className="pa-btn flex-1 py-3 text-sm"
               >
                 Отмена
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                className="pa-btn-primary flex-1 py-3 text-sm disabled:opacity-50"
               >
                 {saving ? "…" : "Сохранить"}
               </button>

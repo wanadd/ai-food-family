@@ -3,23 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV_ITEMS = [
-  { href: "/nutritionist", label: "Нутрициолог", icon: "🥗", isHome: false },
-  { href: "/menu", label: "Меню", icon: "🍽", isHome: false },
-  { href: "/", label: "ПланАм", icon: "🏠", isHome: true },
-  { href: "/shopping", label: "Покупки", icon: "🛒", isHome: false },
-  { href: "/pantry", label: "Запасы", icon: "📦", isHome: false },
-] as const;
-
-/** Routes without bottom tab bar (system / first-run only). */
-const HIDDEN_PREFIXES = ["/onboarding", "/admin"];
+import { NAV_TABS, getActiveTabId, isNavHidden } from "@/lib/navigation/nav-config";
 
 export function BottomNavigation() {
   const pathname = usePathname();
 
-  if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (isNavHidden(pathname)) {
     return null;
   }
+
+  const activeId = getActiveTabId(pathname);
 
   return (
     <nav
@@ -27,26 +20,26 @@ export function BottomNavigation() {
       aria-label="Основная навигация"
     >
       <div className="mx-auto flex max-w-lg items-end justify-between gap-0.5">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+        {NAV_TABS.map((item) => {
+          const isActive = activeId === item.id;
 
-          if (item.isHome) {
+          if (item.isCenter) {
+            // ПланАм — центральная вкладка и AI-хаб: усиленный, но лёгкий
+            // акцент (без тяжёлой floating-кнопки).
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex min-w-0 flex-1 flex-col items-center px-1 pb-1 pt-0.5 ${
-                  isActive ? "text-emerald-700" : "text-stone-500"
+                  isActive ? "text-emerald-700" : "text-emerald-600"
                 }`}
               >
                 <span
-                  className={`flex h-11 w-11 items-center justify-center rounded-full text-xl shadow-sm transition ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-full text-xl shadow-sm ring-1 transition ${
                     isActive
-                      ? "bg-emerald-600 text-white shadow-emerald-200"
-                      : "bg-stone-100"
+                      ? "bg-emerald-600 text-white ring-emerald-600 shadow-emerald-200"
+                      : "bg-emerald-50 text-emerald-700 ring-emerald-200"
                   }`}
                   aria-hidden
                 >
@@ -61,8 +54,9 @@ export function BottomNavigation() {
 
           return (
             <Link
-              key={item.href}
+              key={item.id}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={`flex min-w-0 flex-1 flex-col items-center rounded-xl px-1 py-2 text-center transition ${
                 isActive
                   ? "bg-emerald-50 text-emerald-800"

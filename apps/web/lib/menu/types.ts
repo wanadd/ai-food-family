@@ -4,10 +4,25 @@ export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 export type MenuMeal = {
   meal_type: MealType;
   name: string;
+  display_title?: string | null;
   description: string;
   prep_time_minutes: number;
   calories_estimate?: number | null;
   recipe_id?: number | null;
+  slot_id?: string | null;
+  servings?: number | null;
+  planned_yield_amount?: number | null;
+  planned_yield_unit?: string | null;
+  planned_serving_size_amount?: number | null;
+  planned_serving_size_unit?: string | null;
+  planned_servings?: number | null;
+  expected_leftover_amount?: number | null;
+  expected_leftover_unit?: string | null;
+  cook_strategy?: string | null;
+  yield_type?: string | null;
+  image_url?: string | null;
+  hero_image_url?: string | null;
+  thumbnail_url?: string | null;
 };
 
 export type MenuIngredient = {

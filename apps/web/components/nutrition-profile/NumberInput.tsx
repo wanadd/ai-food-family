@@ -21,7 +21,7 @@ export function NumberInput({
 }: NumberInputProps) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-stone-700">
+      <span className="mb-1.5 block text-sm font-medium text-graphite-700">
         {label}
       </span>
       <div className="relative">
@@ -42,10 +42,10 @@ export function NumberInput({
             const parsed = step < 1 ? parseFloat(raw) : parseInt(raw, 10);
             onChange(Number.isNaN(parsed) ? null : parsed);
           }}
-          className="w-full rounded-xl border border-stone-200 bg-white py-3 pl-4 pr-12 text-base text-stone-900 outline-none ring-emerald-500 focus:border-emerald-500 focus:ring-2"
+          className="w-full rounded-control border border-cream-border bg-cream-surface py-3 pl-4 pr-12 text-base text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
         />
         {unit ? (
-          <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-stone-400">
+          <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-graphite-400">
             {unit}
           </span>
         ) : null}

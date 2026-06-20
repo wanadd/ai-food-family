@@ -38,3 +38,11 @@ The project uses a monorepo layout:
 
 - Recipes favorites are always per user (not per family).
 - Onboarding is always per user; family members have their own goals/restrictions.
+
+## Recipe Engine v1
+
+Фундаментальная библиотека рецептов для ПланАм.
+
+- Архитектура: `docs/RECIPE_ENGINE_V1.md`
+- Backend доменные сервисы/сущности лежат в `apps/api/app/services/recipes/*`
+- В Sprint 1 добавлены слои repository/search/explainability/collections/history/family preferences/scenarios и feature flags (default OFF), чтобы можно было подключать wiring без риска.

@@ -90,18 +90,20 @@ async def chat_json(
     temperature: float = 0.5,
     max_tokens: int | None = 4096,
     retries: int = 1,
+    model: str | None = None,
 ) -> dict[str, Any]:
     client = get_openai_client()
     if client is None:
         raise AiUnavailableError()
 
+    effective_model = (model or "").strip() or _effective_model()
     prompt = user
     last_error: Exception | None = None
 
     for attempt in range(retries + 1):
         try:
             response = await client.chat.completions.create(
-                model=_effective_model(),
+                model=effective_model,
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": prompt},

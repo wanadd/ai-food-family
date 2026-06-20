@@ -23,10 +23,10 @@ export function ShoppingItemRow({
 
   return (
     <div
-      className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 ${
+      className={`flex items-start gap-2 rounded-control border px-3 py-2.5 ${
         item.checked
-          ? "border-stone-100 bg-stone-50/60"
-          : "border-stone-100 bg-white"
+          ? "border-cream-border bg-cream-deep/60"
+          : "border-cream-border bg-cream-surface"
       } ${toggling ? "opacity-60" : ""}`}
     >
       <input
@@ -34,20 +34,20 @@ export function ShoppingItemRow({
         checked={item.checked}
         disabled={toggling}
         onChange={(event) => onToggle(event.target.checked)}
-        className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 text-emerald-600"
+        className="mt-0.5 h-4 w-4 shrink-0 rounded border-cream-border text-sage-500"
         aria-label={`Отметить ${item.name}`}
       />
       <div className="min-w-0 flex-1">
         <p
           className={`text-sm font-medium leading-snug ${
-            item.checked ? "text-stone-400 line-through" : "text-stone-900"
+            item.checked ? "text-graphite-400 line-through" : "text-graphite-900"
           }`}
         >
           {item.name}
           {amount ? (
             <span
               className={
-                item.checked ? "text-stone-300" : "text-stone-500"
+                item.checked ? "text-graphite-300" : "text-graphite-500"
               }
             >
               {" "}
@@ -55,11 +55,11 @@ export function ShoppingItemRow({
             </span>
           ) : null}
         </p>
-        <p className="mt-0.5 text-[11px] text-stone-400">
+        <p className="mt-0.5 text-[11px] text-graphite-400">
           {sourceLabel(item.source)}
         </p>
         {item.added_to_pantry || item.linked_pantry_item_id ? (
-          <p className="mt-0.5 text-[11px] font-medium text-teal-700">
+          <p className="mt-0.5 text-[11px] font-medium text-sage-700">
             Добавлено в запасы
           </p>
         ) : null}
@@ -68,7 +68,7 @@ export function ShoppingItemRow({
         <button
           type="button"
           onClick={onEdit}
-          className="rounded px-1.5 py-1 text-[11px] font-semibold text-stone-500 hover:bg-stone-100"
+          className="rounded px-1.5 py-1 text-[11px] font-semibold text-graphite-500 hover:bg-cream-deep"
         >
           ✎
         </button>

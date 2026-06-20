@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/api";
+import { buildProtectedRequestHeaders } from "@/lib/audit/audit-mode";
 
 export type EventPlanCreatePayload = {
   event_type: string;
@@ -37,7 +38,7 @@ async function eventFetch<T>(
     ...init,
     headers: {
       "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
+      ...buildProtectedRequestHeaders(initData),
       ...init?.headers,
     },
   });

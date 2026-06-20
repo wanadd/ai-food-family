@@ -20,3 +20,7 @@ export function clearAdminSessionToken(): void {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(STORAGE_KEY);
 }
+
+export function hasAdminAuthCredential(initData?: string | null): boolean {
+  return Boolean(initData || getAdminSessionToken());
+}

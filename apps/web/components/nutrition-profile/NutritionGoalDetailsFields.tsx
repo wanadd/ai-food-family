@@ -53,7 +53,7 @@ export function NutritionGoalDetailsFields({
 
   if (goal === "lose" || goal === "gain") {
     return (
-      <div className="mt-4 space-y-3 border-t border-stone-100 pt-4">
+      <div className="mt-4 space-y-3 border-t border-cream-border pt-4">
         <NumberInput
           label="Текущий вес, кг"
           value={details.current_weight_kg ?? profile.weight_kg}
@@ -67,16 +67,16 @@ export function NutritionGoalDetailsFields({
           value={details.target_weight_kg ?? null}
           onChange={(v) => patch({ target_weight_kg: v })}
         />
-        <label className="block text-sm font-medium text-stone-700">
+        <label className="block text-sm font-medium text-graphite-700">
           Дата цели
         </label>
         <input
           type="date"
           value={details.target_date ?? ""}
           onChange={(e) => patch({ target_date: e.target.value || null })}
-          className="w-full rounded-xl border border-stone-200 px-3 py-2.5"
+          className="w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
         />
-        <p className="text-sm font-medium text-stone-700">Темп</p>
+        <p className="text-sm font-medium text-graphite-700">Темп</p>
         <OptionCards
           options={PACE_OPTIONS}
           value={details.goal_pace ?? null}
@@ -84,7 +84,7 @@ export function NutritionGoalDetailsFields({
         />
         {goal === "gain" ? (
           <>
-            <p className="text-sm font-medium text-stone-700">Тип набора</p>
+            <p className="text-sm font-medium text-graphite-700">Тип набора</p>
             <OptionCards
               options={GAIN_TYPE_OPTIONS}
               value={details.mass_gain_type ?? null}
@@ -103,7 +103,7 @@ export function NutritionGoalDetailsFields({
 
   if (goal === "maintain") {
     return (
-      <div className="mt-4 space-y-3 border-t border-stone-100 pt-4">
+      <div className="mt-4 space-y-3 border-t border-cream-border pt-4">
         <NumberInput
           label="Текущий вес, кг"
           value={details.current_weight_kg ?? profile.weight_kg}
@@ -128,8 +128,8 @@ export function NutritionGoalDetailsFields({
 
   if (goal === "sport") {
     return (
-      <div className="mt-4 space-y-3 border-t border-stone-100 pt-4">
-        <p className="text-sm font-medium text-stone-700">Спортивная цель</p>
+      <div className="mt-4 space-y-3 border-t border-cream-border pt-4">
+        <p className="text-sm font-medium text-graphite-700">Спортивная цель</p>
         <OptionCards
           options={SPORT_GOAL_OPTIONS}
           value={details.sport_goal_type ?? null}
@@ -156,8 +156,8 @@ export function NutritionGoalDetailsFields({
 
   if (goal === "healthy") {
     return (
-      <div className="mt-4 space-y-3 border-t border-stone-100 pt-4">
-        <p className="text-sm font-medium text-stone-700">Фокус</p>
+      <div className="mt-4 space-y-3 border-t border-cream-border pt-4">
+        <p className="text-sm font-medium text-graphite-700">Фокус</p>
         <OptionCards
           options={HEALTH_FOCUS_OPTIONS}
           value={details.health_focus ?? null}

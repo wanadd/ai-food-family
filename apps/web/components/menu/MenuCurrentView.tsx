@@ -1,18 +1,24 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { ScreenLayout } from "@/components/layout/ScreenLayout";
-import { AmaConfirmDialog } from "@/components/subscription/AmaConfirmDialog";
-import { MealCheckinPanel } from "@/components/menu/MealCheckinPanel";
+import { MenuDayOverview } from "@/components/menu/MenuDayOverview";
 import { MenuDayPicker } from "@/components/menu/MenuDayPicker";
-import { MenuVariantCard } from "@/components/menu/MenuVariantCard";
 import { ReplaceDishModal } from "@/components/menu/ReplaceDishModal";
-import { PageLoading } from "@/components/ui/PageLoading";
+import { ScreenLayout } from "@/components/layout/ScreenLayout";
+import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
+import { SkeletonCard, SkeletonList } from "@/components/ui/Skeleton";
 import { useTelegram } from "@/components/TelegramProvider";
+import {
+  cacheKey,
+  getCached,
+  invalidate as invalidateCache,
+  setCached,
+} from "@/lib/cache/session-cache";
 import {
   fetchSelectedMenu,
   replaceDish,
@@ -21,43 +27,76 @@ import {
 import {
   dateIsoForDayIndex,
   defaultDayIndex,
+  mergeReplaceResult,
   menuHasMultipleDays,
   menuViewForDay,
 } from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
 import { MEAL_LABELS } from "@/lib/menu/labels";
-import { fetchSubscriptionOverview } from "@/lib/subscription/api";
+
+const AmaConfirmDialog = dynamic(
+  () =>
+    import("@/components/subscription/AmaConfirmDialog").then(
+      (m) => m.AmaConfirmDialog,
+    ),
+  { ssr: false },
+);
+
+type CachedSelected = { menu: MenuVariant | null; selected_at: string | null };
 
 export function MenuCurrentView() {
   const searchParams = useSearchParams();
   const { initData } = useTelegram();
   const { mode, loading: modeLoading } = useAppMode();
-  const [menu, setMenu] = useState<MenuVariant | null>(null);
-  const [selectedAt, setSelectedAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const cachedSelected = initData
+    ? getCached<CachedSelected>(cacheKey.selectedMenu(mode))
+    : null;
+  const [menu, setMenu] = useState<MenuVariant | null>(
+    cachedSelected?.menu ?? null,
+  );
+  const [loading, setLoading] = useState(cachedSelected == null);
   const [replacing, setReplacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MenuVariant | null>(null);
   const [pendingMealIndex, setPendingMealIndex] = useState<number | null>(null);
-  const [amaBalance, setAmaBalance] = useState<number | null>(null);
-  const [amaCosts, setAmaCosts] = useState<Record<string, number> | null>(null);
-  const [dayIndex, setDayIndex] = useState(1);
+  const {
+    overview: subscription,
+    ensureLoaded: ensureSubscriptionLoaded,
+    refresh: refreshSubscription,
+  } = useSubscriptionOverview();
+  const amaBalance = subscription?.ama_balance ?? null;
+  const amaCosts = subscription?.ama_costs ?? null;
+  const [dayIndex, setDayIndex] = useState(() =>
+    cachedSelected?.menu ? defaultDayIndex(cachedSelected.menu) : 1,
+  );
   const justSaved = searchParams.get("saved") === "1";
+  const replaceFlowKeyRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     if (!initData) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    const key = cacheKey.selectedMenu(mode);
+    const primed = getCached<CachedSelected>(key);
+    if (primed) {
+      const loaded = primed.menu;
+      setMenu(loaded);
+      if (loaded) setDayIndex(defaultDayIndex(loaded));
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
       const selected = await fetchSelectedMenu(initData, mode);
       const loaded = selected?.menu ?? null;
+      setCached(key, {
+        menu: loaded,
+        selected_at: selected?.selected_at ?? null,
+      });
       setMenu(loaded);
-      if (loaded) {
-        setDayIndex(defaultDayIndex(loaded));
-      }
-      setSelectedAt(selected?.selected_at ?? null);
+      if (loaded) setDayIndex(defaultDayIndex(loaded));
     } catch {
       setError("Не удалось загрузить план");
     } finally {
@@ -71,41 +110,52 @@ export function MenuCurrentView() {
   }, [load, modeLoading]);
 
   useEffect(() => {
-    if (searchParams.get("replace") === "1" && menu) {
-      setReplaceTarget(menu);
+    const replaceParam = searchParams.get("replace");
+    if (replaceParam !== "1") {
+      replaceFlowKeyRef.current = null;
+      return;
     }
-  }, [searchParams, menu]);
+    if (!menu) return;
+    const flowKey = `${dayIndex}`;
+    if (replaceFlowKeyRef.current === flowKey) return;
+    replaceFlowKeyRef.current = flowKey;
+    setReplaceTarget(menuViewForDay(menu, dayIndex));
+    setPendingMealIndex(null);
+  }, [searchParams, menu, dayIndex]);
 
   useEffect(() => {
     if (!initData) return;
-    void (async () => {
-      try {
-        const sub = await fetchSubscriptionOverview(initData, mode);
-        if (sub) {
-          setAmaBalance(sub.ama_balance);
-          setAmaCosts(sub.ama_costs ?? null);
-        }
-      } catch {
-        // Soft fallback: dialog will say ``может потребовать Амы``.
-      }
-    })();
-  }, [initData, mode]);
+    ensureSubscriptionLoaded();
+  }, [initData, ensureSubscriptionLoaded]);
 
   async function handleConfirmReplace() {
     if (!initData || !replaceTarget || pendingMealIndex == null || !menu) return;
     setReplacing(true);
     setError(null);
     try {
+      const dayMenuPayload = menuViewForDay(menu, dayIndex);
       const updated = await replaceDish(
         initData,
         mode,
-        replaceTarget,
+        dayMenuPayload,
         pendingMealIndex,
+        undefined,
+        dayIndex,
       );
-      await selectMenu(initData, mode, updated);
-      setMenu(updated);
+      const merged = mergeReplaceResult(menu, updated, dayIndex);
+      await selectMenu(initData, mode, merged);
+      invalidateCache("selected-menu");
+      invalidateCache("menu-overview");
+      invalidateCache("shopping-list");
+      invalidateCache("pantry");
+      setCached(cacheKey.selectedMenu(mode), {
+        menu: merged,
+        selected_at: new Date().toISOString(),
+      });
+      setMenu(merged);
       setReplaceTarget(null);
       setPendingMealIndex(null);
+      void refreshSubscription();
     } catch (err) {
       setError(
         err instanceof Error
@@ -119,19 +169,24 @@ export function MenuCurrentView() {
 
   if (loading || modeLoading) {
     return (
-      <div className="min-h-screen bg-stone-50">
-        <PageLoading message="Загрузка плана…" />
-      </div>
+      <ScreenLayout
+        title="Текущий план"
+        back={{ href: "/menu", label: "Меню" }}
+        contentClassName="space-y-3 pb-24"
+      >
+        <SkeletonCard titleWidth="w-1/2" lines={4} withButton />
+        <SkeletonList count={2} />
+      </ScreenLayout>
     );
   }
 
   if (!menu) {
     return (
-      <div className="min-h-screen bg-stone-50 px-4 py-16 text-center">
-        <p className="text-stone-600">Активного плана пока нет</p>
+      <div className="min-h-screen bg-cream px-4 py-16 text-center">
+        <p className="text-graphite-600">Активного плана пока нет</p>
         <Link
           href="/menu"
-          className="mt-4 inline-block text-sm font-semibold text-emerald-700"
+          className="mt-4 inline-block text-sm font-semibold text-sage-700"
         >
           Настроить план
         </Link>
@@ -139,9 +194,9 @@ export function MenuCurrentView() {
     );
   }
 
-  const plannedDate = menu ? dateIsoForDayIndex(menu, dayIndex) : "";
-  const dayMenu = menu ? menuViewForDay(menu, dayIndex) : null;
-  const multiDay = menu ? menuHasMultipleDays(menu) : false;
+  const plannedDate = dateIsoForDayIndex(menu, dayIndex);
+  const dayMenu = menuViewForDay(menu, dayIndex);
+  const multiDay = menuHasMultipleDays(menu);
 
   const dateLabel = multiDay
     ? new Date(plannedDate).toLocaleDateString("ru-RU", {
@@ -149,71 +204,59 @@ export function MenuCurrentView() {
         day: "numeric",
         month: "short",
       })
-    : selectedAt
-      ? new Date(selectedAt).toLocaleDateString("ru-RU", {
-          day: "numeric",
-          month: "long",
-        })
-      : "Сегодня";
+    : "Сегодня";
 
   return (
     <ScreenLayout
-      title={menu.title}
+      title="Текущий план"
       subtitle={
         multiDay
           ? `${dateLabel} · день ${dayIndex}${menu.plan_days ? ` из ${menu.plan_days}` : ""}`
-          : `${dateLabel} · активен`
+          : dateLabel
       }
       back={{ label: "Меню", href: "/menu" }}
-      contentClassName="space-y-4"
+      contentClassName="space-y-3"
     >
-        {justSaved ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            <p className="font-semibold">Меню сохранено</p>
-            <p className="mt-1 text-emerald-800">
-              План активен — отмечайте приёмы пищи и смотрите другие дни ниже.
-            </p>
-          </div>
-        ) : null}
+      {justSaved ? (
+        <div className="rounded-control border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-graphite-900">
+          <p className="font-semibold">Меню сохранено</p>
+          <p className="mt-1 text-sage-800">Отмечайте приёмы пищи ниже.</p>
+        </div>
+      ) : null}
 
-        {error ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
-        ) : null}
+      {error ? (
+        <p className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </p>
+      ) : null}
 
-        {multiDay ? (
-          <MenuDayPicker
-            menu={menu}
-            dayIndex={dayIndex}
-            onDayIndexChange={setDayIndex}
-          />
-        ) : null}
+      {multiDay ? (
+        <MenuDayPicker
+          menu={menu}
+          dayIndex={dayIndex}
+          onDayIndexChange={setDayIndex}
+        />
+      ) : null}
 
-        {dayMenu ? (
-          <MenuVariantCard
-            menu={dayMenu}
-            selected
-            onSelect={() => {}}
-            onReplace={() => setReplaceTarget(dayMenu)}
-            selecting={false}
-          />
-        ) : null}
+      {dayMenu ? (
+        <MenuDayOverview
+          menu={dayMenu}
+          plannedDate={plannedDate}
+          onReplaceMeal={(index) => {
+            setError(null);
+            setReplaceTarget(menuViewForDay(menu, dayIndex));
+            setPendingMealIndex(index);
+          }}
+          onUpdated={() => void load()}
+        />
+      ) : null}
 
-        {dayMenu ? (
-          <MealCheckinPanel
-            menu={dayMenu}
-            plannedDate={plannedDate}
-            onUpdated={() => void load()}
-          />
-        ) : null}
-
-        <Link
-          href="/menu/leftovers"
-          className="flex min-h-[44px] items-center justify-center rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-800 shadow-sm"
-        >
-          Остатки блюд
-        </Link>
+      <Link
+        href="/shopping/leftovers"
+        className="pa-btn-ghost block text-center text-sm text-graphite-600"
+      >
+        Остатки блюд →
+      </Link>
 
       {replaceTarget && pendingMealIndex === null ? (
         <ReplaceDishModal
@@ -235,23 +278,22 @@ export function MenuCurrentView() {
           if (!meal) return null;
           return (
             <span>
-              ПланАм предложит альтернативу для блюда
-              {" «"}
-              <span className="font-semibold text-stone-900">{meal.name}</span>
-              {"» ("}
-              {MEAL_LABELS[meal.meal_type]}
-              {"). "}
-              Активный план обновится, список покупок пересчитается. Если новое
-              блюдо не подойдёт — можно заменить ещё раз.
+              ПланАм предложит альтернативу для «
+              <span className="font-semibold text-graphite-900">{meal.name}</span>
+              » ({MEAL_LABELS[meal.meal_type]}).
             </span>
           );
         })()}
+        benefit="ПланАм учтёт ваши предпочтения и обновит покупки"
         costAma={amaCosts?.menu_replace_dish ?? null}
         balanceAma={amaBalance}
         busy={replacing}
         confirmLabel="Подтвердить замену"
         onCancel={() => {
-          if (!replacing) setPendingMealIndex(null);
+          if (!replacing) {
+            setPendingMealIndex(null);
+            setReplaceTarget(null);
+          }
         }}
         onConfirm={() => void handleConfirmReplace()}
       />

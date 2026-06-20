@@ -6,6 +6,7 @@ from app.schemas.notifications import (
     NotificationSettingsResponse,
     NotificationSettingsUpdate,
 )
+from app.services.normalization.notifications import normalize_time, normalize_timezone
 
 
 def get_or_create_settings(db: Session, user: User) -> UserNotificationSettings:
@@ -46,18 +47,29 @@ def update_settings(
             row.cook_breakfast_enabled = False
             row.cook_lunch_enabled = False
             row.cook_dinner_enabled = False
+    # Unified write-path normalization: invalid times fall back to current value.
     if payload.buy_reminder_time is not None:
-        row.buy_reminder_time = payload.buy_reminder_time
+        row.buy_reminder_time = normalize_time(
+            payload.buy_reminder_time, row.buy_reminder_time
+        )
     if payload.cook_reminder_time is not None:
-        row.cook_reminder_time = payload.cook_reminder_time
+        row.cook_reminder_time = normalize_time(
+            payload.cook_reminder_time, row.cook_reminder_time
+        )
     if payload.cook_breakfast_time is not None:
-        row.cook_breakfast_time = payload.cook_breakfast_time
+        row.cook_breakfast_time = normalize_time(
+            payload.cook_breakfast_time, row.cook_breakfast_time
+        )
     if payload.cook_lunch_time is not None:
-        row.cook_lunch_time = payload.cook_lunch_time
+        row.cook_lunch_time = normalize_time(
+            payload.cook_lunch_time, row.cook_lunch_time
+        )
     if payload.cook_dinner_time is not None:
-        row.cook_dinner_time = payload.cook_dinner_time
+        row.cook_dinner_time = normalize_time(
+            payload.cook_dinner_time, row.cook_dinner_time
+        )
     if payload.timezone is not None:
-        row.timezone = payload.timezone
+        row.timezone = normalize_timezone(payload.timezone)
 
     row.cook_reminder_enabled = (
         row.cook_breakfast_enabled

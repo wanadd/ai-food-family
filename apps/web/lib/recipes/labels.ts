@@ -22,7 +22,10 @@ export const CATALOG_MEAL_FILTERS: { value: string; label: string }[] = [
 export const CATEGORY_LABELS: Record<string, string> = {
   soup: "Суп",
   main: "Основное",
+  side: "Гарнир",
   salad: "Салат",
+  snack: "Перекус",
+  breakfast: "Завтрак",
   dessert: "Десерт",
   quick: "Быстрое",
   kids: "Детское",
@@ -44,12 +47,15 @@ export const DIET_LABELS: Record<string, string> = {
   pescatarian: "С рыбой",
 };
 
-export function mealLabel(value: string): string {
-  return MEAL_TYPE_LABELS[value] ?? value;
+/** User-facing label or empty string — never expose raw slugs in UI. */
+export function mealLabel(value: string | null | undefined): string {
+  if (!value) return "";
+  return MEAL_TYPE_LABELS[value] ?? "";
 }
 
-export function categoryLabel(value: string): string {
-  return CATEGORY_LABELS[value] ?? value;
+export function categoryLabel(value: string | null | undefined): string {
+  if (!value) return "";
+  return CATEGORY_LABELS[value] ?? "";
 }
 
 export function difficultyLabel(value: string): string {
@@ -58,4 +64,12 @@ export function difficultyLabel(value: string): string {
 
 export function dietLabel(value: string): string {
   return DIET_LABELS[value] ?? value;
+}
+
+export function hasMealLabel(value: string | null | undefined): boolean {
+  return Boolean(mealLabel(value));
+}
+
+export function hasCategoryLabel(value: string | null | undefined): boolean {
+  return Boolean(categoryLabel(value));
 }

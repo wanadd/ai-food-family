@@ -3,6 +3,7 @@ import logging
 import httpx
 
 from app.config import settings
+from app.telegram.api_urls import telegram_bot_api_url
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ def resolve_webhook_url() -> str | None:
 
 
 async def _telegram_api(method: str, payload: dict | None = None) -> dict:
-    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/{method}"
+    url = telegram_bot_api_url(method)
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(url, json=payload or {})
         return response.json()
@@ -47,6 +48,26 @@ async def setup_menu_button() -> None:
         return
 
     logger.info("Telegram menu button → %s", settings.telegram_webapp_url)
+
+
+async def setup_bot_commands() -> None:
+    """Register bot command menu so the chat always has visible entry points."""
+    if not settings.telegram_bot_token:
+        logger.info("Skip Telegram bot commands: TELEGRAM_BOT_TOKEN missing")
+        return
+
+    payload = {
+        "commands": [
+            {"command": "start", "description": "Запустить PLANAM"},
+            {"command": "help", "description": "Помощь и кнопки"},
+            {"command": "invite", "description": "Пригласить в семью"},
+        ]
+    }
+    data = await _telegram_api("setMyCommands", payload)
+    if not data.get("ok"):
+        logger.warning("setMyCommands failed: %s", data)
+        return
+    logger.info("Telegram bot commands registered")
 
 
 async def setup_webhook() -> None:

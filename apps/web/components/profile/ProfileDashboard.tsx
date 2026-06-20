@@ -28,7 +28,7 @@ function SettingsGearLink() {
     <Link
       href="/settings"
       aria-label="Настройки"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-600 shadow-sm transition hover:border-emerald-200 hover:text-emerald-700"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill border border-cream-border bg-cream-surface text-graphite-600 shadow-soft transition hover:border-sage-200 hover:text-sage-700"
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
         <path
@@ -61,13 +61,13 @@ function UserAvatar({
       <img
         src={photoUrl}
         alt=""
-        className="h-14 w-14 shrink-0 rounded-2xl object-cover shadow-md ring-2 ring-white"
+        className="h-14 w-14 shrink-0 rounded-card object-cover shadow-soft ring-2 ring-cream-surface"
       />
     );
   }
   return (
     <div
-      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-xl font-bold text-white shadow-md shadow-emerald-200/50"
+      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-sage-500 text-xl font-bold text-white shadow-soft"
       aria-hidden
     >
       {initial}
@@ -117,8 +117,8 @@ export function ProfileDashboard() {
       headerExtra={<SettingsGearLink />}
     >
       {!isTelegram || !user ? (
-        <section className="rounded-3xl border border-stone-100 bg-white p-5 shadow-sm">
-          <p className="text-sm text-stone-600">
+        <section className="pa-card p-5">
+          <p className="text-sm text-graphite-500">
             {isAuthenticating
               ? "Подключаем Telegram…"
               : "Откройте приложение через Telegram Mini App"}
@@ -126,19 +126,19 @@ export function ProfileDashboard() {
         </section>
       ) : (
         <>
-          <section className="rounded-3xl border border-stone-100 bg-white p-5 shadow-sm">
+          <section className="pa-card p-5">
             <div className="flex items-center gap-4">
               <UserAvatar name={fullName} photoUrl={user?.photo_url} />
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-xl font-bold text-stone-900">
+                <h2 className="truncate text-xl font-bold text-graphite-900">
                   {fullName}
                 </h2>
-                <p className="mt-1 text-sm text-stone-500">Ваш аккаунт</p>
+                <p className="mt-1 text-sm text-graphite-500">Ваш аккаунт</p>
               </div>
             </div>
             {!modeLoading ? (
               <div className="mt-5">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-graphite-400">
                   Режим
                 </p>
                 <ProfileModeControl />
@@ -148,34 +148,34 @@ export function ProfileDashboard() {
 
           <Link
             href="/profile/nutrition"
-            className="block rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/90 to-white p-4 shadow-sm transition active:scale-[0.99] hover:border-emerald-200"
+            className="pa-card block p-4 transition active:scale-[0.99] hover:border-sage-200"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
                   Профиль питания
                 </p>
                 {loadingNutrition ? (
-                  <p className="mt-2 text-sm text-stone-500">Загрузка…</p>
+                  <p className="mt-2 text-sm text-graphite-500">Загрузка…</p>
                 ) : sectionChecks ? (
-                  <p className="mt-1.5 text-sm font-medium text-stone-800">
+                  <p className="mt-1.5 text-sm font-medium text-graphite-900">
                     Заполнено {sectionChecks.filled} из {sectionChecks.total}{" "}
                     · {progressPercent}%
                   </p>
                 ) : (
-                  <p className="mt-1.5 text-sm text-stone-600">
+                  <p className="mt-1.5 text-sm text-graphite-500">
                     Настройте цели и ограничения
                   </p>
                 )}
               </div>
-              <span className="text-stone-400" aria-hidden>
+              <span className="text-graphite-400" aria-hidden>
                 ›
               </span>
             </div>
             {sectionChecks && progressPercent < 100 ? (
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100">
+              <div className="mt-3 h-2 overflow-hidden rounded-pill bg-sage-100">
                 <div
-                  className="h-full rounded-full bg-emerald-600 transition-all"
+                  className="h-full rounded-pill bg-sage-500 transition-all"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -189,21 +189,21 @@ export function ProfileDashboard() {
           <li key={item.href}>
             <Link
               href={item.href}
-              className="flex min-h-[60px] items-center gap-3 rounded-2xl border border-stone-100 bg-white px-4 py-3.5 shadow-sm transition hover:border-emerald-200 active:scale-[0.99]"
+              className="pa-card flex min-h-[60px] items-center gap-3 px-4 py-3.5 transition hover:border-sage-200 active:scale-[0.99]"
             >
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-50 text-lg"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-sage-50 text-lg"
                 aria-hidden
               >
                 {item.emoji}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-stone-900">{item.label}</p>
-                <p className="mt-0.5 truncate text-sm text-stone-500">
+                <p className="font-semibold text-graphite-900">{item.label}</p>
+                <p className="mt-0.5 truncate text-sm text-graphite-500">
                   {item.desc}
                 </p>
               </div>
-              <span className="shrink-0 text-stone-400" aria-hidden>
+              <span className="shrink-0 text-graphite-400" aria-hidden>
                 ›
               </span>
             </Link>

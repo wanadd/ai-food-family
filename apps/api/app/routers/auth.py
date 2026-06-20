@@ -6,10 +6,16 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.schemas.auth import (
+    AuditLoginResponse,
     DevLoginResponse,
     TelegramAuthRequest,
     TelegramAuthResponse,
     UserResponse,
+)
+from app.services.audit_auth import (
+    audit_init_data_for_persona,
+    get_or_create_audit_user,
+    is_audit_mode_enabled,
 )
 from app.services.dev_auth import DEV_INIT_DATA, dev_auth_enabled, get_or_create_dev_user
 from app.services.legal_consent import user_can_access_app, user_has_legal_consent
@@ -66,4 +72,34 @@ def authenticate_dev(
         legal_accepted=user_has_legal_consent(user),
         can_use_app=user_can_access_app(user),
         dev_init_data=DEV_INIT_DATA,
+    )
+
+
+@router.post("/audit-login", response_model=AuditLoginResponse)
+def authenticate_audit(
+    persona: str,
+    db: Session = Depends(get_db),
+) -> AuditLoginResponse:
+    if not is_audit_mode_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Audit auth is only available in local audit mode",
+        )
+
+    user, is_new = get_or_create_audit_user(db, persona)
+    init_token = audit_init_data_for_persona(persona)
+    logger.info(
+        "Audit auth success persona=%s user_id=%s is_new=%s",
+        persona,
+        user.id,
+        is_new,
+    )
+    return AuditLoginResponse(
+        user=UserResponse.model_validate(user),
+        is_new=is_new,
+        phone_verified=user_has_verified_phone(user),
+        legal_accepted=user_has_legal_consent(user),
+        can_use_app=user_can_access_app(user),
+        audit_init_data=init_token,
+        audit_persona=persona,
     )

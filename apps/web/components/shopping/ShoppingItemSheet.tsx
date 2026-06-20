@@ -7,6 +7,9 @@ import { CategoryPicker } from "@/components/shopping/CategoryPicker";
 import type { ShoppingCategory, ShoppingItemDraft } from "@/lib/shopping/types";
 import { UNIT_OPTIONS } from "@/lib/shopping/units";
 
+const INPUT_CLS =
+  "mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200";
+
 type ShoppingItemSheetProps = {
   open: boolean;
   title: string;
@@ -56,7 +59,7 @@ export function ShoppingItemSheet({
         }}
       >
         <label className="block">
-          <span className="text-xs font-semibold text-stone-500">Название</span>
+          <span className="text-xs font-semibold text-graphite-500">Название</span>
           <input
             id={nameInputId}
             value={draft.name}
@@ -66,12 +69,12 @@ export function ShoppingItemSheet({
             onBlur={(event) => onNameBlur?.(event.target.value)}
             required
             placeholder="Помидоры"
-            className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
+            className={INPUT_CLS}
           />
         </label>
 
         <CategoryPicker
-          value={draft.category || "продукты"}
+          value={draft.category || "другое"}
           categories={categories}
           extraSlugs={categorySlugsFromItems}
           onChange={(slug) => onChange({ ...draft, category: slug })}
@@ -82,7 +85,7 @@ export function ShoppingItemSheet({
 
         <div className="grid grid-cols-2 gap-2">
           <label className="block">
-            <span className="text-xs font-semibold text-stone-500">
+            <span className="text-xs font-semibold text-graphite-500">
               Количество
             </span>
             <input
@@ -90,17 +93,17 @@ export function ShoppingItemSheet({
               onChange={(event) =>
                 onChange({ ...draft, quantity: event.target.value })
               }
-              className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
+              className={INPUT_CLS}
             />
           </label>
           <label className="block">
-            <span className="text-xs font-semibold text-stone-500">Единица</span>
+            <span className="text-xs font-semibold text-graphite-500">Единица</span>
             <select
               value={draft.unit}
               onChange={(event) =>
                 onChange({ ...draft, unit: event.target.value })
               }
-              className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
+              className={INPUT_CLS}
             >
               {UNIT_OPTIONS.map((unit) => (
                 <option key={unit} value={unit}>
@@ -112,7 +115,7 @@ export function ShoppingItemSheet({
         </div>
 
         <label className="block">
-          <span className="text-xs font-semibold text-stone-500">
+          <span className="text-xs font-semibold text-graphite-500">
             Комментарий (необязательно)
           </span>
           <input
@@ -120,12 +123,12 @@ export function ShoppingItemSheet({
             onChange={(event) =>
               onChange({ ...draft, note: event.target.value })
             }
-            className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
+            className={INPUT_CLS}
           />
         </label>
 
         {successMessage ? (
-          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-center text-sm font-semibold text-emerald-800">
+          <p className="rounded-control bg-sage-50 px-3 py-2 text-center text-sm font-semibold text-sage-700">
             {successMessage}
           </p>
         ) : null}
@@ -133,7 +136,7 @@ export function ShoppingItemSheet({
         <button
           type="submit"
           disabled={loading || !draft.name.trim()}
-          className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="pa-btn-primary w-full disabled:opacity-50"
         >
           {loading ? "Сохранение…" : "Сохранить"}
         </button>

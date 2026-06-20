@@ -11,16 +11,31 @@ import {
 } from "react";
 
 import {
+  authenticateAuditLogin,
   authenticateDevLogin,
   authenticateWithTelegram,
   type AuthUser,
 } from "@/lib/api";
+import { prefetchAppContext } from "@/lib/app-mode/api";
+import {
+  auditPersonaSkipsOnboarding,
+  getStoredAuditPersona,
+  isAuditAuthReady,
+  isAuditModeEnabled,
+  storeAuditPersona,
+  syncAuditPersonaFromUrl,
+} from "@/lib/audit/audit-mode";
 import { isClientDevMode, storeDevInitData } from "@/lib/dev-auth";
+import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
+import { markWowComplete } from "@/lib/planam/onboarding-gate";
 import { loadTelegramWebApp } from "@/lib/telegram-webapp";
 
 type TelegramContextValue = {
   isTelegram: boolean;
   isDevMode: boolean;
+  isAuditMode: boolean;
+  auditPersona: string | null;
+  auditAuthReady: boolean;
   initData: string;
   platform: string;
   colorScheme: string;
@@ -36,6 +51,9 @@ const TelegramContext = createContext<TelegramContextValue | null>(null);
 const defaultContext: TelegramContextValue = {
   isTelegram: false,
   isDevMode: false,
+  isAuditMode: false,
+  auditPersona: null,
+  auditAuthReady: false,
   initData: "",
   platform: "unknown",
   colorScheme: "light",
@@ -46,55 +64,72 @@ const defaultContext: TelegramContextValue = {
   retryAuth: () => {},
 };
 
-function readTelegramInitData(): string {
-  if (typeof window === "undefined") {
-    return "";
-  }
-  return (
-    (window as Window & { Telegram?: { WebApp?: { initData?: string } } }).Telegram
-      ?.WebApp?.initData ?? ""
-  );
+const isDev =
+  typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
+
+function debugAuthLog(message: string, extra?: Record<string, unknown>) {
+  if (!isDev) return;
+  if (typeof console === "undefined") return;
+  if (extra) console.info(`[PlanAm/Auth] ${message}`, extra);
+  else console.info(`[PlanAm/Auth] ${message}`);
 }
 
 export function TelegramProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authAttempt, setAuthAttempt] = useState(0);
   const [initData, setInitData] = useState("");
   const [isTelegram, setIsTelegram] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
+  const [isAuditMode, setIsAuditMode] = useState(false);
+  const [auditPersona, setAuditPersona] = useState<string | null>(null);
   const [platform, setPlatform] = useState("unknown");
   const [colorScheme, setColorScheme] = useState("light");
 
   useEffect(() => {
     setMounted(true);
-
-    void (async () => {
-      const webApp = await loadTelegramWebApp();
-      if (webApp?.initData) {
-        webApp.ready();
-        webApp.expand();
-        setPlatform(webApp.platform);
-        setColorScheme(webApp.colorScheme);
-        document.documentElement.style.setProperty(
-          "--tg-theme-bg-color",
-          webApp.themeParams.bg_color ?? "#f8fafc",
-        );
-      } else if (isClientDevMode()) {
-        setPlatform("dev");
-      }
-    })();
   }, []);
 
   const runAuth = useCallback(async () => {
-    const telegramInitData = readTelegramInitData();
+    // Step 1: actually wait for Telegram.WebApp before deciding whether
+    // we're in Telegram or in dev. The previous version read the global
+    // synchronously and could see an empty initData if the client
+    // injected the global a tick later — that produced the auth-loop
+    // ("Open in Telegram" → share phone → still no initData → repeat).
+    setIsAuthenticating(true);
+    setAuthError(null);
+
+    const webApp = await loadTelegramWebApp();
+    const telegramInitData = webApp?.initData ?? "";
+
+    debugAuthLog("loadTelegramWebApp resolved", {
+      hasWebApp: Boolean(webApp),
+      hasInitData: telegramInitData.length > 0,
+      platform: webApp?.platform,
+    });
+
+    if (webApp) {
+      try {
+        webApp.ready();
+        webApp.expand();
+      } catch {
+        /* old clients may not implement these — safe to ignore */
+      }
+      setPlatform(webApp.platform || "unknown");
+      setColorScheme(webApp.colorScheme || "light");
+      if (typeof document !== "undefined") {
+        const fallbackBg = isPlanamUi2026Enabled() ? "#FFFFFF" : "#f8fafc";
+        document.documentElement.style.setProperty(
+          "--tg-theme-bg-color",
+          webApp.themeParams?.bg_color ?? fallbackBg,
+        );
+      }
+    }
 
     if (telegramInitData.length > 0) {
-      setIsAuthenticating(true);
-      setAuthError(null);
       try {
         const result = await authenticateWithTelegram(telegramInitData);
         setUser(result.user);
@@ -102,6 +137,10 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         setInitData(telegramInitData);
         setIsTelegram(true);
         setIsDevMode(false);
+        // Kick off /users/me/app-context immediately in parallel with the
+        // ensuing render cycle so AppModeProvider can read it from cache
+        // instead of triggering a fresh request.
+        void prefetchAppContext(telegramInitData).catch(() => {});
         console.info("[PlanAm] Telegram auth success", {
           userId: result.user.id,
           isNew: result.is_new,
@@ -118,9 +157,49 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Step 2: local audit mode (Playwright / UX audit harness).
+    if (isAuditModeEnabled()) {
+      try {
+        syncAuditPersonaFromUrl();
+        const persona = getStoredAuditPersona();
+        const result = await authenticateAuditLogin(persona);
+        storeAuditPersona(persona);
+        setInitData(result.audit_init_data);
+        setUser(result.user);
+        setIsNewUser(
+          result.is_new && !auditPersonaSkipsOnboarding(persona),
+        );
+        if (auditPersonaSkipsOnboarding(persona)) {
+          markWowComplete();
+        }
+        setIsTelegram(false);
+        setIsDevMode(false);
+        setIsAuditMode(true);
+        setAuditPersona(persona);
+        setPlatform("audit");
+        void prefetchAppContext(result.audit_init_data).catch(() => {});
+        console.info("[PlanAm] Audit auth success", {
+          persona,
+          userId: result.user.id,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Audit auth failed";
+        setAuthError(message);
+        setUser(null);
+        setIsNewUser(false);
+        setInitData("");
+        setIsAuditMode(false);
+        setAuditPersona(null);
+      } finally {
+        setIsAuthenticating(false);
+      }
+      return;
+    }
+
+    // Step 3: no Telegram initData. Try dev login if we look like a
+    // local/preview environment.
     if (isClientDevMode()) {
-      setIsAuthenticating(true);
-      setAuthError(null);
       try {
         const result = await authenticateDevLogin();
         storeDevInitData(result.dev_init_data);
@@ -129,7 +208,10 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         setIsNewUser(result.is_new);
         setIsTelegram(false);
         setIsDevMode(true);
+        setIsAuditMode(false);
+        setAuditPersona(null);
         setPlatform("dev");
+        void prefetchAppContext(result.dev_init_data).catch(() => {});
         console.info("[PlanAm] Dev auth success", { userId: result.user.id });
       } catch (error) {
         const message =
@@ -144,11 +226,17 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Step 4: genuinely outside Telegram and outside dev/audit — show the
+    // "open in Telegram" screen.
+    debugAuthLog("No initData and no dev mode — falling back to TelegramRequired");
     setAuthError("Откройте приложение через Telegram");
     setUser(null);
     setInitData("");
     setIsTelegram(false);
     setIsDevMode(false);
+    setIsAuditMode(false);
+    setAuditPersona(null);
+    setIsAuthenticating(false);
   }, []);
 
   useEffect(() => {
@@ -162,6 +250,9 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     () => ({
       isTelegram,
       isDevMode,
+      isAuditMode,
+      auditPersona,
+      auditAuthReady: isAuditAuthReady(initData, user, isAuthenticating),
       initData,
       platform,
       colorScheme,
@@ -176,9 +267,11 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       colorScheme,
       initData,
       isAuthenticating,
+      isAuditMode,
       isDevMode,
       isNewUser,
       isTelegram,
+      auditPersona,
       platform,
       user,
     ],
@@ -186,8 +279,10 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 
   if (!mounted) {
     return (
-      <TelegramContext.Provider value={defaultContext}>
-        {children}
+      <TelegramContext.Provider
+        value={{ ...defaultContext, isAuthenticating: true }}
+      >
+        {null}
       </TelegramContext.Provider>
     );
   }

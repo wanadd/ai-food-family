@@ -19,7 +19,7 @@ export async function addPantryItem(
     method: "POST",
     body: JSON.stringify({
       name: draft.name.trim(),
-      category: draft.category.trim() || "продукты",
+      category: draft.category.trim() || "другое",
       quantity: draft.quantity.trim(),
       unit: draft.unit.trim() || "шт",
       expires_at: draft.expires_at || null,

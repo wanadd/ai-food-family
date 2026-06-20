@@ -39,3 +39,39 @@ yarn-error.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Generated recipe datasets
+exports/*.jsonl
+exports/*.json
+reports/*.md
+# Authored consolidation audit reports (tracked deliverables — keep in git)
+!reports/planam_cross_branch_audit.md
+!reports/planam_project_consolidation_audit.md
+!reports/profile_account_consolidation_audit.md
+!reports/ui_2026_consolidation_audit.md
+!reports/recipe_rebuild_v2_*.md
+!reports/recipe_gold_v3_*.md
+!reports/nutrition_profile_religious_restrictions_gap.md
+# Generated per-run project health audit (read-only script output)
+reports/project_health_audit.json
+# Environment-specific normalization/resync outputs (generated per-run)
+reports/planam_v1_ingredient_normalization*.json
+reports/recipe_ingredients_jsonb_resync_*.json
+reports/to_taste_ingredients_migration_*.json
+reports/ingredient_normalization_needs_review.json
+reports/recipe_readiness_after_to_taste.json
+reports/nutrition_estimate.json
+reports/shopping_list_groups.json
+reports/photo_prompt_readiness.json
+reports/nutrition_shopping_photo_pipeline_*.json
+reports/recipe_nutrition_summary_*.json
+reports/menu_nutrition_readiness.json
+reports/recipe_ingredient_display_amounts_audit.json
+
+# Recipe image assets (generated locally; do not commit heavy binaries)
+apps/web/public/recipe-images/**/*
+!apps/web/public/recipe-images/.gitkeep
+
+# Local database backups
+backup_*.sql
+*.sql

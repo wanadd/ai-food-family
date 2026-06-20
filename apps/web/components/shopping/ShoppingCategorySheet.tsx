@@ -2,6 +2,9 @@
 
 import { Sheet } from "@/components/ui/Sheet";
 
+const INPUT_CLS =
+  "mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200";
+
 type ShoppingCategorySheetProps = {
   open: boolean;
   name: string;
@@ -33,31 +36,31 @@ export function ShoppingCategorySheet({
         }}
       >
         <label className="block">
-          <span className="text-xs font-semibold text-stone-500">Название</span>
+          <span className="text-xs font-semibold text-graphite-500">Название</span>
           <input
             value={name}
             onChange={(event) => onNameChange(event.target.value)}
             required
             placeholder="Ремонт"
-            className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
+            className={INPUT_CLS}
           />
         </label>
-        <label className="flex items-center gap-2 text-sm text-stone-700">
+        <label className="flex items-center gap-2 text-sm text-graphite-700">
           <input
             type="checkbox"
             checked={isFood}
             onChange={(event) => onIsFoodChange(event.target.checked)}
-            className="h-4 w-4 rounded border-stone-300 text-emerald-600"
+            className="h-4 w-4 rounded border-cream-border text-sage-500"
           />
           Это продукты?
         </label>
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-graphite-500">
           Если включено, купленные товары автоматически попадут в запасы.
         </p>
         <button
           type="submit"
           disabled={loading || !name.trim()}
-          className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="pa-btn-primary w-full disabled:opacity-50"
         >
           {loading ? "Создание…" : "Создать категорию"}
         </button>

@@ -1,0 +1,1487 @@
+{
+  "version": "planam_v1",
+  "note": "Canonical products registry. Source of truth: backend/scripts/canonical_products.py. Names are identity (catalog has 0 spelling variants); maps product -> shopping category + flags.",
+  "category_order": [
+    "бакалея",
+    "быт_уборка",
+    "детские_товары",
+    "для_питомцев",
+    "другое",
+    "крупы_макароны",
+    "молочные",
+    "мясо_птица",
+    "напитки",
+    "овощи_зелень",
+    "рыба_морепродукты",
+    "специи_соусы",
+    "фрукты_ягоды",
+    "хлеб_выпечка",
+    "яйца"
+  ],
+  "canonical_units": [
+    "г",
+    "зубчик",
+    "кг",
+    "л",
+    "мл",
+    "ст.л.",
+    "стакан",
+    "упаковка",
+    "ч.л.",
+    "шт",
+    "щепотка"
+  ],
+  "unit_aliases": {
+    "гр": "г",
+    "гр.": "г",
+    "г.": "г",
+    "грамм": "г",
+    "граммов": "г",
+    "грамма": "г",
+    "килограмм": "кг",
+    "кг.": "кг",
+    "мл.": "мл",
+    "л.": "л",
+    "литр": "л",
+    "литра": "л",
+    "ст.л": "ст.л.",
+    "ст. л.": "ст.л.",
+    "стл": "ст.л.",
+    "ст.ложка": "ст.л.",
+    "столовая ложка": "ст.л.",
+    "столовых ложек": "ст.л.",
+    "ложка": "ст.л.",
+    "ложки": "ст.л.",
+    "ч.л": "ч.л.",
+    "ч. л.": "ч.л.",
+    "чайная ложка": "ч.л.",
+    "чл": "ч.л.",
+    "шт.": "шт",
+    "штук": "шт",
+    "штука": "шт",
+    "штуки": "шт",
+    "зуб.": "зубчик",
+    "зубчика": "зубчик",
+    "зубчиков": "зубчик",
+    "пакетик": "упаковка",
+    "пакет": "упаковка",
+    "пач.": "упаковка",
+    "пачка": "упаковка",
+    "банка": "упаковка",
+    "стак.": "стакан",
+    "щепотку": "щепотка"
+  },
+  "product_count": 235,
+  "products": [
+    {
+      "canonical_name": "арахис",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "ванилин",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "ванильный сахар",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "дрожжи",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "изюм",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "какао-порошок",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "крахмал картофельный",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "крахмал кукурузный",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кунжут",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "мак",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "маслины",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "масло кунжутное",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "масло оливковое",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "масло подсолнечное",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "масло растительное",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "мед",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "молоко кокосовое",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "мука пшеничная",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "оливки зеленые",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "орехи",
+      "category": "бакалея",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "орехи грецкие",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "пюре картофельное",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сахар",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сахар коричневый",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сода",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сухофрукты",
+      "category": "бакалея",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "томатная паста",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "томаты в собственном соку",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "томаты пассерованные",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "тофу",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "уксус",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "фасоль",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "финик",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "халва",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "чернослив",
+      "category": "бакалея",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "детское питание",
+      "category": "детские_товары",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "пюре фруктовое",
+      "category": "детские_товары",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "вермишель",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "крупа гречневая",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "крупа манная",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "крупа перловая",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кус-кус",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "лапша",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "макаронные изделия",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "маш",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "мука гречневая",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "нут",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "отруби",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "пшено",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "рис",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "спагетти",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "хлопья гречневые",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "хлопья овсяные",
+      "category": "крупы_макароны",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "йогурт",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "масло сливочное",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "молоко",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "напиток кисломолочный",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "пармезан",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "романо",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сливки",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сметана",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сыр",
+      "category": "молочные",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "сыр голландский",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сыр колбасный",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сыр мягкий",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сыр плавленый",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сыр полутвердый",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сыр сулугуни",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сыр твердый",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сыр творожный",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "творог",
+      "category": "молочные",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "балык",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "баранина",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "бедро куриное",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "бекон",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "ветчина",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "говядина",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "голень куриная",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "грудка куриная",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "колбаса",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "крылья куриные",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "курица",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "мясо",
+      "category": "мясо_птица",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "окорочок куриный",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "печень говяжья",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "печень куриная",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "ребра свиные",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сало",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "свинина",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сердечки куриные",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сосиска",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "фарш куриный",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "фарш мясной",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "филе куриное",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "фрикадельки",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "шпиг",
+      "category": "мясо_птица",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "вода",
+      "category": "напитки",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сок",
+      "category": "напитки",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сок апельсиновый",
+      "category": "напитки",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сок томатный",
+      "category": "напитки",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "авокадо",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "ассорти овощное",
+      "category": "овощи_зелень",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "базилик",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "баклажан",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "брокколи",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "вешенки",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "горошек зеленый",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "грибы",
+      "category": "овощи_зелень",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "зелень",
+      "category": "овощи_зелень",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "кабачок",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "капуста белокочанная",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "капуста брюссельская",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "капуста кольраби",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "капуста пекинская",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "капуста цветная",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "картофель",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кинза",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кукуруза",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "листья салата",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "лук белый",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "лук зеленый",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "лук красный",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "лук репчатый",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "лук-порей",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "морковь",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "мята",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "овощи",
+      "category": "овощи_зелень",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "огурец",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "огурец соленый",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "опята",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "пастернак",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец болгарский",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец красный жгучий",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец сладкий",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец сладкий желтый",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец сладкий красный",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец чили",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "петрушка",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "помидор",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "помидоры черри",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "редька",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "репа",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "руккола",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "свекла",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сельдерей корневой",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сельдерей черешковый",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "тыква",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "укроп",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "фасоль стручковая",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "чеснок",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "шампиньоны",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "шпинат",
+      "category": "овощи_зелень",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "анчоусы",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "горбуша",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "зубатка",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кальмар",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "капуста морская",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кета",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "килька",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кожа рыбная",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "крабовые палочки",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "креветки",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "лосось",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "рыба",
+      "category": "рыба_морепродукты",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "сельдь",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "семга",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "треска",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "тунец",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "угорь",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "филе рыбное",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "шпроты",
+      "category": "рыба_морепродукты",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "бальзамик",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "бульон",
+      "category": "специи_соусы",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "горчица",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "зира",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кардамон",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "карри",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кетчуп",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кориандр",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "корица",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "кумин",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "куркума",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "лист лавровый",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "майонез",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "майоран",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "орегано",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "орех мускатный",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "пажитник",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "паприка сладкая",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец белый",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец душистый",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец кайен",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "перец черный",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "приправа",
+      "category": "специи_соусы",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "смесь перцев",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "соевый соус",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сок лимонный",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "соль",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "соус",
+      "category": "специи_соусы",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "специи",
+      "category": "специи_соусы",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "табаско",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "тимьян",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "ткемали",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "тмин",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "уцхо-сунели",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "хмели-сунели",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "хрен",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "цедра лимона",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "шалфей",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "шафран",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "эстрагон",
+      "category": "специи_соусы",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "абрикос",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "ананас",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "апельсин",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "банан",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "виноград",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "гранат",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "груша",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "киви",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "клубника",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "лимон",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "малина",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "яблоко",
+      "category": "фрукты_ягоды",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "ягода",
+      "category": "фрукты_ягоды",
+      "generic": true,
+      "nutrition_ready": false
+    },
+    {
+      "canonical_name": "блин",
+      "category": "хлеб_выпечка",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "булочка",
+      "category": "хлеб_выпечка",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "корж",
+      "category": "хлеб_выпечка",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "маца",
+      "category": "хлеб_выпечка",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "сухари панировочные",
+      "category": "хлеб_выпечка",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "хлеб",
+      "category": "хлеб_выпечка",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "хлебцы",
+      "category": "хлеб_выпечка",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "белок яичный",
+      "category": "яйца",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "желток яичный",
+      "category": "яйца",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "яйцо куриное",
+      "category": "яйца",
+      "generic": false,
+      "nutrition_ready": true
+    },
+    {
+      "canonical_name": "яйцо перепелиное",
+      "category": "яйца",
+      "generic": false,
+      "nutrition_ready": true
+    }
+  ]
+}

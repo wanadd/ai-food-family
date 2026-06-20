@@ -9,7 +9,14 @@ import { ModeBanner } from "@/components/app-mode/ModeBanner";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ProtectedScreenFallback } from "@/components/auth/ProtectedScreenFallback";
 import { useProtectedScreen } from "@/lib/use-protected-screen";
-import { PageLoading } from "@/components/ui/PageLoading";
+import {
+  cacheKey,
+  getCached,
+  invalidate as invalidateCache,
+  setCached,
+} from "@/lib/cache/session-cache";
+import { ShoppingSectionLayout } from "@/components/shopping/ShoppingSectionLayout";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/ToastProvider";
 import { ShoppingCategorySection } from "@/components/shopping/ShoppingCategorySection";
 import { ShoppingCategorySheet } from "@/components/shopping/ShoppingCategorySheet";
@@ -53,8 +60,18 @@ export function ShoppingListView() {
   const { mode } = useAppMode();
   const { initData, state: authState } = useProtectedScreen();
   const { showToast } = useToast();
-  const [list, setList] = useState<ShoppingList | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cachedList = initData
+    ? getCached<ShoppingList>(cacheKey.shoppingList(mode))
+    : null;
+  const [list, setListState] = useState<ShoppingList | null>(cachedList);
+  const setList = useCallback(
+    (next: ShoppingList | null) => {
+      setListState(next);
+      if (next) setCached(cacheKey.shoppingList(mode), next);
+    },
+    [mode],
+  );
+  const [loading, setLoading] = useState(cachedList == null);
   const [syncing, setSyncing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -90,10 +107,11 @@ export function ShoppingListView() {
           return;
         }
         updatedAtRef.current = data.updated_at;
-        setList({
+        const merged: ShoppingList = {
           ...data,
           categories: mergeCategories(data.categories ?? [], extraCats),
-        });
+        };
+        setList(merged);
         if (!silent) {
           console.info("[PlanAm] Shopping loaded");
         }
@@ -109,7 +127,7 @@ export function ShoppingListView() {
         }
       }
     },
-    [],
+    [setList],
   );
 
   useEffect(() => {
@@ -125,7 +143,7 @@ export function ShoppingListView() {
       setItemDraft({
         ...EMPTY_SHOPPING_DRAFT,
         name: addName,
-        category: "продукты",
+        category: "другое",
       });
       setItemSheetOpen(true);
     }
@@ -235,7 +253,9 @@ export function ShoppingListView() {
       current?.checked &&
       (current.added_to_pantry || current.linked_pantry_item_id)
     ) {
-      const remove = window.confirm("Убрать товар из запасов?");
+      const remove = window.confirm(
+        "Этот товар уже в запасах. Убрать его и оттуда?",
+      );
       setTogglingId(itemId);
       setError(null);
       try {
@@ -244,6 +264,7 @@ export function ShoppingListView() {
         });
         updatedAtRef.current = data.updated_at;
         setList(data);
+        if (remove) invalidateCache("pantry");
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Не получилось обновить позицию",
@@ -265,6 +286,7 @@ export function ShoppingListView() {
         const wentToPantry =
           nextItem?.added_to_pantry || nextItem?.linked_pantry_item_id;
         if (wentToPantry) {
+          invalidateCache("pantry");
           void showToast(`✓ ${current.name} → в запасы`);
         }
       }
@@ -280,7 +302,7 @@ export function ShoppingListView() {
   function normalizeDraft(draft: ShoppingItemDraft): ShoppingItemDraft {
     const name = draft.name.trim();
     const category =
-      draft.category?.trim() || suggestCategorySlug(name) || "продукты";
+      draft.category?.trim() || suggestCategorySlug(name) || "другое";
     return {
       ...draft,
       name,
@@ -420,47 +442,42 @@ export function ShoppingListView() {
   }
 
   if (loading) {
-    return <PageLoading message="Загружаем покупки..." />;
+    return (
+      <ShoppingSectionLayout subtitle="Список покупок семьи">
+        <SkeletonList count={3} />
+      </ShoppingSectionLayout>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 px-4 py-4 backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold text-stone-900">Покупки</h1>
-            <p className="mt-0.5 text-xs text-stone-500">
-              Отметили ✓ — товар попадёт в запасы автоматически
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={openAddItem}
-            className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
-          >
-            + Добавить
-          </button>
-        </div>
-
+    <ShoppingSectionLayout
+      subtitle="Отметили ✓ — товар уходит в запасы. Снимите галочку, чтобы отменить."
+      action={
+        <button
+          type="button"
+          onClick={openAddItem}
+          className="shrink-0 rounded-control bg-sage-500 px-3 py-2 text-xs font-semibold text-white shadow-soft"
+        >
+          + Добавить
+        </button>
+      }
+    >
         {list ? (
-          <div className="mt-3">
-            <div className="mb-1 flex justify-between text-[11px] font-medium text-stone-500">
+          <div>
+            <div className="mb-1 flex justify-between text-[11px] font-medium text-graphite-500">
               <span>
                 Куплено {list.checked_count} из {list.total_count}
               </span>
               <span>{progress}%</span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-stone-100">
+            <div className="h-1.5 overflow-hidden rounded-pill bg-cream-deep">
               <div
-                className="h-full rounded-full bg-emerald-500 transition-all"
+                className="h-full rounded-pill bg-sage-500 transition-all"
                 style={{ width: `${progress}%` }}
               />
             </div>
           </div>
         ) : null}
-      </header>
-
-      <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
         <BotQuickInputHint />
         <ModeBanner />
 
@@ -475,31 +492,31 @@ export function ShoppingListView() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Найти товар"
-          className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"
+          className="w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
         />
 
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={expandAll}
-            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-semibold text-stone-600"
+            className="rounded-pill border border-cream-border bg-cream-surface px-2.5 py-1 text-[11px] font-semibold text-graphite-700"
           >
             Развернуть всё
           </button>
           <button
             type="button"
             onClick={collapseAll}
-            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-semibold text-stone-600"
+            className="rounded-pill border border-cream-border bg-cream-surface px-2.5 py-1 text-[11px] font-semibold text-graphite-700"
           >
             Свернуть всё
           </button>
           <button
             type="button"
             onClick={() => setHideChecked((value) => !value)}
-            className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${
+            className={`rounded-pill border px-2.5 py-1 text-[11px] font-semibold ${
               hideChecked
-                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                : "border-stone-200 bg-white text-stone-600"
+                ? "border-sage-200 bg-sage-50 text-sage-700"
+                : "border-cream-border bg-cream-surface text-graphite-700"
             }`}
           >
             Скрыть купленные
@@ -507,7 +524,7 @@ export function ShoppingListView() {
           <button
             type="button"
             onClick={() => setCategorySheetOpen(true)}
-            className="rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] font-semibold text-stone-600"
+            className="rounded-pill border border-cream-border bg-cream-surface px-2.5 py-1 text-[11px] font-semibold text-graphite-700"
           >
             + Категория
           </button>
@@ -515,20 +532,20 @@ export function ShoppingListView() {
             type="button"
             onClick={handleSync}
             disabled={syncing}
-            className="rounded-md border border-emerald-200 bg-white px-2 py-1 text-[11px] font-semibold text-emerald-700 disabled:opacity-50"
+            className="rounded-pill border border-sage-200 bg-cream-surface px-2.5 py-1 text-[11px] font-semibold text-sage-700 disabled:opacity-50"
           >
             {syncing ? "…" : "Из меню"}
           </button>
         </div>
 
         {list && list.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-stone-200 bg-white px-4 py-8 text-center">
-            <p className="text-sm text-stone-600">
+          <div className="pa-card border-dashed px-4 py-8 text-center">
+            <p className="text-sm text-graphite-500">
               Список пуст. Выберите меню — ингредиенты появятся после синхронизации.
             </p>
             <Link
               href="/menu"
-              className="mt-3 inline-block text-sm font-semibold text-emerald-700"
+              className="mt-3 inline-block text-sm font-semibold text-sage-700"
             >
               Перейти к меню →
             </Link>
@@ -536,7 +553,7 @@ export function ShoppingListView() {
         ) : null}
 
         {grouped.length === 0 && list && list.items.length > 0 ? (
-          <p className="py-6 text-center text-sm text-stone-400">
+          <p className="py-6 text-center text-sm text-graphite-400">
             Ничего не найдено
           </p>
         ) : null}
@@ -557,7 +574,6 @@ export function ShoppingListView() {
             />
           ))}
         </div>
-      </main>
 
       <ShoppingItemSheet
         open={itemSheetOpen}
@@ -588,6 +604,6 @@ export function ShoppingListView() {
         onSubmit={handleCreateCategory}
         loading={saving}
       />
-    </div>
+    </ShoppingSectionLayout>
   );
 }

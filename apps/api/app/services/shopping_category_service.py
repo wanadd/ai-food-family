@@ -2,41 +2,23 @@
 
 from __future__ import annotations
 
+import logging
 import re
 
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Query, Session
 
 from app.models.shopping_category import ShoppingCategory
 from app.schemas.shopping_category import ShoppingCategoryCreateRequest
 from app.services.app_scope import AppScope
-from app.services.shopping_categories import NON_FOOD_CATEGORIES, is_food_category, normalize_category
+from app.services.categories_v1 import SYSTEM_CATEGORIES_V1
+from app.services.shopping_categories import is_food_category, normalize_category
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_CATEGORIES: list[tuple[str, str, str | None, bool]] = [
-    ("продукты", "Продукты", "🛒", True),
-    ("овощи_зелень", "Овощи и зелень", "🥕", True),
-    ("фрукты", "Фрукты", "🍎", True),
-    ("мясо_птица", "Мясо и птица", "🥩", True),
-    ("рыба_морепродукты", "Рыба и морепродукты", "🐟", True),
-    ("молочные", "Молочные продукты", "🥛", True),
-    ("яйца", "Яйца", "🥚", True),
-    ("хлеб_выпечка", "Хлеб и выпечка", "🍞", True),
-    ("крупы_макароны", "Крупы и макароны", "🌾", True),
-    ("заморозка", "Заморозка", "🧊", True),
-    ("напитки", "Напитки", "🥤", True),
-    ("сладости", "Сладости", "🍰", True),
-    ("бытовые", "Бытовые товары", "🧴", False),
-    ("животные", "Для животных", "🐾", False),
-    ("другое", "Другое", "📦", False),
-    # legacy slugs kept for existing items
-    ("овощи", "Овощи", "🥕", True),
-    ("мясо", "Мясо", "🥩", True),
-    ("рыба", "Рыба", "🐟", True),
-    ("молочное", "Молочное", "🥛", True),
-    ("крупы", "Крупы", "🌾", True),
-    ("хлеб", "Хлеб", "🍞", True),
-    ("дом_и_химия", "Дом и химия", "🧴", False),
-    ("питомцы", "Питомцы", "🐾", False),
+    (slug, label, icon, is_food) for slug, label, icon, is_food in SYSTEM_CATEGORIES_V1
 ]
 
 
@@ -52,14 +34,53 @@ def _scope_filters(scope: AppScope):
     return ShoppingCategory.user_id == scope.user_id
 
 
+def _one_category_or_first(
+    query: Query[ShoppingCategory],
+    *,
+    context: str,
+) -> ShoppingCategory | None:
+    """Return the oldest row; log and tolerate duplicate legacy rows."""
+    rows = query.order_by(ShoppingCategory.id.asc()).all()
+    if not rows:
+        return None
+    if len(rows) > 1:
+        logger.warning(
+            "Duplicate shopping categories for %s (ids=%s), using id=%s",
+            context,
+            [row.id for row in rows],
+            rows[0].id,
+        )
+    return rows[0]
+
+
+def _find_system_category(
+    db: Session,
+    scope: AppScope,
+    *,
+    slug: str,
+    name: str,
+) -> ShoppingCategory | None:
+    """Find an existing system category for this scope by slug, then by display name."""
+    base = db.query(ShoppingCategory).filter(
+        _scope_filters(scope),
+        ShoppingCategory.is_system.is_(True),
+    )
+    scope_label = f"{scope.mode} user={scope.user_id} family={scope.family_id}"
+    by_slug = _one_category_or_first(
+        base.filter(ShoppingCategory.slug == slug),
+        context=f"system slug={slug} {scope_label}",
+    )
+    if by_slug is not None:
+        return by_slug
+    return _one_category_or_first(
+        base.filter(ShoppingCategory.name == name),
+        context=f"system name={name!r} {scope_label}",
+    )
+
+
 def ensure_system_categories(db: Session, scope: AppScope) -> None:
     for slug, name, icon, is_food in SYSTEM_CATEGORIES:
-        query = db.query(ShoppingCategory).filter(
-            _scope_filters(scope),
-            ShoppingCategory.slug == slug,
-            ShoppingCategory.is_system.is_(True),
-        )
-        existing = query.one_or_none()
+        existing = _find_system_category(db, scope, slug=slug, name=name)
         if existing is None:
             db.add(
                 ShoppingCategory(
@@ -72,7 +93,17 @@ def ensure_system_categories(db: Session, scope: AppScope) -> None:
                     family_id=scope.family_id if scope.is_family else None,
                 )
             )
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        logger.warning(
+            "Concurrent system category seed for scope=%s user=%s family=%s; "
+            "unique constraint prevented duplicate insert",
+            scope.mode,
+            scope.user_id,
+            scope.family_id,
+        )
 
 
 def list_categories(db: Session, scope: AppScope) -> list[ShoppingCategory]:
@@ -90,18 +121,20 @@ def get_category_by_slug(
 ) -> ShoppingCategory | None:
     ensure_system_categories(db, scope)
     normalized = normalize_category(slug)
-    cat = (
-        db.query(ShoppingCategory)
-        .filter(_scope_filters(scope), ShoppingCategory.slug == normalized)
-        .one_or_none()
+    cat = _one_category_or_first(
+        db.query(ShoppingCategory).filter(
+            _scope_filters(scope), ShoppingCategory.slug == normalized
+        ),
+        context=f"slug={normalized} scope={scope.mode}",
     )
     if cat is not None:
         return cat
     by_name = slug_from_display_name(slug)
-    return (
-        db.query(ShoppingCategory)
-        .filter(_scope_filters(scope), ShoppingCategory.slug == by_name)
-        .one_or_none()
+    return _one_category_or_first(
+        db.query(ShoppingCategory).filter(
+            _scope_filters(scope), ShoppingCategory.slug == by_name
+        ),
+        context=f"slug={by_name} scope={scope.mode}",
     )
 
 

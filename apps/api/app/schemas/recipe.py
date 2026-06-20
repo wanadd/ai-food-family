@@ -41,9 +41,30 @@ class RecipeIngredient(BaseModel):
     is_optional: bool = False
 
 
+class NutritionSummary(BaseModel):
+    """Recipe-level KБЖУ summary (additive; null when not yet calculated)."""
+
+    kcal_total: float | None = None
+    protein_total: float | None = None
+    fat_total: float | None = None
+    carbs_total: float | None = None
+    kcal_per_serving: float | None = None
+    protein_per_serving: float | None = None
+    fat_per_serving: float | None = None
+    carbs_per_serving: float | None = None
+    servings: float | None = None
+    serving_size_text: str | None = None
+    confidence: Literal["exact", "estimated", "low_confidence", "unavailable"] | None = None
+    needs_review: bool = False
+    review_reason: str | None = None
+    calculated_at: datetime | None = None
+
+
 class RecipeSummary(BaseModel):
     id: int
     title: str
+    display_title: str | None = None
+    full_title: str | None = None
     description: str
     meal_type: str
     category: str
@@ -58,13 +79,20 @@ class RecipeSummary(BaseModel):
     is_alcoholic: bool = False
     calories_per_serving: float | None = None
     protein_g: float | None = None
+    fat_g: float | None = None
+    carbs_g: float | None = None
     suitable_for_children: bool = True
     suitable_for_sport: bool = False
     suitable_for_event: bool = False
     fit_level: Literal["good", "partial", "not_recommended"] | None = None
+    image_url: str | None = None
+    hero_image_url: str | None = None
+    thumbnail_url: str | None = None
+    nutrition_summary: NutritionSummary | None = None
 
 
 class RecipeDetail(RecipeSummary):
+    original_title: str | None = None
     ingredients: list[RecipeIngredient]
     steps: list[str]
     allergens: list[str] = []

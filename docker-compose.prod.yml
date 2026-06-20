@@ -13,6 +13,8 @@ services:
       - ./deploy/nginx/docker-entrypoint.sh:/docker-entrypoint.sh:ro
       - certbot_www:/var/www/certbot:ro
       - certbot_certs:/etc/letsencrypt:ro
+      # Generated recipe images are served directly by nginx.
+      - ${RECIPE_IMAGES_HOST_DIR:-/var/www/ai-food-family-data/recipe-images}:/var/www/recipe-images:ro
     entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
     depends_on:
       web:
@@ -37,8 +39,14 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:-}
         NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME: ${NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME:-}
+        NEXT_PUBLIC_PLANAM_UI_2026: ${NEXT_PUBLIC_PLANAM_UI_2026:-true}
     environment:
       NODE_ENV: production
+      NEXT_PUBLIC_PLANAM_UI_2026: ${NEXT_PUBLIC_PLANAM_UI_2026:-true}
+    volumes:
+      # Persistent recipe images live on the host and survive image rebuilds.
+      # Mount ONLY the recipe-images subdir so other /app/public assets stay intact.
+      - ${RECIPE_IMAGES_HOST_DIR:-/var/www/ai-food-family-data/recipe-images}:/app/public/recipe-images
     depends_on:
       api:
         condition: service_healthy
@@ -61,8 +69,10 @@ services:
     environment:
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_API_BASE_URL: ${TELEGRAM_API_BASE_URL:-https://tg-relay.planam.ru}
       TELEGRAM_WEBAPP_URL: ${TELEGRAM_WEBAPP_URL}
       TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
       TELEGRAM_AUTO_SETUP_WEBHOOK: ${TELEGRAM_AUTO_SETUP_WEBHOOK:-true}
       TELEGRAM_MENU_BUTTON_TEXT: ${TELEGRAM_MENU_BUTTON_TEXT:-Открыть ПланАм}
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}}
@@ -70,10 +80,21 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       ADMIN_TELEGRAM_IDS: ${ADMIN_TELEGRAM_IDS:-}
+      ADMIN_PIN: ${ADMIN_PIN:-}
       BACKUP_ROOT: ${BACKUP_ROOT:-backups}
       ENVIRONMENT: production
+      PLANAM_IMAGE_OPENAI_API_KEY: ${PLANAM_IMAGE_OPENAI_API_KEY:-}
+      RECIPE_IMAGES_DIR: ${RECIPE_IMAGES_DIR:-/app/public/recipe-images}
+      RECIPE_IMAGES_PUBLIC_URL: ${RECIPE_IMAGES_PUBLIC_URL:-/recipe-images}
     volumes:
       - ./backups:/app/backups
+      # Same persistent recipe images, so the api can read/write them and
+      # backend scripts work without manual `docker compose cp`.
+      - ${RECIPE_IMAGES_HOST_DIR:-/var/www/ai-food-family-data/recipe-images}:/app/public/recipe-images
+      # Production scripts + their inputs, available in the api container at build-independent paths.
+      - ./backend:/app/backend:ro
+      - ./data:/app/data:ro
+      - ./reports:/app/reports
     depends_on:
       postgres:
         condition: service_healthy

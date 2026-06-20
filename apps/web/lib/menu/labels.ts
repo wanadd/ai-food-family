@@ -7,17 +7,17 @@ export const VARIANT_LABELS: Record<
   quick: {
     label: "Быстрое",
     emoji: "⚡",
-    accent: "from-amber-400 to-orange-500",
+    accent: "from-warm to-orange-400",
   },
   economy: {
     label: "Экономное",
     emoji: "💰",
-    accent: "from-emerald-400 to-teal-500",
+    accent: "from-sage-500 to-sage-700",
   },
   balanced: {
     label: "Сбалансированное",
     emoji: "🥗",
-    accent: "from-violet-400 to-indigo-500",
+    accent: "from-olive-500 to-sage-600",
   },
 };
 

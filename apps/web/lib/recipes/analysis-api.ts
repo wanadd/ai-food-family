@@ -19,6 +19,17 @@ async function requireGet<T>(
   return data;
 }
 
+/**
+ * GET /recipes/{id}/evaluate.
+ *
+ * IMPORTANT: spends Amas when the OpenAI key is configured on the
+ * server. Backend calls subscription_service.require_ai_action with
+ * action ``recipe_analyze`` (see apps/api/app/services/recipe_analysis.py
+ * and AMA_COSTS["recipe_analyze"] = 2 in subscription_catalog.py).
+ *
+ * Never invoke this from a useEffect on mount. Always require an
+ * explicit user click that goes through AmaConfirmDialog.
+ */
 export async function evaluateRecipe(
   initData: string,
   mode: AppMode,
@@ -27,6 +38,13 @@ export async function evaluateRecipe(
   return requireGet(initData, mode, `/recipes/${recipeId}/evaluate`);
 }
 
+/**
+ * GET /recipes/{id}/family-compatibility.
+ *
+ * Safe to auto-load: backend handler is recipe_analysis.family_compatibility
+ * which is a pure heuristic over the recipe text and family member
+ * profiles. It does NOT call OpenAI and does NOT charge Amas.
+ */
 export async function fetchRecipeFamilyFit(
   initData: string,
   mode: AppMode,
@@ -35,6 +53,16 @@ export async function fetchRecipeFamilyFit(
   return requireGet(initData, mode, `/recipes/${recipeId}/family-compatibility`);
 }
 
+/**
+ * GET /recipes/{id}/improve.
+ *
+ * Does NOT charge Amas (the Ama charge lives on the POST companion
+ * apply_improvements -> AMA_COSTS["recipe_improve"]). However, when
+ * the OpenAI key is configured, the GET still calls ai_improve_recipe
+ * and consumes server-side AI quota. Treat it like a paid action and
+ * gate it behind an explicit user click + confirmation dialog rather
+ * than auto-loading on mount.
+ */
 export async function fetchRecipeImproveSuggestions(
   initData: string,
   mode: AppMode,
@@ -43,13 +71,33 @@ export async function fetchRecipeImproveSuggestions(
   return requireGet(initData, mode, `/recipes/${recipeId}/improve`);
 }
 
+export type AddRecipeToMenuResponse = {
+  item: {
+    slot_id: string;
+    date: string;
+    meal_type: string;
+    recipe_id: number | null;
+    name: string;
+    servings: number;
+    prep_time_minutes: number;
+    calories_estimate?: number | null;
+  };
+  created: boolean;
+  menu: MenuVariant;
+};
+
 export async function addRecipeToMenu(
   initData: string,
   mode: AppMode,
   recipeId: number,
-  payload: { meal_type?: string; replace_meal_index?: number },
-): Promise<MenuVariant> {
-  const data = await apiFetch<MenuVariant>(
+  payload: {
+    date?: string;
+    meal_type?: string;
+    servings?: number;
+    replace_meal_index?: number;
+  },
+): Promise<AddRecipeToMenuResponse> {
+  const data = await apiFetch<AddRecipeToMenuResponse>(
     initData,
     mode,
     `/recipes/${recipeId}/add-to-menu`,

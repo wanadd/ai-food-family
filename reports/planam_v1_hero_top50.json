@@ -1,0 +1,302 @@
+[
+  {
+    "title": "Куриные котлеты с картофельным пюре в духовке",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Курица"
+  },
+  {
+    "title": "Мясные \"розы\", фаршированные гречневой крупой",
+    "meal_type": "breakfast",
+    "category": "quick",
+    "priority": "Говядина"
+  },
+  {
+    "title": "Рыба «Красное и белое»",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Рыба"
+  },
+  {
+    "title": "Куриный суп с домашней лапшой",
+    "meal_type": "lunch",
+    "category": "soup",
+    "priority": "Супы"
+  },
+  {
+    "title": "Чисто английский завтрак из овсянки",
+    "meal_type": "breakfast",
+    "category": "quick",
+    "priority": "Каши"
+  },
+  {
+    "title": "Мацовая запеканка с грибами",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Запеканки"
+  },
+  {
+    "title": "Спагетти с курицей в сливочном соусе",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Паста"
+  },
+  {
+    "title": "Салат \"Баклажанчик\"",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Овощные блюда"
+  },
+  {
+    "title": "Салат \"Винегретная фантазия\"",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Гречка с грибами портабелла или шампиньонами",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Курица с черносливом",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Бедра куриные \"По-французски\"",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Холодный суп из авокадо с начинкой",
+    "meal_type": "lunch",
+    "category": "soup",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салатик зимний \"Витаминный\"",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Сырный суп с шампиньонами и брокколи",
+    "meal_type": "lunch",
+    "category": "soup",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат из морепродуктов",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат \"Рыбацкий\"",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Рыбный картофель к блюду \"Гефилте фиш\"",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат с килькой",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат \"Селяночка\"",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Рыба \"Вдохновение\"",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Суп пюре из фасоли и моркови с красным перцем",
+    "meal_type": "lunch",
+    "category": "soup",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Грибной суп \"Опятница\"",
+    "meal_type": "lunch",
+    "category": "soup",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Рулет из куриного филе \"Мелодия\"",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Суп из баранины с нутом",
+    "meal_type": "lunch",
+    "category": "soup",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Фриттата с рисом и овощами",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат с морской капустой",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Суп вермишелевый",
+    "meal_type": "lunch",
+    "category": "soup",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Курица с рулетиками в духовке",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Картофельный салат по-американски",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Ложная жареная рыба",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "А-ля \"Люля\" из курицы",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Суп \"Грибное лукошко\"",
+    "meal_type": "lunch",
+    "category": "soup",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Пикантный салат из печеной капусты",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат с клубникой",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат со шпротами",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат  \"Бешеная курица\"",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат  \"Комплимент\"",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат из печени и горошка \"На пробу\"",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат \"Ламинария\"",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Куриные окорочка сметанно-кунжутные",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Манная каша с бананом",
+    "meal_type": "breakfast",
+    "category": "quick",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Запеченное мясо в фольге, с картофелем",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Картофель \"Золотистый\"",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Пшенная запеканка с малиной",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Котлеты овощные в вафельной оболочке",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Рис с яйцом-пашот с томатным соусом",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Суп  \"Цветик-семицветик\"",
+    "meal_type": "lunch",
+    "category": "soup",
+    "priority": "Семейное"
+  },
+  {
+    "title": "Салат \"Цезарь\" от Джейми Оливера",
+    "meal_type": "dinner",
+    "category": "salad",
+    "priority": "Семейное"
+  },
+  {
+    "title": "\"Королевская\" запеканка",
+    "meal_type": "dinner",
+    "category": "main",
+    "priority": "Семейное"
+  }
+]

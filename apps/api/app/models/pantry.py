@@ -17,7 +17,7 @@ class FamilyPantryItem(Base):
         ForeignKey("families.id", ondelete="CASCADE"), index=True, nullable=True
     )
     name: Mapped[str] = mapped_column(String(120))
-    category: Mapped[str] = mapped_column(String(64), default="продукты", server_default="продукты")
+    category: Mapped[str] = mapped_column(String(64), default="другое", server_default="другое")
     quantity: Mapped[str] = mapped_column(String(80))
     unit: Mapped[str] = mapped_column(String(32), default="", server_default="")
     source: Mapped[str] = mapped_column(

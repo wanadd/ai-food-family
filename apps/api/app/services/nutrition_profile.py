@@ -9,6 +9,8 @@ from app.schemas.goal_details import NutritionGoalDetails
 from app.schemas.nutrition_profile import NutritionProfileData, NutritionProData
 from app.services.goal_details import goal_details_from_profile, validate_measurable_goal
 from app.services import family as family_service
+from app.nutrition.restrictions_catalog import normalize_restrictions
+from app.services.normalization.profile import normalize_profile_payload
 from app.services.nutrition_profile_labels import NUTRITION_GOAL_TO_LEGACY_GOALS
 from app.services.onboarding import get_or_create_profile
 
@@ -63,6 +65,7 @@ def profile_to_nutrition_schema(profile: UserProfile) -> NutritionProfileData:
         nutrition_goal=profile.nutrition_goal,
         activity_level=profile.activity_level,
         allergies=profile.allergies or [],
+        restrictions=normalize_restrictions(profile.restrictions or []),
         medical_restrictions=profile.medical_restrictions or "",
         banned_foods=profile.banned_foods or "",
         diets=profile.diets or [],
@@ -91,6 +94,8 @@ def sync_legacy_menu_fields(profile: UserProfile) -> None:
 def save_nutrition_profile(
     db: Session, user: User, payload: NutritionProfileData
 ) -> UserProfile:
+    # Unified profile write-path normalization: trim text, dedupe allergies/diets.
+    payload = normalize_profile_payload(payload)
     validate_measurable_goal(payload)
     profile = get_or_create_profile(db, user)
     profile.age = payload.age
@@ -100,6 +105,7 @@ def save_nutrition_profile(
     profile.nutrition_goal = payload.nutrition_goal
     profile.activity_level = payload.activity_level
     profile.allergies = payload.allergies
+    profile.restrictions = normalize_restrictions(payload.restrictions)
     profile.medical_restrictions = payload.medical_restrictions
     profile.banned_foods = payload.banned_foods
     profile.diets = payload.diets

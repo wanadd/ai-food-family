@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/api";
+import { buildProtectedRequestHeaders } from "@/lib/audit/audit-mode";
 
 export type LegalDocument = {
   id: string;
@@ -31,7 +32,7 @@ export async function fetchLegalDocuments(): Promise<{
 
 export async function fetchLegalStatus(initData: string): Promise<LegalStatus> {
   const res = await fetch(`${apiUrl}/legal/status`, {
-    headers: { "X-Telegram-Init-Data": initData },
+    headers: buildProtectedRequestHeaders(initData),
   });
   if (!res.ok) throw new Error("Не удалось проверить согласия");
   return res.json();
@@ -49,7 +50,7 @@ export async function acceptLegal(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Telegram-Init-Data": initData,
+      ...buildProtectedRequestHeaders(initData),
     },
     body: JSON.stringify(payload),
   });
@@ -63,7 +64,7 @@ export async function acceptLegal(
 export async function skipPhone(initData: string): Promise<LegalStatus> {
   const res = await fetch(`${apiUrl}/legal/skip-phone`, {
     method: "POST",
-    headers: { "X-Telegram-Init-Data": initData },
+    headers: buildProtectedRequestHeaders(initData),
   });
   if (!res.ok) throw new Error("Не удалось пропустить телефон");
   return res.json();
@@ -76,7 +77,7 @@ export async function requestDataDeletion(initData: string): Promise<{
 }> {
   const res = await fetch(`${apiUrl}/legal/delete-data-request`, {
     method: "POST",
-    headers: { "X-Telegram-Init-Data": initData },
+    headers: buildProtectedRequestHeaders(initData),
   });
   if (!res.ok) throw new Error("Не удалось отправить запрос");
   return res.json();

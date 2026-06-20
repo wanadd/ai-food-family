@@ -17,8 +17,8 @@ from app.services.legal_consent import (
 )
 from app.schemas.legal import LegalAcceptRequest
 from app.telegram.messaging import (
+    entry_inline_keyboard,
     own_phone_keyboard,
-    remove_keyboard,
     send_telegram_message,
     webapp_inline_keyboard,
 )
@@ -215,6 +215,8 @@ async def send_registration_complete(db: Session, user: User, chat_id: int) -> N
 
 
 async def route_after_start(db: Session, user: User, chat_id: int) -> None:
+    from app.services.users import user_has_verified_phone
+
     if not user_has_legal_consent(user):
         await send_welcome_legal(db, user, chat_id)
         return
@@ -223,14 +225,11 @@ async def route_after_start(db: Session, user: User, chat_id: int) -> None:
         return
     from app.services.bot_menu import send_main_menu
 
-    await send_telegram_message(
-        chat_id,
-        "С возвращением в ПланАм!",
-        reply_markup=remove_keyboard(),
-    )
     await send_main_menu(chat_id)
     await send_telegram_message(
         chat_id,
-        "Открыть приложение:",
-        reply_markup=webapp_inline_keyboard(),
+        "С возвращением в ПланАм! 👋",
+        reply_markup=entry_inline_keyboard(
+            include_phone=not user_has_verified_phone(user)
+        ),
     )
