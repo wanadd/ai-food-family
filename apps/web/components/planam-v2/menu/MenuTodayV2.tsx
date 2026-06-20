@@ -318,7 +318,7 @@ export function MenuTodayV2() {
         <V2EmptyState
           icon={<span aria-hidden>🍽</span>}
           title="Меню пока не собрано"
-          description="PLANAM может предложить рацион и список покупок."
+          description="Соберём меню на сегодня за 1 минуту."
           actionLabel="Собрать меню"
           onAction={() => router.push(PLAN_PATHS.generate)}
         />
@@ -391,10 +391,10 @@ export function MenuTodayV2() {
       <div className="mt-3 px-4">
         {timeline.length === 0 ? (
           <V2EmptyState
-            title="На этот день нет блюд"
-            description="Выберите другой день или пересоберите план."
-            actionLabel="Неделя"
-            onAction={() => router.push(PLAN_PATHS.week)}
+            title="На этот день пока нет блюд"
+            description="Соберите меню или выберите другой день."
+            actionLabel="Собрать меню"
+            onAction={() => router.push(PLAN_PATHS.generate)}
           />
         ) : (
           <div className="space-y-4">
@@ -435,19 +435,23 @@ export function MenuTodayV2() {
         )}
 
         <div className="mt-4 flex gap-2">
-          <V2Button
-            variant="secondary"
-            className="flex-1"
-            onClick={() => {
-              setReplaceMealIndex(null);
-              setReplaceOpen(true);
-            }}
-          >
-            Заменить блюдо
-          </V2Button>
-          <V2Button variant="ghost" onClick={() => setConsumptionOpen(true)}>
-            {MENU_TODAY_MARK_CONSUMPTION_BUTTON}
-          </V2Button>
+          {flatMeals.length > 0 ? (
+            <>
+              <V2Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  setReplaceMealIndex(null);
+                  setReplaceOpen(true);
+                }}
+              >
+                Заменить блюдо
+              </V2Button>
+              <V2Button variant="ghost" onClick={() => setConsumptionOpen(true)}>
+                {MENU_TODAY_MARK_CONSUMPTION_BUTTON}
+              </V2Button>
+            </>
+          ) : null}
         </div>
       </div>
 

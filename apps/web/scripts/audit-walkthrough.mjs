@@ -37,7 +37,11 @@ const API_URL =
 const MIN_BODY_TEXT_LENGTH = 20;
 const MIN_BODY_HTML_LENGTH = 100;
 const PIXEL_VALIDATION_ENABLED = false;
-const EXPECTED_SCREENSHOT_COUNT = 108;
+const EXPECTED_SCREENSHOT_COUNT = 120;
+
+const AUDIT_SUFFIX_FORBIDDEN = /\(audit\)/i;
+
+const BOTTOM_NAV_LABELS = ["Меню", "Покупки", "ПланАм", "Здоровье", "События"];
 
 const EXPECTED_403_ENDPOINTS = [];
 
@@ -51,6 +55,7 @@ const ROUTE_ASSERTIONS = {
     "Покупки",
     "Запасы",
     "Здоровье",
+    "События",
   ],
   menu: [
     "Меню",
@@ -75,7 +80,8 @@ const ROUTE_ASSERTIONS = {
     "КБЖУ",
     "цель",
   ],
-  recipes: ["Рецепт", "рецепт", "ингредиент", "приготов", "ккал"],
+  recipes: ["Рецепт", "рецепт", "ингредиент", "приготов", "ккал", "Блюда", "меню"],
+  events: ["События", "праздник", "гост", "PLANAM"],
   account: ["Профиль", "Аккаунт", "Настройки", "Телефон", "Подписка", "Семья"],
   subscription: ["Подписка", "Тариф", "тариф", "план"],
   family: ["Семья", "семь", "Участник", "Admin", "Adult"],
@@ -158,6 +164,7 @@ const ROUTES = [
   { key: "account", path: "/account" },
   { key: "subscription", path: "/account/subscription" },
   { key: "family", path: "/account/family" },
+  { key: "events", path: "/events" },
 ];
 
 function isApiUrl(url) {
@@ -193,6 +200,9 @@ function matchedExpectedTexts(routeKey, bodyText) {
 
 function matchedForbiddenTexts(bodyText, persona, routeKey) {
   const hits = [];
+  if (AUDIT_SUFFIX_FORBIDDEN.test(bodyText)) {
+    hits.push("(audit)");
+  }
   for (const text of GLOBAL_FORBIDDEN_TEXTS) {
     if (bodyText.includes(text)) hits.push(text);
   }

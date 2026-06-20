@@ -7,6 +7,10 @@ import { NavIcon2026 } from "@/components/planam-2026/navigation/NavIcon2026";
 import { ThemeToggle2026 } from "@/components/planam-2026/theme/ThemeToggle2026";
 import { Card2026 } from "@/components/planam-2026/ui/Card2026";
 import { useTelegram } from "@/components/TelegramProvider";
+import {
+  formatAccountDisplayName,
+  formatAccountUsernameLabel,
+} from "@/lib/display/sanitize-label";
 import { ACCOUNT_HUB_ITEMS_2026 } from "@/lib/navigation/nav-config-2026";
 
 function UserAvatar({
@@ -38,9 +42,12 @@ function UserAvatar({
 
 export function AccountHub2026() {
   const { user } = useTelegram();
-  const fullName =
-    [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
-    "Пользователь";
+  const fullName = formatAccountDisplayName(
+    user?.first_name,
+    user?.last_name,
+    user?.username,
+  );
+  const usernameLabel = formatAccountUsernameLabel(user?.username);
 
   return (
     <div className="mx-auto max-w-lg space-y-3 px-4 py-3 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -54,9 +61,7 @@ export function AccountHub2026() {
             <UserAvatar name={fullName} photoUrl={user.photo_url} />
             <div className="min-w-0 flex-1">
               <p className="pa26-card-title truncate">{fullName}</p>
-              <p className="pa26-caption text-pa-muted">
-                {user.username ? `@${user.username}` : "Ваш аккаунт"}
-              </p>
+              <p className="pa26-caption text-pa-muted">{usernameLabel}</p>
             </div>
           </div>
         </Card2026>

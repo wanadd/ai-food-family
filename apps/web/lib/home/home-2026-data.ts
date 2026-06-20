@@ -1,5 +1,7 @@
+import { stripAuditSuffix } from "@/lib/display/sanitize-label";
 import type { MenuOverview, HomeNextAction } from "@/lib/menu/overview-types";
 import type { MenuMeal } from "@/lib/menu/types";
+import { defaultDayIndex, mealsForDayIndex } from "@/lib/menu/menu-days";
 
 export type Home2026TodayMeal = {
   meal_type: string;
@@ -23,21 +25,13 @@ function mealsFromSelectedMenu(
   overview: MenuOverview,
 ): Map<string, MenuMeal> {
   const map = new Map<string, MenuMeal>();
-  const meals = overview.selected_menu?.menu?.meals;
-  if (!meals?.length) {
+  const menu = overview.selected_menu?.menu;
+  if (!menu) {
     return map;
   }
-  for (const meal of meals) {
+  const dayIndex = defaultDayIndex(menu);
+  for (const meal of mealsForDayIndex(menu, dayIndex)) {
     map.set(meal.meal_type, meal);
-  }
-  const days = overview.selected_menu?.menu?.days;
-  if (days?.length) {
-    const today = days.find((d) => d.date_iso) ?? days[0];
-    for (const meal of today.meals ?? []) {
-      if (!map.has(meal.meal_type)) {
-        map.set(meal.meal_type, meal);
-      }
-    }
   }
   return map;
 }
@@ -51,7 +45,7 @@ export function enrichTodayMeals(overview: MenuOverview): Home2026TodayMeal[] {
       return {
         meal_type: m.meal_type,
         label: m.label,
-        name: m.name!.trim(),
+        name: stripAuditSuffix(m.name!.trim()),
         recipe_id: m.recipe_id ?? null,
         image_url: m.image_url ?? null,
         prep_time_minutes: detail?.prep_time_minutes ?? null,

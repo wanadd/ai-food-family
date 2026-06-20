@@ -21,6 +21,7 @@ import {
 import {
   catalogEntryForCode,
   filterRetailPlans,
+  isDowngradePlan,
   isRetailPlanCode,
   planDisplayName,
   sortRetailPlans,
@@ -87,13 +88,15 @@ export function SubscriptionHub2026() {
     return <SubscriptionOffline2026 onRetry={() => void refresh()} />;
   }
 
+  const trial = isOnTrial(data);
+  const periodEnd = formatPeriodEnd(data.current_period_ends_at);
+
   const menuLimitLabel =
     data.menu_generations_limit == null
       ? "безлимит"
-      : `${data.menu_generations_remaining ?? 0} из ${data.menu_generations_limit}`;
-
-  const periodEnd = formatPeriodEnd(data.current_period_ends_at);
-  const trial = isOnTrial(data);
+      : trial
+        ? `${data.menu_generations_remaining ?? 0} подборов доступно`
+        : `${data.menu_generations_remaining ?? 0} из ${data.menu_generations_limit}`;
 
   return (
     <div className="space-y-4 px-4 pb-8 pt-2">
@@ -126,7 +129,7 @@ export function SubscriptionHub2026() {
         <Link href={MONETIZATION_PATHS.ams} className="block">
           <Card2026 className="h-full border-sage-200 bg-sage-50/50 p-3 dark:border-sage-700/40 dark:bg-sage-700/15">
             <p className="pa26-micro text-pa-muted">
-              {data.is_family_billing ? "Амы семьи" : "Амы"}
+              {data.is_family_billing ? "AI-действия семьи" : "AI-действия"}
             </p>
             <p className="pa26-card-title mt-1 tabular-nums">
               {formatAmasBalance(data.ama_balance)}
@@ -164,6 +167,7 @@ export function SubscriptionHub2026() {
                   catalog={catalog}
                   apiPlan={apiPlan}
                   isCurrent={apiPlan.is_current}
+                  isDowngrade={isDowngradePlan(data.plan_code, apiPlan.code)}
                   selecting={selecting === apiPlan.code}
                   onSelect={(code) => {
                     setSelecting(code);

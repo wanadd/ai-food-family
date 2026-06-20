@@ -14,12 +14,9 @@ export function NavIcon2026({ id, className }: NavIcon2026Props) {
     case "plan":
       return (
         <svg className={base} viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M4 6h16M4 12h16M4 18h10"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-          />
+          <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.75" />
+          <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+          <path d="M9 14h2M13 14h2M9 17h2" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
         </svg>
       );
     case "home":
@@ -36,11 +33,26 @@ export function NavIcon2026({ id, className }: NavIcon2026Props) {
     case "wellness":
       return (
         <svg className={base} viewBox="0 0 24 24" fill="none" aria-hidden>
+          <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.75" />
           <path
-            d="M12 20c-3.5-2.5-6-5.2-6-8.5a4.5 4.5 0 018-2.2A4.5 4.5 0 0118 11.5c0 3.3-2.5 6-6 8.5z"
+            d="M12 8v4l2.5 1.5"
             stroke="currentColor"
             strokeWidth="1.75"
+            strokeLinecap="round"
             strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "events":
+    case "calendar-star":
+      return (
+        <svg className={base} viewBox="0 0 24 24" fill="none" aria-hidden>
+          <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.75" />
+          <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+          <path
+            d="M12 13l1.2 2.4 2.6.4-1.9 1.8.5 2.6L12 18.8l-2.4 1.4.5-2.6-1.9-1.8 2.6-.4L12 13z"
+            fill="currentColor"
+            stroke="none"
           />
         </svg>
       );

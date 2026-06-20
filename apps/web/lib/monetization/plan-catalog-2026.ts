@@ -125,3 +125,15 @@ export function sortRetailPlans<T extends { code: string }>(plans: T[]): T[] {
 export function filterRetailPlans<T extends { code: string }>(plans: T[]): T[] {
   return plans.filter((p) => isRetailPlanCode(p.code));
 }
+
+export function planTierRank(planCode: string): number {
+  const idx = RETAIL_PLAN_ORDER.indexOf(planCode as RetailPlanCode);
+  return idx >= 0 ? idx : -1;
+}
+
+export function isDowngradePlan(currentCode: string, targetCode: string): boolean {
+  const current = planTierRank(currentCode);
+  const target = planTierRank(targetCode);
+  if (current < 0 || target < 0) return false;
+  return target < current;
+}

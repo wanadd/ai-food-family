@@ -1,3 +1,4 @@
+import { formatGreetingName, stripAuditSuffix } from "@/lib/display/sanitize-label";
 import type { MenuOverview } from "@/lib/menu/overview-types";
 import { PLANAM_ROUTES, recipeDetailPath } from "@/lib/planam/routes";
 
@@ -75,7 +76,7 @@ const QUOTE_PAIRS: Array<[string, string]> = [
 
 /** Убирает обрамляющие кавычки из названия блюда: «Каша» → Каша. */
 export function cleanMealTitle(name: string | null | undefined): string {
-  let text = (name ?? "").trim();
+  let text = stripAuditSuffix(name ?? "");
   let changed = true;
   while (changed && text.length > 2) {
     changed = false;
@@ -108,8 +109,9 @@ export function formatPlanAmGreeting(
   date: Date = new Date(),
 ): string {
   const base = greetingForPlanAm(date);
-  if (displayName?.trim()) {
-    return `${base}, ${displayName.trim()} 👋`;
+  const short = formatGreetingName(displayName);
+  if (short) {
+    return `${base},\n${short} 👋`;
   }
   return `${base} 👋`;
 }
@@ -374,11 +376,17 @@ function preparedDishesLabel(count: number): string {
   return "готовых блюд";
 }
 
-export function shoppingStatusLabel(unchecked: number): string {
-  if (unchecked <= 0) {
-    return "Всё куплено";
+export function shoppingStatusLabel(
+  unchecked: number,
+  hasMenu = false,
+): string {
+  if (unchecked > 0) {
+    return `${unchecked} ${goodsLabel(unchecked)}`;
   }
-  return `${unchecked} ${goodsLabel(unchecked)}`;
+  if (!hasMenu) {
+    return "Список пуст";
+  }
+  return "Всё куплено";
 }
 
 /** Home status chip for today's menu completeness. */
@@ -394,8 +402,15 @@ export function menuStatusLabel(overview: MenuOverview | null): string {
   if (filled === 0) {
     return "Собрать";
   }
-  const pct = Math.round((filled / slots.length) * 100);
-  return `${pct}%`;
+  return `${filled} ${mealsLabel(filled)}`;
+}
+
+function mealsLabel(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return "блюдо";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "блюда";
+  return "блюд";
 }
 
 export function formatPlanAmDate(date: Date = new Date()): string {

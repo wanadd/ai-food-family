@@ -9,6 +9,7 @@ type PlanCard2026Props = {
   catalog: PlanCatalogEntry;
   apiPlan: SubscriptionPlanInfo;
   isCurrent: boolean;
+  isDowngrade?: boolean;
   selecting?: boolean;
   onSelect: (code: string) => void;
 };
@@ -24,6 +25,7 @@ export function PlanCard2026({
   catalog,
   apiPlan,
   isCurrent,
+  isDowngrade = false,
   selecting = false,
   onSelect,
 }: PlanCard2026Props) {
@@ -63,7 +65,7 @@ export function PlanCard2026({
           </li>
         ))}
       </ul>
-      {!isCurrent ? (
+      {!isCurrent && !isDowngrade ? (
         <Button2026
           size="wide"
           variant={catalog.isPro ? "primary" : "secondary"}
@@ -73,6 +75,10 @@ export function PlanCard2026({
         >
           {selecting ? "…" : "Перейти к оплате"}
         </Button2026>
+      ) : isCurrent ? (
+        <p className="pa26-caption mt-4 font-semibold text-sage-700 dark:text-sage-300">
+          Ваш тариф
+        </p>
       ) : null}
     </article>
   );

@@ -9,7 +9,10 @@ import { EmptyState2026 } from "@/components/planam-2026/ui/EmptyState2026";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useTelegram } from "@/components/TelegramProvider";
+import { stripAuditSuffix } from "@/lib/display/sanitize-label";
+import { buildActiveMenuDayState } from "@/lib/household/active-menu-day";
 import { replaceMenuSlot } from "@/lib/menu/api";
+import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import {
   buildReplaceDetailUrl,
   parseCurrentRecipeId,
@@ -75,6 +78,9 @@ export function RecipeCatalog2026() {
   const [searchInput, setSearchInput] = useState(query.q ?? "");
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [replacingId, setReplacingId] = useState<number | null>(null);
+  const [menuMeals, setMenuMeals] = useState<
+    { name: string; meal_type: string; calories_estimate?: number | null }[]
+  >([]);
 
   const isFavorites = Boolean(query.favorites_only);
   const hasFilters = Boolean(query.q || query.meal_type || query.category || isFavorites);
@@ -137,6 +143,33 @@ export function RecipeCatalog2026() {
       cancelled = true;
     };
   }, [initData, query, paramString]);
+
+  useEffect(() => {
+    if (!initData || loading || recipes.length > 0) {
+      return;
+    }
+    let cancelled = false;
+    fetchMenuOverview(initData, mode)
+      .then((overview) => {
+        if (cancelled) return;
+        const state = buildActiveMenuDayState(overview);
+        setMenuMeals(
+          state.activeMeals
+            .filter((m) => m.name?.trim())
+            .map((m) => ({
+              name: stripAuditSuffix(m.name),
+              meal_type: m.meal_type,
+              calories_estimate: m.calories_estimate,
+            })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setMenuMeals([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initData, mode, loading, recipes.length]);
 
   useEffect(() => {
     setSearchInput(query.q ?? "");
@@ -220,11 +253,37 @@ export function RecipeCatalog2026() {
           onAction={() => updateParams({ meal_type: undefined })}
         />
       );
+    } else if (menuMeals.length > 0) {
+      emptyContent = (
+        <div className="space-y-3">
+          <EmptyState2026
+            title="Блюда из вашего меню"
+            description="Рецепты появятся, когда соберёте меню — пока показываем блюда из плана."
+            actionLabel="Открыть меню"
+            onAction={() => router.push(PLAN_PATHS.today)}
+          />
+          <ul className="space-y-2">
+            {menuMeals.map((meal) => (
+              <li
+                key={meal.meal_type}
+                className="rounded-card border border-pa-border bg-pa-surface px-3.5 py-3"
+              >
+                <p className="pa26-card-title">{meal.name}</p>
+                {meal.calories_estimate ? (
+                  <p className="pa26-caption text-pa-muted">
+                    {Math.round(meal.calories_estimate)} ккал
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
     } else {
       emptyContent = (
         <EmptyState2026
           title="Каталог пока пуст"
-          description="Рецепты появятся после наполнения базы. Создайте меню — ПланАм подберёт блюда."
+          description="Рецепты появятся, когда соберёте меню — PLANAM подберёт блюда."
           actionLabel="Создать меню"
           onAction={() => router.push(PLAN_PATHS.generate)}
         />

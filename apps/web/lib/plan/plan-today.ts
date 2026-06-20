@@ -1,3 +1,4 @@
+import { stripAuditSuffix } from "@/lib/display/sanitize-label";
 import type { MealCheckin } from "@/lib/meal-checkins/api";
 import { mealCheckinStatusLabel } from "@/lib/meal-checkins/constants";
 import { MEAL_LABELS } from "@/lib/menu/labels";
@@ -88,26 +89,27 @@ export function enrichMealsForDay(
   return meals
     .map((meal, mealIndex) => ({ meal, mealIndex }))
     .filter(
-      ({ meal }) =>
-        meal.recipe_id != null &&
-        meal.name.trim() !== "" &&
-        meal.name !== "Свободно",
+      ({ meal }) => meal.name.trim() !== "" && meal.name !== "Свободно",
     )
     .map(({ meal, mealIndex }) => {
-    const statusCode = statusByType.get(meal.meal_type) ?? null;
+      const displayMeal =
+        meal.name.includes("(audit)")
+          ? { ...meal, name: stripAuditSuffix(meal.name) }
+          : meal;
+    const statusCode = statusByType.get(displayMeal.meal_type) ?? null;
     const statusLabel = mealCheckinStatusLabel(statusCode);
     const imageUrl =
-      meal.image_url ??
-      meal.hero_image_url ??
-      meal.thumbnail_url ??
-      (meal.recipe_id != null
-        ? imageByType.get(`recipe:${meal.recipe_id}`)
+      displayMeal.image_url ??
+      displayMeal.hero_image_url ??
+      displayMeal.thumbnail_url ??
+      (displayMeal.recipe_id != null
+        ? imageByType.get(`recipe:${displayMeal.recipe_id}`)
         : null) ??
-      (dateIso === todayIso ? imageByType.get(meal.meal_type) : null) ??
+      (dateIso === todayIso ? imageByType.get(displayMeal.meal_type) : null) ??
       null;
 
     return {
-      meal,
+      meal: displayMeal,
       mealIndex,
       slotId: meal.slot_id ?? `${dateIso}:${meal.meal_type}`,
       imageUrl,

@@ -47,7 +47,7 @@ from app.schemas.leftovers import CookingBatchCreateIn  # noqa: E402
 from app.services.app_scope import AppScope  # noqa: E402
 
 
-def _seed_nutrition_profile(db, user: User) -> None:
+def _seed_nutrition_profile(db, user: User, *, goal: str = "healthy", activity: str = "moderate") -> None:
     from app.models.user_profile import UserProfile
 
     profile = (
@@ -61,13 +61,13 @@ def _seed_nutrition_profile(db, user: User) -> None:
     profile.gender = "female"
     profile.height_cm = 168
     profile.weight_kg = 62.0
-    profile.nutrition_goal = "healthy"
-    profile.activity_level = "moderate"
-    profile.goals = ["healthy_eating"]
+    profile.nutrition_goal = goal
+    profile.activity_level = activity
+    profile.goals = [goal]
     db.commit()
 
 
-def _seed_audit_menu(db, user: User, *, family_id: int | None = None) -> None:
+def _seed_audit_menu(db, user: User, *, family_id: int | None = None, plan_mode: str = "healthy") -> None:
     from datetime import timedelta
 
     from app.schemas.menu import (
@@ -135,7 +135,7 @@ def _seed_audit_menu(db, user: User, *, family_id: int | None = None) -> None:
         user,
         scope,
         SelectMenuRequest(menu=menu),
-        plan_mode="healthy",
+        plan_mode=plan_mode,
         persons_count=1,
     )
 
@@ -396,17 +396,32 @@ def seed_all() -> dict[str, int]:
         # 4.5 Athlete
         athlete = _user_by_persona(db, "audit_athlete")
         _set_plan(athlete, db, "pro")
+        _seed_nutrition_profile(db, athlete, goal="muscle_gain", activity="high")
+        try:
+            _seed_audit_menu(db, athlete)
+        except Exception as exc:  # noqa: BLE001
+            print(f"  warn: athlete menu: {exc}")
         counts["audit_athlete"] = 1
 
         # 4.6 Strict diet
         strict = _user_by_persona(db, "audit_strict_diet")
         _set_plan(strict, db, "pro")
+        _seed_nutrition_profile(db, strict, goal="weight_loss", activity="moderate")
+        try:
+            _seed_audit_menu(db, strict, plan_mode="strict")
+        except Exception as exc:  # noqa: BLE001
+            print(f"  warn: strict diet menu: {exc}")
         counts["audit_strict_diet"] = 1
 
         # 4.7 Healthy eating
         healthy = _user_by_persona(db, "audit_healthy_eating")
         _set_plan(healthy, db, "personal")
         _add_pantry_items(db, healthy)
+        _seed_nutrition_profile(db, healthy, goal="healthy", activity="moderate")
+        try:
+            _seed_audit_menu(db, healthy)
+        except Exception as exc:  # noqa: BLE001
+            print(f"  warn: healthy eating menu: {exc}")
         counts["audit_healthy_eating"] = 1
 
         # 4.8 Tariff personas

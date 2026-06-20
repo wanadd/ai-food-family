@@ -245,7 +245,9 @@ export function ShoppingV2() {
         <p className="pa26-micro mt-0.5 text-pa-muted">
           {uncheckedCount > 0
             ? `${uncheckedCount} ${plural(uncheckedCount, "товар", "товара", "товаров")} к покупке`
-            : "Всё куплено"}
+            : list && list.total_count > 0
+              ? "Всё куплено"
+              : "Список пуст"}
         </p>
 
         <HomeDomainSegmentV2 active="shopping" className="mt-3" />

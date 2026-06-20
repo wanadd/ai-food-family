@@ -27,6 +27,7 @@ import {
   invalidate as invalidateCache,
   setCached,
 } from "@/lib/cache/session-cache";
+import { buildActiveMenuDayState, sumMealNutrition } from "@/lib/household/active-menu-day";
 import { fetchTodayMealCheckins } from "@/lib/meal-checkins/api";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import type { MenuOverview } from "@/lib/menu/overview-types";
@@ -139,9 +140,22 @@ export function WellnessV2() {
     [overview, progress, water, profileComplete, mealsCompleted],
   );
 
+  const plannedNutrition = useMemo(() => {
+    if (!overview?.selected_menu?.menu) return null;
+    const state = buildActiveMenuDayState(overview);
+    return sumMealNutrition(state.activeMeals);
+  }, [overview]);
+
   const metrics = useMemo<MetricRow[]>(() => {
     const targets = progress?.targets;
     const actual = progress?.daily_actual;
+    const planned = plannedNutrition;
+    const usePlanned =
+      (actual?.calories_consumed ?? 0) === 0 &&
+      planned != null &&
+      planned.calories > 0 &&
+      overview?.plan_summary.has_selected_menu;
+
     const waterTotal = water?.total_ml ?? actual?.water_consumed_ml ?? 0;
     const waterTarget = water?.target_ml ?? targets?.water_target_ml ?? null;
     const kcal = (c: number, t: number | null) =>
@@ -156,25 +170,25 @@ export function WellnessV2() {
     return [
       {
         label: "Калории",
-        current: actual?.calories_consumed ?? 0,
+        current: usePlanned ? planned!.calories : (actual?.calories_consumed ?? 0),
         target: targets?.calories_target ?? null,
         format: kcal,
       },
       {
         label: "Белки",
-        current: actual?.protein_consumed_g ?? 0,
+        current: usePlanned ? planned!.protein_g : (actual?.protein_consumed_g ?? 0),
         target: targets?.protein_target_g ?? null,
         format: grams,
       },
       {
         label: "Жиры",
-        current: actual?.fat_consumed_g ?? 0,
+        current: usePlanned ? planned!.fat_g : (actual?.fat_consumed_g ?? 0),
         target: targets?.fat_target_g ?? null,
         format: grams,
       },
       {
         label: "Углеводы",
-        current: actual?.carbs_consumed_g ?? 0,
+        current: usePlanned ? planned!.carbs_g : (actual?.carbs_consumed_g ?? 0),
         target: targets?.carbs_target_g ?? null,
         format: grams,
       },
@@ -185,7 +199,7 @@ export function WellnessV2() {
         format: liters,
       },
     ];
-  }, [progress, water]);
+  }, [progress, water, plannedNutrition, overview?.plan_summary.has_selected_menu]);
 
   const recommendations = useMemo(() => {
     const meals = overview?.today_meals ?? [];
@@ -220,7 +234,8 @@ export function WellnessV2() {
     profileComplete ||
     (progress?.daily_actual?.meals_logged ?? 0) > 0 ||
     (water?.total_ml ?? 0) > 0 ||
-    overview?.plan_summary.has_selected_menu;
+    (overview?.plan_summary.has_selected_menu &&
+      (plannedNutrition?.calories ?? 0) > 0);
 
   return (
     <div className="space-y-3 px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -238,9 +253,9 @@ export function WellnessV2() {
       ) : !hasAnyData ? (
         <V2EmptyState
           icon={<span aria-hidden>🌿</span>}
-          title="Заполните питание"
-          description="PLANAM покажет баланс и рекомендации."
-          actionLabel="Заполнить профиль"
+          title="Расскажите о себе — покажем баланс"
+          description="PLANAM посчитает калории и даст рекомендации под ваши цели."
+          actionLabel="Настроить"
           onAction={() =>
             router.push(`${PLANAM_ROUTES.accountNutrition}?returnTo=/wellness`)
           }

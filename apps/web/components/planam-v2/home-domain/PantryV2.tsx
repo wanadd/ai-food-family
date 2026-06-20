@@ -9,6 +9,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { stripAuditSuffix } from "@/lib/display/sanitize-label";
+
 import { HomeDomainSegmentV2 } from "@/components/planam-v2/home-domain/HomeDomainSegmentV2";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -274,8 +276,8 @@ export function PantryV2() {
         {items.length === 0 ? (
           <V2EmptyState
             icon={<span aria-hidden>📦</span>}
-            title="Продуктов пока нет"
-            description="Добавьте продукты — и PLANAM будет учитывать их в меню."
+            title="Добавим первые продукты?"
+            description="PLANAM будет точнее составлять меню и покупки, если знает, что уже есть дома. Начните с 5–10 продуктов — остальное добавим позже."
             actionLabel="Добавить продукт"
             onAction={() => setAddOpen(true)}
           />
@@ -325,7 +327,7 @@ export function PantryV2() {
                 )}
               >
                 <p className="pa26-body font-medium">
-                  {dish.recipe_title ?? "Блюдо"}
+                  {stripAuditSuffix(dish.recipe_title ?? "Блюдо")}
                 </p>
                 <p className="pa26-caption text-pa-muted">
                   {formatPreparedLeftoverAmount(

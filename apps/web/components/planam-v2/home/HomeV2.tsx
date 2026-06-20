@@ -134,7 +134,11 @@ export function HomeV2() {
   if (loadState === "error") {
     return (
       <div className="pb-2">
-        <Greeting greeting={greeting} dateLabel={dateLabel} />
+        <Greeting
+          greeting={greeting}
+          dateLabel={dateLabel}
+          onSettings={() => router.push(PLANAM_ROUTES.account)}
+        />
         <V2EmptyState
           title="Не удалось обновить день"
           description={errorMessage ?? "Проверьте сеть и попробуйте снова."}
@@ -150,7 +154,11 @@ export function HomeV2() {
 
   return (
     <div className="space-y-0 pb-2">
-      <Greeting greeting={greeting} dateLabel={dateLabel} />
+      <Greeting
+        greeting={greeting}
+        dateLabel={dateLabel}
+        onSettings={() => router.push(PLANAM_ROUTES.account)}
+      />
 
       <HomeHeroV2
         loading={loading}
@@ -166,7 +174,7 @@ export function HomeV2() {
           <StatusCard
             emoji="🛒"
             label="Купить"
-            value={loading ? "…" : shoppingStatusLabel(overview?.shopping_unchecked_count ?? 0)}
+            value={loading ? "…" : shoppingStatusLabel(overview?.shopping_unchecked_count ?? 0, hasMenu)}
             onClick={() => router.push(PLANAM_ROUTES.shopping)}
           />
           <StatusCard
@@ -234,11 +242,39 @@ export function HomeV2() {
   );
 }
 
-function Greeting({ greeting, dateLabel }: { greeting: string; dateLabel: string }) {
+function Greeting({
+  greeting,
+  dateLabel,
+  onSettings,
+}: {
+  greeting: string;
+  dateLabel: string;
+  onSettings?: () => void;
+}) {
   return (
-    <header className="px-4 pb-0.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
-      <h1 className="pa26-page-title truncate">{greeting}</h1>
-      <p className="pa26-micro mt-0.5 capitalize text-pa-muted">{dateLabel}</p>
+    <header className="flex items-start justify-between gap-2 px-4 pb-0.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <div className="min-w-0 flex-1">
+        <h1 className="pa26-page-title whitespace-pre-line leading-tight">{greeting}</h1>
+        <p className="pa26-micro mt-0.5 capitalize text-pa-muted">{dateLabel}</p>
+      </div>
+      {onSettings ? (
+        <button
+          type="button"
+          onClick={onSettings}
+          aria-label="Профиль и настройки"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-pa-border bg-pa-surface text-pa-muted transition active:scale-95"
+        >
+          <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.75" />
+            <path
+              d="M12 4v2M12 18v2M4 12h2M18 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      ) : null}
     </header>
   );
 }

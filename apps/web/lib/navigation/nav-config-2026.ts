@@ -4,7 +4,7 @@
  * @see docs/SPRINT_1_COMPLETION_REPORT.md
  */
 
-export type Nav2026TabId = "plan" | "shopping" | "planam" | "wellness" | "account";
+export type Nav2026TabId = "plan" | "shopping" | "planam" | "wellness" | "events";
 
 export type Nav2026IconId =
   | "plan"
@@ -21,7 +21,8 @@ export type Nav2026IconId =
   | "notifications"
   | "profile"
   | "theme"
-  | "legal";
+  | "events"
+  | "calendar-star"
 
 export type Nav2026Tab = {
   id: Nav2026TabId;
@@ -49,13 +50,13 @@ export type Nav2026RouteMeta = {
   planned?: boolean;
 };
 
-/** Нижняя навигация: Меню · Покупки · ПланАм · Здоровье · Профиль */
+/** Нижняя навигация: Меню · Покупки · ПланАм · Здоровье · События */
 export const NAV_TABS_2026: Nav2026Tab[] = [
   {
     id: "plan",
     href: "/plan/today",
     label: "Меню",
-    icon: "recipes",
+    icon: "plan",
     matchPrefixes: ["/plan"],
   },
   {
@@ -81,11 +82,11 @@ export const NAV_TABS_2026: Nav2026Tab[] = [
     matchPrefixes: ["/wellness"],
   },
   {
-    id: "account",
-    href: "/account",
-    label: "Профиль",
-    icon: "account",
-    matchPrefixes: ["/account"],
+    id: "events",
+    href: "/events",
+    label: "События",
+    icon: "events",
+    matchPrefixes: ["/events"],
   },
 ];
 
@@ -187,32 +188,30 @@ export const ROUTES_2026: Nav2026RouteMeta[] = [
   { href: "/plan/recipes", title: "Рецепты", tabId: "plan", sectionId: "recipes" },
   { href: "/wellness", title: "Здоровье", tabId: "wellness", sectionId: "wellness" },
   { href: "/wellness/chat", title: "AI помощник", sectionId: "wellness-chat" },
-  { href: "/account", title: "Профиль", tabId: "account", sectionId: "account" },
+  { href: "/events", title: "События", tabId: "events", sectionId: "events" },
+  { href: "/account", title: "Профиль", sectionId: "account" },
   {
     href: "/account/subscription",
     title: "Подписка",
-    tabId: "account",
     sectionId: "subscription",
   },
-  { href: "/account/ams", title: "Амы", tabId: "account", sectionId: "ams" },
-  { href: "/account/family", title: "Семья", tabId: "account", sectionId: "family" },
+  { href: "/account/ams", title: "Амы", sectionId: "ams" },
+  { href: "/account/family", title: "Семья", sectionId: "family" },
   {
     href: "/account/notifications",
     title: "Уведомления",
-    tabId: "account",
     sectionId: "notifications",
   },
-  { href: "/account/settings", title: "Настройки", tabId: "account", sectionId: "settings" },
-  { href: "/account/nutrition", title: "Питание", tabId: "account", sectionId: "nutrition" },
-  { href: "/account/settings/account", title: "Аккаунт", tabId: "account" },
-  { href: "/account/settings/documents", title: "Документы", tabId: "account" },
+  { href: "/account/settings", title: "Настройки", sectionId: "settings" },
+  { href: "/account/nutrition", title: "Питание", sectionId: "nutrition" },
+  { href: "/account/settings/account", title: "Аккаунт" },
+  { href: "/account/settings/documents", title: "Документы" },
   {
     href: "/account/settings/delete-data",
     title: "Удалить данные",
-    tabId: "account",
   },
-  { href: "/account/settings/support", title: "Поддержка", tabId: "account" },
-  { href: "/account/settings/about", title: "О приложении", tabId: "account" },
+  { href: "/account/settings/support", title: "Поддержка" },
+  { href: "/account/settings/about", title: "О приложении" },
 ];
 
 /** Legacy маршруты, активирующие вкладку «Профиль». */
@@ -241,7 +240,8 @@ export function isShellHeaderHidden2026(pathname: string): boolean {
     pathname === "/wellness" ||
     pathname === "/account" ||
     pathname === "/plan/today" ||
-    pathname === "/plan/recipes"
+    pathname === "/plan/recipes" ||
+    pathname === "/events"
   );
 }
 
@@ -256,6 +256,7 @@ export const LEGACY_FALLBACK_BY_2026_PATH: Record<string, string> = {
   "/plan/generate": "/menu/generate",
   "/plan/recipes": "/menu/recipes",
   "/wellness": "/health",
+  "/events": "/menu/event",
   "/account": "/profile",
   "/account/subscription": "/subscription",
   "/account/ams": "/subscription",
@@ -285,17 +286,20 @@ export function getActiveTabId2026(pathname: string): Nav2026TabId | null {
   if (pathname === "/wellness" || pathname.startsWith("/wellness/")) {
     return "wellness";
   }
+  if (pathname === "/events" || pathname.startsWith("/events/")) {
+    return "events";
+  }
   if (pathname === "/plan" || pathname.startsWith("/plan/")) {
     return "plan";
   }
   if (pathname === "/account" || pathname.startsWith("/account/")) {
-    return "account";
+    return null;
   }
   const accountLegacy = ACCOUNT_LEGACY_PREFIXES_2026.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
   if (accountLegacy) {
-    return "account";
+    return null;
   }
   return null;
 }
@@ -346,7 +350,7 @@ export function getSubTabsForTab2026(tabId: Nav2026TabId): Nav2026SubTab[] {
     case "shopping":
     case "planam":
     case "wellness":
-    case "account":
+    case "events":
       return [];
     default:
       return [];
