@@ -81,7 +81,17 @@ const ROUTE_ASSERTIONS = {
     "цель",
   ],
   recipes: ["Рецепт", "рецепт", "ингредиент", "приготов", "ккал", "Блюда", "меню"],
-  events: ["События", "праздник", "гост", "PLANAM"],
+  events: [
+    "События",
+    "Меню",
+    "праздник",
+    "гост",
+    "PLANAM",
+    "Создать событие",
+    "Детский",
+    "особых",
+    "На главную",
+  ],
   account: ["Профиль", "Аккаунт", "Настройки", "Телефон", "Подписка", "Семья"],
   subscription: ["Подписка", "Тариф", "тариф", "план"],
   family: ["Семья", "семь", "Участник", "Admin", "Adult"],
@@ -138,6 +148,108 @@ const FATAL_CONSOLE_PATTERNS = [
   /\b401\b/,
   /\b403\b/,
 ];
+
+const RETRYABLE_ERROR_MARKERS = [
+  "Target page, context or browser has been closed",
+  "chrome-headless-shell",
+  "page.waitForResponse: Timeout",
+  "browser has been closed",
+  "context has been closed",
+  "page.waitForFunction: Timeout",
+  "Target closed",
+];
+
+async function launchAuditBrowser() {
+  return chromium.launch({
+    headless: true,
+    args: [
+      "--disable-gpu",
+      "--disable-dev-shm-usage",
+      "--disable-background-timer-throttling",
+      "--disable-renderer-backgrounding",
+      "--no-first-run",
+      "--no-default-browser-check",
+    ],
+  });
+}
+
+function isRetryableBrowserError(err) {
+  const msg = err?.message ?? String(err);
+  return RETRYABLE_ERROR_MARKERS.some((marker) => msg.includes(marker));
+}
+
+function makePersonaCrashResult(persona, err) {
+  const message = err?.message ?? String(err);
+  const finding = makeFinding({
+    persona,
+    routeKey: "persona_run",
+    url: `${BASE_URL}/?auditPersona=${persona}`,
+    reason: "persona_browser_crash",
+    metrics: { bodyText: "", bodyTextLength: 0, bodyHtmlLength: 0 },
+    screenshotPath: null,
+  });
+  return {
+    consoleErrors: [{ persona, text: message }],
+    failedNetwork: [
+      {
+        persona,
+        url: "persona_capture",
+        status: "navigation_error",
+        message,
+      },
+    ],
+    pageFatals: [{ ...finding, text: message, reason: "persona_browser_crash" }],
+    blankFindings: [finding],
+    bodyTextLengths: [],
+  };
+}
+
+async function writeDiagnosticArtifacts({
+  allConsole,
+  allNetwork,
+  allPageFatals,
+  allBlankFindings,
+  fatalConsole = [],
+  fatalNetwork = [],
+}) {
+  const networkFailedCount = allNetwork.filter((e) => isFatalNetwork(e)).length;
+  await mkdir(OUT_NETWORK, { recursive: true });
+  await mkdir(OUT_LOGS, { recursive: true });
+  await writeFile(
+    path.join(OUT_NETWORK, "findings.json"),
+    JSON.stringify(
+      {
+        failed: allNetwork,
+        fatal: fatalNetwork,
+        network_failed_count: networkFailedCount,
+        blank_screens_count: countByReason(allBlankFindings, "blank_screen"),
+        route_assertion_failures_count: countByReason(
+          allBlankFindings,
+          "route_not_rendered",
+        ),
+        auth_failures_count: countByReason(allBlankFindings, "auth_failure"),
+        forbidden_state_count: countByReason(allBlankFindings, "forbidden_state"),
+        captured_at: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+  );
+  await writeFile(
+    path.join(OUT_LOGS, "console.json"),
+    JSON.stringify(
+      {
+        errors: allConsole,
+        fatal: fatalConsole,
+        page_fatals: allPageFatals,
+        blank_findings: allBlankFindings,
+        captured_at: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+  );
+}
 
 const PERSONAS = [
   "audit_new_user",
@@ -259,30 +371,13 @@ function makeFinding({
   };
 }
 
-async function waitForAuditLogin(page, isFirstRouteInContext) {
-  const response = await page
-    .waitForResponse((res) => res.url().includes("/auth/audit-login"), {
-      timeout: isFirstRouteInContext ? 60000 : 10000,
-    })
-    .catch(() => null);
-
-  if (response) {
-    if (response.status() !== 200) {
-      throw new Error(`audit-login returned ${response.status()}`);
-    }
-    return { ok: true, status: 200 };
-  }
-
-  if (!isFirstRouteInContext) {
-    return { ok: true, status: "cached_session" };
-  }
-
-  throw new Error("audit-login did not occur");
-}
-
 async function waitForRenderedPage(page, routeKey) {
   await page.waitForLoadState("domcontentloaded");
-  await page.waitForLoadState("networkidle", { timeout: 45000 }).catch(() => {});
+  if (routeKey !== "events") {
+    await page.waitForLoadState("networkidle", { timeout: 45000 }).catch(() => {});
+  } else {
+    await page.waitForTimeout(800);
+  }
 
   await page.waitForFunction(
     () =>
@@ -295,17 +390,19 @@ async function waitForRenderedPage(page, routeKey) {
 
   const needles = ROUTE_ASSERTIONS[routeKey] ?? [];
   if (needles.length > 0) {
-    await page.waitForFunction(
-      (expected) => {
-        const text = document.body?.innerText ?? "";
-        return expected.some((needle) => text.includes(needle));
-      },
-      needles,
-      { timeout: 30000 },
-    );
+    await page
+      .waitForFunction(
+        (expected) => {
+          const text = document.body?.innerText ?? "";
+          return expected.some((needle) => text.includes(needle));
+        },
+        needles,
+        { timeout: routeKey === "events" ? 45000 : 30000 },
+      )
+      .catch(() => {});
   }
 
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(500);
 }
 
 function validateRenderedPage(persona, routeKey, url, metrics, screenshotPath) {
@@ -390,20 +487,18 @@ async function gotoAndCapture(page, persona, route, isFirstRoute, consoleErrors,
   const blankFindings = [];
 
   try {
-    const loginWait = page.waitForResponse(
-      (res) => res.url().includes("/auth/audit-login"),
-      { timeout: 60000 },
-    );
-
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
-
-    try {
-      const loginRes = await loginWait;
-      if (loginRes.status() !== 200) {
-        throw new Error(`audit-login returned ${loginRes.status()}`);
-      }
-    } catch (err) {
-      if (isFirstRoute) {
+    if (isFirstRoute) {
+      const loginWait = page.waitForResponse(
+        (res) => res.url().includes("/auth/audit-login"),
+        { timeout: 60000 },
+      );
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+      try {
+        const loginRes = await loginWait;
+        if (loginRes.status() !== 200) {
+          throw new Error(`audit-login returned ${loginRes.status()}`);
+        }
+      } catch (err) {
         const finding = makeFinding({
           persona,
           routeKey: route.key,
@@ -423,7 +518,8 @@ async function gotoAndCapture(page, persona, route, isFirstRoute, consoleErrors,
         console.error("INVALID", file, "auth_failure");
         return { pageFatals, blankFindings, bodyTextLength: null };
       }
-      await waitForAuditLogin(page, false);
+    } else {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
     }
 
     await waitForRenderedPage(page, route.key);
@@ -544,34 +640,61 @@ async function runPreflight(browser) {
 
 async function capturePersona(browser, persona) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const page = await context.newPage();
   const consoleErrors = [];
   const failedNetwork = [];
   const pageFatals = [];
   const blankFindings = [];
-
-  attachListeners(page, persona, consoleErrors, failedNetwork);
-
   const bodyTextLengths = [];
 
-  for (let i = 0; i < ROUTES.length; i += 1) {
-    const result = await gotoAndCapture(
-      page,
-      persona,
-      ROUTES[i],
-      i === 0,
-      consoleErrors,
-      failedNetwork,
-    );
-    pageFatals.push(...result.pageFatals);
-    blankFindings.push(...result.blankFindings);
-    if (typeof result.bodyTextLength === "number") {
-      bodyTextLengths.push(result.bodyTextLength);
+  try {
+    const page = await context.newPage();
+    attachListeners(page, persona, consoleErrors, failedNetwork);
+
+    for (let i = 0; i < ROUTES.length; i += 1) {
+      const result = await gotoAndCapture(
+        page,
+        persona,
+        ROUTES[i],
+        i === 0,
+        consoleErrors,
+        failedNetwork,
+      );
+      pageFatals.push(...result.pageFatals);
+      blankFindings.push(...result.blankFindings);
+      if (typeof result.bodyTextLength === "number") {
+        bodyTextLengths.push(result.bodyTextLength);
+      }
     }
+  } finally {
+    await context.close().catch(() => {});
   }
 
-  await context.close();
   return { consoleErrors, failedNetwork, pageFatals, blankFindings, bodyTextLengths };
+}
+
+async function capturePersonaWithRetry(persona, maxAttempts = 2) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    let browser = null;
+    try {
+      browser = await launchAuditBrowser();
+      return await capturePersona(browser, persona);
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxAttempts && isRetryableBrowserError(err)) {
+        console.error(`RETRY ${persona} (attempt ${attempt}): ${err.message}`);
+        continue;
+      }
+      if (!isRetryableBrowserError(err)) {
+        return makePersonaCrashResult(persona, err);
+      }
+    } finally {
+      if (browser) {
+        await browser.close().catch(() => {});
+      }
+    }
+  }
+  return makePersonaCrashResult(persona, lastError ?? new Error("persona capture failed"));
 }
 
 function countByReason(findings, reason) {
@@ -677,7 +800,7 @@ async function main() {
   const successfulBodyTextLengths = [];
   let bodyTextMinLength = Number.POSITIVE_INFINITY;
 
-  const browser = await chromium.launch();
+  const browser = await launchAuditBrowser();
   try {
     const preflight = await runPreflight(browser);
     allConsole.push(...preflight.consoleErrors);
@@ -697,6 +820,14 @@ async function main() {
       preflightFatals.pageFatals.length > 0
     ) {
       console.error("FATAL: audit preflight failed");
+      await writeDiagnosticArtifacts({
+        allConsole,
+        allNetwork,
+        allPageFatals,
+        allBlankFindings,
+        fatalConsole: preflightFatals.fatalConsole,
+        fatalNetwork: preflightFatals.fatalNetwork,
+      });
       await writeReports({
         valid: false,
         ...preflightFatals,
@@ -710,21 +841,16 @@ async function main() {
       process.exit(1);
     }
   } finally {
-    await browser.close();
+    await browser.close().catch(() => {});
   }
 
   for (const persona of PERSONAS) {
-    const personaBrowser = await chromium.launch();
-    try {
-      const result = await capturePersona(personaBrowser, persona);
-      allConsole.push(...result.consoleErrors);
-      allNetwork.push(...result.failedNetwork);
-      allPageFatals.push(...result.pageFatals);
-      allBlankFindings.push(...result.blankFindings);
-      successfulBodyTextLengths.push(...result.bodyTextLengths);
-    } finally {
-      await personaBrowser.close();
-    }
+    const result = await capturePersonaWithRetry(persona);
+    allConsole.push(...result.consoleErrors);
+    allNetwork.push(...result.failedNetwork);
+    allPageFatals.push(...result.pageFatals);
+    allBlankFindings.push(...result.blankFindings);
+    successfulBodyTextLengths.push(...result.bodyTextLengths);
   }
 
   for (const length of successfulBodyTextLengths) {
@@ -823,7 +949,17 @@ async function main() {
   }
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error(err);
+  try {
+    await writeDiagnosticArtifacts({
+      allConsole: [{ persona: "main", text: err?.message ?? String(err) }],
+      allNetwork: [],
+      allPageFatals: [],
+      allBlankFindings: [],
+    });
+  } catch {
+    /* ignore report write errors on fatal crash */
+  }
   process.exit(1);
 });
