@@ -253,15 +253,31 @@ export function WellnessV2() {
           <Skeleton2026 variant="rect" className="h-24 w-full" />
         </>
       ) : !hasAnyData ? (
-        <V2EmptyState
-          icon={<span aria-hidden>🌿</span>}
-          title="Расскажите о себе — покажем баланс"
-          description="PLANAM посчитает калории и даст рекомендации под ваши цели."
-          actionLabel="Настроить питание"
-          onAction={() =>
-            router.push(`${PLANAM_ROUTES.accountNutrition}?returnTo=/wellness`)
-          }
-        />
+        <div className="space-y-3">
+          <V2EmptyState
+            icon={<span aria-hidden>🌿</span>}
+            title="Расскажите о себе — покажем баланс"
+            description="PLANAM посчитает калории и даст рекомендации под ваши цели."
+            actionLabel="Настроить питание"
+            onAction={() =>
+              router.push(`${PLANAM_ROUTES.accountNutrition}?returnTo=/wellness`)
+            }
+          />
+          <V2AiTip
+            tone="ai"
+            title="AI-нутрициолог"
+            text="Можно спросить, что делать после пропущенного приёма пищи, как добрать белок или как учесть еду вне плана."
+            onClick={() => setAiOpen(true)}
+          />
+          <V2Button
+            variant="primary"
+            size="wide"
+            data-testid="wellness-ai-open"
+            onClick={() => setAiOpen(true)}
+          >
+            Спросить AI-нутрициолога
+          </V2Button>
+        </div>
       ) : (
         <>
           <V2Card>
@@ -340,11 +356,12 @@ export function WellnessV2() {
             </section>
           ) : null}
 
-          <V2Button
-            variant="primary"
-            size="wide"
-            onClick={() => setAiOpen(true)}
-          >
+            <V2Button
+              variant="primary"
+              size="wide"
+              data-testid="wellness-ai-open"
+              onClick={() => setAiOpen(true)}
+            >
             Спросить AI-нутрициолога
           </V2Button>
         </>

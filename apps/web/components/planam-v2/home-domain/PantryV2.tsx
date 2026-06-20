@@ -258,6 +258,11 @@ export function PantryV2() {
               key={f.id}
               label={f.label}
               active={filter === f.id}
+              data-testid={
+                f.id === "excess"
+                  ? "pantry-filter-many"
+                  : `pantry-filter-${f.id}`
+              }
               onClick={() => setFilter(f.id)}
             />
           ))}
@@ -349,6 +354,7 @@ export function PantryV2() {
           <V2Button
             variant="secondary"
             size="wide"
+            data-testid="pantry-cook-from-available"
             onClick={() => router.push(`${PLANAM_ROUTES.recipes}?from_pantry=true`)}
           >
             Приготовить из того, что есть

@@ -58,7 +58,7 @@ export function PaymentStub2026() {
     try {
       const updated = await selectPlanStub(initData, mode, planCode);
       patchOverview(updated);
-      await showToast("✓ Тариф сохранён (тест без оплаты)");
+      await showToast("✓ Тариф сохранён без списания");
       if (returnTo) {
         router.push(returnTo);
       } else {
@@ -84,8 +84,8 @@ export function PaymentStub2026() {
           {apiPlan.price_rub > 0 ? `${apiPlan.price_rub} ₽/мес` : "Бесплатно"}
         </p>
         <p className="pa26-body mt-3 text-pa-muted">
-          Реальная оплата подключается позже. Сейчас можно сохранить тариф для
-          теста — без списания с карты.
+          Оплата будет подключена позже. Сейчас можно вернуться к тарифам или
+          сохранить выбранный план без списания с карты.
         </p>
       </Card2026>
 
@@ -97,11 +97,17 @@ export function PaymentStub2026() {
         ))}
       </ul>
 
-      <Button2026 size="wide" loading={busy} onClick={() => void handleStubPay()}>
-        Подключить (заглушка)
+      <Button2026
+        size="wide"
+        loading={busy}
+        data-testid="subscription-checkout-confirm"
+        onClick={() => void handleStubPay()}
+      >
+        Сохранить выбранный план
       </Button2026>
       <Link
         href={MONETIZATION_PATHS.subscription}
+        data-testid="subscription-checkout-back"
         className="block text-center pa26-micro font-semibold text-sage-700 dark:text-sage-300"
       >
         ← Назад к тарифам

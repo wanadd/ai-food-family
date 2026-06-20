@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import type { FamilyMember } from "@/lib/family/types";
-import { stripAuditSuffix } from "@/lib/display/sanitize-label";
+import { sanitizeUserFacingLabel } from "@/lib/display/sanitize-label";
 
 type MemberCardProps = {
   member: FamilyMember;
@@ -19,8 +19,14 @@ export function MemberCard({
   onDelete,
 }: MemberCardProps) {
   const typeLabel =
-    member.member_type === "virtual" ? "Виртуальный" : "Аккаунт Telegram";
-  const displayName = stripAuditSuffix(member.display_name).replace(/^Audit\s+/i, "");
+    member.member_type === "virtual" ? "Виртуальный участник" : "Аккаунт Telegram";
+  const roleLabel =
+    member.role === "admin"
+      ? "Админ"
+      : member.role === "child"
+        ? "Ребёнок"
+        : "Взрослый";
+  const displayName = sanitizeUserFacingLabel(member.display_name, "Участник");
   const profileStatus = member.nutrition_profile_complete
     ? "Заполнен"
     : "Не заполнен";
@@ -43,7 +49,7 @@ export function MemberCard({
           <div className="mt-2 flex flex-wrap gap-1.5">
             <span className="pa-chip">{typeLabel}</span>
             <span className="rounded-pill bg-olive/20 px-2.5 py-0.5 text-xs font-medium text-graphite-700">
-              {member.role_label}
+              {roleLabel}
             </span>
             <span
               className={`rounded-pill px-2.5 py-0.5 text-xs font-medium ${statusColor}`}
@@ -108,6 +114,7 @@ export function MemberCard({
           <button
             type="button"
             onClick={onEditNutrition}
+            data-testid="family-member-edit"
             className="pa-btn-ghost px-3 py-2 text-xs"
           >
             {member.is_virtual ? "Профиль питания" : "Изменить профиль"}
@@ -117,6 +124,7 @@ export function MemberCard({
           <button
             type="button"
             onClick={onDelete}
+            data-testid="family-member-delete"
             className="rounded-control px-3 py-2 text-xs font-semibold text-red-600"
           >
             Удалить

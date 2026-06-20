@@ -197,6 +197,7 @@ export function SubscriptionHub2026() {
           <Button2026
             size="wide"
             className="mt-4"
+            data-testid="subscription-upgrade-cta"
             onClick={() => handleUpgrade("pro")}
           >
             Перейти на PRO

@@ -285,10 +285,15 @@ export function ShoppingV2() {
               key={f.id}
               label={f.label}
               active={filter === f.id}
+              data-testid={`shopping-filter-${f.id}`}
               onClick={() => setFilter(f.id)}
             />
           ))}
-          <V2Chip label={syncing ? "Обновляем…" : "Из меню"} onClick={() => void handleSync()} />
+          <V2Chip
+            label={syncing ? "Обновляем…" : "Из меню"}
+            data-testid="shopping-sync-from-menu"
+            onClick={() => void handleSync()}
+          />
         </div>
       </div>
 
@@ -302,7 +307,7 @@ export function ShoppingV2() {
         {emptyList ? (
           <V2EmptyState
             icon={<span aria-hidden>🛒</span>}
-            title="Покупок пока нет"
+            title="Список пуст"
             description="Соберите меню или добавьте продукт вручную."
             actionLabel="Собрать меню"
             onAction={() => router.push(PLANAM_ROUTES.planGenerate)}
@@ -344,7 +349,12 @@ export function ShoppingV2() {
         )}
 
         <div className="mt-5 space-y-2">
-          <V2Button variant="primary" size="wide" onClick={() => setAddOpen(true)}>
+          <V2Button
+            variant="primary"
+            size="wide"
+            data-testid="shopping-add-open"
+            onClick={() => setAddOpen(true)}
+          >
             Добавить продукт
           </V2Button>
         </div>
@@ -361,6 +371,7 @@ export function ShoppingV2() {
             loading={adding}
             disabled={!draft.name.trim()}
             onClick={() => void handleAdd()}
+            data-testid="shopping-add-submit"
           >
             Добавить
           </V2Button>
@@ -372,6 +383,7 @@ export function ShoppingV2() {
             <input
               type="text"
               value={draft.name}
+              data-testid="shopping-add-input"
               onChange={(e) =>
                 setDraft((d) => ({
                   ...d,
@@ -456,6 +468,7 @@ function ShoppingRowV2({
           type="button"
           onClick={onToggle}
           disabled={busy}
+          data-testid="shopping-item-toggle"
           className={cn(
             "flex min-w-0 flex-1 items-center gap-3 text-left transition",
             "hover:opacity-90 disabled:opacity-60",
@@ -498,6 +511,7 @@ function ShoppingRowV2({
           type="button"
           onClick={onDelete}
           disabled={busy}
+          data-testid="shopping-item-delete"
           className="shrink-0 rounded-pill border border-pa-border px-2.5 py-1.5 pa26-micro font-semibold text-pa-muted disabled:opacity-50"
         >
           Удалить

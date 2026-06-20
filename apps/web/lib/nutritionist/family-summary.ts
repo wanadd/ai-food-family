@@ -1,4 +1,5 @@
 import type { Family } from "@/lib/family/types";
+import { sanitizeUserFacingLabel } from "@/lib/display/sanitize-label";
 
 export type FamilyNutritionSummary = {
   memberCount: number;
@@ -16,7 +17,7 @@ export function buildFamilySummary(family: Family): FamilyNutritionSummary {
     .map((m) => {
       const goal = m.nutrition_goal_label;
       if (!goal) return null;
-      return `${m.display_name}: ${goal}`;
+      return `${sanitizeUserFacingLabel(m.display_name, "Участник")}: ${goal}`;
     })
     .filter((line): line is string => Boolean(line))
     .slice(0, 4);

@@ -1,4 +1,5 @@
 import type { Family, FamilyMember } from "@/lib/family/types";
+import { sanitizeUserFacingLabel } from "@/lib/display/sanitize-label";
 
 export type FamilyMemberInsight = {
   name: string;
@@ -46,7 +47,7 @@ export function buildFamilyMemberInsights(
   return (family.members ?? [])
     .filter((m) => !m.is_you)
     .map((member) => ({
-      name: member.display_name,
+      name: sanitizeUserFacingLabel(member.display_name, "Участник"),
       line: insightForMember(member),
     }));
 }

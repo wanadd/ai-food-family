@@ -1,4 +1,5 @@
 import type { AppMode } from "@/lib/app-mode/types";
+import { sanitizeUserFacingLabel } from "@/lib/display/sanitize-label";
 
 export const MENU_TODAY_MARK_CONSUMPTION_BUTTON = "Отметить съеденное";
 
@@ -78,7 +79,7 @@ export function buildConsumptionMemberTargets(
   const self = members.find((m) => m.is_you);
   const selfTarget = {
     id: "self" as const,
-    label: self?.display_name?.trim() || "Я",
+    label: sanitizeUserFacingLabel(self?.display_name, "Я"),
   };
 
   if (!isAdmin) {
@@ -92,7 +93,10 @@ export function buildConsumptionMemberTargets(
     if (member.is_you || !member.is_virtual) {
       continue;
     }
-    targets.push({ id: member.id, label: member.display_name });
+    targets.push({
+      id: member.id,
+      label: sanitizeUserFacingLabel(member.display_name, "Участник"),
+    });
   }
   return targets;
 }

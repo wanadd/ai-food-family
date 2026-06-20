@@ -36,6 +36,7 @@ export function AddPersonSheet({
               onClose();
               onInviteTelegram();
             }}
+            data-testid="family-invite-member"
             className="pa-card flex w-full min-h-[56px] flex-col items-start px-4 py-3.5 text-left transition hover:border-sage-200 active:scale-[0.99]"
           >
             <span className="font-semibold text-graphite-900">
@@ -51,6 +52,7 @@ export function AddPersonSheet({
               onClose();
               onAddVirtual();
             }}
+            data-testid="family-add-virtual-member"
             className="pa-card flex w-full min-h-[56px] flex-col items-start px-4 py-3.5 text-left transition hover:border-sage-200 active:scale-[0.99]"
           >
             <span className="font-semibold text-graphite-900">

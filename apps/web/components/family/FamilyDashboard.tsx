@@ -32,6 +32,7 @@ import {
   type VirtualMemberDraft,
   type VirtualNutrition,
 } from "@/lib/family/types";
+import { sanitizeFamilyName, sanitizeUserFacingLabel } from "@/lib/display/sanitize-label";
 
 function memberCountLabel(count: number): string {
   const n = Math.abs(count);
@@ -56,7 +57,7 @@ function draftFromMember(member: FamilyMember): VirtualMemberDraft {
     : { ...EMPTY_VIRTUAL_NUTRITION };
 
   return {
-    display_name: member.display_name,
+    display_name: sanitizeUserFacingLabel(member.display_name, "Участник"),
     virtual_kind: member.virtual_kind ?? "child",
     role: member.role === "child" ? "child" : "adult",
     nutrition,
@@ -188,7 +189,7 @@ export function FamilyDashboard() {
     setCreating(true);
     setError(null);
     try {
-      const created = await createFamily(initData, familyName.trim(), adminConsent);
+      const created = await createFamily(initData, sanitizeFamilyName(familyName), adminConsent);
       setFamily(created);
       setFamilyName("");
       await refreshContext();
@@ -249,7 +250,7 @@ export function FamilyDashboard() {
 
   async function handleDeleteMember(member: FamilyMember) {
     if (!initData || !family) return;
-    if (!window.confirm(`Убрать ${member.display_name} из семьи?`)) return;
+    if (!window.confirm(`Убрать ${sanitizeUserFacingLabel(member.display_name, "участника")} из семьи?`)) return;
     setError(null);
     try {
       await removeFamilyMember(initData, family.id, member.id);
@@ -284,9 +285,9 @@ export function FamilyDashboard() {
 
   if (showNutritionForm) {
     const formTitle = linkedAccount
-      ? (editingMember?.display_name ?? "Участник")
+      ? sanitizeUserFacingLabel(editingMember?.display_name, "Участник")
       : editingMember
-        ? editingMember.display_name
+        ? sanitizeUserFacingLabel(editingMember.display_name, "Участник")
         : "Новый участник";
 
     return (
@@ -335,7 +336,7 @@ export function FamilyDashboard() {
               editingMember ? "Сохранить профиль" : "Добавить в семью"
             }
             linkedAccount={linkedAccount}
-            linkedName={editingMember?.display_name}
+            linkedName={sanitizeUserFacingLabel(editingMember?.display_name, "")}
             onSubmit={() => void handleSaveNutrition()}
             onCancel={closeMemberForm}
             loading={saving}
@@ -402,7 +403,9 @@ export function FamilyDashboard() {
               <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
                 Ваша семья
               </p>
-              <h2 className="mt-1 text-xl font-bold text-graphite-900">{family.name}</h2>
+              <h2 className="mt-1 text-xl font-bold text-graphite-900">
+                {sanitizeFamilyName(family.name)}
+              </h2>
               <div className="mt-3 flex flex-wrap gap-2 text-sm">
                 <span className="pa-chip">
                   {memberCountLabel(family.members_count)}
@@ -430,6 +433,7 @@ export function FamilyDashboard() {
               <button
                 type="button"
                 onClick={() => setShowAddPerson(true)}
+                data-testid="family-add-member"
                 className="pa-btn-primary w-full active:scale-[0.99]"
               >
                 + Добавить человека
@@ -483,6 +487,7 @@ export function FamilyDashboard() {
                   <button
                     type="button"
                     onClick={() => setShowAddPerson(true)}
+                    data-testid="family-add-member-secondary"
                     className="pa-btn-ghost inline-flex min-h-[40px] items-center px-4"
                   >
                     + Добавить участника

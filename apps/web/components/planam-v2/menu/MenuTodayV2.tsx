@@ -414,6 +414,7 @@ export function MenuTodayV2() {
                 key={day.day_index}
                 type="button"
                 onClick={() => selectDay(day.day_index)}
+                data-testid="menu-day-switch"
                 className={cn(
                   "shrink-0 rounded-pill px-3.5 py-2 pa26-micro font-semibold transition",
                   dayIndex === day.day_index
@@ -547,6 +548,7 @@ export function MenuTodayV2() {
                     key={value}
                     type="button"
                     onClick={() => setPortionMultiplier(value)}
+                    data-testid="menu-meal-portion"
                     className={cn(
                       "rounded-pill border px-2 py-1.5 pa26-micro font-semibold",
                       portionMultiplier === value
@@ -562,6 +564,7 @@ export function MenuTodayV2() {
             {actionMeal.meal.recipe_id ? (
               <SheetAction
                 label="Готовить"
+                testId="menu-meal-cook"
                 onClick={() => {
                   const id = actionMeal.meal.recipe_id!;
                   setActionMeal(null);
@@ -571,11 +574,13 @@ export function MenuTodayV2() {
             ) : (
               <SheetAction
                 label={checkinBusy === "cooked" ? "Сохраняем…" : "Рецепт пока недоступен · отметить приготовленным"}
+                testId="menu-meal-cook"
                 onClick={() => void handleMealStatus(actionMeal, "cooked")}
               />
             )}
             <SheetAction
               label={checkinBusy === "ate_home" ? "Сохраняем…" : "Отметить съеденным"}
+              testId="menu-meal-eaten"
               onClick={() => void handleMealStatus(actionMeal, "ate_home")}
             />
             <SheetAction
@@ -595,6 +600,7 @@ export function MenuTodayV2() {
             />
             <SheetAction
               label="Ел другое"
+              testId="menu-meal-ate-outside"
               onClick={() => {
                 setAteOtherMeal(actionMeal);
                 setActionMeal(null);
@@ -602,6 +608,7 @@ export function MenuTodayV2() {
             />
             <SheetAction
               label={skipBusy ? "Сохраняем…" : "Пропустил"}
+              testId="menu-meal-skipped"
               onClick={() => void handleSkipMeal(actionMeal)}
             />
             {actionMeal.meal.recipe_id ? (
@@ -732,6 +739,7 @@ function MealRowV2({
       data-meal-type={meal.meal_type}
       data-recipe-id={meal.recipe_id ?? undefined}
       data-slot-id={item.slotId ?? undefined}
+      data-testid="menu-meal-row"
       className={cn(
         "flex items-center gap-3 overflow-hidden rounded-card border bg-pa-surface p-3 shadow-soft dark:shadow-none",
         highlighted
@@ -769,6 +777,7 @@ function MealRowV2({
       <button
         type="button"
         onClick={onQuickActions}
+        data-testid="menu-meal-action-open"
         className={cn(
           "shrink-0 rounded-pill border border-sage-300 bg-sage-50 px-3 py-2",
           "pa26-micro font-semibold text-sage-700 transition hover:bg-sage-100",
@@ -786,15 +795,18 @@ function SheetAction({
   label,
   onClick,
   destructive = false,
+  testId,
 }: {
   label: string;
   onClick: () => void;
   destructive?: boolean;
+  testId?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-testid={testId}
       className={cn(
         "flex w-full min-h-[48px] items-center rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left pa26-card-title transition",
         destructive

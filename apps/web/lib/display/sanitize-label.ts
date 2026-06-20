@@ -5,6 +5,9 @@ import {
 
 const AUDIT_SUFFIX = /\s*\(audit\)\s*$/i;
 const AUDIT_PREFIX_IN_NAME = /^Audit\s+/i;
+const RAW_AUDIT_WORD = /\baudit\b/gi;
+const RAW_DEBUG_WORDS = /\b(test|demo)\b/gi;
+const INVALID_LABELS = /^(undefined|null|nan)$/i;
 
 /** Human-readable names for audit harness personas on user-facing screens. */
 export const AUDIT_ACCOUNT_DISPLAY_NAMES: Record<AuditPersona, string> = {
@@ -25,7 +28,30 @@ export const AUDIT_ACCOUNT_DISPLAY_NAMES: Record<AuditPersona, string> = {
 
 /** Remove test harness suffix from user-visible labels. */
 export function stripAuditSuffix(text: string | null | undefined): string {
-  return (text ?? "").replace(AUDIT_SUFFIX, "").trim();
+  return (text ?? "")
+    .replace(AUDIT_SUFFIX, "")
+    .replace(RAW_AUDIT_WORD, "")
+    .replace(RAW_DEBUG_WORDS, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+export function sanitizeUserFacingLabel(
+  text: string | null | undefined,
+  fallback = "Пользователь",
+): string {
+  const clean = stripAuditSuffix(String(text ?? ""))
+    .replace(AUDIT_PREFIX_IN_NAME, "")
+    .trim();
+  if (!clean || INVALID_LABELS.test(clean)) return fallback;
+  return clean;
+}
+
+export function sanitizeFamilyName(text: string | null | undefined): string {
+  const clean = sanitizeUserFacingLabel(text, "");
+  if (!clean || /^family$/i.test(clean)) return "Моя семья";
+  if (/^иванов/i.test(clean)) return clean;
+  return clean;
 }
 
 export function formatUserDisplayName(
@@ -66,7 +92,7 @@ export function formatAccountDisplayName(
   }
 
   const cleaned = formatUserDisplayName(first, last);
-  if (cleaned && !AUDIT_PREFIX_IN_NAME.test(cleaned)) {
+  if (cleaned && !AUDIT_PREFIX_IN_NAME.test(cleaned) && !INVALID_LABELS.test(cleaned)) {
     return cleaned;
   }
 

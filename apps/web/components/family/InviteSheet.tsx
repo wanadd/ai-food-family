@@ -153,6 +153,7 @@ export function InviteSheet({
             <button
               type="button"
               onClick={() => setStep("phone")}
+              data-testid="family-invite-phone"
               className="pa-card w-full px-4 py-4 text-left text-sm font-semibold text-graphite-900 hover:border-sage-200 dark:text-pa-foreground dark:hover:border-sage-700/50"
             >
               Ввести номер телефона
@@ -160,6 +161,7 @@ export function InviteSheet({
             <button
               type="button"
               onClick={() => void handleLinkInvite()}
+              data-testid="family-invite-link"
               className="w-full rounded-card border border-sage-200 bg-sage-50 px-4 py-4 text-left text-sm font-semibold text-sage-700 hover:bg-sage-100 dark:border-sage-700/50 dark:bg-sage-900/30 dark:text-sage-300 dark:hover:bg-sage-800/40"
             >
               Отправить ссылку-приглашение
@@ -179,6 +181,7 @@ export function InviteSheet({
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              data-testid="family-invite-phone-input"
               placeholder="+79001234567"
               className={INPUT_CLS}
             />

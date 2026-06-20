@@ -6,7 +6,7 @@
  * мягкие скругления, чистые поверхности, зелёный CTA, спокойные подписи.
  */
 
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { BottomSheet2026 } from "@/components/planam-2026/ui/BottomSheet2026";
@@ -117,19 +117,21 @@ export function V2Chip({
   disabled = false,
   onClick,
   className,
+  ...rest
 }: {
   label: string;
   active?: boolean;
   disabled?: boolean;
   onClick?: () => void;
   className?: string;
-}) {
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "onClick">) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={disabled ? undefined : onClick}
       aria-pressed={active}
+      {...rest}
       className={cn(
         "shrink-0 rounded-pill border px-3 py-1.5 pa26-micro font-semibold transition",
         active

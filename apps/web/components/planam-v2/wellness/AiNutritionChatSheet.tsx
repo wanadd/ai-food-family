@@ -126,6 +126,9 @@ export function AiNutritionChatSheet({
             messages.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
+                data-testid={
+                  message.role === "assistant" ? "wellness-ai-answer" : undefined
+                }
                 className={
                   message.role === "user"
                     ? "ml-8 rounded-card bg-sage-500 px-3 py-2 pa26-caption text-white"
@@ -147,7 +150,8 @@ export function AiNutritionChatSheet({
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Ваш вопрос"
+            placeholder="Напишите, что вы съели или что хотите узнать"
+            data-testid="wellness-ai-input"
             rows={2}
             className="min-w-0 flex-1 resize-none rounded-control border border-pa-border bg-pa-surface px-3 py-2.5 pa26-body outline-none focus:border-sage-400"
           />
@@ -155,6 +159,7 @@ export function AiNutritionChatSheet({
             variant="primary"
             disabled={!input.trim() || sending}
             loading={sending}
+            data-testid="wellness-ai-send"
             onClick={() => void send(input)}
           >
             Отправить

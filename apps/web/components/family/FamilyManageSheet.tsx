@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { useToast } from "@/components/ui/ToastProvider";
+import { sanitizeFamilyName, sanitizeUserFacingLabel } from "@/lib/display/sanitize-label";
 import {
   deleteFamily,
   leaveFamily,
@@ -31,7 +32,7 @@ export function FamilyManageSheet({
 }: Props) {
   const { showToast } = useToast();
   const isAdmin = family.your_role === "admin";
-  const [name, setName] = useState(family.name);
+  const [name, setName] = useState(sanitizeFamilyName(family.name));
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [transferId, setTransferId] = useState<number | null>(null);
@@ -43,7 +44,7 @@ export function FamilyManageSheet({
   if (!open) return null;
 
   async function handleRename() {
-    const trimmed = name.trim();
+    const trimmed = sanitizeFamilyName(name);
     if (!trimmed) return;
     setBusy(true);
     try {
@@ -91,7 +92,7 @@ export function FamilyManageSheet({
     setBusy(true);
     try {
       const updated = await transferFamilyAdmin(initData, member.id);
-      showToast(`Права переданы: ${member.display_name}`);
+      showToast(`Права переданы: ${sanitizeUserFacingLabel(member.display_name, "участник")}`);
       onUpdated(updated);
       onClose();
     } catch (err) {
@@ -148,7 +149,7 @@ export function FamilyManageSheet({
                         }}
                         className="pa-card w-full px-3 py-2.5 text-left text-sm disabled:opacity-50"
                       >
-                        {m.display_name}
+                        {sanitizeUserFacingLabel(m.display_name, "Участник")}
                         {transferId === m.id ? " …" : ""}
                       </button>
                     </li>
@@ -168,7 +169,7 @@ export function FamilyManageSheet({
             ) : (
               <div className="mt-6 rounded-card border border-red-100 bg-red-50 p-4">
                 <p className="font-semibold text-graphite-900">
-                  Удалить семью «{family.name}»?
+                  Удалить семью «{sanitizeFamilyName(family.name)}»?
                 </p>
                 <p className="mt-2 text-xs text-graphite-500">
                   Будут удалены семейные меню, общие покупки, общие запасы и

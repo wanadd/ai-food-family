@@ -71,6 +71,7 @@ export function PlanCard2026({
           variant={catalog.isPro ? "primary" : "secondary"}
           className="mt-4"
           disabled={selecting}
+          data-testid="subscription-upgrade-cta"
           onClick={() => onSelect(apiPlan.code)}
         >
           {selecting ? "…" : "Перейти к оплате"}
