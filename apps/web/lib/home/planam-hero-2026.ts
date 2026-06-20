@@ -187,7 +187,7 @@ export function resolvePlanAmHeroState(
       ...base,
       variant: "nutrition_profile",
       priority: "P0",
-      ctaLabel: "Заполнить профиль",
+      ctaLabel: "Настроить питание",
       ctaHref: PLANAM_ROUTES.accountNutrition,
       title: "Давайте настроим питание под вас",
       subtitle:

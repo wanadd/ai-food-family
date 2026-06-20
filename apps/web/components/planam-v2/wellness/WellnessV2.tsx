@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
+import { AiNutritionChatSheet } from "@/components/planam-v2/wellness/AiNutritionChatSheet";
 import { Skeleton2026 } from "@/components/planam-2026/ui/Skeleton2026";
 import {
   V2AiTip,
@@ -61,6 +62,7 @@ export function WellnessV2() {
   const [progress, setProgress] = useState<ProgressOverview | null>(null);
   const [profile, setProfile] = useState<NutritionProfileData | null>(null);
   const [water, setWater] = useState<WaterToday | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
   const [checkins, setCheckins] = useState<
     Awaited<ReturnType<typeof fetchTodayMealCheckins>>
   >([]);
@@ -255,7 +257,7 @@ export function WellnessV2() {
           icon={<span aria-hidden>🌿</span>}
           title="Расскажите о себе — покажем баланс"
           description="PLANAM посчитает калории и даст рекомендации под ваши цели."
-          actionLabel="Настроить"
+          actionLabel="Настроить питание"
           onAction={() =>
             router.push(`${PLANAM_ROUTES.accountNutrition}?returnTo=/wellness`)
           }
@@ -309,6 +311,13 @@ export function WellnessV2() {
 
           {insight ? <V2AiTip text={insight} /> : null}
 
+          <V2AiTip
+            tone="ai"
+            title="AI-нутрициолог"
+            text="Можно написать: пропустил обед, съел другое, хочу добрать белок. PRO: расширенный разбор рациона."
+            onClick={() => setAiOpen(true)}
+          />
+
           {recommendations.length > 0 ? (
             <section>
               <h2 className="pa26-section-title">Рекомендации для вас</h2>
@@ -334,12 +343,14 @@ export function WellnessV2() {
           <V2Button
             variant="primary"
             size="wide"
-            onClick={() => router.push(PLANAM_ROUTES.wellnessChat)}
+            onClick={() => setAiOpen(true)}
           >
             Спросить AI-нутрициолога
           </V2Button>
         </>
       )}
+
+      <AiNutritionChatSheet open={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
   );
 }

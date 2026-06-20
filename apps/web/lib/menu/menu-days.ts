@@ -34,7 +34,12 @@ export function defaultDayIndex(menu: MenuVariant): number {
   const today = new Date().toISOString().slice(0, 10);
   const days = getMenuDays(menu);
   const match = days.find((d) => d.date_iso === today);
-  return match?.day_index ?? days[0]?.day_index ?? 1;
+  if (match) return match.day_index;
+
+  const firstNonEmpty = days.find((day) =>
+    day.meals.some((meal) => meal.name?.trim() && meal.name !== "Свободно"),
+  );
+  return firstNonEmpty?.day_index ?? days[0]?.day_index ?? 1;
 }
 
 export function menuViewForDay(menu: MenuVariant, dayIndex: number): MenuVariant {

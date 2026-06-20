@@ -349,7 +349,7 @@ export function PantryV2() {
           <V2Button
             variant="secondary"
             size="wide"
-            onClick={() => router.push(PLANAM_ROUTES.homeLeftovers)}
+            onClick={() => router.push(`${PLANAM_ROUTES.recipes}?from_pantry=true`)}
           >
             Приготовить из того, что есть
           </V2Button>
@@ -380,7 +380,7 @@ export function PantryV2() {
                   selected.expires_at
                     ? selected.is_expired
                       ? "Просрочено"
-                      : `${selected.days_until_expiry} дн.`
+                      : formatExpiry(selected.days_until_expiry)
                     : "Не указан"
                 }
               />
@@ -503,7 +503,7 @@ function PantryRowV2({
   const trailing = item.expires_at
     ? item.is_expired
       ? "Просрочено"
-      : `${item.days_until_expiry} дн.`
+      : formatExpiry(item.days_until_expiry)
     : qty;
 
   return (
@@ -527,6 +527,11 @@ function PantryRowV2({
       </button>
     </li>
   );
+}
+
+function formatExpiry(days: number): string {
+  if (days <= 0) return "сегодня";
+  return `${days} дн.`;
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {

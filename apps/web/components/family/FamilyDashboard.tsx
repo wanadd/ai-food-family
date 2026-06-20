@@ -111,7 +111,15 @@ export function FamilyDashboard() {
     if (embedded) {
       return (
         <>
-          <div className="mx-auto max-w-lg px-4 pb-6">{children}</div>
+          <div className="mx-auto max-w-lg px-4 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <header className="mb-3">
+              <h1 className="pa26-page-title">Семья</h1>
+              {subtitle ? (
+                <p className="pa26-micro mt-0.5 text-pa-muted">{subtitle}</p>
+              ) : null}
+            </header>
+            {children}
+          </div>
           {footer}
         </>
       );
@@ -349,7 +357,7 @@ export function FamilyDashboard() {
     <>
       <FamilyLayout
         title="Семья и участники"
-        subtitle="Необязательно — можно пользоваться ПланАм одному"
+        subtitle="Общее меню, покупки и профили участников"
         back={{ label: "Профиль", href: profileBack }}
       >
         {error ? (
@@ -402,7 +410,13 @@ export function FamilyDashboard() {
                 <span className="pa-chip">
                   Тариф: {family.plan_label}
                 </span>
+                <span className="pa-chip">
+                  {isAdmin ? "Админ" : "Взрослый участник"}
+                </span>
               </div>
+              <p className="mt-3 text-sm text-graphite-700">
+                Семейное меню и общий список покупок будут учитывать участников и их профили.
+              </p>
               <button
                 type="button"
                 onClick={() => setShowManage(true)}

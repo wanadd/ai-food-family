@@ -192,6 +192,21 @@ export function HomeV2() {
         </ul>
       </section>
 
+      {!loading && overview && (overview.persons_count > 1 || overview.is_pro) ? (
+        <section className="px-4 pt-3" aria-label="Контекст тарифа и семьи">
+          <div className="rounded-card border border-sage-200 bg-sage-50/70 px-3 py-3 dark:border-sage-700/40 dark:bg-sage-900/20">
+            <p className="pa26-micro font-semibold text-sage-800 dark:text-sage-300">
+              {overview.persons_count > 1 ? "Семейное меню" : "PRO включён"}
+            </p>
+            <p className="pa26-caption mt-1 text-pa-foreground">
+              {overview.persons_count > 1
+                ? `${overview.persons_count} участника · общий список покупок и блюда для всех`
+                : "AI-нутрициолог, цели по КБЖУ и расширенный разбор рациона"}
+            </p>
+          </div>
+        </section>
+      ) : null}
+
       {!loading && nextMeals.length > 0 ? (
         <section className="px-4 pt-3" aria-label="Дальше сегодня">
           <h2 className="pa26-section-title">Дальше сегодня</h2>

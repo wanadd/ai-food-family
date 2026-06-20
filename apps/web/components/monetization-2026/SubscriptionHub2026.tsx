@@ -95,8 +95,8 @@ export function SubscriptionHub2026() {
     data.menu_generations_limit == null
       ? "безлимит"
       : trial
-        ? `${data.menu_generations_remaining ?? 0} подборов доступно`
-        : `${data.menu_generations_remaining ?? 0} из ${data.menu_generations_limit}`;
+        ? `Осталось ${data.menu_generations_remaining ?? 0} подборов меню`
+        : `Осталось ${data.menu_generations_remaining ?? 0} подборов меню`;
 
   return (
     <div className="space-y-4 px-4 pb-8 pt-2">
@@ -129,10 +129,13 @@ export function SubscriptionHub2026() {
         <Link href={MONETIZATION_PATHS.ams} className="block">
           <Card2026 className="h-full border-sage-200 bg-sage-50/50 p-3 dark:border-sage-700/40 dark:bg-sage-700/15">
             <p className="pa26-micro text-pa-muted">
-              {data.is_family_billing ? "AI-действия семьи" : "AI-действия"}
+              {data.is_family_billing ? "Амы — AI-действия семьи" : "Амы — AI-действия"}
             </p>
             <p className="pa26-card-title mt-1 tabular-nums">
               {formatAmasBalance(data.ama_balance)}
+            </p>
+            <p className="pa26-micro mt-1 text-pa-muted">
+              Например: 1 разбор рациона или AI-совет
             </p>
             <p className="pa26-micro mt-1 font-semibold text-sage-700 dark:text-sage-300">
               История →
@@ -203,7 +206,7 @@ export function SubscriptionHub2026() {
 
       <p className="px-1 text-center pa26-micro text-pa-muted">
         Оплата картой и Telegram Stars — в следующем обновлении. Сейчас выбор
-        тарифа сохраняется для теста.
+        тарифа сохраняется в приложении.
       </p>
     </div>
   );

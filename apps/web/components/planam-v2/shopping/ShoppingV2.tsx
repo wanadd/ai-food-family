@@ -36,6 +36,7 @@ import {
 import { PLANAM_ROUTES } from "@/lib/planam/routes";
 import {
   createShoppingItem,
+  deleteShoppingItem,
   fetchShoppingCategories,
   fetchShoppingList,
   syncShoppingList,
@@ -49,12 +50,13 @@ import type {
 } from "@/lib/shopping/types";
 import { EMPTY_SHOPPING_DRAFT } from "@/lib/shopping/types";
 
-type ShoppingFilter = "to-buy" | "all" | "bought";
+type ShoppingFilter = "to-buy" | "all" | "bought" | "from-menu";
 
 const FILTERS: { id: ShoppingFilter; label: string }[] = [
   { id: "to-buy", label: "Купить" },
   { id: "all", label: "Все" },
   { id: "bought", label: "Куплено" },
+  { id: "from-menu", label: "Из меню" },
 ];
 
 export function ShoppingV2() {
@@ -118,6 +120,9 @@ export function ShoppingV2() {
       }
       if (filter === "bought") {
         return item.checked;
+      }
+      if (filter === "from-menu") {
+        return item.source === "menu" || item.source === "recipe";
       }
       return true;
     });
@@ -206,6 +211,24 @@ export function ShoppingV2() {
       setError(err instanceof Error ? err.message : "Не удалось добавить продукт");
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function handleDelete(item: ShoppingListItem) {
+    if (!initData) {
+      return;
+    }
+    setTogglingId(item.id);
+    setError(null);
+    try {
+      const data = await deleteShoppingItem(initData, mode, item.id);
+      setCached(cacheK, data);
+      setList(data);
+      invalidateCache("menu-overview");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось удалить продукт");
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -311,6 +334,7 @@ export function ShoppingV2() {
                       busy={togglingId === item.id}
                       divider={idx > 0}
                       onToggle={() => void handleToggle(item)}
+                      onDelete={() => void handleDelete(item)}
                     />
                   ))}
                 </ul>
@@ -410,11 +434,13 @@ function ShoppingRowV2({
   busy,
   divider,
   onToggle,
+  onDelete,
 }: {
   item: ShoppingListItem;
   busy: boolean;
   divider: boolean;
   onToggle: () => void;
+  onDelete: () => void;
 }) {
   const qty = formatProductQuantity({
     quantity: item.quantity,
@@ -425,15 +451,16 @@ function ShoppingRowV2({
 
   return (
     <li className={cn(divider && "border-t border-pa-border/70")}>
-      <button
-        type="button"
-        onClick={onToggle}
-        disabled={busy}
-        className={cn(
-          "flex w-full min-h-[52px] items-center gap-3 px-4 py-3 text-left transition",
-          "hover:bg-sage-50/60 disabled:opacity-60 dark:hover:bg-pa-elevated/30",
-        )}
-      >
+      <div className="flex min-h-[52px] items-center gap-2 px-4 py-3">
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={busy}
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-3 text-left transition",
+            "hover:opacity-90 disabled:opacity-60",
+          )}
+        >
         <span
           aria-hidden
           className={cn(
@@ -466,7 +493,16 @@ function ShoppingRowV2({
         {qty ? (
           <span className="pa26-caption shrink-0 tabular-nums text-pa-muted">{qty}</span>
         ) : null}
-      </button>
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={busy}
+          className="shrink-0 rounded-pill border border-pa-border px-2.5 py-1.5 pa26-micro font-semibold text-pa-muted disabled:opacity-50"
+        >
+          Удалить
+        </button>
+      </div>
     </li>
   );
 }

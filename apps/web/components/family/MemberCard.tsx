@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import type { FamilyMember } from "@/lib/family/types";
+import { stripAuditSuffix } from "@/lib/display/sanitize-label";
 
 type MemberCardProps = {
   member: FamilyMember;
@@ -18,7 +19,8 @@ export function MemberCard({
   onDelete,
 }: MemberCardProps) {
   const typeLabel =
-    member.member_type === "virtual" ? "Без аккаунта" : "Аккаунт Telegram";
+    member.member_type === "virtual" ? "Виртуальный" : "Аккаунт Telegram";
+  const displayName = stripAuditSuffix(member.display_name).replace(/^Audit\s+/i, "");
   const profileStatus = member.nutrition_profile_complete
     ? "Заполнен"
     : "Не заполнен";
@@ -31,7 +33,7 @@ export function MemberCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-base font-bold text-graphite-900">
-            {member.display_name}
+            {displayName || "Участник"}
             {member.is_you ? (
               <span className="ml-1.5 text-sm font-medium text-graphite-400">
                 (вы)

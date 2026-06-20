@@ -1,7 +1,8 @@
 import { stripAuditSuffix } from "@/lib/display/sanitize-label";
+import { buildActiveMenuDayState } from "@/lib/household/active-menu-day";
 import type { MenuOverview, HomeNextAction } from "@/lib/menu/overview-types";
 import type { MenuMeal } from "@/lib/menu/types";
-import { defaultDayIndex, mealsForDayIndex } from "@/lib/menu/menu-days";
+import { MEAL_LABELS } from "@/lib/menu/labels";
 
 export type Home2026TodayMeal = {
   meal_type: string;
@@ -25,12 +26,11 @@ function mealsFromSelectedMenu(
   overview: MenuOverview,
 ): Map<string, MenuMeal> {
   const map = new Map<string, MenuMeal>();
-  const menu = overview.selected_menu?.menu;
-  if (!menu) {
+  if (!overview.selected_menu?.menu) {
     return map;
   }
-  const dayIndex = defaultDayIndex(menu);
-  for (const meal of mealsForDayIndex(menu, dayIndex)) {
+  const state = buildActiveMenuDayState(overview);
+  for (const meal of state.activeMeals) {
     map.set(meal.meal_type, meal);
   }
   return map;
@@ -38,20 +38,45 @@ function mealsFromSelectedMenu(
 
 export function enrichTodayMeals(overview: MenuOverview): Home2026TodayMeal[] {
   const byType = mealsFromSelectedMenu(overview);
-  return overview.today_meals
-    .filter((m): m is typeof m & { name: string } => Boolean(m.name?.trim()))
-    .map((m) => {
-      const detail = byType.get(m.meal_type);
+  const activeMenuMeals = Array.from(byType.values()).filter(
+    (m) => m.name?.trim() && m.name !== "Свободно",
+  );
+  if (activeMenuMeals.length > 0) {
+    return activeMenuMeals.map((detail) => {
+      const overviewMeal = overview.today_meals.find(
+        (m) => m.meal_type === detail.meal_type,
+      );
       return {
-        meal_type: m.meal_type,
-        label: m.label,
-        name: stripAuditSuffix(m.name!.trim()),
-        recipe_id: m.recipe_id ?? null,
-        image_url: m.image_url ?? null,
+        meal_type: detail.meal_type,
+        label:
+          overviewMeal?.label ??
+          MEAL_LABELS[detail.meal_type as keyof typeof MEAL_LABELS] ??
+          detail.meal_type,
+        name: stripAuditSuffix(detail.name.trim()),
+        recipe_id: detail.recipe_id ?? null,
+        image_url:
+          detail.image_url ??
+          detail.hero_image_url ??
+          detail.thumbnail_url ??
+          overviewMeal?.image_url ??
+          null,
         prep_time_minutes: detail?.prep_time_minutes ?? null,
         calories: detail?.calories_estimate ?? null,
       };
     });
+  }
+
+  return overview.today_meals
+    .filter((m): m is typeof m & { name: string } => Boolean(m.name?.trim()))
+    .map((m) => ({
+      meal_type: m.meal_type,
+      label: m.label,
+      name: stripAuditSuffix(m.name!.trim()),
+      recipe_id: m.recipe_id ?? null,
+      image_url: m.image_url ?? null,
+      prep_time_minutes: null,
+      calories: null,
+    }));
 }
 
 export function pickHeroMeal(meals: Home2026TodayMeal[]): Home2026TodayMeal | null {

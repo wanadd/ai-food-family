@@ -15,7 +15,6 @@ import { useState } from "react";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MealFallbackPlate2026 } from "@/components/home-2026/MealFallbackPlate2026";
 import { PlanAmHero2026 } from "@/components/home-2026/PlanAmHero2026";
-import { MealEatenSheetV2 } from "@/components/planam-v2/menu/MealEatenSheetV2";
 import { V2Button } from "@/components/planam-v2/ui/V2Primitives";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useTelegram } from "@/components/TelegramProvider";
@@ -44,7 +43,6 @@ export function HomeHeroV2({ loading = false, state, onChanged }: HomeHeroV2Prop
   const { initData } = useTelegram();
   const { mode } = useAppMode();
   const { showToast } = useToast();
-  const [otherOpen, setOtherOpen] = useState(false);
   const [skipBusy, setSkipBusy] = useState(false);
 
   if (loading) {
@@ -92,6 +90,10 @@ export function HomeHeroV2({ loading = false, state, onChanged }: HomeHeroV2Prop
     }
   }
 
+  function openMealAction() {
+    router.push(`/plan/today?meal=${encodeURIComponent(meal.meal_type)}&action=1`);
+  }
+
   return (
     <section className="px-4 pt-1" aria-label="Главное действие">
       <div className="overflow-hidden rounded-card border border-pa-border bg-pa-surface shadow-soft dark:shadow-none">
@@ -132,15 +134,15 @@ export function HomeHeroV2({ loading = false, state, onChanged }: HomeHeroV2Prop
             <V2Button
               variant="primary"
               size="wide"
-              onClick={() => router.push(state.ctaHref)}
+              onClick={openMealAction}
             >
-              Готовить
+              Открыть действия
             </V2Button>
             <div className="flex gap-2">
               <V2Button
                 variant="secondary"
                 className="flex-1"
-                onClick={() => setOtherOpen(true)}
+                onClick={openMealAction}
               >
                 Ел другое
               </V2Button>
@@ -156,17 +158,6 @@ export function HomeHeroV2({ loading = false, state, onChanged }: HomeHeroV2Prop
           </div>
         </div>
       </div>
-
-      <MealEatenSheetV2
-        open={otherOpen}
-        onClose={() => setOtherOpen(false)}
-        onSaved={onChanged}
-        mealType={meal.meal_type}
-        mealName={meal.name}
-        recipeId={meal.recipe_id}
-        initialStep="other"
-        title="Ел другое"
-      />
     </section>
   );
 }

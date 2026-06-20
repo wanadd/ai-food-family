@@ -43,6 +43,7 @@ function queryFromParams(sp: URLSearchParams): RecipeQuery {
   const category = sp.get("category");
   if (category) query.category = category;
   if (sp.get("favorites_only") === "true") query.favorites_only = true;
+  if (sp.get("from_pantry") === "true") query.from_pantry = true;
   return query;
 }
 

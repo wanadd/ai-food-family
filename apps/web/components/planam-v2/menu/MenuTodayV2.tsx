@@ -96,9 +96,11 @@ export function MenuTodayV2() {
   const [outcomeOpen, setOutcomeOpen] = useState(false);
   const [outcomeMealIndex, setOutcomeMealIndex] = useState<number | null>(null);
   const [actionMeal, setActionMeal] = useState<PlanTodayMeal | null>(null);
+  const [portionMultiplier, setPortionMultiplier] = useState(1);
   const [shoppingBusy, setShoppingBusy] = useState(false);
   const [ateOtherMeal, setAteOtherMeal] = useState<PlanTodayMeal | null>(null);
   const [skipBusy, setSkipBusy] = useState(false);
+  const [checkinBusy, setCheckinBusy] = useState<string | null>(null);
 
   const mealQuery = searchParams.get("meal");
   const recipeIdQuery = searchParams.get("recipeId");
@@ -249,6 +251,20 @@ export function MenuTodayV2() {
     return () => window.clearTimeout(timer);
   }, [loading, menu, mealQuery, highlightedRecipeId, highlightedSlotId, timeline]);
 
+  useEffect(() => {
+    if (loading || actionMeal || searchParams.get("action") !== "1") {
+      return;
+    }
+    const requestedMeal = searchParams.get("meal");
+    const requested = flatMeals.find((item) =>
+      requestedMeal ? item.meal.meal_type === requestedMeal : true,
+    );
+    if (requested) {
+      setPortionMultiplier(1);
+      setActionMeal(requested);
+    }
+  }, [loading, actionMeal, searchParams, flatMeals]);
+
   const multiDay = menu ? menuHasMultipleDays(menu) : false;
   const days = menu ? getMenuDays(menu) : [];
   const consumptionFamilyId = resolveConsumptionFamilyId(
@@ -279,6 +295,42 @@ export function MenuTodayV2() {
       showToast("Не удалось сохранить. Попробуйте ещё раз.");
     } finally {
       setSkipBusy(false);
+    }
+  }
+
+  async function handleMealStatus(
+    meal: PlanTodayMeal,
+    status: "ate_home" | "cooked",
+  ) {
+    if (!initData || checkinBusy) {
+      return;
+    }
+    setCheckinBusy(status);
+    try {
+      const description =
+        portionMultiplier === 1
+          ? menuMealHeading(meal.meal)
+          : `${menuMealHeading(meal.meal)} · порция ${portionMultiplier}x`;
+      await createMealCheckin(initData, mode, {
+        meal_type: meal.meal.meal_type,
+        actual_status: status,
+        planned_date: plannedDate || undefined,
+        actual_description: description,
+        recipe_id: meal.meal.recipe_id ?? undefined,
+      });
+      invalidateCache(cacheKey.menuOverview(mode));
+      showToast(
+        status === "cooked"
+          ? "Блюдо отмечено приготовленным — съесть можно позже"
+          : "Отметили как съеденное",
+      );
+      setActionMeal(null);
+      setNutritionRefreshKey((k) => k + 1);
+      void reloadCheckins();
+    } catch {
+      showToast("Не удалось сохранить. Попробуйте ещё раз.");
+    } finally {
+      setCheckinBusy(null);
     }
   }
 
@@ -425,7 +477,10 @@ export function MenuTodayV2() {
                           setOutcomeOpen(true);
                         }
                       }}
-                      onQuickActions={() => setActionMeal(item)}
+                      onQuickActions={() => {
+                        setPortionMultiplier(1);
+                        setActionMeal(item);
+                      }}
                     />
                   ))}
                 </div>
@@ -461,20 +516,68 @@ export function MenuTodayV2() {
         onClose={() => setActionMeal(null)}
       >
         {actionMeal ? (
-          <div className="space-y-2 pb-2">
-            <p className="pa26-caption -mt-1 text-pa-muted">
-              {menuMealHeading(actionMeal.meal)}
-            </p>
+          <div className="space-y-3 pb-2">
+            <div className="rounded-card border border-pa-border bg-pa-surface px-4 py-3">
+              <p className="pa26-micro text-pa-muted">
+                {mealTypeLabel(actionMeal.meal.meal_type)} · {actionMeal.statusLabel || "В плане"}
+              </p>
+              <h3 className="pa26-card-title mt-1">{menuMealHeading(actionMeal.meal)}</h3>
+              <p className="pa26-caption mt-1 text-pa-muted">
+                {[
+                  actionMeal.meal.calories_estimate
+                    ? `${Math.round(actionMeal.meal.calories_estimate * portionMultiplier)} ккал`
+                    : null,
+                  actionMeal.meal.protein_g != null
+                    ? `Б ${Math.round(actionMeal.meal.protein_g * portionMultiplier)}`
+                    : null,
+                  actionMeal.meal.fat_g != null
+                    ? `Ж ${Math.round(actionMeal.meal.fat_g * portionMultiplier)}`
+                    : null,
+                  actionMeal.meal.carbs_g != null
+                    ? `У ${Math.round(actionMeal.meal.carbs_g * portionMultiplier)}`
+                    : null,
+                ].filter(Boolean).join(" · ") || "КБЖУ появится после уточнения рецепта"}
+              </p>
+              <p className="pa26-micro mt-2 text-pa-muted">
+                Порция: {portionMultiplier}x
+              </p>
+              <div className="mt-2 grid grid-cols-4 gap-1.5">
+                {[0.5, 1, 1.5, 2].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPortionMultiplier(value)}
+                    className={cn(
+                      "rounded-pill border px-2 py-1.5 pa26-micro font-semibold",
+                      portionMultiplier === value
+                        ? "border-sage-500 bg-sage-500 text-white"
+                        : "border-pa-border bg-pa-canvas text-pa-muted",
+                    )}
+                  >
+                    {value}x
+                  </button>
+                ))}
+              </div>
+            </div>
             {actionMeal.meal.recipe_id ? (
               <SheetAction
-                label="Открыть рецепт"
+                label="Готовить"
                 onClick={() => {
                   const id = actionMeal.meal.recipe_id!;
                   setActionMeal(null);
                   openRecipe(id);
                 }}
               />
-            ) : null}
+            ) : (
+              <SheetAction
+                label={checkinBusy === "cooked" ? "Сохраняем…" : "Рецепт пока недоступен · отметить приготовленным"}
+                onClick={() => void handleMealStatus(actionMeal, "cooked")}
+              />
+            )}
+            <SheetAction
+              label={checkinBusy === "ate_home" ? "Сохраняем…" : "Отметить съеденным"}
+              onClick={() => void handleMealStatus(actionMeal, "ate_home")}
+            />
             <SheetAction
               label="Заменить блюдо"
               onClick={() => {

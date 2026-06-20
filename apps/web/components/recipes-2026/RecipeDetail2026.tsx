@@ -28,6 +28,7 @@ import { useTelegram } from "@/components/TelegramProvider";
 import {
   addRecipeToShopping,
   fetchRecipe,
+  markRecipeCooked,
   toggleRecipeFavorite,
 } from "@/lib/recipes/api";
 import {
@@ -178,6 +179,9 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [replaceBusy, setReplaceBusy] = useState(false);
   const [cookedOpen, setCookedOpen] = useState(false);
+  const [cookingStarted, setCookingStarted] = useState(false);
+  const [cookedSaved, setCookedSaved] = useState(false);
+  const [cookingBusy, setCookingBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!initData || !recipeId) {
@@ -255,6 +259,23 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
       setRecipe({ ...recipe, is_favorited: result.is_favorited });
     } finally {
       setToggling(false);
+    }
+  }
+
+  async function handleCooked() {
+    if (!initData || !recipe) return;
+    setCookingBusy(true);
+    try {
+      await markRecipeCooked(initData, mode, recipe.id, {
+        servings: recipe.servings ?? 1,
+      });
+      setCookedSaved(true);
+      showToast("Приготовлено — это ещё не считается съеденным");
+    } catch {
+      setCookedSaved(true);
+      showToast("Приготовлено. Отметку питания можно добавить отдельно.");
+    } finally {
+      setCookingBusy(false);
     }
   }
 
@@ -364,6 +385,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
                 variant="primary"
                 className="w-full"
                 onClick={() => {
+                  setCookingStarted(true);
                   document
                     .getElementById("recipe-cooking-steps")
                     ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -447,14 +469,30 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
             </ol>
           )}
           {!replaceMode ? (
-            <Button2026
-              variant="primary"
-              size="wide"
-              className="mt-4"
-              onClick={() => setCookedOpen(true)}
-            >
-              Готово
-            </Button2026>
+            <div className="mt-4 space-y-2">
+              {cookingStarted ? (
+                <p className="rounded-card border border-sage-200 bg-sage-50 px-3 py-2 pa26-caption text-sage-800 dark:border-sage-700/40 dark:bg-sage-700/20 dark:text-sage-300">
+                  Режим готовки открыт. Следуйте шагам и отметьте блюдо готовым, когда закончите.
+                </p>
+              ) : null}
+              <Button2026
+                variant="primary"
+                size="wide"
+                loading={cookingBusy}
+                onClick={() => void handleCooked()}
+              >
+                Приготовлено
+              </Button2026>
+              {cookedSaved ? (
+                <Button2026
+                  variant="secondary"
+                  size="wide"
+                  onClick={() => setCookedOpen(true)}
+                >
+                  Отметить, кто съел
+                </Button2026>
+              ) : null}
+            </div>
           ) : null}
         </section>
       </div>

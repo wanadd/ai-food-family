@@ -16,7 +16,15 @@ export function resolveActiveMenuDayIndex(
   now: Date = new Date(),
 ): number {
   if (!menu) return 1;
-  return defaultDayIndex(menu);
+  const today = userLocalDateIso(now);
+  const days = getMenuDays(menu);
+  const todayInPlan = days.find((day) => day.date_iso === today);
+  if (todayInPlan) return todayInPlan.day_index;
+
+  const firstNonEmpty = days.find((day) =>
+    day.meals.some((meal) => meal.name?.trim() && meal.name !== "Свободно"),
+  );
+  return firstNonEmpty?.day_index ?? defaultDayIndex(menu);
 }
 
 export type ActiveMenuDayState = {
