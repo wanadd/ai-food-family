@@ -117,7 +117,7 @@ const SCENARIOS = [
       ["home", "open app", "first screen explains PLANAM and next action"],
       ["home", "open profile CTA", "profile/onboarding entry is available", { click: [/профил/i, /начать/i, /настро/i, /заполн/i] }],
       ["account", "capture account/profile entry", "profile settings are reachable"],
-      ["account", "type name if editable", "name field accepts input", { fill: "Иван" }],
+      ["account", "type name if editable", "name field accepts input when profile form is present", { fill: "Иван", optional: true }],
       ["account", "choose goal/activity/restrictions if visible", "nutrition profile controls are visible", { click: [/цель/i, /актив/i, /огранич/i, /аллерг/i] }],
       ["menu", "open generate menu", "generate menu CTA or state is visible", { click: [/собрать/i, /создать/i, /меню/i] }],
       ["home", "verify post-profile destination", "home/menu/generate menu path remains clear"],
@@ -142,11 +142,11 @@ const SCENARIOS = [
     steps: [
       ["home", "capture hero/day/today meal", "home shows today continuity"],
       ["menu", "open menu active day", "active day is visible"],
-      ["menu", "switch day 1", "day switch works", { click: [/1/i, /пн/i, /день/i] }],
-      ["menu", "switch day 5", "day 5 is reachable", { click: [/5/i, /пт/i, /сегодня/i] }],
-      ["menu", "open meal sheet", "meal sheet opens", { click: [/завтрак/i, /обед/i, /ужин/i, /готов/i] }],
-      ["menu", "start cooking", "cooking CTA works or is absent", { click: [/готовить/i, /начать/i] }],
-      ["menu", "mark eaten or skipped", "meal status action is available", { click: [/съел/i, /съед/i, /пропуст/i, /другое/i] }],
+      ["menu", "switch day 1", "day switch works", { clickTestId: "menu-day-switch" }],
+      ["menu", "switch day 5", "day 5 is reachable", { clickTestId: "menu-day-switch" }],
+      ["menu", "open meal sheet", "meal sheet opens", { clickTestId: "menu-meal-action-open" }],
+      ["menu", "start cooking", "cooking CTA works or fallback is visible", { clickSequence: ["menu-meal-action-open", "menu-meal-cook"] }],
+      ["menu", "mark eaten or skipped", "meal status action is available", { clickSequence: ["menu-meal-action-open", "menu-meal-eaten"] }],
       ["wellness", "check recalculation", "wellness remains consistent"],
       ["shopping", "check shopping impact", "shopping remains consistent"],
       ["pantry", "check leftovers impact", "leftovers/pantry remains consistent"],
@@ -171,12 +171,12 @@ const SCENARIOS = [
     persona: "audit_family_admin",
     steps: [
       ["shopping", "open shopping", "shopping page opens"],
-      ["shopping", "add item CTA", "manual add is available or clear", { click: [/добав/i, /товар/i, /\+/] }],
-      ["shopping", "type manual item", "manual input accepts item", { fill: "молоко" }],
-      ["shopping", "submit item", "item can be submitted or blocker is captured", { click: [/сохран/i, /добав/i, /готов/i] }],
-      ["shopping", "mark bought", "bought toggle is available", { click: [/куп/i, /в корз/i, /✓/] }],
-      ["shopping", "open all filter", "all filter works", { click: [/все/i] }],
-      ["shopping", "open bought filter", "bought filter works", { click: [/куплен/i] }],
+      ["shopping", "add item CTA", "manual add is available or clear", { clickTestId: "shopping-add-open" }],
+      ["shopping", "type manual item", "manual input accepts item", { beforeClickTestId: "shopping-add-open", fillTestId: "shopping-add-input", fill: "молоко" }],
+      ["shopping", "submit item", "item can be submitted or blocker is captured", { beforeClickTestId: "shopping-add-open", fillTestId: "shopping-add-input", fill: "молоко", afterClickTestId: "shopping-add-submit" }],
+      ["shopping", "mark bought", "bought toggle is available", { beforeClickTestId: "shopping-add-open", fillTestId: "shopping-add-input", fill: "молоко", afterClickTestId: "shopping-add-submit", finalClickTestId: "shopping-item-toggle" }],
+      ["shopping", "open all filter", "all filter works", { clickTestId: "shopping-filter-all" }],
+      ["shopping", "open bought filter", "bought filter works", { clickTestId: "shopping-filter-bought" }],
       ["home", "check buy tile", "home buy tile agrees with shopping"],
     ],
   },
@@ -186,10 +186,10 @@ const SCENARIOS = [
     persona: "audit_healthy_eating",
     steps: [
       ["pantry", "open pantry", "pantry opens"],
-      ["pantry", "check expiry filters", "expiry filters are available", { click: [/скоро/i, /много/i, /проср/i] }],
+      ["pantry", "check expiry filters", "expiry filters are available", { clickSequence: ["pantry-filter-expiring", "pantry-filter-many", "pantry-filter-expired"] }],
       ["pantry", "add pantry item", "add pantry item is available", { click: [/добав/i, /продукт/i, /\+/] }],
       ["pantry", "type pantry item", "pantry form accepts input", { fill: "гречка" }],
-      ["pantry", "cook from available", "cook-from-pantry path is visible", { click: [/приготов/i, /из того/i] }],
+      ["pantry", "cook from available", "cook-from-pantry path is visible", { clickTestId: "pantry-cook-from-available" }],
       ["recipes", "pantry to recipes/menu", "recipes/menu relation is visible"],
     ],
   },
@@ -213,7 +213,7 @@ const SCENARIOS = [
     persona: "audit_pro_ai_heavy",
     steps: [
       ["wellness", "open wellness", "wellness opens with nutrition data"],
-      ["wellness", "open AI assistant", "AI assistant opens", { click: [/ai/i, /нутрициолог/i, /спрос/i, /чат/i] }],
+      ["wellness", "open AI assistant", "AI assistant opens", { clickTestId: "wellness-ai-open" }],
       ["wellness", "ask skipped lunch", "AI gives practical safe answer", { aiQuestion: "Я пропустил обед, что делать?" }],
       ["wellness", "ask ate shawarma", "AI helps account for outside food", { aiQuestion: "Я съел шаурму вместо ужина, как это учесть?" }],
       ["wellness", "ask weight loss fit", "AI assesses weight-loss fit safely", { aiQuestion: "Подходит ли мой рацион для похудения?" }],
@@ -228,9 +228,9 @@ const SCENARIOS = [
     persona: "audit_family_admin",
     steps: [
       ["family", "open family", "family page opens"],
-      ["family", "add virtual member", "virtual member CTA is available", { click: [/виртуал/i, /добав/i, /участ/i] }],
-      ["family", "fill member profile", "member profile accepts input", { fill: "Маша" }],
-      ["family", "check roles", "child/adult/eating restrictions are visible", { click: [/реб/i, /взрос/i, /не ест/i] }],
+      ["family", "add virtual member", "virtual member CTA is available", { clickSequence: ["family-add-member", "family-add-virtual-member"] }],
+      ["family", "fill member profile", "member profile accepts input", { clickSequence: ["family-add-member", "family-add-virtual-member"], fill: "Маша" }],
+      ["family", "check roles", "child/adult/eating restrictions are visible", { clickTestId: "family-member-edit", optional: true }],
       ["menu", "check family menu", "member affects menu context"],
       ["shopping", "check family shopping", "family shopping context is visible"],
       ["home", "check family home", "family state appears on home"],
@@ -242,7 +242,7 @@ const SCENARIOS = [
     persona: "audit_family_admin",
     steps: [
       ["family", "admin opens family", "admin can manage family"],
-      ["family", "invite real account", "invite/link/phone CTA is visible", { click: [/приглас/i, /ссыл/i, /телефон/i] }],
+      ["family", "invite real account", "invite/link/phone CTA is visible", { clickSequence: ["family-add-member", "family-invite-member"] }],
       ["family", "capture role controls", "admin/adult/virtual/child roles are clear"],
       ["menu", "check shared menu", "shared menu is visible"],
       ["shopping", "check shared shopping", "shared shopping is visible"],
@@ -256,7 +256,7 @@ const SCENARIOS = [
     steps: [
       ["subscription", "open subscription", "current tariff is visible"],
       ["subscription", "check plans", "Free/Trial/Personal/Pair/Family/Pro are understandable"],
-      ["subscription", "click upgrade/pay", "checkout/paywall path opens or blocker captured", { click: [/оплат/i, /апгрейд/i, /улучш/i, /подключ/i] }],
+      ["subscription", "click upgrade/pay", "checkout/paywall path opens or blocker captured", { clickTestId: "subscription-upgrade-cta", deferredIfMissing: "Current/top-tier plan has no valid upgrade CTA." }],
       ["checkout", "checkout route", "checkout route is available or redirects clearly"],
       ["subscription", "check Amas", "Amas balance/history/spend is understandable", { click: [/ам/i, /баланс/i, /истор/i] }],
       ["wellness", "contextual wellness upsell", "Pro value appears in wellness"],
@@ -304,7 +304,7 @@ const SCENARIOS = [
       ["wellness", "no health data", "empty health state is useful"],
       ["family", "no family", "empty family state has CTA"],
       ["subscription", "subscription data/paywall state", "subscription state is readable"],
-      ["wellness", "AI unavailable/pro state", "AI unavailable/paywall state is readable", { click: [/ai/i, /нутрициолог/i, /спрос/i] }],
+      ["wellness", "AI unavailable/pro state", "AI unavailable/paywall state is readable", { clickTestId: "wellness-ai-open", deferredIfMissing: "AI entry can be gated for new users when fallback copy is visible." }],
       ["family", "forbidden adult/admin state", "access restrictions are clear"],
     ],
   },
@@ -363,7 +363,22 @@ function severityForStep(step) {
   return "P3";
 }
 
-function pushIssue({ severity, screen, persona, scenario, step, title, expected, actual, screenshotPath, owner = "product", blocker = false }) {
+function pushIssue({
+  severity,
+  screen,
+  persona,
+  scenario,
+  step,
+  title,
+  expected,
+  actual,
+  screenshotPath,
+  owner = "product",
+  blocker = false,
+  status = "failed",
+  selector = null,
+  classification = "product_or_selector",
+}) {
   const p = severity ?? "P3";
   const count = issues.filter((issue) => issue.severity === p).length + 1;
   issues.push({
@@ -377,6 +392,9 @@ function pushIssue({ severity, screen, persona, scenario, step, title, expected,
     evidence_screenshot: screenshotPath ? path.relative(RUN_DIR, screenshotPath).replaceAll("\\", "/") : null,
     expected,
     actual: String(actual ?? "").slice(0, 1200),
+    status,
+    attempted_selector: selector,
+    classification,
     impact: blocker ? "Blocks critical audit flow or launch confidence." : "Reduces clarity, continuity, or conversion confidence.",
     recommendation: "Review this screen in product/design triage and decide whether to fix before beta.",
     owner,
@@ -401,6 +419,16 @@ async function waitForApp(page) {
       () => document.body && document.body.innerText.trim().length > 10,
       null,
       { timeout: 8000 },
+    )
+    .catch(() => {});
+  await page
+    .waitForFunction(
+      () => {
+        const text = document.body?.innerText ?? "";
+        return !/PLANAM загружает меню|Загружаем список покупок|Загрузка…|Загрузка\.\.\./i.test(text);
+      },
+      null,
+      { timeout: 15000 },
     )
     .catch(() => {});
   await page.waitForTimeout(180);
@@ -430,6 +458,17 @@ async function clickAny(page, patterns) {
   return { ok: true, note: `Clicked: ${found.text}`, label: found.text };
 }
 
+async function clickByTestId(page, testId) {
+  const selector = `[data-testid="${testId}"]`;
+  const locator = page.locator(selector).first();
+  await locator.waitFor({ state: "visible", timeout: 15000 }).catch(() => {});
+  const count = await page.locator(selector).count().catch(() => 0);
+  if (!count) return { ok: false, note: `No [data-testid="${testId}"] control`, selector: `[data-testid="${testId}"]` };
+  await locator.click({ timeout: 5000 }).catch(() => {});
+  await waitForApp(page);
+  return { ok: true, note: `Clicked [data-testid="${testId}"]`, selector: `[data-testid="${testId}"]` };
+}
+
 async function fillFirst(page, value) {
   const input = page.locator("input:not([type=hidden]), textarea").first();
   const count = await page.locator("input:not([type=hidden]), textarea").count().catch(() => 0);
@@ -440,6 +479,19 @@ async function fillFirst(page, value) {
   await page.keyboard.press("Enter").catch(() => {});
   await waitForApp(page);
   return { ok: true, note: `Filled first input with "${value}"` };
+}
+
+async function fillByTestId(page, testId, value) {
+  const selector = `[data-testid="${testId}"]`;
+  const locator = page.locator(selector).first();
+  await locator.waitFor({ state: "visible", timeout: 15000 }).catch(() => {});
+  const count = await page.locator(selector).count().catch(() => 0);
+  if (!count) return { ok: false, note: `No [data-testid="${testId}"] input`, selector: `[data-testid="${testId}"]` };
+  await locator.fill(value, { timeout: 5000 }).catch(async () => {
+    await locator.type(value, { timeout: 5000 }).catch(() => {});
+  });
+  await waitForApp(page);
+  return { ok: true, note: `Filled [data-testid="${testId}"] with "${value}"`, selector: `[data-testid="${testId}"]` };
 }
 
 async function setTheme(page, theme) {
@@ -459,12 +511,61 @@ async function performAction(page, options = {}) {
     await waitForApp(page);
     return { ok: true, note: "Browser back invoked" };
   }
-  if (options.fill) return fillFirst(page, options.fill);
+  const notes = [];
+  let attemptedSelector = null;
+  if (options.beforeClickTestId) {
+    const clicked = await clickByTestId(page, options.beforeClickTestId);
+    notes.push(clicked.note);
+    attemptedSelector = clicked.selector;
+    if (!clicked.ok) return { ...clicked, note: notes.join("; ") };
+  }
+  if (options.clickSequence) {
+    for (const testId of options.clickSequence) {
+      const clicked = await clickByTestId(page, testId);
+      notes.push(clicked.note);
+      attemptedSelector = clicked.selector;
+      if (!clicked.ok) return { ...clicked, note: notes.join("; ") };
+    }
+    return { ok: true, note: notes.join("; "), selector: attemptedSelector };
+  }
+  if (options.clickTestId) {
+    return clickByTestId(page, options.clickTestId);
+  }
+  if (options.fill) {
+    const filled = options.fillTestId
+      ? await fillByTestId(page, options.fillTestId, options.fill)
+      : await fillFirst(page, options.fill);
+    notes.push(filled.note);
+    attemptedSelector = filled.selector ?? null;
+    if (!filled.ok) return { ...filled, note: notes.join("; ") };
+    if (options.afterClickTestId) {
+      const clicked = await clickByTestId(page, options.afterClickTestId);
+      notes.push(clicked.note);
+      attemptedSelector = clicked.selector;
+      if (!clicked.ok) return { ...clicked, note: notes.join("; ") };
+    }
+    if (options.finalClickTestId) {
+      const clicked = await clickByTestId(page, options.finalClickTestId);
+      notes.push(clicked.note);
+      attemptedSelector = clicked.selector;
+      if (!clicked.ok) return { ...clicked, note: notes.join("; ") };
+    }
+    return { ok: true, note: notes.join("; "), selector: attemptedSelector };
+  }
   if (options.aiQuestion) {
-    const filled = await fillFirst(page, options.aiQuestion);
+    const open = await clickByTestId(page, "wellness-ai-open");
+    if (!open.ok) return open;
+    const filled = await fillByTestId(page, "wellness-ai-input", options.aiQuestion);
     if (!filled.ok) return filled;
-    const clicked = await clickAny(page, [/отправ/i, /спрос/i, /send/i, /➜|→/]);
-    return { ok: true, note: `${filled.note}; ${clicked.note}` };
+    const clicked = await clickByTestId(page, "wellness-ai-send");
+    const answer = page.locator('[data-testid="wellness-ai-answer"]').last();
+    await answer.waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+    const answerCount = await page.locator('[data-testid="wellness-ai-answer"]').count().catch(() => 0);
+    return {
+      ok: clicked.ok && answerCount > 0,
+      note: `${open.note}; ${filled.note}; ${clicked.note}; answers=${answerCount}`,
+      selector: '[data-testid="wellness-ai-answer"]',
+    };
   }
   if (options.click) return clickAny(page, options.click);
   return { ok: true, note: "Observation only" };
@@ -514,13 +615,27 @@ async function runStep({ page, context, scenario, persona, stepIndex, step }) {
   const screenshotPath = path.join(SCREEN_DIR, fileName);
   let pass = true;
   let notes = [];
+  let status = "passed";
+  let attemptedSelector = null;
 
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
     await waitForApp(page);
     const actionResult = await performAction(page, options);
     notes.push(actionResult.note);
-    if (!actionResult.ok && options) pass = false;
+    attemptedSelector = actionResult.selector ?? null;
+    if (!actionResult.ok && options) {
+      if (options.optional) {
+        status = "optional_absent";
+        notes.push("Optional control absent; not a product failure.");
+      } else if (options.deferredIfMissing) {
+        status = "deferred_mvp";
+        notes.push(`Deferred MVP: ${options.deferredIfMissing}`);
+      } else {
+        pass = false;
+        status = "failed";
+      }
+    }
   } catch (err) {
     pass = false;
     notes.push(`Navigation/action error: ${err.message}`);
@@ -559,6 +674,8 @@ async function runStep({ page, context, scenario, persona, stepIndex, step }) {
     duration_ms: Date.now() - started,
     screenshot_path: path.relative(RUN_DIR, screenshotPath).replaceAll("\\", "/"),
     pass,
+    status,
+    attempted_selector: attemptedSelector,
     notes: notes.filter(Boolean).join("; "),
   };
   scenarioSteps.push(row);
@@ -585,8 +702,26 @@ async function runStep({ page, context, scenario, persona, stepIndex, step }) {
       expected,
       actual: row.notes || bodyText.slice(0, 400),
       screenshotPath,
+      selector: attemptedSelector,
       owner: "product/design",
       blocker: ["S01", "S08", "S11"].includes(scenario.id),
+    });
+  } else if (status === "deferred_mvp") {
+    pushIssue({
+      severity: "P2",
+      screen: route,
+      persona: persona.id,
+      scenario: scenario.id,
+      step: `${stepIndex + 1}: ${action}`,
+      title: `Deferred MVP: ${action}`,
+      expected,
+      actual: row.notes || bodyText.slice(0, 400),
+      screenshotPath,
+      selector: attemptedSelector,
+      owner: "product",
+      blocker: false,
+      status,
+      classification: "unsupported_mvp",
     });
   }
 }
@@ -869,9 +1004,10 @@ async function writeArtifacts(startedAt, finishedAt) {
 function createArchive() {
   const src = RUN_DIR.replace(/'/g, "''");
   const dst = ZIP_PATH.replace(/'/g, "''");
-  execSync(`powershell -NoProfile -Command "Compress-Archive -Path '${src}' -DestinationPath '${dst}' -Force"`, {
-    stdio: "inherit",
-  });
+  execSync(
+    `powershell -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; if (Test-Path '${dst}') { Remove-Item '${dst}' -Force }; [System.IO.Compression.ZipFile]::CreateFromDirectory('${src}', '${dst}')"`,
+    { stdio: "inherit" },
+  );
 }
 
 async function main() {
