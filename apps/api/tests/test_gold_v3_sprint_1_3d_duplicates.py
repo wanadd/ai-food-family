@@ -125,7 +125,17 @@ def test_plan_file_contains_no_source_leakage(tmp_path, monkeypatch):
     monkeypatch.setattr(mod, "PLAN_JSON", tmp_path / "plan.json")
     report = mod.audit([_recipe()], [], write_reports=False)
     report["db_available"] = True
+    report["blocked_for_apply"] = False
     mod.maybe_write_plan(report)
     blob = (tmp_path / "plan.json").read_text(encoding="utf-8").lower()
     for marker in ("source_url", "original_url", "http", "povarenok", "поваренок"):
         assert marker not in blob
+
+
+def test_blocked_report_does_not_write_optional_plan(tmp_path, monkeypatch):
+    mod = _load_script("audit_gold_v3_repaired_30_duplicates")
+    monkeypatch.setattr(mod, "PLAN_JSON", tmp_path / "plan.json")
+    report = mod.audit([_recipe()], [_existing()], write_reports=False)
+    report["blocked_for_apply"] = True
+    mod.maybe_write_plan(report)
+    assert not (tmp_path / "plan.json").exists()

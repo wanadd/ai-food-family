@@ -476,6 +476,8 @@ def recommendation_for(decisions: Counter[str], blocked_for_apply: bool) -> str:
 def maybe_write_plan(report: dict[str, Any]) -> None:
     if not report["db_available"]:
         return
+    if report["blocked_for_apply"]:
+        return
     decisions = []
     safe_import_candidates = []
     rename_import_candidates = []
