@@ -14,7 +14,7 @@ export function SectionSubTabs2026() {
   const pathname = usePathname();
   const tabId = getActiveTabId2026(pathname);
 
-  if (!tabId || tabId === "account") {
+  if (!tabId) {
     return null;
   }
 

@@ -7,6 +7,7 @@ import type {
   VirtualMemberDraft,
   VirtualNutrition,
 } from "./types";
+import type { FamilyInvite } from "./invite-types";
 
 async function familyFetch<T>(
   path: string,

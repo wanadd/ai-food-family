@@ -23,6 +23,7 @@ export type Nav2026IconId =
   | "theme"
   | "events"
   | "calendar-star"
+  | "legal";
 
 export type Nav2026Tab = {
   id: Nav2026TabId;
