@@ -1,0 +1,3121 @@
+{
+  "schema_version": "gold_v3_pilot_10_seed.v1",
+  "source_backup": "backups/gold_v3_pilot_20260621T140535Z",
+  "generated_at": "2026-06-21T00:00:00Z",
+  "recipe_ids": [
+    256,
+    257,
+    258,
+    259,
+    260,
+    261,
+    262,
+    263,
+    264,
+    265
+  ],
+  "required_tags": [
+    "gold_v3",
+    "recipe_schema_v3",
+    "status:gold"
+  ],
+  "recipes": [
+    {
+      "id": 256,
+      "category": "main",
+      "cuisine": "русская",
+      "description": "Запечённые куриные котлеты с морковью, луком и чесноком. Мягкое семейное блюдо для обеда или ужина без жарки на сковороде.",
+      "difficulty": "medium",
+      "display_title": "Куриные котлеты",
+      "meal_type": "dinner",
+      "normalized_title": "котлеты с овощами",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Котлеты с овощами",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Нежные куриные котлеты с овощами",
+      "yield_type": null,
+      "cooking_time_minutes": 20,
+      "prep_time_minutes": 20,
+      "servings": 4,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 290.0,
+      "carbs_g": 18.0,
+      "estimated_servings": null,
+      "fat_g": 12.0,
+      "fiber_g": 2.0,
+      "nutrition_carbs_per_serving": 18.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 12.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 290.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 30.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 30.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 1.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "куриное филе",
+          "unit": "г",
+          "amount": 500,
+          "category": "мясо_птица",
+          "optional": false,
+          "shopping_name": "куриное филе",
+          "display_amount": "500 г"
+        },
+        {
+          "name": "морковь",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "морковь",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "сыр твёрдый",
+          "unit": "г",
+          "amount": 70,
+          "category": "молочные продукты",
+          "optional": false,
+          "shopping_name": "сыр твёрдый",
+          "display_amount": "70 г"
+        },
+        {
+          "name": "яйцо куриное",
+          "unit": "шт",
+          "amount": 1,
+          "category": "яйца",
+          "optional": false,
+          "shopping_name": "яйцо",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "лук репчатый",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "лук",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "панировочные сухари",
+          "unit": "г",
+          "amount": 40,
+          "category": "выпечка/тесто",
+          "optional": false,
+          "shopping_name": "панировочные сухари",
+          "display_amount": "40 г"
+        },
+        {
+          "name": "масло растительное",
+          "unit": "ст.л.",
+          "amount": 2,
+          "category": "масла/соусы",
+          "optional": false,
+          "shopping_name": "растительное масло",
+          "display_amount": "2 ст.л."
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 1,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "соль",
+          "display_amount": "1 ч.л."
+        },
+        {
+          "name": "чёрный перец",
+          "unit": "ч.л.",
+          "amount": 0.5,
+          "category": "специи",
+          "optional": true,
+          "shopping_name": "чёрный перец",
+          "display_amount": "0.5 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.5,
+        "fiber_g": 2.0,
+        "sugar_g": 1.0
+      },
+      "steps": [
+        {
+          "text": "Куриное филе нарежьте небольшими кусочками, лук и морковь очистите. Морковь натрите на крупной тёрке, лук нарежьте мелко.",
+          "step_number": 1
+        },
+        {
+          "text": "В блендере измельчите куриное филе с луком до получения однородного фарша. Переложите в миску, добавьте натёртую морковь и натёртый сыр.",
+          "step_number": 2
+        },
+        {
+          "text": "Добавьте яйцо, панировочные сухари, соль и перец. Тщательно перемешайте фарш руками до равномерного распределения всех компонентов.",
+          "step_number": 3
+        },
+        {
+          "text": "Сформируйте влажными руками 10–12 небольших котлет и выложите их на противень, застеленный бумагой для выпечки. Сверху смажьте каждую котлету растительным маслом.",
+          "step_number": 4
+        },
+        {
+          "text": "Выпекайте котлеты в предварительно разогретой до 180°C духовке около 30 минут до золотистой корочки. Подавайте горячими с любимым гарниром.",
+          "step_number": 5
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/256/hero.webp",
+      "image_url": "/recipe-images/256/card_800.webp",
+      "thumbnail_url": "/recipe-images/256/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "куриное филе",
+          "quantity": "600",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "морковь",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "лук",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "чеснок",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "панировочные сухари",
+          "quantity": "100",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "оливковое масло",
+          "quantity": "2",
+          "unit": "ст.л.",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "соль",
+          "quantity": "1",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "перец черный",
+          "quantity": "0.5",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "Куриное филе промыть и нарезать на небольшие кусочки. Лук и чеснок очистить и мелко нарезать."
+        },
+        {
+          "step_number": 2,
+          "text": "Морковь натереть на крупной терке. Все подготовленные ингредиенты перемешать в глубокой миске."
+        },
+        {
+          "step_number": 3,
+          "text": "Добавить к смеси панировочные сухари, соль и перец. Хорошо перемешать, чтобы все ингредиенты равномерно распределились."
+        },
+        {
+          "step_number": 4,
+          "text": "Сформировать котлеты и выложить их на противень, смазанный оливковым маслом. Запекать в разогретой до 180°C духовке около 25-30 минут."
+        }
+      ]
+    },
+    {
+      "id": 257,
+      "category": "side",
+      "cuisine": "русская",
+      "description": "Сытная перловка с морковью, луком и брокколи. Подходит как самостоятельный гарнир или основа для простого семейного ужина.",
+      "difficulty": "medium",
+      "display_title": "Перловка с брокколи",
+      "meal_type": "dinner",
+      "normalized_title": "крупа с овощами",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Крупа с овощами",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Перловка с овощами и брокколи",
+      "yield_type": null,
+      "cooking_time_minutes": 25,
+      "prep_time_minutes": 10,
+      "servings": 4,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 250.0,
+      "carbs_g": 40.0,
+      "estimated_servings": null,
+      "fat_g": 8.0,
+      "fiber_g": 5.0,
+      "nutrition_carbs_per_serving": 40.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 8.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 250.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 7.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 7.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 3.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "перловая крупа",
+          "unit": "г",
+          "amount": 160,
+          "category": "крупы",
+          "optional": false,
+          "shopping_name": "перловая крупа",
+          "display_amount": "160 г"
+        },
+        {
+          "name": "морковь",
+          "unit": "шт",
+          "amount": 2,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "морковь",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "сладкий перец",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "сладкий перец",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "лук репчатый",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "лук репчатый",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "растительное масло",
+          "unit": "ст.л.",
+          "amount": 2,
+          "category": "масла/соусы",
+          "optional": false,
+          "shopping_name": "растительное масло",
+          "display_amount": "2 ст.л."
+        },
+        {
+          "name": "петрушка свежая",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": true,
+          "shopping_name": "петрушка",
+          "display_amount": "1 пучок"
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 1,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "соль",
+          "display_amount": "1 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.2,
+        "fiber_g": 5.0,
+        "sugar_g": 3.0
+      },
+      "steps": [
+        {
+          "text": "Перловую крупу промойте под проточной водой, залейте 500 мл воды и доведите до кипения на среднем огне. Варите под крышкой 25 минут до готовности и мягкости.",
+          "step_number": 1
+        },
+        {
+          "text": "Пока крупа варится, очистите морковь, нарежьте её и сладкий перец крупными кусочками, а лук — полукольцами.",
+          "step_number": 2
+        },
+        {
+          "text": "Выложите овощи на противень, сбрызните растительным маслом и запекайте в разогретой до 200°C духовке 15 минут, пока они не станут мягкими.",
+          "step_number": 3
+        },
+        {
+          "text": "Готовую перловку соедините с запечёнными овощами, перемешайте, посолите по вкусу. Добавьте мелко нарезанную петрушку и подавайте тёплым, как гарнир.",
+          "step_number": 4
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/257/hero.webp",
+      "image_url": "/recipe-images/257/card_800.webp",
+      "thumbnail_url": "/recipe-images/257/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "перловая крупа",
+          "quantity": "200",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "морковь",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "брокколи",
+          "quantity": "150",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "лук репчатый",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "оливковое масло",
+          "quantity": "2",
+          "unit": "ст.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "соль",
+          "quantity": "1",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "Перловую крупу промыть под холодной водой и замочить на 1-2 часа, чтобы она быстрее сварилась."
+        },
+        {
+          "step_number": 2,
+          "text": "Морковь и лук нарезать мелкими кубиками, брокколи разделить на соцветия. В сковороде разогреть оливковое масло."
+        },
+        {
+          "step_number": 3,
+          "text": "На разогретом масле обжарить лук до прозрачности, добавить морковь и готовить еще 5 минут. Затем добавить брокколи и обжаривать все вместе еще 3 минуты."
+        },
+        {
+          "step_number": 4,
+          "text": "Отцеженную перловую крупу добавить к овощам, влить 400 мл воды, посолить и довести до кипения. Уменьшить огонь и готовить под крышкой 20 минут."
+        }
+      ]
+    },
+    {
+      "id": 258,
+      "category": "soup",
+      "cuisine": "русская",
+      "description": "Простой домашний суп с куриным филе, картофелем, морковью и зеленью. Лёгкий вариант для семейного обеда.",
+      "difficulty": "medium",
+      "display_title": "Куриный суп",
+      "meal_type": "lunch",
+      "normalized_title": "куриный суп с овощами",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Куриный суп с овощами",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Куриный суп с овощами",
+      "yield_type": null,
+      "cooking_time_minutes": 25,
+      "prep_time_minutes": 15,
+      "servings": 4,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 320.0,
+      "carbs_g": 35.0,
+      "estimated_servings": null,
+      "fat_g": 10.0,
+      "fiber_g": 5.0,
+      "nutrition_carbs_per_serving": 35.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 10.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 320.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 30.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 30.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 2.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "куриное филе",
+          "unit": "г",
+          "amount": 400,
+          "category": "мясо_птица",
+          "optional": false,
+          "shopping_name": "куриное филе",
+          "display_amount": "400 г"
+        },
+        {
+          "name": "морковь",
+          "unit": "шт",
+          "amount": 2,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "морковь",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "картофель",
+          "unit": "шт",
+          "amount": 2,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "картофель",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "яйцо куриное",
+          "unit": "шт",
+          "amount": 2,
+          "category": "яйца",
+          "optional": false,
+          "shopping_name": "яйцо куриное",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "лук репчатый",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "лук",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "масло оливковое",
+          "unit": "ст.л.",
+          "amount": 2,
+          "category": "масла/соусы",
+          "optional": false,
+          "shopping_name": "оливковое масло",
+          "display_amount": "2 ст.л."
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 1,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "соль",
+          "display_amount": "1 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.5,
+        "fiber_g": 5.0,
+        "sugar_g": 2.0
+      },
+      "steps": [
+        {
+          "text": "Разогрейте духовку до 200°C. Морковь очистите, нарежьте вдоль крупными ломтиками, выложите на противень, смажьте оливковым маслом и запекайте 15 минут до мягкости.",
+          "step_number": 1
+        },
+        {
+          "text": "Куриное филе нарежьте небольшими кубиками. Картофель и лук очистите и нарежьте средними кусочками.",
+          "step_number": 2
+        },
+        {
+          "text": "В кастрюле вскипятите 1,2 литра воды. Добавьте куриное филе, варите 10 минут, снимая пену. Затем добавьте картофель и лук, варите ещё 10 минут.",
+          "step_number": 3
+        },
+        {
+          "text": "Параллельно сварите яйца вкрутую (8–10 минут), остудите под холодной водой и очистите от скорлупы.",
+          "step_number": 4
+        },
+        {
+          "text": "Добавьте запечённую морковь в суп, посолите, проварите всё вместе 5 минут. Разлейте суп по тарелкам, в каждую положите разрезанное пополам яйцо.",
+          "step_number": 5
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/258/hero.webp",
+      "image_url": "/recipe-images/258/card_800.webp",
+      "thumbnail_url": "/recipe-images/258/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "куриное филе",
+          "quantity": "500",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "морковь",
+          "quantity": "2",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "картофель",
+          "quantity": "3",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "лук",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "петрушка",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "вода",
+          "quantity": "2000",
+          "unit": "мл",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "соль",
+          "quantity": "1",
+          "unit": "по вкусу",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "В кастрюле доведите до кипения 2 литра воды. Добавьте куриное филе и варите на среднем огне около 15 минут, пока мясо не станет мягким."
+        },
+        {
+          "step_number": 2,
+          "text": "Тем временем очистите и нарежьте мелко морковь, картофель и лук. Добавьте их в кастрюлю к курице после 15 минут варки."
+        },
+        {
+          "step_number": 3,
+          "text": "Продолжайте варить суп еще 10-15 минут, пока овощи не станут мягкими. Не забудьте периодически снимать пену с поверхности."
+        },
+        {
+          "step_number": 4,
+          "text": "Когда овощи будут готовы, добавьте нарезанную петрушку и посолите по вкусу. Дайте супу настояться под крышкой 5 минут перед подачей."
+        }
+      ]
+    },
+    {
+      "id": 259,
+      "category": "main",
+      "cuisine": "домашняя",
+      "description": "Горячее блюдо из куриной грудки, брокколи, сладкого перца и яблок. Получается мягким, ароматным и немного сладковатым.",
+      "difficulty": "medium",
+      "display_title": "Курица с яблоками",
+      "meal_type": "dinner",
+      "normalized_title": "куриные грудки с фруктами и овощами",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Куриные грудки с фруктами и овощами",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Курица с овощами и яблоками",
+      "yield_type": null,
+      "cooking_time_minutes": 20,
+      "prep_time_minutes": 20,
+      "servings": 4,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 420.0,
+      "carbs_g": 25.0,
+      "estimated_servings": null,
+      "fat_g": 18.0,
+      "fiber_g": 5.0,
+      "nutrition_carbs_per_serving": 25.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 18.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 420.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 40.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 40.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 8.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "куриное филе",
+          "unit": "г",
+          "amount": 500,
+          "category": "мясо_птица",
+          "optional": false,
+          "shopping_name": "куриное филе",
+          "display_amount": "500 г"
+        },
+        {
+          "name": "морковь",
+          "unit": "шт",
+          "amount": 2,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "морковь",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "болгарский перец",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "болгарский перец",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "яблоко",
+          "unit": "шт",
+          "amount": 2,
+          "category": "фрукты/ягоды",
+          "optional": false,
+          "shopping_name": "яблоко",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "лук репчатый",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "лук",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "растительное масло",
+          "unit": "ст.л.",
+          "amount": 2,
+          "category": "масла/соусы",
+          "optional": false,
+          "shopping_name": "растительное масло",
+          "display_amount": "2 ст.л."
+        },
+        {
+          "name": "чеснок",
+          "unit": "шт",
+          "amount": 2,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "чеснок",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 1,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "соль",
+          "display_amount": "1 ч.л."
+        },
+        {
+          "name": "черный перец молотый",
+          "unit": "ч.л.",
+          "amount": 0.5,
+          "category": "специи",
+          "optional": true,
+          "shopping_name": "черный перец",
+          "display_amount": "0.5 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.5,
+        "fiber_g": 5.0,
+        "sugar_g": 8.0
+      },
+      "steps": [
+        {
+          "text": "Куриное филе нарежьте средними кусочками. Морковь и яблоки очистите, нарежьте тонкими полосками. Лук и перец нарежьте полукольцами.",
+          "step_number": 1
+        },
+        {
+          "text": "В глубокой сковороде разогрейте растительное масло. Обжарьте лук и морковь 3–4 минуты до мягкости.",
+          "step_number": 2
+        },
+        {
+          "text": "Добавьте куриное филе, жарьте на среднем огне, пока кусочки не станут белыми со всех сторон.",
+          "step_number": 3
+        },
+        {
+          "text": "Всыпьте болгарский перец, яблоки и измельчённый чеснок. Посолите, поперчите. Готовьте под крышкой на слабом огне 10–12 минут, иногда помешивая.",
+          "step_number": 4
+        },
+        {
+          "text": "Проверьте готовность курицы, при необходимости готовьте ещё 2–3 минуты. Подавайте горячим, украсив свежей зеленью по желанию.",
+          "step_number": 5
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/259/hero.webp",
+      "image_url": "/recipe-images/259/card_800.webp",
+      "thumbnail_url": "/recipe-images/259/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "куриные грудки",
+          "quantity": "600",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "брокколи",
+          "quantity": "300",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "перец сладкий",
+          "quantity": "2",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "яблоки",
+          "quantity": "2",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "оливковое масло",
+          "quantity": "3",
+          "unit": "ст.л.",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "соль",
+          "quantity": "1",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "перец черный",
+          "quantity": "0.5",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "чеснок",
+          "quantity": "2",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "Начните с подготовки куриных грудок. Промойте их под холодной водой и обсушите бумажным полотенцем. Затем нарежьте грудки на небольшие кусочки."
+        },
+        {
+          "step_number": 2,
+          "text": "На сковороде разогрейте оливковое масло и обжарьте куриные кусочки на среднем огне до золотистой корочки, около 7-10 минут. Не забудьте добавить соль и перец."
+        },
+        {
+          "step_number": 3,
+          "text": "Пока курица жарится, нарежьте сладкий перец и брокколи, а яблоки — на дольки. Добавьте их на сковороду к курице и готовьте еще 5-7 минут."
+        },
+        {
+          "step_number": 4,
+          "text": "В конце приготовления добавьте мелко нарезанный чеснок и перемешайте все ингредиенты. Готовьте еще 2-3 минуты, чтобы чеснок раскрывал свой аромат."
+        }
+      ]
+    },
+    {
+      "id": 260,
+      "category": "main",
+      "cuisine": "русская",
+      "description": "Запечённое куриное филе с брокколи, цветной капустой, сливками и сыром. Сытное горячее блюдо для семейного ужина.",
+      "difficulty": "medium",
+      "display_title": "Курица с брокколи",
+      "meal_type": "dinner",
+      "normalized_title": "запеканка с курицей и овощами",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Запеканка с курицей и овощами",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Курица с брокколи под сыром",
+      "yield_type": null,
+      "cooking_time_minutes": 20,
+      "prep_time_minutes": 20,
+      "servings": 4,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 350.0,
+      "carbs_g": 10.0,
+      "estimated_servings": null,
+      "fat_g": 20.0,
+      "fiber_g": 3.0,
+      "nutrition_carbs_per_serving": 10.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 20.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 350.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 30.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 30.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 2.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "куриное филе",
+          "unit": "г",
+          "amount": 400,
+          "category": "мясо_птица",
+          "optional": false,
+          "shopping_name": "куриное филе",
+          "display_amount": "400 г"
+        },
+        {
+          "name": "яйцо куриное",
+          "unit": "шт",
+          "amount": 3,
+          "category": "яйца",
+          "optional": false,
+          "shopping_name": "яйцо куриное",
+          "display_amount": "3 шт"
+        },
+        {
+          "name": "кабачок",
+          "unit": "г",
+          "amount": 250,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "кабачок",
+          "display_amount": "250 г"
+        },
+        {
+          "name": "морковь",
+          "unit": "г",
+          "amount": 120,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "морковь",
+          "display_amount": "120 г"
+        },
+        {
+          "name": "лук репчатый",
+          "unit": "г",
+          "amount": 80,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "лук репчатый",
+          "display_amount": "80 г"
+        },
+        {
+          "name": "сметана",
+          "unit": "г",
+          "amount": 100,
+          "category": "молочные продукты",
+          "optional": false,
+          "shopping_name": "сметана",
+          "display_amount": "100 г"
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 0.5,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "соль",
+          "display_amount": "0.5 ч.л."
+        },
+        {
+          "name": "перец чёрный молотый",
+          "unit": "ч.л.",
+          "amount": 0.3,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "чёрный перец",
+          "display_amount": "0.3 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.5,
+        "fiber_g": 3.0,
+        "sugar_g": 2.0
+      },
+      "steps": [
+        {
+          "text": "Куриное филе нарежьте небольшими кубиками и слегка посолите. Оставьте на 10 минут, чтобы мясо стало сочнее.",
+          "step_number": 1
+        },
+        {
+          "text": "Кабачок и морковь натрите на крупной тёрке, лук нарежьте маленькими кубиками. Овощи перемешайте и слегка отожмите лишний сок.",
+          "step_number": 2
+        },
+        {
+          "text": "Форму для запекания смажьте маслом. Выложите слоем куриное филе, затем разложите овощную смесь. Немного примните ложкой.",
+          "step_number": 3
+        },
+        {
+          "text": "Яйца взбейте со сметаной, добавьте соль и чёрный перец. Получившейся заливкой равномерно покройте овощи в форме.",
+          "step_number": 4
+        },
+        {
+          "text": "Поставьте форму в разогретую до 180°С духовку и запекайте примерно 35 минут до аппетитной румяной корочки.",
+          "step_number": 5
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/260/hero.webp",
+      "image_url": "/recipe-images/260/card_800.webp",
+      "thumbnail_url": "/recipe-images/260/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "куриное филе",
+          "quantity": "400",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "брокколи",
+          "quantity": "200",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "цветная капуста",
+          "quantity": "200",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "твердый сыр",
+          "quantity": "100",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "сливки",
+          "quantity": "150",
+          "unit": "мл",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "специи",
+          "quantity": "1",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "Предварительно разогрейте духовку до 180 градусов. Куриную грудку нарежьте небольшими кубиками, добавьте специи по вкусу."
+        },
+        {
+          "step_number": 2,
+          "text": "Брокколи и цветную капусту отварите в подсоленной воде 5-7 минут до полуготовности. Затем откиньте на дуршлаг и дайте стечь."
+        },
+        {
+          "step_number": 3,
+          "text": "В глубокой форме для запекания выложите куриное филе, затем добавьте отваренные овощи. Смешайте сливки с натертым сыром и равномерно залейте смесью."
+        },
+        {
+          "step_number": 4,
+          "text": "Поместите форму в разогретую духовку и запекайте 25-30 минут до золотистой корочки. Подавайте горячей."
+        }
+      ]
+    },
+    {
+      "id": 261,
+      "category": "soup",
+      "cuisine": "русская",
+      "description": "Сытный суп со свининой, картофелем, морковью, луком и зеленью. Мясо измельчается в фарш и варится вместе с овощами.",
+      "difficulty": "medium",
+      "display_title": "Суп со свиным фаршем",
+      "meal_type": "lunch",
+      "normalized_title": "суп с фаршированной свининой",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Суп с фаршированной свининой",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Суп со свиным фаршем и овощами",
+      "yield_type": null,
+      "cooking_time_minutes": 25,
+      "prep_time_minutes": 15,
+      "servings": 4,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 320.0,
+      "carbs_g": 30.0,
+      "estimated_servings": null,
+      "fat_g": 15.0,
+      "fiber_g": 5.0,
+      "nutrition_carbs_per_serving": 30.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 15.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 320.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 25.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 25.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 2.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "свиной фарш",
+          "unit": "г",
+          "amount": 300,
+          "category": "свинина",
+          "optional": false,
+          "shopping_name": "свиной фарш",
+          "display_amount": "300 г"
+        },
+        {
+          "name": "перец сладкий",
+          "unit": "шт",
+          "amount": 2,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "перец сладкий",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "морковь",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "морковь",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "картофель",
+          "unit": "шт",
+          "amount": 2,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "картофель",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "лук репчатый",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "лук",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "сливки 20%",
+          "unit": "мл",
+          "amount": 150,
+          "category": "молочные продукты",
+          "optional": false,
+          "shopping_name": "сливки",
+          "display_amount": "150 мл"
+        },
+        {
+          "name": "яблоко",
+          "unit": "шт",
+          "amount": 1,
+          "category": "фрукты/ягоды",
+          "optional": false,
+          "shopping_name": "яблоко",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "петрушка свежая",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": true,
+          "shopping_name": "петрушка",
+          "display_amount": "1 пучок"
+        },
+        {
+          "name": "масло сливочное",
+          "unit": "г",
+          "amount": 20,
+          "category": "молочные продукты",
+          "optional": false,
+          "shopping_name": "сливочное масло",
+          "display_amount": "20 г"
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 1,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "соль",
+          "display_amount": "1 ч.л."
+        },
+        {
+          "name": "чёрный перец молотый",
+          "unit": "ч.л.",
+          "amount": 0.25,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "чёрный перец",
+          "display_amount": "1/4 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.5,
+        "fiber_g": 5.0,
+        "sugar_g": 2.0
+      },
+      "steps": [
+        {
+          "text": "Перец сладкий промойте, аккуратно срежьте верхушки и удалите семена. Яблоко очистите от кожуры и нарежьте небольшими кубиками.",
+          "step_number": 1
+        },
+        {
+          "text": "Смешайте свиной фарш с яблоком, половиной мелко нарезанного лука, добавьте соль и чёрный перец. Наполните перцы получившимся фаршем.",
+          "step_number": 2
+        },
+        {
+          "text": "В кастрюле растопите сливочное масло, обжарьте оставшийся лук и натёртую морковь до мягкости. Добавьте нарезанный кубиками картофель и слегка обжарьте.",
+          "step_number": 3
+        },
+        {
+          "text": "Влейте 1,2 литра воды, доведите до кипения. Вложите в суп фаршированные перцы. Варите суп на среднем огне 15 минут.",
+          "step_number": 4
+        },
+        {
+          "text": "Влейте сливки, перемешайте, попробуйте на соль. Варите ещё 5-7 минут до готовности перцев. Подавайте с рубленой петрушкой.",
+          "step_number": 5
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/261/hero.webp",
+      "image_url": "/recipe-images/261/card_800.webp",
+      "thumbnail_url": "/recipe-images/261/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "свинина",
+          "quantity": "400",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "картофель",
+          "quantity": "3",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "морковь",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "лук",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "чеснок",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "петрушка",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "вода",
+          "quantity": "2000",
+          "unit": "мл",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "соль",
+          "quantity": "1",
+          "unit": "по вкусу",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "Сначала подготовьте свинину, нарезав её на мелкие кусочки. Затем пропустите мясо через мясорубку или измельчите в блендере до состояния фарша."
+        },
+        {
+          "step_number": 2,
+          "text": "Очистите и нарежьте картофель, морковь и лук. В кастрюле с кипящей водой добавьте овощи и варите 10 минут."
+        },
+        {
+          "step_number": 3,
+          "text": "Добавьте в кастрюлю фарш из свинины и тщательно перемешайте. Варите суп ещё 15 минут на среднем огне, регулярно снимая пену."
+        },
+        {
+          "step_number": 4,
+          "text": "В конце добавьте измельченный чеснок и петрушку, посолите по вкусу. Дайте настояться под крышкой 5 минут перед подачей."
+        }
+      ]
+    },
+    {
+      "id": 262,
+      "category": "soup",
+      "cuisine": "русская",
+      "description": "Нежный суп-пюре из картофеля, моркови, брокколи и лука. Овощи варятся до мягкости и пробиваются блендером.",
+      "difficulty": "medium",
+      "display_title": "Овощной суп-пюре",
+      "meal_type": "lunch",
+      "normalized_title": "овощной суппюре",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Овощной суп-пюре",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Овощной суп-пюре с брокколи",
+      "yield_type": null,
+      "cooking_time_minutes": 20,
+      "prep_time_minutes": 10,
+      "servings": 4,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 180.0,
+      "carbs_g": 28.0,
+      "estimated_servings": null,
+      "fat_g": 7.0,
+      "fiber_g": 6.0,
+      "nutrition_carbs_per_serving": 28.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 7.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 180.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 4.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 4.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 3.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "картофель",
+          "unit": "г",
+          "amount": 300,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "картофель",
+          "display_amount": "300 г"
+        },
+        {
+          "name": "морковь",
+          "unit": "г",
+          "amount": 120,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "морковь",
+          "display_amount": "120 г"
+        },
+        {
+          "name": "лук репчатый",
+          "unit": "г",
+          "amount": 80,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "лук репчатый",
+          "display_amount": "80 г"
+        },
+        {
+          "name": "тофу",
+          "unit": "г",
+          "amount": 180,
+          "category": "прочее",
+          "optional": false,
+          "shopping_name": "тофу",
+          "display_amount": "180 г"
+        },
+        {
+          "name": "растительные сливки (без лактозы)",
+          "unit": "мл",
+          "amount": 200,
+          "category": "молочные продукты",
+          "optional": false,
+          "shopping_name": "растительные сливки",
+          "display_amount": "200 мл"
+        },
+        {
+          "name": "зелёный горошек (замороженный)",
+          "unit": "г",
+          "amount": 80,
+          "category": "бобовые",
+          "optional": false,
+          "shopping_name": "зелёный горошек",
+          "display_amount": "80 г"
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 1,
+          "category": "специи",
+          "optional": true,
+          "shopping_name": "соль",
+          "display_amount": "1 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.5,
+        "fiber_g": 6.0,
+        "sugar_g": 3.0
+      },
+      "steps": [
+        {
+          "text": "Картофель очистите и нарежьте небольшими кубиками. Морковь нарежьте кружочками, лук мелко нашинкуйте.",
+          "step_number": 1
+        },
+        {
+          "text": "В кастрюле доведите до кипения 1 литр воды. Добавьте картофель и морковь, варите 10 минут на среднем огне.",
+          "step_number": 2
+        },
+        {
+          "text": "Добавьте лук и зелёный горошек в кастрюлю, продолжайте варить ещё 7 минут до мягкости овощей.",
+          "step_number": 3
+        },
+        {
+          "text": "Положите нарезанный кубиками тофу и влейте растительные сливки. Перемешайте, при необходимости добавьте соль.",
+          "step_number": 4
+        },
+        {
+          "text": "Доведите суп до лёгкого кипения и прогрейте 3 минуты. Подавайте горячим, украсив зеленью по желанию.",
+          "step_number": 5
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/262/hero.webp",
+      "image_url": "/recipe-images/262/card_800.webp",
+      "thumbnail_url": "/recipe-images/262/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "картофель",
+          "quantity": "300",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "морковь",
+          "quantity": "150",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "брокколи",
+          "quantity": "200",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "лук",
+          "quantity": "100",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "оливковое масло",
+          "quantity": "2",
+          "unit": "ст.л.",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "вода",
+          "quantity": "800",
+          "unit": "мл",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "соль",
+          "quantity": "1",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "Очистите и нарежьте картофель, морковь и лук. Брокколи разделите на соцветия."
+        },
+        {
+          "step_number": 2,
+          "text": "В кастрюле разогрейте оливковое масло и обжарьте лук до прозрачности."
+        },
+        {
+          "step_number": 3,
+          "text": "Добавьте картофель и морковь, готовьте 5 минут, помешивая, затем добавьте брокколи."
+        },
+        {
+          "step_number": 4,
+          "text": "Залейте овощи водой, добавьте соль и доведите до кипения. Варите 15 минут до мягкости овощей."
+        },
+        {
+          "step_number": 5,
+          "text": "Пюрируйте суп с помощью блендера до однородной консистенции и подавайте горячим."
+        }
+      ]
+    },
+    {
+      "id": 263,
+      "category": "salad",
+      "cuisine": "средиземноморская",
+      "description": "Лёгкий салат с креветками, огурцом, помидорами черри и лимонной заправкой. Подходит для обеда или лёгкого ужина.",
+      "difficulty": "medium",
+      "display_title": "Салат с креветками",
+      "meal_type": "lunch",
+      "normalized_title": "салат с морепродуктами",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Салат с морепродуктами",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Салат с креветками и свежим огурцом",
+      "yield_type": null,
+      "cooking_time_minutes": 10,
+      "prep_time_minutes": 15,
+      "servings": 4,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 250.0,
+      "carbs_g": 10.0,
+      "estimated_servings": null,
+      "fat_g": 15.0,
+      "fiber_g": 3.0,
+      "nutrition_carbs_per_serving": 10.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 15.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 250.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 20.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 20.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 2.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "кальмары очищенные",
+          "unit": "г",
+          "amount": 300,
+          "category": "морепродукты",
+          "optional": false,
+          "shopping_name": "кальмары очищенные",
+          "display_amount": "300 г"
+        },
+        {
+          "name": "огурец свежий",
+          "unit": "г",
+          "amount": 200,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "огурец",
+          "display_amount": "200 г"
+        },
+        {
+          "name": "зелёный лук",
+          "unit": "г",
+          "amount": 40,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "зелёный лук",
+          "display_amount": "40 г"
+        },
+        {
+          "name": "оливковое масло",
+          "unit": "ст.л.",
+          "amount": 2,
+          "category": "масла/соусы",
+          "optional": false,
+          "shopping_name": "оливковое масло",
+          "display_amount": "2 ст.л."
+        },
+        {
+          "name": "лимонный сок",
+          "unit": "ст.л.",
+          "amount": 1,
+          "category": "масла/соусы",
+          "optional": false,
+          "shopping_name": "лимонный сок",
+          "display_amount": "1 ст.л."
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 0.5,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "соль",
+          "display_amount": "0.5 ч.л."
+        },
+        {
+          "name": "чёрный перец молотый",
+          "unit": "ч.л.",
+          "amount": 0.25,
+          "category": "специи",
+          "optional": true,
+          "shopping_name": "чёрный перец",
+          "display_amount": "0.25 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.2,
+        "fiber_g": 3.0,
+        "sugar_g": 2.0
+      },
+      "steps": [
+        {
+          "text": "Кальмары отварите в кипящей подсоленной воде 2 минуты, затем быстро охладите в ледяной воде и нарежьте тонкими полосками.",
+          "step_number": 1
+        },
+        {
+          "text": "Огурец нарежьте тонкой соломкой или полукольцами, зелёный лук измельчите мелкими кольцами.",
+          "step_number": 2
+        },
+        {
+          "text": "В глубокой миске соедините кальмары, огурец и зелёный лук. Посолите и при желании добавьте чёрный перец.",
+          "step_number": 3
+        },
+        {
+          "text": "Полейте салат смесью оливкового масла и лимонного сока, аккуратно перемешайте и подавайте охлаждённым.",
+          "step_number": 4
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/263/hero.webp",
+      "image_url": "/recipe-images/263/card_800.webp",
+      "thumbnail_url": "/recipe-images/263/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "креветки",
+          "quantity": "300",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "огурец",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "помидоры черри",
+          "quantity": "200",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "оливковое масло",
+          "quantity": "3",
+          "unit": "ст.л.",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "лимонный сок",
+          "quantity": "2",
+          "unit": "ст.л.",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "соль",
+          "quantity": "1",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "Приготовьте креветки, отварив их в подсоленной воде в течение 3–5 минут до готовности. После этого остудите их и очистите."
+        },
+        {
+          "step_number": 2,
+          "text": "Помойте огурец и нарежьте его кубиками. Помидоры черри разрежьте пополам. Подготовленные овощи поместите в большую салатницу."
+        },
+        {
+          "step_number": 3,
+          "text": "Добавьте в салатницу остывшие креветки, затем заправьте салат оливковым маслом и лимонным соком. Хорошо перемешайте ингредиенты."
+        },
+        {
+          "step_number": 4,
+          "text": "При необходимости добавьте соль по вкусу. Подавайте салат сразу же, украсив зеленью по желанию."
+        }
+      ]
+    },
+    {
+      "id": 264,
+      "category": "salad",
+      "cuisine": "русская",
+      "description": "Этот сытный салат сочетает отварную куриную грудку, свежие овощи и хрустящее яблоко, придающее блюду оригинальную свежесть. Подходит для семейного обеда или лёгкого ужина.",
+      "difficulty": "medium",
+      "display_title": "Салат с курицей и яблоком",
+      "meal_type": "lunch",
+      "normalized_title": "салат с курицей и фруктами",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Салат с курицей и фруктами",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Салат с курицей, яблоком и свежими овощами",
+      "yield_type": null,
+      "cooking_time_minutes": 20,
+      "prep_time_minutes": 15,
+      "servings": 4,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 320.0,
+      "carbs_g": 20.0,
+      "estimated_servings": null,
+      "fat_g": 15.0,
+      "fiber_g": 4.0,
+      "nutrition_carbs_per_serving": 20.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 15.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 320.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 28.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 28.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 6.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "куриная грудка",
+          "unit": "г",
+          "amount": 300,
+          "category": "мясо_птица",
+          "optional": false,
+          "shopping_name": "куриная грудка",
+          "display_amount": "300 г"
+        },
+        {
+          "name": "яйцо куриное",
+          "unit": "шт",
+          "amount": 3,
+          "category": "яйца",
+          "optional": false,
+          "shopping_name": "яйца",
+          "display_amount": "3 шт"
+        },
+        {
+          "name": "огурец свежий",
+          "unit": "г",
+          "amount": 150,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "огурец",
+          "display_amount": "150 г"
+        },
+        {
+          "name": "помидор",
+          "unit": "г",
+          "amount": 120,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "помидор",
+          "display_amount": "120 г"
+        },
+        {
+          "name": "яблоко зелёное",
+          "unit": "шт",
+          "amount": 1,
+          "category": "фрукты/ягоды",
+          "optional": false,
+          "shopping_name": "яблоко",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "лук зелёный",
+          "unit": "г",
+          "amount": 20,
+          "category": "овощи",
+          "optional": true,
+          "shopping_name": "лук зелёный",
+          "display_amount": "20 г"
+        },
+        {
+          "name": "сметана",
+          "unit": "г",
+          "amount": 60,
+          "category": "молочные продукты",
+          "optional": false,
+          "shopping_name": "сметана",
+          "display_amount": "60 г"
+        },
+        {
+          "name": "горчица",
+          "unit": "ч.л.",
+          "amount": 1,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "горчица",
+          "display_amount": "1 ч.л."
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 0.5,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "соль",
+          "display_amount": "0.5 ч.л."
+        },
+        {
+          "name": "чёрный перец молотый",
+          "unit": "ч.л.",
+          "amount": 0.25,
+          "category": "специи",
+          "optional": true,
+          "shopping_name": "чёрный перец",
+          "display_amount": "0.25 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.2,
+        "fiber_g": 4.0,
+        "sugar_g": 6.0
+      },
+      "steps": [
+        {
+          "text": "Куриную грудку отварите в подсоленной воде до готовности (примерно 20 минут), затем остудите и нарежьте небольшими кубиками.",
+          "step_number": 1
+        },
+        {
+          "text": "Яйца сварите вкрутую, остудите под холодной водой, очистите и нарежьте кубиками среднего размера.",
+          "step_number": 2
+        },
+        {
+          "text": "Свежий огурец и помидор нарежьте небольшими кусочками. Яблоко очистите от сердцевины и нарежьте соломкой или тонкими полосками.",
+          "step_number": 3
+        },
+        {
+          "text": "В глубокой миске смешайте куриную грудку, яйца, овощи, яблоко и, по желанию, мелко нарезанный зелёный лук.",
+          "step_number": 4
+        },
+        {
+          "text": "Для заправки соедините сметану, горчицу, соль и чёрный перец. Тщательно перемешайте до однородности.",
+          "step_number": 5
+        },
+        {
+          "text": "Заправьте салат получившейся смесью, аккуратно перемешайте и дайте настояться 5–10 минут перед подачей.",
+          "step_number": 6
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/264/hero.webp",
+      "image_url": "/recipe-images/264/card_800.webp",
+      "thumbnail_url": "/recipe-images/264/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "куриное филе",
+          "quantity": "400",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "яблоки",
+          "quantity": "2",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "огурец",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "салатный микс",
+          "quantity": "100",
+          "unit": "г",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "оливковое масло",
+          "quantity": "3",
+          "unit": "ст.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "лимонный сок",
+          "quantity": "1",
+          "unit": "ст.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "соль",
+          "quantity": "1",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "перец",
+          "quantity": "0.5",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "Отварите куриное филе в подсоленной воде до готовности, затем остудите и нарежьте кубиками."
+        },
+        {
+          "step_number": 2,
+          "text": "Яблоки тщательно промойте, удалите сердцевину и нарежьте кубиками. Огурец также нарежьте на мелкие кусочки."
+        },
+        {
+          "step_number": 3,
+          "text": "В глубокой миске соедините салатный микс, нарезанное куриное филе, яблоки и огурец."
+        },
+        {
+          "step_number": 4,
+          "text": "Заправьте салат оливковым маслом, лимонным соком, посолите и поперчите по вкусу. Перемешайте все ингредиенты и подавайте к столу."
+        }
+      ]
+    },
+    {
+      "id": 265,
+      "category": "soup",
+      "cuisine": "русская",
+      "description": "Этот суп объединяет яркие летние овощи и белую фасоль, создавая сытное, но лёгкое первое блюдо для всей семьи. Гармония аромата трав и свежести овощей подходит для обедов и ужинов в тёплый сезон.",
+      "difficulty": "hard",
+      "display_title": "Овощной суп с фасолью",
+      "meal_type": "lunch",
+      "normalized_title": "овощной суп с бобовыми",
+      "nutrition_confidence": "estimated",
+      "nutrition_review_reason": null,
+      "nutrition_serving_size_text": null,
+      "nutrition_source": "gold_v3_import",
+      "original_title": "Овощной суп с бобовыми",
+      "recipe_yield_unit": null,
+      "serving_size_unit": null,
+      "source_type": "seed",
+      "source_url": "planam_gold_v3_strong_quality_fix",
+      "title": "Летний овощной суп с фасолью",
+      "yield_type": null,
+      "cooking_time_minutes": 45,
+      "prep_time_minutes": 15,
+      "servings": 6,
+      "alcohol_percent": null,
+      "caffeine_mg": null,
+      "calories_per_serving": 210.0,
+      "carbs_g": 45.0,
+      "estimated_servings": null,
+      "fat_g": 2.0,
+      "fiber_g": 7.0,
+      "nutrition_carbs_per_serving": 45.0,
+      "nutrition_carbs_total": null,
+      "nutrition_fat_per_serving": 2.0,
+      "nutrition_fat_total": null,
+      "nutrition_kcal_per_serving": 210.0,
+      "nutrition_kcal_total": null,
+      "nutrition_protein_per_serving": 10.0,
+      "nutrition_protein_total": null,
+      "nutrition_servings": 4.0,
+      "protein_g": 10.0,
+      "recipe_yield_amount": null,
+      "serving_size_amount": null,
+      "sugar_g": 2.0,
+      "is_active": true,
+      "is_alcoholic": false,
+      "is_drink": false,
+      "nutrition_needs_review": false,
+      "suitable_for_children": true,
+      "suitable_for_event": false,
+      "suitable_for_sport": false,
+      "diets": [],
+      "ingredients": [
+        {
+          "name": "фасоль белая отварная",
+          "unit": "г",
+          "amount": 320,
+          "category": "бобовые",
+          "optional": false,
+          "shopping_name": "фасоль белая",
+          "display_amount": "320 г"
+        },
+        {
+          "name": "морковь",
+          "unit": "г",
+          "amount": 180,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "морковь",
+          "display_amount": "180 г"
+        },
+        {
+          "name": "картофель",
+          "unit": "г",
+          "amount": 320,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "картофель",
+          "display_amount": "320 г"
+        },
+        {
+          "name": "кабачок",
+          "unit": "г",
+          "amount": 200,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "кабачок",
+          "display_amount": "200 г"
+        },
+        {
+          "name": "помидор",
+          "unit": "г",
+          "amount": 220,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "помидор",
+          "display_amount": "220 г"
+        },
+        {
+          "name": "лук репчатый",
+          "unit": "г",
+          "amount": 120,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "лук репчатый",
+          "display_amount": "120 г"
+        },
+        {
+          "name": "болгарский перец",
+          "unit": "г",
+          "amount": 140,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "болгарский перец",
+          "display_amount": "140 г"
+        },
+        {
+          "name": "чеснок",
+          "unit": "шт",
+          "amount": 2,
+          "category": "овощи",
+          "optional": false,
+          "shopping_name": "чеснок",
+          "display_amount": "2 шт"
+        },
+        {
+          "name": "зелень петрушки",
+          "unit": "шт",
+          "amount": 1,
+          "category": "овощи",
+          "optional": true,
+          "shopping_name": "петрушка",
+          "display_amount": "1 шт"
+        },
+        {
+          "name": "масло оливковое",
+          "unit": "ст.л.",
+          "amount": 2,
+          "category": "масла/соусы",
+          "optional": false,
+          "shopping_name": "оливковое масло",
+          "display_amount": "2 ст.л."
+        },
+        {
+          "name": "соль",
+          "unit": "ч.л.",
+          "amount": 1,
+          "category": "специи",
+          "optional": false,
+          "shopping_name": "соль",
+          "display_amount": "1 ч.л."
+        },
+        {
+          "name": "смесь сухих трав",
+          "unit": "ч.л.",
+          "amount": 0.5,
+          "category": "специи",
+          "optional": true,
+          "shopping_name": "сухие травы",
+          "display_amount": "0.5 ч.л."
+        }
+      ],
+      "nutrition_coverage_json": {
+        "salt_g": 1.5,
+        "fiber_g": 7.0,
+        "sugar_g": 2.0
+      },
+      "steps": [
+        {
+          "text": "Морковь, лук и болгарский перец нарежьте мелкими кубиками. В кастрюле разогрейте оливковое масло и обжарьте овощи на среднем огне 7 минут до мягкости.",
+          "step_number": 1
+        },
+        {
+          "text": "Добавьте нарезанные помидоры и кабачок, перемешайте. Готовьте ещё 5 минут, чтобы овощи пустили сок.",
+          "step_number": 2
+        },
+        {
+          "text": "Всыпьте картофель, влейте 1,5 литра горячей воды. Варите под крышкой 20 минут до мягкости картофеля.",
+          "step_number": 3
+        },
+        {
+          "text": "Добавьте фасоль, измельчённый чеснок, соль и сухие травы. Проварите суп ещё 15 минут на слабом огне, чтобы вкусы объединились.",
+          "step_number": 4
+        },
+        {
+          "text": "Перед подачей украсьте суп свежей петрушкой. Подавайте горячим для всей семьи.",
+          "step_number": 5
+        }
+      ],
+      "tags": [
+        "gold_v3",
+        "recipe_schema_v3",
+        "status:gold"
+      ],
+      "hero_image_url": "/recipe-images/265/hero.webp",
+      "image_url": "/recipe-images/265/card_800.webp",
+      "thumbnail_url": "/recipe-images/265/thumb_400.webp",
+      "ingredient_rows": [
+        {
+          "name": "морковь",
+          "quantity": "2",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "картофель",
+          "quantity": "3",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "лук",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "фасоль",
+          "quantity": "200",
+          "unit": "мл",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "петрушка",
+          "quantity": "1",
+          "unit": "шт",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "соль",
+          "quantity": "1",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "перец черный",
+          "quantity": "0.5",
+          "unit": "ч.л.",
+          "category": "другое",
+          "is_optional": true,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        },
+        {
+          "name": "вода",
+          "quantity": "2",
+          "unit": "л",
+          "category": "другое",
+          "is_optional": false,
+          "notes": null,
+          "quantity_mode": null,
+          "quantity_text": null,
+          "is_to_taste": false,
+          "nutrition_precision": null,
+          "shopping_priority": null,
+          "needs_review": false,
+          "needs_review_reason": null,
+          "photo_visibility": null,
+          "manual_review_status": null
+        }
+      ],
+      "step_rows": [
+        {
+          "step_number": 1,
+          "text": "Очистите и нарежьте морковь, картофель и лук. Это будет основа для вашего супа."
+        },
+        {
+          "step_number": 2,
+          "text": "В кастрюле доведите воду до кипения и добавьте нарезанные овощи. Уменьшите огонь до среднего."
+        },
+        {
+          "step_number": 3,
+          "text": "Добавьте фасоль и варите все ингредиенты до полной готовности, около 30 минут."
+        },
+        {
+          "step_number": 4,
+          "text": "В конце добавьте соль, черный перец и мелко нарезанную петрушку. Дайте настояться перед подачей."
+        }
+      ]
+    }
+  ]
+}
