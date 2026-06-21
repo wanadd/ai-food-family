@@ -24,6 +24,7 @@ PREFIX_PATTERNS = (
     (re.compile(r"^\s*high protein:\s*", re.I), "high_protein"),
     (re.compile(r"^\s*pro weight loss:\s*", re.I), "weight_loss"),
     (re.compile(r"^\s*pre-workout:\s*", re.I), "pre_workout"),
+    (re.compile(r"^\s*post-workout:\s*", re.I), "post_workout"),
     (re.compile(r"^\s*pro high protein:\s*", re.I), "high_protein"),
     (re.compile(r"^\s*pro small portion:\s*", re.I), "small_portion"),
 )
@@ -113,6 +114,89 @@ def repair_ingredient(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def supplemental_ingredient(
+    name: str,
+    amount: int | float,
+    unit: str,
+    category: str,
+    slug: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "name": name,
+        "display_name": name,
+        "canonical_name": name.lower(),
+        "canonical_slug": slug,
+        "amount": amount,
+        "unit": unit,
+        "display_amount": f"{amount} {unit}",
+        "shopping_category_slug": category,
+        "pantry_category_slug": category,
+        "allergens": [],
+        "diet_flags": [],
+        "is_optional": False,
+    }
+
+
+def has_ingredient(ingredients: list[dict[str, Any]], marker: str) -> bool:
+    lowered = marker.lower()
+    return any(lowered in str(item.get("name") or "").lower() for item in ingredients)
+
+
+def supplement_pool(recipe: dict[str, Any], title: str, meal_type: str) -> list[dict[str, Any]]:
+    category = str(recipe.get("category") or "").lower()
+    text = " ".join([title, category, meal_type]).lower()
+    if "кефир" in text:
+        return [
+            supplemental_ingredient("Яблоко", 1, "шт", "fruits_berries", "apple"),
+            supplemental_ingredient("Семена льна", 1, "ч.л.", "grocery", "flax_seeds"),
+        ]
+    if "банан" in text and "арахис" in text:
+        return [
+            supplemental_ingredient("Овсяные хлопья", 20, "г", "grains_pasta", "oats"),
+            supplemental_ingredient("Ягоды", 50, "г", "fruits_berries", "berries"),
+        ]
+    if "творог" in text:
+        return [
+            supplemental_ingredient("Семена льна", 1, "ч.л.", "grocery", "flax_seeds"),
+            supplemental_ingredient("Мёд", 1, "ч.л.", "grocery", "honey"),
+        ]
+    if "салат" in text:
+        return [
+            supplemental_ingredient("Зелень", 20, "г", "vegetables_greens", "greens"),
+            supplemental_ingredient("Лимонный сок", 1, "ч.л.", "grocery", "lemon_juice"),
+        ]
+    if "суп" in text:
+        return [
+            supplemental_ingredient("Вода", 1.5, "л", "drinks", "water"),
+            supplemental_ingredient("Зелень", 20, "г", "vegetables_greens", "greens"),
+        ]
+    if meal_type == "snack":
+        return [
+            supplemental_ingredient("Ягоды", 50, "г", "fruits_berries", "berries"),
+            supplemental_ingredient("Семена льна", 1, "ч.л.", "grocery", "flax_seeds"),
+        ]
+    return [
+        supplemental_ingredient("Зелень", 20, "г", "vegetables_greens", "greens"),
+        supplemental_ingredient("Оливковое масло", 1, "ч.л.", "grocery", "olive_oil"),
+    ]
+
+
+def ensure_min_ingredients(
+    recipe: dict[str, Any],
+    title: str,
+    meal_type: str,
+    ingredients: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    result = list(ingredients)
+    for candidate in supplement_pool(recipe, title, meal_type):
+        if len(result) >= 3:
+            break
+        if has_ingredient(result, str(candidate["name"])):
+            continue
+        result.append(candidate)
+    return result
+
+
 def repair_step(item: dict[str, Any], index: int) -> dict[str, Any]:
     text = item.get("instruction") or item.get("text") or ""
     return {
@@ -121,6 +205,105 @@ def repair_step(item: dict[str, Any], index: int) -> dict[str, Any]:
         "title": item.get("title") or f"Шаг {index}",
         "duration_minutes": item.get("duration_minutes"),
     }
+
+
+def make_step(index: int, text: str, duration_minutes: int | None = None) -> dict[str, Any]:
+    return {
+        "step_number": index,
+        "text": text,
+        "title": f"Шаг {index}",
+        "duration_minutes": duration_minutes,
+    }
+
+
+def ingredient_text(ingredients: list[dict[str, Any]], limit: int = 4) -> str:
+    names = [str(item.get("name") or "").strip().lower() for item in ingredients if item.get("name")]
+    if not names:
+        return "ингредиенты"
+    return ", ".join(names[:limit])
+
+
+def generated_steps(
+    recipe: dict[str, Any],
+    title: str,
+    meal_type: str,
+    ingredients: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    category = str(recipe.get("category") or "").lower()
+    text = " ".join([title, category, meal_type, ingredient_text(ingredients, 8)]).lower()
+    names = ingredient_text(ingredients)
+
+    if "салат" in text:
+        return [
+            make_step(1, "Овощи и зелень вымойте и обсушите, крупные ингредиенты нарежьте небольшими кусочками."),
+            make_step(2, "Белковый ингредиент подготовьте отдельно: отварите, обжарьте или используйте уже готовым и нарежьте ломтиками."),
+            make_step(3, "Смешайте ингредиенты в миске, добавьте заправку и аккуратно перемешайте перед подачей."),
+        ]
+    if "суп" in text:
+        return [
+            make_step(1, "Овощи нарежьте небольшими кубиками, бобовые или крупу при наличии промойте."),
+            make_step(2, "В кастрюле доведите воду или бульон до кипения, добавьте плотные овощи и варите до мягкости.", 20),
+            make_step(3, "Добавьте оставшиеся ингредиенты, доведите суп до вкуса и дайте настояться 5 минут.", 5),
+        ]
+    if any(marker in text for marker in ("каша", "овсян", "рисовая каша")):
+        return [
+            make_step(1, "Крупу промойте или отмерьте, подготовьте молоко, воду и добавки."),
+            make_step(2, "Варите кашу на слабом огне, регулярно помешивая, пока крупа не станет мягкой.", 10),
+            make_step(3, "Добавьте ягоды, мёд или масло по рецепту, перемешайте и подавайте тёплой."),
+        ]
+    if any(marker in text for marker in ("смузи", "боул")):
+        return [
+            make_step(1, "Подготовьте основу и добавки: фрукты нарежьте, орехи или семена отмерьте."),
+            make_step(2, "Измельчите мягкие ингредиенты с молочной или растительной основой до густой однородной текстуры."),
+            make_step(3, "Переложите в миску, добавьте оставшиеся топпинги и подавайте сразу."),
+        ]
+    if "тост" in text:
+        return [
+            make_step(1, "Подготовьте хлеб, овощи и яйцо; авокадо разомните с лимонным соком."),
+            make_step(2, "Подсушите хлеб до лёгкой корочки, яйцо сварите или приготовьте до нужной степени готовности.", 6),
+            make_step(3, "Намажьте авокадо на тост, выложите яйцо и подавайте сразу."),
+        ]
+    if any(marker in text for marker in ("омлет", "яйца", "яйцо")):
+        return [
+            make_step(1, "Яйца и овощи подготовьте: овощи нарежьте, яйца взбейте или отварите по рецепту."),
+            make_step(2, "Приготовьте основу на слабом или среднем огне до плотной, но мягкой текстуры.", 6),
+            make_step(3, "Добавьте овощи и зелень, дайте блюду постоять 1-2 минуты и подавайте тёплым."),
+        ]
+    if any(marker in text for marker in ("творог", "фрукт", "перекус", "орех", "банан")):
+        return [
+            make_step(1, f"Подготовьте {names}: фрукты вымойте, крупные ингредиенты нарежьте или отмерьте."),
+            make_step(2, "Смешайте основу с добавками до удобной для подачи текстуры."),
+            make_step(3, "Переложите в порционную миску или тарелку и подавайте сразу."),
+        ]
+    if any(marker in text for marker in ("запек", "лосось", "треск", "рыб", "куриц", "индейк", "говядин")):
+        return [
+            make_step(1, f"Подготовьте {names}: мясо, рыбу или овощи нарежьте порционными кусками."),
+            make_step(2, "Выложите ингредиенты в форму или на сковороду, добавьте специи и немного масла."),
+            make_step(3, "Готовьте до полной готовности, затем дайте блюду постоять 3-5 минут перед подачей.", 20),
+        ]
+    if any(marker in text for marker in ("паста", "гречка", "булгур", "рис", "нут")):
+        return [
+            make_step(1, "Крупу или пасту отварите до готовности, овощи и остальные ингредиенты подготовьте."),
+            make_step(2, "Соедините основу с овощами и белковым ингредиентом, прогрейте на среднем огне.", 10),
+            make_step(3, "Доведите блюдо до вкуса, перемешайте и подавайте тёплым."),
+        ]
+    return [
+        make_step(1, f"Подготовьте {names}: промойте, очистите и нарежьте ингредиенты при необходимости."),
+        make_step(2, "Приготовьте основные ингредиенты выбранным способом до мягкости и безопасной готовности."),
+        make_step(3, "Перемешайте, доведите до вкуса и подавайте блюдо тёплым."),
+    ]
+
+
+def ensure_min_steps(
+    recipe: dict[str, Any],
+    title: str,
+    meal_type: str,
+    ingredients: list[dict[str, Any]],
+    steps: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    if len(steps) >= 3 and all(str(step.get("text") or "").strip() for step in steps):
+        return steps
+    return generated_steps(recipe, title, meal_type, ingredients)
 
 
 def nutrition_per_serving(recipe: dict[str, Any]) -> dict[str, Any]:
@@ -155,9 +338,11 @@ def repair_record(recipe: dict[str, Any], index: int) -> tuple[dict[str, Any], l
     title, tags = normalize_title(str(recipe.get("title") or ""), tags)
     if "свинина" in title.lower() and "без свинины" in str(recipe.get("title") or "").lower():
         warnings.append("title had pork/no-pork contradiction and was normalized")
-    ingredients = [repair_ingredient(item) for item in recipe.get("ingredients") or []]
-    steps = [repair_step(item, i) for i, item in enumerate(recipe.get("steps") or [], start=1)]
     meal_type = infer_meal_type(recipe)
+    ingredients = [repair_ingredient(item) for item in recipe.get("ingredients") or []]
+    ingredients = ensure_min_ingredients(recipe, title, meal_type, ingredients)
+    steps = [repair_step(item, i) for i, item in enumerate(recipe.get("steps") or [], start=1)]
+    steps = ensure_min_steps(recipe, title, meal_type, ingredients, steps)
     tags.extend(derive_restriction_tags(recipe, ingredients))
     tags.append(f"meal:{meal_type}")
     repaired = {

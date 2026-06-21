@@ -158,6 +158,10 @@ def evaluate(records: list[dict[str, Any]], json_errors: list[str] | None = None
                 "title": recipe.get("title"),
                 "ok": ok,
                 "blockers": blockers,
+                "ingredients_count": len(recipe.get("ingredients") or []),
+                "steps_count": len(recipe.get("steps") or []),
+                "tags": recipe.get("tags") or [],
+                "meal_type": recipe.get("meal_type"),
             }
         )
     hard_fail = len(json_errors) + sum(1 for item in items if item["blockers"])
