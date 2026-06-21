@@ -15,7 +15,10 @@ INPUT = ROOT / "data" / "recipe_v2" / "gold_recipes_30_repaired_candidate.jsonl"
 REPORTS = ROOT / "reports"
 REPORT_JSON = REPORTS / "SPRINT_1_3C_GOLD_RECIPES_30_QUALITY_GATE.json"
 REPORT_MD = REPORTS / "SPRINT_1_3C_GOLD_RECIPES_30_QUALITY_GATE.md"
-ENGLISH_PREFIX_RE = re.compile(r"^\s*(high protein|pro weight loss|pre-workout)\s*:", re.I)
+ENGLISH_PREFIX_RE = re.compile(
+    r"^\s*(high protein|pro weight loss|pre-workout|pro\s+[a-z][a-z\s-]*)\s*:",
+    re.I,
+)
 PORK_WORDS = ("свинина", "свиной", "свиная", "свиные", "свиным", "бекон", "ветчина")
 MEAT_WORDS = ("куриц", "курин", "индейк", "говядин", "свинин", "бекон", "ветчина", "фарш", "рыб", "лосось", "кревет")
 SEAFOOD_WORDS = ("кревет", "морепродукт", "мидии", "кальмар")

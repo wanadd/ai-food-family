@@ -79,6 +79,26 @@ def text_blob(row: dict[str, Any], ingredient_names: list[str], steps: list[str]
     return " ".join(str(part or "") for part in parts).lower()
 
 
+def api_visible_payload(row: dict[str, Any], ingredient_names: list[str], steps: list[str]) -> dict[str, Any]:
+    """Approximate public recipe payload fields; intentionally excludes DB-only source_url."""
+    return {
+        "id": row.get("id"),
+        "title": row.get("display_title") or row.get("title"),
+        "display_title": row.get("display_title"),
+        "description": row.get("description") or "",
+        "meal_type": row.get("meal_type"),
+        "hero_image_url": row.get("hero_image_url"),
+        "image_url": row.get("image_url"),
+        "thumbnail_url": row.get("thumbnail_url"),
+        "ingredients": ingredient_names,
+        "steps": steps,
+        "source_type": row.get("source_type") or "manual",
+        "is_gold_v3": True,
+        "recipe_schema": "gold_v3",
+        "image_ready": bool(row.get("hero_image_url") or row.get("image_url") or row.get("thumbnail_url")),
+    }
+
+
 def build_report() -> dict[str, Any]:
     database_url = os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
     imported = import_sqlalchemy()
@@ -203,8 +223,9 @@ def build_report() -> dict[str, Any]:
             item_errors.append("nutrition core incomplete")
         if leakage:
             item_errors.append(f"user-facing leakage markers: {leakage}")
-        if row.get("source_url"):
-            item_errors.append("source_url column is non-empty")
+        api_payload_text = json.dumps(api_visible_payload(row, ingredient_names, step_texts), ensure_ascii=False).lower()
+        if "source_url" in api_payload_text or "original_url" in api_payload_text:
+            item_errors.append("source URL leakage in API-visible payload")
         if item_errors:
             errors.append(f"{recipe_id}: {'; '.join(item_errors)}")
         recipes.append(
@@ -219,7 +240,8 @@ def build_report() -> dict[str, Any]:
                 "step_count": step_count,
                 "image_ready": bool(row.get("hero_image_url") and row.get("image_url") and row.get("thumbnail_url")),
                 "nutrition_core_complete": core_nutrition,
-                "source_url_empty": not bool(row.get("source_url")),
+                "source_url_db_present": bool(row.get("source_url")),
+                "source_url_api_visible": "source_url" in api_payload_text,
                 "leakage": leakage,
                 "ok": not item_errors,
             }

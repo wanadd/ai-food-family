@@ -151,6 +151,31 @@ def test_repair_script_produces_valid_candidate_records():
     assert repaired["image_prompt"]
 
 
+def test_repair_script_removes_pro_english_prefixes():
+    mod = _load_script("repair_gold_recipes_30_candidate")
+    raw = {
+        "title": "Pro high protein: куриная грудка и киноа",
+        "meal_types": ["lunch"],
+        "category": "main",
+        "ingredients": [
+            {"display_name": "Куриная грудка", "amount": 200, "unit": "г", "shopping_category_slug": "meat"},
+            {"display_name": "Киноа", "amount": 80, "unit": "г", "shopping_category_slug": "grains"},
+            {"display_name": "Брокколи", "amount": 100, "unit": "г", "shopping_category_slug": "vegetables"},
+        ],
+        "steps": [
+            {"instruction": "Отварить киноа."},
+            {"instruction": "Запечь курицу."},
+            {"instruction": "Подать с брокколи."},
+        ],
+        "nutrition_summary": {"calories": 450, "protein_g": 48, "fat_g": 14, "carbs_g": 32},
+    }
+    repaired, _warnings = mod.repair_record(raw, 28)
+    assert repaired["title"] == "Куриная грудка и киноа"
+    assert repaired["normalized_title"] == "куриная грудка и киноа"
+    assert "high_protein" in repaired["tags"]
+    assert "vegetarian" not in repaired["tags"]
+
+
 def test_quality_gate_catches_core_blockers():
     mod = _load_script("quality_gate_gold_recipes_30_candidate")
     bad = {
@@ -170,6 +195,28 @@ def test_quality_gate_catches_core_blockers():
     assert "meal_type_missing" in blockers
     assert "no_pork_plus_pork" in blockers
     assert "nutrition_core_incomplete" in blockers
+
+
+def test_quality_gate_catches_generic_pro_english_title_prefix():
+    mod = _load_script("quality_gate_gold_recipes_30_candidate")
+    bad = {
+        "schema_version": "recipe_gold_v3",
+        "source_type": "gold_v3_candidate",
+        "meal_type": "lunch",
+        "title": "Pro high protein: куриная грудка и киноа",
+        "tags": ["high_protein"],
+        "ingredients": [
+            {"name": "куриная грудка", "amount": 200, "unit": "г", "shopping_category_slug": "meat"},
+            {"name": "киноа", "amount": 80, "unit": "г", "shopping_category_slug": "grains"},
+            {"name": "брокколи", "amount": 100, "unit": "г", "shopping_category_slug": "vegetables"},
+        ],
+        "steps": [{"text": "Раз."}, {"text": "Два."}, {"text": "Три."}],
+        "nutrition_per_serving": {"kcal": 450, "protein_g": 48, "fat_g": 14, "carbs_g": 32},
+        "image_prompt": "Фото блюда.",
+    }
+    ok, blockers = mod.validate_record(bad, set())
+    assert ok is False
+    assert "title_garbage" in blockers
 
 
 def test_vegetarian_restriction_blocks_kurinoe_file():

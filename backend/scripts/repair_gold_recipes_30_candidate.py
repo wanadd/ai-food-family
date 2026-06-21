@@ -24,11 +24,27 @@ PREFIX_PATTERNS = (
     (re.compile(r"^\s*high protein:\s*", re.I), "high_protein"),
     (re.compile(r"^\s*pro weight loss:\s*", re.I), "weight_loss"),
     (re.compile(r"^\s*pre-workout:\s*", re.I), "pre_workout"),
+    (re.compile(r"^\s*pro high protein:\s*", re.I), "high_protein"),
+    (re.compile(r"^\s*pro small portion:\s*", re.I), "small_portion"),
 )
 TITLE_SUFFIX_RE = re.compile(r"\s+#\d+\s*$")
 PORK_WORDS = ("свинина", "бекон", "ветчина", "свиным", "свиная", "свиные")
 SEAFOOD_WORDS = ("кревет", "морепродукт", "мидии", "кальмар")
-MEAT_WORDS = ("куриц", "индейк", "говядин", "свинин", "бекон", "фарш", "рыб", "лосось", "кревет")
+MEAT_WORDS = (
+    "куриц",
+    "курин",
+    "индейк",
+    "говядин",
+    "свинин",
+    "бекон",
+    "ветчин",
+    "фарш",
+    "рыб",
+    "треск",
+    "тунц",
+    "лосось",
+    "кревет",
+)
 
 
 def now() -> str:
