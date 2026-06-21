@@ -88,6 +88,9 @@ class RecipeSummary(BaseModel):
     image_url: str | None = None
     hero_image_url: str | None = None
     thumbnail_url: str | None = None
+    is_gold_v3: bool = False
+    recipe_schema: str | None = None
+    image_ready: bool = False
     nutrition_summary: NutritionSummary | None = None
 
 

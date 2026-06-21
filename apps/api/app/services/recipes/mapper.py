@@ -54,6 +54,31 @@ def public_original_title(recipe: Recipe, *, shown_title: str) -> str | None:
     return original
 
 
+def is_gold_v3_recipe(recipe: Recipe) -> bool:
+    tags = get_tags(recipe)
+    return (
+        "gold_v3" in tags
+        or "recipe_schema_v3" in tags
+        or (
+            str(recipe.source_type or "") == "seed"
+            and bool(recipe.id is not None and 256 <= int(recipe.id) <= 265)
+        )
+    )
+
+
+def recipe_schema(recipe: Recipe) -> str | None:
+    tags = get_tags(recipe)
+    if "gold_v3" in tags or "recipe_schema_v3" in tags:
+        return "gold_v3"
+    if "recipe_schema_v2" in tags or "gold_v2" in tags:
+        return "gold_v2"
+    return None
+
+
+def image_ready(recipe: Recipe) -> bool:
+    return bool(recipe.hero_image_url or recipe.image_url or recipe.thumbnail_url)
+
+
 def nutrition_summary(recipe: Recipe) -> NutritionSummary | None:
     """Build the recipe-level nutrition summary; None when not yet calculated.
 
@@ -121,6 +146,9 @@ def to_summary(
         image_url=recipe.image_url,
         hero_image_url=recipe.hero_image_url,
         thumbnail_url=recipe.thumbnail_url,
+        is_gold_v3=is_gold_v3_recipe(recipe),
+        recipe_schema=recipe_schema(recipe),
+        image_ready=image_ready(recipe),
         nutrition_summary=nutrition_summary(recipe),
     )
 

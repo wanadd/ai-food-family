@@ -253,6 +253,7 @@ _RESTRICTION_DEFINITIONS: tuple[RestrictionDefinition, ...] = (
         banned=(
             "мясо",
             "курица",
+            "курин",
             "индейка",
             "говядина",
             "свинина",
@@ -276,6 +277,7 @@ _RESTRICTION_DEFINITIONS: tuple[RestrictionDefinition, ...] = (
         banned=(
             "мясо",
             "курица",
+            "курин",
             "индейка",
             "говядина",
             "свинина",
@@ -308,6 +310,7 @@ _RESTRICTION_DEFINITIONS: tuple[RestrictionDefinition, ...] = (
         aliases=("пескетарианство", "pescatarian", "пескетарианское"),
         banned=(
             "курица",
+            "курин",
             "индейка",
             "говядина",
             "свинина",
