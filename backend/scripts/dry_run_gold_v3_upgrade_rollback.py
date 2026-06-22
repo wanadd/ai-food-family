@@ -21,6 +21,8 @@ from dry_run_gold_v3_existing_recipe_upgrades import EXPECTED_UPGRADE_IDS  # noq
 MANIFEST_SCHEMA = ROOT / "data" / "recipe_v2" / "gold_v3_upgrade_backup_manifest_schema.json"
 REPORT_MD = ROOT / "reports" / "SPRINT_1_3G_GOLD_V3_ROLLBACK_DRY_RUN.md"
 REPORT_JSON = ROOT / "reports" / "SPRINT_1_3G_GOLD_V3_ROLLBACK_DRY_RUN.json"
+REPORT_WITH_BACKUP_MD = ROOT / "reports" / "SPRINT_1_3H_GOLD_V3_ROLLBACK_WITH_BACKUP_DRY_RUN.md"
+REPORT_WITH_BACKUP_JSON = ROOT / "reports" / "SPRINT_1_3H_GOLD_V3_ROLLBACK_WITH_BACKUP_DRY_RUN.json"
 SOURCE_MARKERS = ("source_url", "original_url", "http://", "https://", "http", "povarenok", "поваренок")
 
 
@@ -35,6 +37,37 @@ def has_source_leakage(value: Any) -> bool:
 
 def expected_inputs() -> list[str]:
     return ["recipes.jsonl", "recipe_ingredients.jsonl", "recipe_steps.jsonl", "rollback_manifest.json"]
+
+
+def load_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def backup_dir_status(backup_dir: Path | None) -> dict[str, Any]:
+    if not backup_dir:
+        return {
+            "backup_missing": True,
+            "manifest_missing": True,
+            "backup_valid": False,
+            "recipe_ids_ok": False,
+            "missing_inputs": expected_inputs(),
+        }
+    missing_inputs = [name for name in expected_inputs() if not (backup_dir / name).exists()]
+    manifest_path = backup_dir / "rollback_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
+    recipe_ids = []
+    recipes_path = backup_dir / "recipes.jsonl"
+    if recipes_path.exists():
+        recipe_ids = sorted(int(row["id"]) for row in load_jsonl(recipes_path) if row.get("id") is not None)
+    return {
+        "backup_missing": not backup_dir.exists(),
+        "manifest_missing": not manifest_path.exists(),
+        "backup_valid": backup_dir.exists() and not missing_inputs and recipe_ids == EXPECTED_UPGRADE_IDS,
+        "recipe_ids_ok": recipe_ids == EXPECTED_UPGRADE_IDS,
+        "recipe_ids": recipe_ids,
+        "missing_inputs": missing_inputs,
+        "rollback_manifest_upgrade_apply_allowed": manifest.get("upgrade_apply_allowed"),
+    }
 
 
 def rollback_operations() -> list[str]:
@@ -81,13 +114,16 @@ def build_report(
     write_reports: bool = True,
 ) -> dict[str, Any]:
     db_state = db_state if db_state is not None else inspect_db_available()
-    manifest_exists = bool(future_backup_path and (future_backup_path / "manifest.json").exists())
-    backup_missing = not bool(future_backup_path and future_backup_path.exists())
+    backup_status = backup_dir_status(future_backup_path)
     blockers = []
-    if backup_missing:
+    if backup_status["backup_missing"]:
         blockers.append("backup_missing")
-    if not manifest_exists:
+    if backup_status["manifest_missing"]:
         blockers.append("manifest_missing")
+    if backup_status.get("missing_inputs"):
+        blockers.append("rollback_inputs_missing")
+    if future_backup_path and not backup_status["recipe_ids_ok"]:
+        blockers.append("recipe_ids_mismatch")
     if not db_state.get("db_available"):
         blockers.append("db_unavailable")
     if not db_state.get("relation_check_available"):
@@ -100,22 +136,24 @@ def build_report(
         "planned_recipe_ids": EXPECTED_UPGRADE_IDS,
         "backup_manifest_schema": str(MANIFEST_SCHEMA.relative_to(ROOT)),
         "future_backup_path": str(future_backup_path) if future_backup_path else None,
-        "backup_missing": backup_missing,
-        "manifest_status": "present" if manifest_exists else "missing",
+        **backup_status,
+        "manifest_status": "present" if not backup_status["manifest_missing"] else "missing",
         "db_available": bool(db_state.get("db_available")),
         "relation_check_available": bool(db_state.get("relation_check_available")),
         "expected_inputs": expected_inputs(),
         "planned_rollback_operations": rollback_operations(),
         "verification_after_future_rollback": verification_plan(),
         "blockers": blockers,
-        "recommendation": "ready_for_future_real_backup_artifact_sprint" if blockers == ["backup_missing", "manifest_missing"] else "fix_rollback_dry_run_blockers",
+        "recommendation": "ready_for_controlled_upgrade_apply_dry_run_sprint" if not blockers else "fix_rollback_dry_run_blockers",
     }
     if has_source_leakage(report):
         raise RuntimeError("rollback dry-run report contains source leakage")
     if write_reports:
-        REPORT_JSON.parent.mkdir(parents=True, exist_ok=True)
-        REPORT_JSON.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        REPORT_MD.write_text(render(report), encoding="utf-8")
+        report_json = REPORT_WITH_BACKUP_JSON if future_backup_path else REPORT_JSON
+        report_md = REPORT_WITH_BACKUP_MD if future_backup_path else REPORT_MD
+        report_json.parent.mkdir(parents=True, exist_ok=True)
+        report_json.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        report_md.write_text(render(report), encoding="utf-8")
     return report
 
 
@@ -159,7 +197,7 @@ def main(argv: list[str] | None = None) -> int:
         print("Apply is intentionally disabled in Sprint 1.3G. Rollback execution is not part of this sprint.", file=sys.stderr)
         return 2
     report = build_report(future_backup_path=Path(args.backup_path) if args.backup_path else None)
-    print(f"Wrote {REPORT_MD}")
+    print(f"Wrote {REPORT_WITH_BACKUP_MD if args.backup_path else REPORT_MD}")
     return 0 if len(report["planned_recipe_ids"]) == 30 else 1
 
 
