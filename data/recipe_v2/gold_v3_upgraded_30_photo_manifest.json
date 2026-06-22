@@ -1,0 +1,913 @@
+{
+  "schema_version": "gold_v3_upgraded_30_photo_manifest.v1",
+  "generated_at": "2026-06-22T12:00:00Z",
+  "recipe_ids": [
+    2,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    236,
+    237,
+    238,
+    239,
+    240,
+    241,
+    242,
+    243,
+    244,
+    245,
+    246,
+    247,
+    248,
+    249,
+    250,
+    251,
+    252,
+    253,
+    254,
+    255
+  ],
+  "recipe_count": 30,
+  "image_generation_run": false,
+  "public_url_prefix": "/recipe-images",
+  "host_storage_root": "/var/www/ai-food-family-data/recipe-images",
+  "container_storage_root": "/app/public/recipe-images",
+  "recipes": [
+    {
+      "id": 2,
+      "candidate_index": 2,
+      "title": "Омлет с овощами",
+      "display_title": "Омлет с овощами",
+      "description_display": "Домашнее блюдо для завтрак с яйца, молоко и перец болгарский — удобный вариант для семейного меню.",
+      "meal_type": "breakfast",
+      "key_ingredients": [
+        "яйца",
+        "молоко",
+        "перец болгарский"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/2/hero.webp",
+        "image_url": "/recipe-images/2/card_800.webp",
+        "thumbnail_url": "/recipe-images/2/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/2/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/2/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/2/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Омлет с овощами."
+    },
+    {
+      "id": 227,
+      "candidate_index": 1,
+      "title": "Овсянка с ягодами",
+      "display_title": "Овсянка с ягодами",
+      "description_display": "Домашнее блюдо для завтрак с овсяные хлопья, молоко и ягоды замороженные — удобный вариант для семейного меню.",
+      "meal_type": "breakfast",
+      "key_ingredients": [
+        "овсяные хлопья",
+        "молоко",
+        "ягоды замороженные"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/227/hero.webp",
+        "image_url": "/recipe-images/227/card_800.webp",
+        "thumbnail_url": "/recipe-images/227/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/227/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/227/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/227/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Овсянка с ягодами."
+    },
+    {
+      "id": 228,
+      "candidate_index": 3,
+      "title": "Творожная боул с фруктами",
+      "display_title": "Творожная боул с фруктами",
+      "description_display": "Домашнее блюдо для завтрак с творог 5%, банан и яблоко — удобный вариант для семейного меню.",
+      "meal_type": "breakfast",
+      "key_ingredients": [
+        "творог 5%",
+        "банан",
+        "яблоко"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/228/hero.webp",
+        "image_url": "/recipe-images/228/card_800.webp",
+        "thumbnail_url": "/recipe-images/228/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/228/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/228/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/228/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Творожная боул с фруктами."
+    },
+    {
+      "id": 229,
+      "candidate_index": 4,
+      "title": "Тост с авокадо и яйцом",
+      "display_title": "Тост с авокадо и яйцом",
+      "description_display": "Домашнее блюдо для завтрак с хлеб цельнозерновой, авокадо и яйцо — удобный вариант для семейного меню.",
+      "meal_type": "breakfast",
+      "key_ingredients": [
+        "хлеб цельнозерновой",
+        "авокадо",
+        "яйцо"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/229/hero.webp",
+        "image_url": "/recipe-images/229/card_800.webp",
+        "thumbnail_url": "/recipe-images/229/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/229/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/229/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/229/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Тост с авокадо и яйцом."
+    },
+    {
+      "id": 230,
+      "candidate_index": 5,
+      "title": "Смузи-боул с бананом и орехами",
+      "display_title": "Смузи-боул с бананом и орехами",
+      "description_display": "Домашнее блюдо для завтрак с банан, йогурт натуральный и орехи грецкие — удобный вариант для семейного меню.",
+      "meal_type": "breakfast",
+      "key_ingredients": [
+        "банан",
+        "йогурт натуральный",
+        "орехи грецкие"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/230/hero.webp",
+        "image_url": "/recipe-images/230/card_800.webp",
+        "thumbnail_url": "/recipe-images/230/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/230/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/230/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/230/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Смузи-боул с бананом и орехами."
+    },
+    {
+      "id": 231,
+      "candidate_index": 6,
+      "title": "Рисовая каша на молоке для детей",
+      "display_title": "Рисовая каша на молоке для детей",
+      "description_display": "Домашнее блюдо для завтрак с рис, молоко и сахар — удобный вариант для семейного меню.",
+      "meal_type": "breakfast",
+      "key_ingredients": [
+        "рис",
+        "молоко",
+        "сахар"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/231/hero.webp",
+        "image_url": "/recipe-images/231/card_800.webp",
+        "thumbnail_url": "/recipe-images/231/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/231/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/231/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/231/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Рисовая каша на молоке для детей."
+    },
+    {
+      "id": 232,
+      "candidate_index": 7,
+      "title": "Куриное филе с рисом",
+      "display_title": "Куриное филе с рисом",
+      "description_display": "Домашнее блюдо для обед с куриное филе, рис и морковь — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "куриное филе",
+        "рис",
+        "морковь"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/232/hero.webp",
+        "image_url": "/recipe-images/232/card_800.webp",
+        "thumbnail_url": "/recipe-images/232/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/232/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/232/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/232/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Куриное филе с рисом."
+    },
+    {
+      "id": 233,
+      "candidate_index": 8,
+      "title": "Запечённая треска с лимоном",
+      "display_title": "Запечённая треска с лимоном",
+      "description_display": "Домашнее блюдо для обед с филе трески, лимон и оливковое масло — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "филе трески",
+        "лимон",
+        "оливковое масло"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/233/hero.webp",
+        "image_url": "/recipe-images/233/card_800.webp",
+        "thumbnail_url": "/recipe-images/233/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/233/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/233/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/233/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Запечённая треска с лимоном."
+    },
+    {
+      "id": 234,
+      "candidate_index": 9,
+      "title": "Лёгкий овощной суп",
+      "display_title": "Лёгкий овощной суп",
+      "description_display": "Домашнее блюдо для обед с картофель, морковь и капуста белокочанная — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "картофель",
+        "морковь",
+        "капуста белокочанная"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/234/hero.webp",
+        "image_url": "/recipe-images/234/card_800.webp",
+        "thumbnail_url": "/recipe-images/234/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/234/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/234/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/234/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Лёгкий овощной суп."
+    },
+    {
+      "id": 235,
+      "candidate_index": 10,
+      "title": "Гречка с индейкой",
+      "display_title": "Гречка с индейкой",
+      "description_display": "Домашнее блюдо для обед с филе индейки, гречка и морковь — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "филе индейки",
+        "гречка",
+        "морковь"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/235/hero.webp",
+        "image_url": "/recipe-images/235/card_800.webp",
+        "thumbnail_url": "/recipe-images/235/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/235/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/235/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/235/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Гречка с индейкой."
+    },
+    {
+      "id": 236,
+      "candidate_index": 11,
+      "title": "Паста с курицей и томатами",
+      "display_title": "Паста с курицей и томатами",
+      "description_display": "Домашнее блюдо для обед с макароны, куриное филе и помидоры — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "макароны",
+        "куриное филе",
+        "помидоры"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/236/hero.webp",
+        "image_url": "/recipe-images/236/card_800.webp",
+        "thumbnail_url": "/recipe-images/236/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/236/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/236/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/236/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Паста с курицей и томатами."
+    },
+    {
+      "id": 237,
+      "candidate_index": 12,
+      "title": "Тушёные овощи с нутом",
+      "display_title": "Тушёные овощи с нутом",
+      "description_display": "Домашнее блюдо для обед с нут консервированный, кабачок и баклажан — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "нут консервированный",
+        "кабачок",
+        "баклажан"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/237/hero.webp",
+        "image_url": "/recipe-images/237/card_800.webp",
+        "thumbnail_url": "/recipe-images/237/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/237/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/237/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/237/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Тушёные овощи с нутом."
+    },
+    {
+      "id": 238,
+      "candidate_index": 13,
+      "title": "Постный гороховый суп",
+      "display_title": "Постный гороховый суп",
+      "description_display": "Домашнее блюдо для обед с горох колотый, морковь и лук репчатый — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "горох колотый",
+        "морковь",
+        "лук репчатый"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/238/hero.webp",
+        "image_url": "/recipe-images/238/card_800.webp",
+        "thumbnail_url": "/recipe-images/238/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/238/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/238/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/238/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Постный гороховый суп."
+    },
+    {
+      "id": 239,
+      "candidate_index": 14,
+      "title": "Халяль-курица с булгуром",
+      "display_title": "Халяль-курица с булгуром",
+      "description_display": "Домашнее блюдо для обед с куриное бедро без кожи, булгур и лук репчатый — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "куриное бедро без кожи",
+        "булгур",
+        "лук репчатый"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/239/hero.webp",
+        "image_url": "/recipe-images/239/card_800.webp",
+        "thumbnail_url": "/recipe-images/239/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/239/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/239/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/239/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Халяль-курица с булгуром."
+    },
+    {
+      "id": 240,
+      "candidate_index": 15,
+      "title": "Лёгкий ужин: салат с тунцом",
+      "display_title": "Лёгкий ужин: салат с тунцом",
+      "description_display": "Домашнее блюдо для ужин с тунец консервированный, огурец и помидоры черри — удобный вариант для семейного меню.",
+      "meal_type": "dinner",
+      "key_ingredients": [
+        "тунец консервированный",
+        "огурец",
+        "помидоры черри"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/240/hero.webp",
+        "image_url": "/recipe-images/240/card_800.webp",
+        "thumbnail_url": "/recipe-images/240/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/240/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/240/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/240/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Лёгкий ужин: салат с тунцом."
+    },
+    {
+      "id": 241,
+      "candidate_index": 16,
+      "title": "Семейный ужин: тефтели в томатном соусе",
+      "display_title": "Семейный ужин: тефтели в томатном соусе",
+      "description_display": "Домашнее блюдо для ужин с фарш говяжий, рис и лук репчатый — удобный вариант для семейного меню.",
+      "meal_type": "dinner",
+      "key_ingredients": [
+        "фарш говяжий",
+        "рис",
+        "лук репчатый"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/241/hero.webp",
+        "image_url": "/recipe-images/241/card_800.webp",
+        "thumbnail_url": "/recipe-images/241/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/241/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/241/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/241/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Семейный ужин: тефтели в томатном соусе."
+    },
+    {
+      "id": 242,
+      "candidate_index": 17,
+      "title": "Говядина с брокколи",
+      "display_title": "Говядина с брокколи",
+      "description_display": "Домашнее блюдо для ужин с говядина вырезка, брокколи и оливковое масло — удобный вариант для семейного меню.",
+      "meal_type": "dinner",
+      "key_ingredients": [
+        "говядина вырезка",
+        "брокколи",
+        "оливковое масло"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/242/hero.webp",
+        "image_url": "/recipe-images/242/card_800.webp",
+        "thumbnail_url": "/recipe-images/242/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/242/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/242/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/242/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Говядина с брокколи."
+    },
+    {
+      "id": 243,
+      "candidate_index": 18,
+      "title": "Лосось на пару с овощами",
+      "display_title": "Лосось на пару с овощами",
+      "description_display": "Домашнее блюдо для ужин с филе лосося, кабачок и морковь — удобный вариант для семейного меню.",
+      "meal_type": "dinner",
+      "key_ingredients": [
+        "филе лосося",
+        "кабачок",
+        "морковь"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/243/hero.webp",
+        "image_url": "/recipe-images/243/card_800.webp",
+        "thumbnail_url": "/recipe-images/243/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/243/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/243/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/243/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Лосось на пару с овощами."
+    },
+    {
+      "id": 244,
+      "candidate_index": 19,
+      "title": "Вегетарианская паста с грибами",
+      "display_title": "Вегетарианская паста с грибами",
+      "description_display": "Домашнее блюдо для ужин с макароны, шампиньоны и сливки 10% — удобный вариант для семейного меню.",
+      "meal_type": "dinner",
+      "key_ingredients": [
+        "макароны",
+        "шампиньоны",
+        "сливки 10%"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/244/hero.webp",
+        "image_url": "/recipe-images/244/card_800.webp",
+        "thumbnail_url": "/recipe-images/244/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/244/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/244/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/244/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Вегетарианская паста с грибами."
+    },
+    {
+      "id": 245,
+      "candidate_index": 20,
+      "title": "Индейка с овощами",
+      "display_title": "Индейка с овощами",
+      "description_display": "Домашнее блюдо для ужин с филе индейки, болгарский перец и кабачок — удобный вариант для семейного меню.",
+      "meal_type": "dinner",
+      "key_ingredients": [
+        "филе индейки",
+        "болгарский перец",
+        "кабачок"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/245/hero.webp",
+        "image_url": "/recipe-images/245/card_800.webp",
+        "thumbnail_url": "/recipe-images/245/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/245/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/245/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/245/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Индейка с овощами."
+    },
+    {
+      "id": 246,
+      "candidate_index": 21,
+      "title": "Быстрый стир-фрай с курицей",
+      "display_title": "Быстрый стир-фрай с курицей",
+      "description_display": "Домашнее блюдо для ужин с куриное филе, морковь и перец болгарский — удобный вариант для семейного меню.",
+      "meal_type": "dinner",
+      "key_ingredients": [
+        "куриное филе",
+        "морковь",
+        "перец болгарский"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/246/hero.webp",
+        "image_url": "/recipe-images/246/card_800.webp",
+        "thumbnail_url": "/recipe-images/246/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/246/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/246/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/246/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Быстрый стир-фрай с курицей."
+    },
+    {
+      "id": 247,
+      "candidate_index": 22,
+      "title": "Запеканка из творога",
+      "display_title": "Запеканка из творога",
+      "description_display": "Домашнее блюдо для ужин с творог 5%, яйца и манка — удобный вариант для семейного меню.",
+      "meal_type": "dinner",
+      "key_ingredients": [
+        "творог 5%",
+        "яйца",
+        "манка"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/247/hero.webp",
+        "image_url": "/recipe-images/247/card_800.webp",
+        "thumbnail_url": "/recipe-images/247/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/247/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/247/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/247/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Запеканка из творога."
+    },
+    {
+      "id": 248,
+      "candidate_index": 23,
+      "title": "Творог с ягодами",
+      "display_title": "Творог с ягодами",
+      "description_display": "Домашнее блюдо для перекус с творог 2%, ягоды и семена льна — удобный вариант для семейного меню.",
+      "meal_type": "snack",
+      "key_ingredients": [
+        "творог 2%",
+        "ягоды",
+        "семена льна"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/248/hero.webp",
+        "image_url": "/recipe-images/248/card_800.webp",
+        "thumbnail_url": "/recipe-images/248/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/248/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/248/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/248/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Творог с ягодами."
+    },
+    {
+      "id": 249,
+      "candidate_index": 24,
+      "title": "Фруктовый перекус",
+      "display_title": "Фруктовый перекус",
+      "description_display": "Домашнее блюдо для перекус с яблоко, груша и миндаль — удобный вариант для семейного меню.",
+      "meal_type": "snack",
+      "key_ingredients": [
+        "яблоко",
+        "груша",
+        "миндаль"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/249/hero.webp",
+        "image_url": "/recipe-images/249/card_800.webp",
+        "thumbnail_url": "/recipe-images/249/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/249/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/249/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/249/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Фруктовый перекус."
+    },
+    {
+      "id": 250,
+      "candidate_index": 25,
+      "title": "Энергетический перекус с орехами",
+      "display_title": "Энергетический перекус с орехами",
+      "description_display": "Домашнее блюдо для перекус с грецкие орехи, курага и мёд — удобный вариант для семейного меню.",
+      "meal_type": "snack",
+      "key_ingredients": [
+        "грецкие орехи",
+        "курага",
+        "мёд"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/250/hero.webp",
+        "image_url": "/recipe-images/250/card_800.webp",
+        "thumbnail_url": "/recipe-images/250/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/250/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/250/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/250/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Энергетический перекус с орехами."
+    },
+    {
+      "id": 251,
+      "candidate_index": 26,
+      "title": "Банан с арахисовой пастой",
+      "display_title": "Банан с арахисовой пастой",
+      "description_display": "Домашнее блюдо для перекус с банан, арахисовая паста и овсяные хлопья — удобный вариант для семейного меню.",
+      "meal_type": "snack",
+      "key_ingredients": [
+        "банан",
+        "арахисовая паста",
+        "овсяные хлопья"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/251/hero.webp",
+        "image_url": "/recipe-images/251/card_800.webp",
+        "thumbnail_url": "/recipe-images/251/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/251/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/251/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/251/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Банан с арахисовой пастой."
+    },
+    {
+      "id": 252,
+      "candidate_index": 27,
+      "title": "Детский перекус: кефир с печеньем",
+      "display_title": "Детский перекус: кефир с печеньем",
+      "description_display": "Домашнее блюдо для перекус с кефир 2.5%, печенье овсяное и яблоко — удобный вариант для семейного меню.",
+      "meal_type": "snack",
+      "key_ingredients": [
+        "кефир 2.5%",
+        "печенье овсяное",
+        "яблоко"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/252/hero.webp",
+        "image_url": "/recipe-images/252/card_800.webp",
+        "thumbnail_url": "/recipe-images/252/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/252/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/252/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/252/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Детский перекус: кефир с печеньем."
+    },
+    {
+      "id": 253,
+      "candidate_index": 28,
+      "title": "Куриная грудка и киноа",
+      "display_title": "Куриная грудка и киноа",
+      "description_display": "Домашнее блюдо для обед с куриная грудка, киноа и брокколи — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "куриная грудка",
+        "киноа",
+        "брокколи"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/253/hero.webp",
+        "image_url": "/recipe-images/253/card_800.webp",
+        "thumbnail_url": "/recipe-images/253/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/253/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/253/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/253/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Куриная грудка и киноа."
+    },
+    {
+      "id": 254,
+      "candidate_index": 29,
+      "title": "Салат с индейкой",
+      "display_title": "Салат с индейкой",
+      "description_display": "Домашнее блюдо для обед с филе индейки, салат листовой и огурец — удобный вариант для семейного меню.",
+      "meal_type": "lunch",
+      "key_ingredients": [
+        "филе индейки",
+        "салат листовой",
+        "огурец"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/254/hero.webp",
+        "image_url": "/recipe-images/254/card_800.webp",
+        "thumbnail_url": "/recipe-images/254/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/254/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/254/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/254/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Салат с индейкой."
+    },
+    {
+      "id": 255,
+      "candidate_index": 30,
+      "title": "Яйца с авокадо",
+      "display_title": "Яйца с авокадо",
+      "description_display": "Домашнее блюдо для завтрак с яйца, авокадо и помидор черри — удобный вариант для семейного меню.",
+      "meal_type": "breakfast",
+      "key_ingredients": [
+        "яйца",
+        "авокадо",
+        "помидор черри"
+      ],
+      "desired_files": [
+        "hero.webp",
+        "card_800.webp",
+        "thumb_400.webp"
+      ],
+      "public_urls": {
+        "hero_image_url": "/recipe-images/255/hero.webp",
+        "image_url": "/recipe-images/255/card_800.webp",
+        "thumbnail_url": "/recipe-images/255/thumb_400.webp"
+      },
+      "storage_paths": {
+        "hero.webp": "/var/www/ai-food-family-data/recipe-images/255/hero.webp",
+        "card_800.webp": "/var/www/ai-food-family-data/recipe-images/255/card_800.webp",
+        "thumb_400.webp": "/var/www/ai-food-family-data/recipe-images/255/thumb_400.webp"
+      },
+      "image_prompt": "Фото готового блюда ПланАм без текста, логотипов и рук; натуральный свет, аккуратная подача: Яйца с авокадо."
+    }
+  ]
+}
