@@ -8,6 +8,7 @@ ORM instance and the favourite-ids set.
 from __future__ import annotations
 
 from app.models.recipe import Recipe
+from app.services.recipes.description_display import public_description
 from app.schemas.recipe import (
     NutritionSummary,
     RecipeDetail,
@@ -123,7 +124,7 @@ def to_summary(
         title=shown,
         display_title=recipe.display_title or shown,
         full_title=full_title,
-        description=recipe.description or "",
+        description=public_description(recipe),
         meal_type=recipe.meal_type,
         category=recipe.category,
         prep_time_minutes=prep_minutes(recipe),
