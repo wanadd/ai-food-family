@@ -11,8 +11,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = ROOT / "backend" / "scripts"
+API_ROOT = ROOT / "apps" / "api"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
+if (API_ROOT / "app").is_dir() and str(API_ROOT) not in sys.path:
+    sys.path.insert(0, str(API_ROOT))
 
 from audit_gold_v3_post_apply_common import (  # noqa: E402
     ENGLISH_TITLE_PREFIX_RE,
@@ -28,6 +31,8 @@ from audit_gold_v3_post_apply_common import (  # noqa: E402
     title_garbage,
     write_json,
 )
+
+from app.services.recipes.title_display import title_cleanliness_blockers  # noqa: E402
 
 REPORT_JSON = ROOT / "reports" / "SPRINT_1_3N_PRODUCT_POLISH_AUDIT.json"
 REPORT_MD = ROOT / "reports" / "SPRINT_1_3N_PRODUCT_POLISH_AUDIT.md"
@@ -97,6 +102,7 @@ def evaluate_payload(recipe_id: int, payload: dict[str, Any]) -> dict[str, Any]:
     if not title:
         blockers.append("title_empty")
     blockers.extend(f"title_garbage:{item}" for item in title_garbage(title))
+    blockers.extend(title_cleanliness_blockers(title))
 
     ingredients = payload.get("ingredients") or []
     steps = payload.get("steps") or []
@@ -197,6 +203,16 @@ def build_report() -> dict[str, Any]:
     source_leakage = sum(
         1 for item in items if any(b.startswith("source_leakage") for b in item["blockers"])
     )
+    religious_title_marker_count = sum(
+        1 for item in items if "religious_title_marker" in item["blockers"]
+    )
+    english_title_marker_count = sum(
+        1 for item in items if "english_title_marker" in item["blockers"]
+    )
+    category_prefix_title_count = sum(
+        1 for item in items if "category_prefix_title" in item["blockers"]
+    )
+    bad_title_term_count = religious_title_marker_count + english_title_marker_count + category_prefix_title_count
 
     return {
         "generated_at": now(),
@@ -205,6 +221,10 @@ def build_report() -> dict[str, Any]:
         "description_empty_user_facing": description_empty_user_facing,
         "raw_json_render_risk": raw_json_render_risk,
         "source_leakage": source_leakage,
+        "bad_title_term_count": bad_title_term_count,
+        "religious_title_marker_count": religious_title_marker_count,
+        "english_title_marker_count": english_title_marker_count,
+        "category_prefix_title_count": category_prefix_title_count,
         "recipe_id_count": len(recipe_ids),
         "database_url": redact_url(database_url or ""),
         "prod_http_smoke_decision": "prod_http_smoke_skipped_by_design: auth_required",

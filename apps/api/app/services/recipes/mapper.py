@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from app.models.recipe import Recipe
 from app.services.recipes.description_display import public_description
+from app.services.recipes.title_display import public_recipe_title_for_recipe
 from app.schemas.recipe import (
     NutritionSummary,
     RecipeDetail,
@@ -45,7 +46,7 @@ def prep_minutes(recipe: Recipe) -> int:
 
 
 def public_title(recipe: Recipe) -> str:
-    return recipe.display_title or recipe.title
+    return public_recipe_title_for_recipe(recipe)
 
 
 def public_original_title(recipe: Recipe, *, shown_title: str) -> str | None:
@@ -122,7 +123,7 @@ def to_summary(
     return RecipeSummary(
         id=recipe.id,
         title=shown,
-        display_title=recipe.display_title or shown,
+        display_title=shown,
         full_title=full_title,
         description=public_description(recipe),
         meal_type=recipe.meal_type,
