@@ -1,0 +1,3065 @@
+{
+  "schema_version": "gold_v3_nutrition_correction_manifest.v1",
+  "source": "PLANAM Sprint 1.7 deterministic internal estimates",
+  "recipe_count": 40,
+  "recipe_ids": [
+    2,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    236,
+    237,
+    238,
+    239,
+    240,
+    241,
+    242,
+    243,
+    244,
+    245,
+    246,
+    247,
+    248,
+    249,
+    250,
+    251,
+    252,
+    253,
+    254,
+    255,
+    256,
+    257,
+    258,
+    259,
+    260,
+    261,
+    262,
+    263,
+    264,
+    265
+  ],
+  "recipes": [
+    {
+      "recipe_id": 2,
+      "display_title": "Омлет с овощами",
+      "meal_type": "breakfast",
+      "servings": 2,
+      "serving_weight_g": 230,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "pan",
+      "yield_notes": "eggs and vegetables per cooked serving; oil included",
+      "ingredients_basis": [
+        {
+          "name": "яйца",
+          "raw_amount_g": 165.0,
+          "edible_amount_g": 165.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 3 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "молоко",
+          "raw_amount_g": 50.0,
+          "edible_amount_g": 50.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 50 мл мл; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "перец болгарский",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "шпинат",
+          "raw_amount_g": 50.0,
+          "edible_amount_g": 50.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 50 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 548,
+        "protein_g": 36,
+        "fat_g": 36,
+        "carbs_g": 20
+      },
+      "nutrition_cooked_total": {
+        "kcal": 548,
+        "protein_g": 36,
+        "fat_g": 36,
+        "carbs_g": 20
+      },
+      "nutrition_per_serving": {
+        "kcal": 274,
+        "protein_g": 18,
+        "fat_g": 18,
+        "carbs_g": 10
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 227,
+      "display_title": "Овсянка с ягодами",
+      "meal_type": "breakfast",
+      "servings": 2,
+      "serving_weight_g": 300,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "boil",
+      "yield_notes": "oats counted dry, cooked yield adjusted with milk/water gain",
+      "ingredients_basis": [
+        {
+          "name": "овсяные хлопья",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 80 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "молоко",
+          "raw_amount_g": 300.0,
+          "edible_amount_g": 300.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 300 мл мл; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "ягоды замороженные",
+          "raw_amount_g": 100.0,
+          "edible_amount_g": 100.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 100 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "мёд",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 592,
+        "protein_g": 22,
+        "fat_g": 16,
+        "carbs_g": 90
+      },
+      "nutrition_cooked_total": {
+        "kcal": 592,
+        "protein_g": 22,
+        "fat_g": 16,
+        "carbs_g": 90
+      },
+      "nutrition_per_serving": {
+        "kcal": 296,
+        "protein_g": 11,
+        "fat_g": 8,
+        "carbs_g": 45
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 228,
+      "display_title": "Творог с фруктами",
+      "meal_type": "breakfast",
+      "servings": 2,
+      "serving_weight_g": 260,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "mix",
+      "yield_notes": "dairy and fruit counted raw; no cooking yield loss",
+      "ingredients_basis": [
+        {
+          "name": "творог 5%",
+          "raw_amount_g": 200.0,
+          "edible_amount_g": 200.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 200 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "банан",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яблоко",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "мёд",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 592,
+        "protein_g": 48,
+        "fat_g": 16,
+        "carbs_g": 64
+      },
+      "nutrition_cooked_total": {
+        "kcal": 592,
+        "protein_g": 48,
+        "fat_g": 16,
+        "carbs_g": 64
+      },
+      "nutrition_per_serving": {
+        "kcal": 296,
+        "protein_g": 24,
+        "fat_g": 8,
+        "carbs_g": 32
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 229,
+      "display_title": "Хлеб с авокадо и яйцом",
+      "meal_type": "breakfast",
+      "servings": 1,
+      "serving_weight_g": 220,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "bread, avocado, egg and oil counted per assembled serving",
+      "ingredients_basis": [
+        {
+          "name": "хлеб цельнозерновой",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "авокадо",
+          "raw_amount_g": 140.0,
+          "edible_amount_g": 140.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яйцо",
+          "raw_amount_g": 55.0,
+          "edible_amount_g": 55.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лимон",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 0.5 шт шт; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 385,
+        "protein_g": 17,
+        "fat_g": 21,
+        "carbs_g": 32
+      },
+      "nutrition_cooked_total": {
+        "kcal": 385,
+        "protein_g": 17,
+        "fat_g": 21,
+        "carbs_g": 32
+      },
+      "nutrition_per_serving": {
+        "kcal": 385,
+        "protein_g": 17,
+        "fat_g": 21,
+        "carbs_g": 32
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 230,
+      "display_title": "Банановый завтрак с орехами",
+      "meal_type": "breakfast",
+      "servings": 2,
+      "serving_weight_g": 280,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "mix",
+      "yield_notes": "banana, dairy and nuts counted raw; no cooking yield loss",
+      "ingredients_basis": [
+        {
+          "name": "банан",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "йогурт натуральный",
+          "raw_amount_g": 150.0,
+          "edible_amount_g": 150.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 150 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "орехи грецкие",
+          "raw_amount_g": 20.0,
+          "edible_amount_g": 20.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 20 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "молоко",
+          "raw_amount_g": 100.0,
+          "edible_amount_g": 100.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 100 мл мл; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 736,
+        "protein_g": 24,
+        "fat_g": 32,
+        "carbs_g": 88
+      },
+      "nutrition_cooked_total": {
+        "kcal": 736,
+        "protein_g": 24,
+        "fat_g": 32,
+        "carbs_g": 88
+      },
+      "nutrition_per_serving": {
+        "kcal": 368,
+        "protein_g": 12,
+        "fat_g": 16,
+        "carbs_g": 44
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 231,
+      "display_title": "Рисовая каша на молоке",
+      "meal_type": "breakfast",
+      "servings": 3,
+      "serving_weight_g": 280,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "boil",
+      "yield_notes": "rice counted dry, cooked milk/water yield adjusted",
+      "ingredients_basis": [
+        {
+          "name": "рис",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 80 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "молоко",
+          "raw_amount_g": 400.0,
+          "edible_amount_g": 400.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 400 мл мл; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "сахар",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "сливочное масло",
+          "raw_amount_g": 10.0,
+          "edible_amount_g": 10.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 10 г г; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 861,
+        "protein_g": 24,
+        "fat_g": 21,
+        "carbs_g": 144
+      },
+      "nutrition_cooked_total": {
+        "kcal": 861,
+        "protein_g": 24,
+        "fat_g": 21,
+        "carbs_g": 144
+      },
+      "nutrition_per_serving": {
+        "kcal": 287,
+        "protein_g": 8,
+        "fat_g": 7,
+        "carbs_g": 48
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 232,
+      "display_title": "Куриное филе с рисом",
+      "meal_type": "lunch",
+      "servings": 2,
+      "serving_weight_g": 360,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "boil_and_pan",
+      "yield_notes": "rice counted dry with cooked yield; chicken cooked yield adjusted; oil included",
+      "ingredients_basis": [
+        {
+          "name": "куриное филе",
+          "raw_amount_g": 450.0,
+          "edible_amount_g": 450.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 450 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "рис",
+          "raw_amount_g": 180.0,
+          "edible_amount_g": 180.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 180 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 850,
+        "protein_g": 76,
+        "fat_g": 18,
+        "carbs_g": 96
+      },
+      "nutrition_cooked_total": {
+        "kcal": 850,
+        "protein_g": 76,
+        "fat_g": 18,
+        "carbs_g": 96
+      },
+      "nutrition_per_serving": {
+        "kcal": 425,
+        "protein_g": 38,
+        "fat_g": 9,
+        "carbs_g": 48
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 233,
+      "display_title": "Запечённая треска с лимоном",
+      "meal_type": "lunch",
+      "servings": 2,
+      "serving_weight_g": 300,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "bake",
+      "yield_notes": "fish cooked yield adjusted; oil included; vegetables garnish estimated",
+      "ingredients_basis": [
+        {
+          "name": "филе трески",
+          "raw_amount_g": 400.0,
+          "edible_amount_g": 400.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.75,
+          "notes": "source ingredient amount: 400 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лимон",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "укроп",
+          "raw_amount_g": 1.0,
+          "edible_amount_g": 1.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 пучок пучок; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 596,
+        "protein_g": 68,
+        "fat_g": 20,
+        "carbs_g": 36
+      },
+      "nutrition_cooked_total": {
+        "kcal": 596,
+        "protein_g": 68,
+        "fat_g": 20,
+        "carbs_g": 36
+      },
+      "nutrition_per_serving": {
+        "kcal": 298,
+        "protein_g": 34,
+        "fat_g": 10,
+        "carbs_g": 18
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 234,
+      "display_title": "Овощной суп",
+      "meal_type": "lunch",
+      "servings": 4,
+      "serving_weight_g": 420,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "soup",
+      "yield_notes": "soup final yield estimated by pot volume; oil included",
+      "ingredients_basis": [
+        {
+          "name": "картофель",
+          "raw_amount_g": 360.0,
+          "edible_amount_g": 360.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 3 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "капуста белокочанная",
+          "raw_amount_g": 200.0,
+          "edible_amount_g": 200.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 200 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "вода",
+          "raw_amount_g": 1.5,
+          "edible_amount_g": 1.5,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1.5 л л; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 796,
+        "protein_g": 24,
+        "fat_g": 28,
+        "carbs_g": 112
+      },
+      "nutrition_cooked_total": {
+        "kcal": 796,
+        "protein_g": 24,
+        "fat_g": 28,
+        "carbs_g": 112
+      },
+      "nutrition_per_serving": {
+        "kcal": 199,
+        "protein_g": 6,
+        "fat_g": 7,
+        "carbs_g": 28
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 235,
+      "display_title": "Гречка с индейкой",
+      "meal_type": "lunch",
+      "servings": 2,
+      "serving_weight_g": 360,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "pan_or_stew",
+      "yield_notes": "buckwheat counted dry, cooked yield adjusted; turkey cooked yield adjusted; oil included",
+      "ingredients_basis": [
+        {
+          "name": "филе индейки",
+          "raw_amount_g": 400.0,
+          "edible_amount_g": 400.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.75,
+          "notes": "source ingredient amount: 400 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "гречка",
+          "raw_amount_g": 180.0,
+          "edible_amount_g": 180.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 180 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "масло растительное",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 828,
+        "protein_g": 72,
+        "fat_g": 20,
+        "carbs_g": 90
+      },
+      "nutrition_cooked_total": {
+        "kcal": 828,
+        "protein_g": 72,
+        "fat_g": 20,
+        "carbs_g": 90
+      },
+      "nutrition_per_serving": {
+        "kcal": 414,
+        "protein_g": 36,
+        "fat_g": 10,
+        "carbs_g": 45
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 236,
+      "display_title": "Паста с курицей и томатами",
+      "meal_type": "lunch",
+      "servings": 2,
+      "serving_weight_g": 380,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "boil_and_pan",
+      "yield_notes": "pasta counted dry with cooked yield; chicken cooked yield adjusted; oil included",
+      "ingredients_basis": [
+        {
+          "name": "макароны",
+          "raw_amount_g": 250.0,
+          "edible_amount_g": 250.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.5,
+          "notes": "source ingredient amount: 250 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "куриное филе",
+          "raw_amount_g": 300.0,
+          "edible_amount_g": 300.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 300 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "помидоры",
+          "raw_amount_g": 240.0,
+          "edible_amount_g": 240.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 3 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "чеснок",
+          "raw_amount_g": 2.0,
+          "edible_amount_g": 2.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 зубчик зубчик; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 960,
+        "protein_g": 70,
+        "fat_g": 24,
+        "carbs_g": 116
+      },
+      "nutrition_cooked_total": {
+        "kcal": 960,
+        "protein_g": 70,
+        "fat_g": 24,
+        "carbs_g": 116
+      },
+      "nutrition_per_serving": {
+        "kcal": 480,
+        "protein_g": 35,
+        "fat_g": 12,
+        "carbs_g": 58
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 237,
+      "display_title": "Тушёные овощи с нутом",
+      "meal_type": "lunch",
+      "servings": 3,
+      "serving_weight_g": 360,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "stew",
+      "yield_notes": "stew final yield estimated; canned chickpeas drained; oil included",
+      "ingredients_basis": [
+        {
+          "name": "нут консервированный",
+          "raw_amount_g": 240.0,
+          "edible_amount_g": 240.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 240 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "кабачок",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "баклажан",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "помидоры",
+          "raw_amount_g": 160.0,
+          "edible_amount_g": 160.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1005,
+        "protein_g": 42,
+        "fat_g": 33,
+        "carbs_g": 135
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1005,
+        "protein_g": 42,
+        "fat_g": 33,
+        "carbs_g": 135
+      },
+      "nutrition_per_serving": {
+        "kcal": 335,
+        "protein_g": 14,
+        "fat_g": 11,
+        "carbs_g": 45
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 238,
+      "display_title": "Гороховый суп с овощами",
+      "meal_type": "lunch",
+      "servings": 4,
+      "serving_weight_g": 430,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "soup",
+      "yield_notes": "dry peas counted dry, soup final yield estimated",
+      "ingredients_basis": [
+        {
+          "name": "горох колотый",
+          "raw_amount_g": 200.0,
+          "edible_amount_g": 200.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 200 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "масло растительное",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "вода",
+          "raw_amount_g": 1.5,
+          "edible_amount_g": 1.5,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1.5 л л; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1148,
+        "protein_g": 56,
+        "fat_g": 28,
+        "carbs_g": 168
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1148,
+        "protein_g": 56,
+        "fat_g": 28,
+        "carbs_g": 168
+      },
+      "nutrition_per_serving": {
+        "kcal": 287,
+        "protein_g": 14,
+        "fat_g": 7,
+        "carbs_g": 42
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 239,
+      "display_title": "Курица с булгуром",
+      "meal_type": "lunch",
+      "servings": 2,
+      "serving_weight_g": 370,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "pan_or_stew",
+      "yield_notes": "bulgur counted dry, cooked yield adjusted; chicken cooked yield adjusted; oil included",
+      "ingredients_basis": [
+        {
+          "name": "куриное бедро без кожи",
+          "raw_amount_g": 500.0,
+          "edible_amount_g": 500.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 500 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "булгур",
+          "raw_amount_g": 180.0,
+          "edible_amount_g": 180.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 180 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "паприка",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "масло растительное",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 888,
+        "protein_g": 72,
+        "fat_g": 24,
+        "carbs_g": 96
+      },
+      "nutrition_cooked_total": {
+        "kcal": 888,
+        "protein_g": 72,
+        "fat_g": 24,
+        "carbs_g": 96
+      },
+      "nutrition_per_serving": {
+        "kcal": 444,
+        "protein_g": 36,
+        "fat_g": 12,
+        "carbs_g": 48
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 240,
+      "display_title": "Салат с тунцом и овощами",
+      "meal_type": "dinner",
+      "servings": 2,
+      "serving_weight_g": 320,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "tuna drained weight, vegetables raw, dressing oil included",
+      "ingredients_basis": [
+        {
+          "name": "тунец консервированный",
+          "raw_amount_g": 160.0,
+          "edible_amount_g": 160.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.75,
+          "notes": "source ingredient amount: 160 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "огурец",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "помидоры черри",
+          "raw_amount_g": 150.0,
+          "edible_amount_g": 150.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 150 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лимон",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 0.5 шт шт; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 652,
+        "protein_g": 64,
+        "fat_g": 28,
+        "carbs_g": 36
+      },
+      "nutrition_cooked_total": {
+        "kcal": 652,
+        "protein_g": 64,
+        "fat_g": 28,
+        "carbs_g": 36
+      },
+      "nutrition_per_serving": {
+        "kcal": 326,
+        "protein_g": 32,
+        "fat_g": 14,
+        "carbs_g": 18
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 241,
+      "display_title": "Тефтели в томатном соусе",
+      "meal_type": "dinner",
+      "servings": 4,
+      "serving_weight_g": 330,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "stew",
+      "yield_notes": "meat cooked yield adjusted; rice/binder counted dry; sauce yield estimated",
+      "ingredients_basis": [
+        {
+          "name": "фарш говяжий",
+          "raw_amount_g": 500.0,
+          "edible_amount_g": 500.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.75,
+          "notes": "source ingredient amount: 500 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "рис",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 80 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "томатная паста",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.5,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1608,
+        "protein_g": 112,
+        "fat_g": 72,
+        "carbs_g": 128
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1608,
+        "protein_g": 112,
+        "fat_g": 72,
+        "carbs_g": 128
+      },
+      "nutrition_per_serving": {
+        "kcal": 402,
+        "protein_g": 28,
+        "fat_g": 18,
+        "carbs_g": 32
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 242,
+      "display_title": "Говядина с брокколи",
+      "meal_type": "dinner",
+      "servings": 2,
+      "serving_weight_g": 320,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "pan",
+      "yield_notes": "beef cooked yield adjusted; broccoli cooked yield; oil included",
+      "ingredients_basis": [
+        {
+          "name": "говядина вырезка",
+          "raw_amount_g": 400.0,
+          "edible_amount_g": 400.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.75,
+          "notes": "source ingredient amount: 400 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "брокколи",
+          "raw_amount_g": 300.0,
+          "edible_amount_g": 300.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 300 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "чеснок",
+          "raw_amount_g": 2.0,
+          "edible_amount_g": 2.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 зубчик зубчик; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 770,
+        "protein_g": 76,
+        "fat_g": 34,
+        "carbs_g": 40
+      },
+      "nutrition_cooked_total": {
+        "kcal": 770,
+        "protein_g": 76,
+        "fat_g": 34,
+        "carbs_g": 40
+      },
+      "nutrition_per_serving": {
+        "kcal": 385,
+        "protein_g": 38,
+        "fat_g": 17,
+        "carbs_g": 20
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 243,
+      "display_title": "Лосось на пару с овощами",
+      "meal_type": "dinner",
+      "servings": 2,
+      "serving_weight_g": 330,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "steam",
+      "yield_notes": "salmon cooked yield adjusted; vegetables cooked yield",
+      "ingredients_basis": [
+        {
+          "name": "филе лосося",
+          "raw_amount_g": 360.0,
+          "edible_amount_g": 360.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 360 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "кабачок",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лимон",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 0.5 шт шт; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 776,
+        "protein_g": 68,
+        "fat_g": 40,
+        "carbs_g": 36
+      },
+      "nutrition_cooked_total": {
+        "kcal": 776,
+        "protein_g": 68,
+        "fat_g": 40,
+        "carbs_g": 36
+      },
+      "nutrition_per_serving": {
+        "kcal": 388,
+        "protein_g": 34,
+        "fat_g": 20,
+        "carbs_g": 18
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 244,
+      "display_title": "Паста с грибами",
+      "meal_type": "dinner",
+      "servings": 2,
+      "serving_weight_g": 360,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "boil_and_pan",
+      "yield_notes": "pasta counted dry with cooked yield; mushrooms cooked yield; oil included",
+      "ingredients_basis": [
+        {
+          "name": "макароны",
+          "raw_amount_g": 180.0,
+          "edible_amount_g": 180.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.5,
+          "notes": "source ingredient amount: 180 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "шампиньоны",
+          "raw_amount_g": 250.0,
+          "edible_amount_g": 250.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 250 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "сливки 10%",
+          "raw_amount_g": 100.0,
+          "edible_amount_g": 100.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 100 мл мл; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "чеснок",
+          "raw_amount_g": 1.0,
+          "edible_amount_g": 1.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 зубчик зубчик; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 832,
+        "protein_g": 30,
+        "fat_g": 24,
+        "carbs_g": 124
+      },
+      "nutrition_cooked_total": {
+        "kcal": 832,
+        "protein_g": 30,
+        "fat_g": 24,
+        "carbs_g": 124
+      },
+      "nutrition_per_serving": {
+        "kcal": 416,
+        "protein_g": 15,
+        "fat_g": 12,
+        "carbs_g": 62
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 245,
+      "display_title": "Индейка с овощами",
+      "meal_type": "dinner",
+      "servings": 2,
+      "serving_weight_g": 340,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "pan_or_stew",
+      "yield_notes": "turkey cooked yield adjusted; vegetables cooked yield; oil included",
+      "ingredients_basis": [
+        {
+          "name": "филе индейки",
+          "raw_amount_g": 450.0,
+          "edible_amount_g": 450.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.75,
+          "notes": "source ingredient amount: 450 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "болгарский перец",
+          "raw_amount_g": 160.0,
+          "edible_amount_g": 160.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "кабачок",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "масло растительное",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 712,
+        "protein_g": 76,
+        "fat_g": 24,
+        "carbs_g": 48
+      },
+      "nutrition_cooked_total": {
+        "kcal": 712,
+        "protein_g": 76,
+        "fat_g": 24,
+        "carbs_g": 48
+      },
+      "nutrition_per_serving": {
+        "kcal": 356,
+        "protein_g": 38,
+        "fat_g": 12,
+        "carbs_g": 24
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 246,
+      "display_title": "Курица с овощами на сковороде",
+      "meal_type": "dinner",
+      "servings": 2,
+      "serving_weight_g": 330,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "pan",
+      "yield_notes": "chicken cooked yield adjusted; stir-fry oil included",
+      "ingredients_basis": [
+        {
+          "name": "куриное филе",
+          "raw_amount_g": 300.0,
+          "edible_amount_g": 300.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 300 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "перец болгарский",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "соевый соус",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "масло растительное",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 714,
+        "protein_g": 72,
+        "fat_g": 26,
+        "carbs_g": 48
+      },
+      "nutrition_cooked_total": {
+        "kcal": 714,
+        "protein_g": 72,
+        "fat_g": 26,
+        "carbs_g": 48
+      },
+      "nutrition_per_serving": {
+        "kcal": 357,
+        "protein_g": 36,
+        "fat_g": 13,
+        "carbs_g": 24
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 247,
+      "display_title": "Запеканка из творога",
+      "meal_type": "snack",
+      "servings": 4,
+      "serving_weight_g": 180,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "bake",
+      "yield_notes": "curd bake moisture loss estimated; sugar/flour included",
+      "ingredients_basis": [
+        {
+          "name": "творог 5%",
+          "raw_amount_g": 500.0,
+          "edible_amount_g": 500.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 500 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яйца",
+          "raw_amount_g": 110.0,
+          "edible_amount_g": 110.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "манка",
+          "raw_amount_g": 45.0,
+          "edible_amount_g": 45.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 3 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "сахар",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "изюм",
+          "raw_amount_g": 40.0,
+          "edible_amount_g": 40.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 40 г г; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1032,
+        "protein_g": 72,
+        "fat_g": 40,
+        "carbs_g": 96
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1032,
+        "protein_g": 72,
+        "fat_g": 40,
+        "carbs_g": 96
+      },
+      "nutrition_per_serving": {
+        "kcal": 258,
+        "protein_g": 18,
+        "fat_g": 10,
+        "carbs_g": 24
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 248,
+      "display_title": "Творог с ягодами",
+      "meal_type": "snack",
+      "servings": 1,
+      "serving_weight_g": 220,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "mix",
+      "yield_notes": "dairy and berries counted raw",
+      "ingredients_basis": [
+        {
+          "name": "творог 2%",
+          "raw_amount_g": 150.0,
+          "edible_amount_g": 150.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 150 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "ягоды",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 80 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "семена льна",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 247,
+        "protein_g": 22,
+        "fat_g": 7,
+        "carbs_g": 24
+      },
+      "nutrition_cooked_total": {
+        "kcal": 247,
+        "protein_g": 22,
+        "fat_g": 7,
+        "carbs_g": 24
+      },
+      "nutrition_per_serving": {
+        "kcal": 247,
+        "protein_g": 22,
+        "fat_g": 7,
+        "carbs_g": 24
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 249,
+      "display_title": "Фруктовый перекус",
+      "meal_type": "snack",
+      "servings": 1,
+      "serving_weight_g": 250,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "fruit raw edible portion counted",
+      "ingredients_basis": [
+        {
+          "name": "яблоко",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "груша",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "миндаль",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 15 г г; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 169,
+        "protein_g": 2,
+        "fat_g": 1,
+        "carbs_g": 38
+      },
+      "nutrition_cooked_total": {
+        "kcal": 169,
+        "protein_g": 2,
+        "fat_g": 1,
+        "carbs_g": 38
+      },
+      "nutrition_per_serving": {
+        "kcal": 169,
+        "protein_g": 2,
+        "fat_g": 1,
+        "carbs_g": 38
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 250,
+      "display_title": "Орехи с курагой и мёдом",
+      "meal_type": "snack",
+      "servings": 1,
+      "serving_weight_g": 70,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "nuts, dried fruit and honey counted raw per small serving",
+      "ingredients_basis": [
+        {
+          "name": "грецкие орехи",
+          "raw_amount_g": 25.0,
+          "edible_amount_g": 25.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 25 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "курага",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 30 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "мёд",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 280,
+        "protein_g": 6,
+        "fat_g": 16,
+        "carbs_g": 28
+      },
+      "nutrition_cooked_total": {
+        "kcal": 280,
+        "protein_g": 6,
+        "fat_g": 16,
+        "carbs_g": 28
+      },
+      "nutrition_per_serving": {
+        "kcal": 280,
+        "protein_g": 6,
+        "fat_g": 16,
+        "carbs_g": 28
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 251,
+      "display_title": "Банан с арахисовой пастой",
+      "meal_type": "snack",
+      "servings": 1,
+      "serving_weight_g": 190,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "banana edible portion and peanut paste counted raw",
+      "ingredients_basis": [
+        {
+          "name": "банан",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "арахисовая паста",
+          "raw_amount_g": 20.0,
+          "edible_amount_g": 20.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.5,
+          "notes": "source ingredient amount: 20 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "овсяные хлопья",
+          "raw_amount_g": 20.0,
+          "edible_amount_g": 20.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 20 г г; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 301,
+        "protein_g": 8,
+        "fat_g": 13,
+        "carbs_g": 38
+      },
+      "nutrition_cooked_total": {
+        "kcal": 301,
+        "protein_g": 8,
+        "fat_g": 13,
+        "carbs_g": 38
+      },
+      "nutrition_per_serving": {
+        "kcal": 301,
+        "protein_g": 8,
+        "fat_g": 13,
+        "carbs_g": 38
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 252,
+      "display_title": "Кефир с печеньем",
+      "meal_type": "snack",
+      "servings": 1,
+      "serving_weight_g": 260,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "kefir and oatmeal cookie counted as served",
+      "ingredients_basis": [
+        {
+          "name": "кефир 2.5%",
+          "raw_amount_g": 200.0,
+          "edible_amount_g": 200.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 200 мл мл; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "печенье овсяное",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яблоко",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 260,
+        "protein_g": 9,
+        "fat_g": 8,
+        "carbs_g": 38
+      },
+      "nutrition_cooked_total": {
+        "kcal": 260,
+        "protein_g": 9,
+        "fat_g": 8,
+        "carbs_g": 38
+      },
+      "nutrition_per_serving": {
+        "kcal": 260,
+        "protein_g": 9,
+        "fat_g": 8,
+        "carbs_g": 38
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 253,
+      "display_title": "Куриная грудка и киноа",
+      "meal_type": "snack",
+      "servings": 2,
+      "serving_weight_g": 320,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "boil_and_bake",
+      "yield_notes": "quinoa counted dry with cooked yield; chicken cooked yield adjusted",
+      "ingredients_basis": [
+        {
+          "name": "куриная грудка",
+          "raw_amount_g": 400.0,
+          "edible_amount_g": 400.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 400 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "киноа",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 120 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "брокколи",
+          "raw_amount_g": 200.0,
+          "edible_amount_g": 200.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 200 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 730,
+        "protein_g": 72,
+        "fat_g": 18,
+        "carbs_g": 70
+      },
+      "nutrition_cooked_total": {
+        "kcal": 730,
+        "protein_g": 72,
+        "fat_g": 18,
+        "carbs_g": 70
+      },
+      "nutrition_per_serving": {
+        "kcal": 365,
+        "protein_g": 36,
+        "fat_g": 9,
+        "carbs_g": 35
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 254,
+      "display_title": "Салат с индейкой",
+      "meal_type": "snack",
+      "servings": 2,
+      "serving_weight_g": 300,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "turkey cooked yield, vegetables raw, dressing oil included",
+      "ingredients_basis": [
+        {
+          "name": "филе индейки",
+          "raw_amount_g": 150.0,
+          "edible_amount_g": 150.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.75,
+          "notes": "source ingredient amount: 150 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "салат листовой",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 80 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "огурец",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "помидор",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 616,
+        "protein_g": 64,
+        "fat_g": 24,
+        "carbs_g": 36
+      },
+      "nutrition_cooked_total": {
+        "kcal": 616,
+        "protein_g": 64,
+        "fat_g": 24,
+        "carbs_g": 36
+      },
+      "nutrition_per_serving": {
+        "kcal": 308,
+        "protein_g": 32,
+        "fat_g": 12,
+        "carbs_g": 18
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 255,
+      "display_title": "Яйца с авокадо",
+      "meal_type": "snack",
+      "servings": 1,
+      "serving_weight_g": 220,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "eggs and avocado counted per assembled serving",
+      "ingredients_basis": [
+        {
+          "name": "яйца",
+          "raw_amount_g": 110.0,
+          "edible_amount_g": 110.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "авокадо",
+          "raw_amount_g": 70.0,
+          "edible_amount_g": 70.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 0.5 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "помидор черри",
+          "raw_amount_g": 400.0,
+          "edible_amount_g": 400.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 5 шт шт; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 344,
+        "protein_g": 18,
+        "fat_g": 24,
+        "carbs_g": 14
+      },
+      "nutrition_cooked_total": {
+        "kcal": 344,
+        "protein_g": 18,
+        "fat_g": 24,
+        "carbs_g": 14
+      },
+      "nutrition_per_serving": {
+        "kcal": 344,
+        "protein_g": 18,
+        "fat_g": 24,
+        "carbs_g": 14
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 256,
+      "display_title": "Куриные котлеты",
+      "meal_type": "lunch",
+      "servings": 4,
+      "serving_weight_g": 260,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "pan",
+      "yield_notes": "chicken cooked yield adjusted; binder and absorbed oil included",
+      "ingredients_basis": [
+        {
+          "name": "куриное филе",
+          "raw_amount_g": 500.0,
+          "edible_amount_g": 500.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 500 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "сыр твёрдый",
+          "raw_amount_g": 70.0,
+          "edible_amount_g": 70.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 70 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яйцо куриное",
+          "raw_amount_g": 55.0,
+          "edible_amount_g": 55.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "панировочные сухари",
+          "raw_amount_g": 40.0,
+          "edible_amount_g": 40.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 40 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "масло растительное",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "соль",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1272,
+        "protein_g": 120,
+        "fat_g": 56,
+        "carbs_g": 72
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1272,
+        "protein_g": 120,
+        "fat_g": 56,
+        "carbs_g": 72
+      },
+      "nutrition_per_serving": {
+        "kcal": 318,
+        "protein_g": 30,
+        "fat_g": 14,
+        "carbs_g": 18
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 257,
+      "display_title": "Перловка с брокколи",
+      "meal_type": "lunch",
+      "servings": 4,
+      "serving_weight_g": 300,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "boil",
+      "yield_notes": "pearl barley counted dry, cooked yield adjusted; broccoli cooked yield",
+      "ingredients_basis": [
+        {
+          "name": "перловая крупа",
+          "raw_amount_g": 160.0,
+          "edible_amount_g": 160.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 2.7,
+          "notes": "source ingredient amount: 160 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 160.0,
+          "edible_amount_g": 160.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "сладкий перец",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "растительное масло",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "петрушка свежая",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 пучок шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "соль",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1116,
+        "protein_g": 32,
+        "fat_g": 28,
+        "carbs_g": 184
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1116,
+        "protein_g": 32,
+        "fat_g": 28,
+        "carbs_g": 184
+      },
+      "nutrition_per_serving": {
+        "kcal": 279,
+        "protein_g": 8,
+        "fat_g": 7,
+        "carbs_g": 46
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 258,
+      "display_title": "Куриный суп",
+      "meal_type": "lunch",
+      "servings": 4,
+      "serving_weight_g": 420,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "soup",
+      "yield_notes": "soup final yield estimated; chicken cooked yield adjusted",
+      "ingredients_basis": [
+        {
+          "name": "куриное филе",
+          "raw_amount_g": 400.0,
+          "edible_amount_g": 400.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 400 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 160.0,
+          "edible_amount_g": 160.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "картофель",
+          "raw_amount_g": 240.0,
+          "edible_amount_g": 240.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яйцо куриное",
+          "raw_amount_g": 110.0,
+          "edible_amount_g": 110.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "масло оливковое",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "соль",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1056,
+        "protein_g": 96,
+        "fat_g": 32,
+        "carbs_g": 96
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1056,
+        "protein_g": 96,
+        "fat_g": 32,
+        "carbs_g": 96
+      },
+      "nutrition_per_serving": {
+        "kcal": 264,
+        "protein_g": 24,
+        "fat_g": 8,
+        "carbs_g": 24
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 259,
+      "display_title": "Курица с яблоками",
+      "meal_type": "dinner",
+      "servings": 4,
+      "serving_weight_g": 300,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "bake",
+      "yield_notes": "chicken cooked yield adjusted; apples cooked yield",
+      "ingredients_basis": [
+        {
+          "name": "куриное филе",
+          "raw_amount_g": 500.0,
+          "edible_amount_g": 500.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 500 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 160.0,
+          "edible_amount_g": 160.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "болгарский перец",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яблоко",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "растительное масло",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "чеснок",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "соль",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1264,
+        "protein_g": 112,
+        "fat_g": 48,
+        "carbs_g": 96
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1264,
+        "protein_g": 112,
+        "fat_g": 48,
+        "carbs_g": 96
+      },
+      "nutrition_per_serving": {
+        "kcal": 316,
+        "protein_g": 28,
+        "fat_g": 12,
+        "carbs_g": 24
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 260,
+      "display_title": "Курица с брокколи",
+      "meal_type": "dinner",
+      "servings": 4,
+      "serving_weight_g": 310,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "pan_or_steam",
+      "yield_notes": "chicken cooked yield adjusted; broccoli cooked yield; oil included",
+      "ingredients_basis": [
+        {
+          "name": "куриное филе",
+          "raw_amount_g": 400.0,
+          "edible_amount_g": 400.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 400 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яйцо куриное",
+          "raw_amount_g": 165.0,
+          "edible_amount_g": 165.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 3 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "кабачок",
+          "raw_amount_g": 250.0,
+          "edible_amount_g": 250.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 250 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 120 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 80 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "сметана",
+          "raw_amount_g": 100.0,
+          "edible_amount_g": 100.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 100 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "соль",
+          "raw_amount_g": 2.5,
+          "edible_amount_g": 2.5,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 0.5 ч.л. ч.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "перец чёрный молотый",
+          "raw_amount_g": 1.5,
+          "edible_amount_g": 1.5,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 0.3 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1192,
+        "protein_g": 128,
+        "fat_g": 40,
+        "carbs_g": 80
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1192,
+        "protein_g": 128,
+        "fat_g": 40,
+        "carbs_g": 80
+      },
+      "nutrition_per_serving": {
+        "kcal": 298,
+        "protein_g": 32,
+        "fat_g": 10,
+        "carbs_g": 20
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 261,
+      "display_title": "Суп со свиным фаршем",
+      "meal_type": "lunch",
+      "servings": 4,
+      "serving_weight_g": 420,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "soup",
+      "yield_notes": "soup final yield estimated; pork mince cooked yield and fat retained",
+      "ingredients_basis": [
+        {
+          "name": "свиной фарш",
+          "raw_amount_g": 300.0,
+          "edible_amount_g": 300.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.75,
+          "notes": "source ingredient amount: 300 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "перец сладкий",
+          "raw_amount_g": 160.0,
+          "edible_amount_g": 160.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "картофель",
+          "raw_amount_g": 240.0,
+          "edible_amount_g": 240.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "сливки 20%",
+          "raw_amount_g": 150.0,
+          "edible_amount_g": 150.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 150 мл мл; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яблоко",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "петрушка свежая",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 пучок шт; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1384,
+        "protein_g": 80,
+        "fat_g": 72,
+        "carbs_g": 104
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1384,
+        "protein_g": 80,
+        "fat_g": 72,
+        "carbs_g": 104
+      },
+      "nutrition_per_serving": {
+        "kcal": 346,
+        "protein_g": 20,
+        "fat_g": 18,
+        "carbs_g": 26
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 262,
+      "display_title": "Овощной суп-пюре",
+      "meal_type": "lunch",
+      "servings": 4,
+      "serving_weight_g": 380,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "soup",
+      "yield_notes": "soup puree final yield estimated; oil/cream basis included conservatively",
+      "ingredients_basis": [
+        {
+          "name": "картофель",
+          "raw_amount_g": 300.0,
+          "edible_amount_g": 300.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 300 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 120 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 80 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "тофу",
+          "raw_amount_g": 180.0,
+          "edible_amount_g": 180.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 180 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "растительные сливки (без лактозы)",
+          "raw_amount_g": 200.0,
+          "edible_amount_g": 200.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 200 мл мл; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "зелёный горошек (замороженный)",
+          "raw_amount_g": 80.0,
+          "edible_amount_g": 80.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 80 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "соль",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 848,
+        "protein_g": 20,
+        "fat_g": 32,
+        "carbs_g": 120
+      },
+      "nutrition_cooked_total": {
+        "kcal": 848,
+        "protein_g": 20,
+        "fat_g": 32,
+        "carbs_g": 120
+      },
+      "nutrition_per_serving": {
+        "kcal": 212,
+        "protein_g": 5,
+        "fat_g": 8,
+        "carbs_g": 30
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 263,
+      "display_title": "Салат с креветками",
+      "meal_type": "dinner",
+      "servings": 4,
+      "serving_weight_g": 260,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "shrimp cooked edible weight; dressing oil included",
+      "ingredients_basis": [
+        {
+          "name": "кальмары очищенные",
+          "raw_amount_g": 300.0,
+          "edible_amount_g": 300.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 300 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "огурец свежий",
+          "raw_amount_g": 200.0,
+          "edible_amount_g": 200.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 200 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "зелёный лук",
+          "raw_amount_g": 40.0,
+          "edible_amount_g": 40.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 40 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "оливковое масло",
+          "raw_amount_g": 30.0,
+          "edible_amount_g": 30.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 2 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лимонный сок",
+          "raw_amount_g": 15.0,
+          "edible_amount_g": 15.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ст.л. ст.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "соль",
+          "raw_amount_g": 2.5,
+          "edible_amount_g": 2.5,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 0.5 ч.л. ч.л.; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "чёрный перец молотый",
+          "raw_amount_g": 1.2,
+          "edible_amount_g": 1.2,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 0.25 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1104,
+        "protein_g": 104,
+        "fat_g": 48,
+        "carbs_g": 64
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1104,
+        "protein_g": 104,
+        "fat_g": 48,
+        "carbs_g": 64
+      },
+      "nutrition_per_serving": {
+        "kcal": 276,
+        "protein_g": 26,
+        "fat_g": 12,
+        "carbs_g": 16
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 264,
+      "display_title": "Салат с курицей и яблоком",
+      "meal_type": "dinner",
+      "servings": 4,
+      "serving_weight_g": 280,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "assemble",
+      "yield_notes": "chicken cooked yield, apple and vegetables raw, dressing included",
+      "ingredients_basis": [
+        {
+          "name": "куриная грудка",
+          "raw_amount_g": 300.0,
+          "edible_amount_g": 300.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 300 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яйцо куриное",
+          "raw_amount_g": 165.0,
+          "edible_amount_g": 165.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 3 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "огурец свежий",
+          "raw_amount_g": 150.0,
+          "edible_amount_g": 150.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 150 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "помидор",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 120 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "яблоко зелёное",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 шт шт; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук зелёный",
+          "raw_amount_g": 20.0,
+          "edible_amount_g": 20.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 20 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "сметана",
+          "raw_amount_g": 60.0,
+          "edible_amount_g": 60.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 60 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "горчица",
+          "raw_amount_g": 5.0,
+          "edible_amount_g": 5.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 1.0,
+          "notes": "source ingredient amount: 1 ч.л. ч.л.; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1196,
+        "protein_g": 112,
+        "fat_g": 44,
+        "carbs_g": 88
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1196,
+        "protein_g": 112,
+        "fat_g": 44,
+        "carbs_g": 88
+      },
+      "nutrition_per_serving": {
+        "kcal": 299,
+        "protein_g": 28,
+        "fat_g": 11,
+        "carbs_g": 22
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    },
+    {
+      "recipe_id": 265,
+      "display_title": "Овощной суп с фасолью",
+      "meal_type": "lunch",
+      "servings": 4,
+      "serving_weight_g": 420,
+      "nutrition_basis": "estimated_cooked_per_serving",
+      "nutrition_confidence": "estimated",
+      "cooking_method": "soup",
+      "yield_notes": "beans drained/cooked weight; soup final yield estimated",
+      "ingredients_basis": [
+        {
+          "name": "фасоль белая отварная",
+          "raw_amount_g": 320.0,
+          "edible_amount_g": 320.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 320 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "морковь",
+          "raw_amount_g": 180.0,
+          "edible_amount_g": 180.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 180 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "картофель",
+          "raw_amount_g": 320.0,
+          "edible_amount_g": 320.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 320 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "кабачок",
+          "raw_amount_g": 200.0,
+          "edible_amount_g": 200.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 200 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "помидор",
+          "raw_amount_g": 220.0,
+          "edible_amount_g": 220.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 220 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "лук репчатый",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 120 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "болгарский перец",
+          "raw_amount_g": 140.0,
+          "edible_amount_g": 140.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 140 г г; converted for cooked per-serving estimate"
+        },
+        {
+          "name": "чеснок",
+          "raw_amount_g": 120.0,
+          "edible_amount_g": 120.0,
+          "nutrition_source": "internal_estimate",
+          "yield_factor": 0.9,
+          "notes": "source ingredient amount: 2 шт шт; converted for cooked per-serving estimate"
+        }
+      ],
+      "nutrition_raw_total": {
+        "kcal": 1116,
+        "protein_g": 48,
+        "fat_g": 28,
+        "carbs_g": 168
+      },
+      "nutrition_cooked_total": {
+        "kcal": 1116,
+        "protein_g": 48,
+        "fat_g": 28,
+        "carbs_g": 168
+      },
+      "nutrition_per_serving": {
+        "kcal": 279,
+        "protein_g": 12,
+        "fat_g": 7,
+        "carbs_g": 42
+      },
+      "changed_fields": [
+        "nutrition_*"
+      ],
+      "rationale": "Corrects portion basis and cooked yield estimate."
+    }
+  ]
+}
