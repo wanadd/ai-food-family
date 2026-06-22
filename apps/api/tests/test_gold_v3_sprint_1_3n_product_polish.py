@@ -191,6 +191,11 @@ def test_product_polish_audit_catches_raw_json_render_risk():
     assert any(b.startswith("raw_json_render_risk") for b in bad["blockers"])
 
 
+def test_upgraded_recipe_id_gets_fallback_without_gold_v3_tag():
+    recipe = _recipe(description="", tags=["gold_v2", "recipe_schema_v2"])
+    assert public_description(recipe)
+
+
 def test_build_description_fallback_uses_ingredients():
     recipe = _recipe(description="")
     with patch(

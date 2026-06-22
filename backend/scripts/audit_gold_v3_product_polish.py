@@ -69,7 +69,7 @@ def load_recipes(recipe_ids: list[int], database_url: str | None = None) -> list
         for recipe in rows:
             detail = to_detail(recipe, set())
             payload = detail.model_dump(mode="json")
-            payload["description_display"] = public_description(recipe)
+            payload["description_display"] = payload.get("description") or public_description(recipe)
             payload["description_db_empty"] = not (recipe.description or "").strip()
             payloads.append((recipe, payload))
         session.close()
@@ -118,18 +118,20 @@ def evaluate_payload(recipe_id: int, payload: dict[str, Any]) -> dict[str, Any]:
         if looks_like_raw_json(step):
             blockers.append("raw_json_render_risk:step")
 
-    nutrition_blob = json.dumps(
-        {
-            "calories_per_serving": payload.get("calories_per_serving"),
-            "protein_g": payload.get("protein_g"),
-            "fat_g": payload.get("fat_g"),
-            "carbs_g": payload.get("carbs_g"),
-            "nutrition_summary": payload.get("nutrition_summary"),
-        },
-        ensure_ascii=False,
-    )
-    if has_user_facing_garbage(nutrition_blob):
-        blockers.append("nutrition_garbage")
+    nutrition_values = [
+        payload.get("calories_per_serving"),
+        payload.get("protein_g"),
+        payload.get("fat_g"),
+        payload.get("carbs_g"),
+    ]
+    if not any(value is not None for value in nutrition_values):
+        blockers.append("nutrition_missing")
+    for value in nutrition_values:
+        if value is None:
+            continue
+        text = str(value).strip().lower()
+        if text in {"nan", "null", "undefined"}:
+            blockers.append("nutrition_garbage")
 
     for field in ("hero_image_url", "image_url", "thumbnail_url"):
         if not image_field_safe(payload.get(field)):

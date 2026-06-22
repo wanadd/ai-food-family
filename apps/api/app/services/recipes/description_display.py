@@ -35,8 +35,48 @@ MEAL_TYPE_PHRASE = {
 }
 
 
+UPGRADED_GOLD_V3_RECIPE_IDS = frozenset(
+    {
+        2,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        253,
+        254,
+        255,
+    }
+)
+
+
 def is_gold_v3_for_display(recipe: Recipe) -> bool:
+    if recipe.id is not None and int(recipe.id) in UPGRADED_GOLD_V3_RECIPE_IDS:
+        return True
     tags = get_tags(recipe)
+    if "upgraded_from_legacy" in tags:
+        return True
     return (
         "gold_v3" in tags
         or "recipe_schema_v3" in tags
