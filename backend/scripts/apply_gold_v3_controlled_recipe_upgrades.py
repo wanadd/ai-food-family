@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from psycopg2.extras import Json
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = ROOT / "backend" / "scripts"
@@ -42,6 +44,9 @@ REPORT_APPLY_MD = ROOT / "reports" / "SPRINT_1_3J_GOLD_V3_CONTROLLED_APPLY_RESUL
 REPORT_APPLY_JSON = ROOT / "reports" / "SPRINT_1_3J_GOLD_V3_CONTROLLED_APPLY_RESULT.json"
 ALLOW_ENV = "PLANAM_ALLOW_GOLD_V3_UPGRADE_APPLY"
 ALLOW_ENV_VALUE = "YES"
+JSONB_COLUMNS_BY_TABLE = {
+    "recipes": {"diets", "tags", "ingredients", "steps", "nutrition_coverage_json"},
+}
 
 
 def now() -> str:
@@ -323,7 +328,22 @@ def filter_columns(payload: dict[str, Any], columns: set[str]) -> dict[str, Any]
     return {key: value for key, value in payload.items() if key in columns}
 
 
+def as_jsonb(value: Any) -> Any:
+    if value is None:
+        return None
+    return Json(value)
+
+
+def serialize_payload_for_table(table: str, payload: dict[str, Any]) -> dict[str, Any]:
+    jsonb_columns = JSONB_COLUMNS_BY_TABLE.get(table, set())
+    return {
+        key: as_jsonb(value) if key in jsonb_columns else value
+        for key, value in payload.items()
+    }
+
+
 def execute_update(conn: Any, text: Any, table: str, payload: dict[str, Any], key_name: str, key_value: Any) -> None:
+    payload = serialize_payload_for_table(table, payload)
     columns = sorted(payload)
     assignments = ", ".join(f"{column} = :{column}" for column in columns)
     params = dict(payload)
@@ -332,6 +352,7 @@ def execute_update(conn: Any, text: Any, table: str, payload: dict[str, Any], ke
 
 
 def execute_insert(conn: Any, text: Any, table: str, payload: dict[str, Any]) -> None:
+    payload = serialize_payload_for_table(table, payload)
     columns = sorted(payload)
     conn.execute(
         text(f"insert into {table} ({', '.join(columns)}) values ({', '.join(':' + column for column in columns)})"),
