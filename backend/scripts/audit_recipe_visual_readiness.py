@@ -174,10 +174,16 @@ def evaluate_recipe(
         for step in steps:
             if looks_like_raw_json(step):
                 blockers.append("raw_json_render_risk:step")
-        blob = json.dumps(payload, ensure_ascii=False).lower()
-        if has_source_leakage(blob):
+        user_fields = [
+            title,
+            description,
+            *[str(ing.get("name") or "") for ing in ingredients],
+            *[str(ing.get("amount") or "") for ing in ingredients],
+            *[str(step) for step in steps],
+        ]
+        if has_source_leakage(" ".join(user_fields).lower()):
             blockers.append("source_leakage")
-        if has_user_facing_garbage(blob):
+        if any(has_user_facing_garbage(field) for field in user_fields if field):
             blockers.append("user_facing_garbage")
         nutrition_values = [
             payload.get("calories_per_serving"),
