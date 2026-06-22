@@ -160,6 +160,12 @@ def evaluate_recipe(
     if not title:
         blockers.append("title_empty")
     blockers.extend(f"title_garbage:{item}" for item in title_garbage(title))
+    try:
+        from app.services.recipes.title_display import title_cleanliness_blockers
+
+        blockers.extend(title_cleanliness_blockers(title))
+    except Exception:
+        pass
 
     description = str((payload or {}).get("description") or row.get("description") or "").strip()
     if not description:
