@@ -18,6 +18,8 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 if (API_ROOT / "app").is_dir() and str(API_ROOT) not in sys.path:
     sys.path.insert(0, str(API_ROOT))
+elif (ROOT / "app").is_dir() and str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from audit_gold_v3_nutrition_realism import GOLD_V3_IDS  # noqa: E402
 from audit_gold_v3_post_apply_common import (  # noqa: E402
