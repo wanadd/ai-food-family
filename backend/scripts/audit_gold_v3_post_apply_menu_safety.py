@@ -68,7 +68,7 @@ def evaluate_menu_safety(
         leakage = has_source_leakage(text)
         if leakage:
             blockers.append(f"source_leakage:{','.join(leakage)}")
-        if "source_url" in json.dumps(row, ensure_ascii=False).lower():
+        if row.get("source_url"):
             blockers.append("source_url_in_payload")
 
         if forbidden_for_profile(text, "no_pork") and ("no_pork" in tags or "no pork" in tags):
