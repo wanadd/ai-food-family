@@ -151,8 +151,11 @@ def _db_state(*, drift: bool = False, relation_ok: bool = True) -> dict:
 
 def _report(tmp_path: Path, **kwargs):
     mod = _load_script("apply_gold_v3_controlled_recipe_upgrades")
+    backup_path = kwargs.pop("backup_path", None)
+    if backup_path is None:
+        backup_path = _create_backup(tmp_path)
     return mod.build_report(
-        backup_path=kwargs.pop("backup_path", _create_backup(tmp_path)),
+        backup_path=backup_path,
         db_state=kwargs.pop("db_state", _db_state()),
         candidates=kwargs.pop("candidates", _candidates()),
         env=kwargs.pop("env", {}),
