@@ -1,0 +1,29 @@
+{
+  "backup_id": "gold_v3_upgrade_YYYYMMDDTHHMMSSZ",
+  "git_commit": "...",
+  "created_at": "...",
+  "recipe_ids": [],
+  "tables": {
+    "recipes": {
+      "required": true,
+      "row_count": 0,
+      "format": "jsonl"
+    },
+    "recipe_ingredients": {
+      "required": true,
+      "row_count": 0,
+      "format": "jsonl"
+    },
+    "recipe_steps": {
+      "required": true,
+      "row_count": 0,
+      "format": "jsonl"
+    }
+  },
+  "relation_tables": {},
+  "image_files": {},
+  "rollback_manifest": {
+    "required": true,
+    "format": "json"
+  }
+}
