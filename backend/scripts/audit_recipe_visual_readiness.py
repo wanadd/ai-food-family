@@ -13,8 +13,13 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = ROOT / "backend" / "scripts"
+API_ROOT = ROOT / "apps" / "api"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
+if (API_ROOT / "app").is_dir() and str(API_ROOT) not in sys.path:
+    sys.path.insert(0, str(API_ROOT))
+elif (ROOT / "app").is_dir() and str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from audit_gold_v3_post_apply_common import (  # noqa: E402
     extract_upgraded_recipe_ids,
@@ -438,6 +443,13 @@ def render(report: dict[str, Any]) -> str:
 def main() -> int:
     report = build_report()
     write_json(REPORT_JSON, report)
+    if "cohorts" not in report:
+        REPORT_MD.write_text(
+            f"# Sprint 1.4 Recipe Visual Readiness\n\nerror: `{report.get('error')}`\n",
+            encoding="utf-8",
+        )
+        print(f"Wrote {REPORT_MD} (error)")
+        return 1
     REPORT_MD.write_text(render(report), encoding="utf-8")
     PHOTO_PLAN_MD.write_text(build_photo_plan(report), encoding="utf-8")
     print(f"Wrote {REPORT_MD}")
