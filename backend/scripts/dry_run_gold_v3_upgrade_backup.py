@@ -63,6 +63,14 @@ def has_source_leakage(value: Any) -> bool:
     return any(marker in text for marker in SOURCE_MARKERS)
 
 
+def public_columns(columns: list[str]) -> list[str]:
+    return [
+        column
+        for column in columns
+        if not any(marker in column.lower() for marker in SOURCE_MARKERS)
+    ]
+
+
 def safe_db_error(exc: Exception) -> str:
     return f"db_connection_unavailable:{type(exc).__name__}"
 
@@ -95,7 +103,7 @@ def inspect_relation_table(conn: Any, inspector: Any, table_name: str, planned_i
     return {
         "table_exists": True,
         "recipe_id_column_detected": recipe_id_column_detected,
-        "columns_detected": columns,
+        "columns_detected": public_columns(columns),
         "hits_by_recipe_id": hits_by_recipe_id,
         "backup_required": bool(hits_by_recipe_id),
         "mutation_policy": "preserve untouched; no delete; no update",
@@ -137,7 +145,7 @@ def inspect_db(planned_ids: list[int], database_url: str | None = None) -> dict[
                         total, by_id = 0, {}
                     child_tables[table_name] = {
                         "table_exists": True,
-                        "columns_detected": columns,
+                        "columns_detected": public_columns(columns),
                         "row_count_total": total,
                         "row_count_by_recipe_id": by_id,
                         "backup_required": True,
@@ -167,10 +175,10 @@ def inspect_db(planned_ids: list[int], database_url: str | None = None) -> dict[
             "current_max_id": current_max_id,
             "planned_recipe_ids": planned_ids,
             "recipe_ids_found": recipe_ids_found,
-            "missing_recipe_ids": [recipe_id for recipe_id in planned_ids if recipe_id not in recipe_ids_found],
+                "missing_recipe_ids": [recipe_id for recipe_id in planned_ids if recipe_id not in recipe_ids_found],
             "recipes": {
                 "table_exists": True,
-                "columns_detected": recipe_columns,
+                "columns_detected": public_columns(recipe_columns),
                 "backup_fields": existing_recipe_fields,
                 "row_count": len(recipe_ids_found),
                 "backup_required": True,

@@ -161,6 +161,11 @@ def test_no_source_leakage_in_backup_and_rollback_reports():
         assert marker not in blob
 
 
+def test_backup_report_sanitizes_source_columns():
+    backup = _load_script("dry_run_gold_v3_upgrade_backup")
+    assert backup.public_columns(["id", "title", "source_url", "original_url"]) == ["id", "title"]
+
+
 def test_scripts_are_read_only_and_perform_no_db_writes():
     backup = _load_script("dry_run_gold_v3_upgrade_backup")
     rollback = _load_script("dry_run_gold_v3_upgrade_rollback")
