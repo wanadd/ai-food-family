@@ -29,6 +29,7 @@ REPORT_JSON = ROOT / "reports" / "SPRINT_1_6_NUTRITION_REALISM_AUDIT.json"
 REPORT_MD = ROOT / "reports" / "SPRINT_1_6_NUTRITION_REALISM_AUDIT.md"
 PLAN_MD = ROOT / "reports" / "SPRINT_1_6_NUTRITION_CORRECTION_PLAN.md"
 DEFAULT_DATABASE_URL = "postgresql://aifood:aifood@localhost:5432/aifood"
+DEFAULT_CORRECTION_MANIFEST = ROOT / "data" / "recipe_v2" / "gold_v3_nutrition_correction_manifest.json"
 UPGRADED_IDS = [2, *range(227, 256)]
 PILOT_IDS = list(range(256, 266))
 GOLD_V3_IDS = [*UPGRADED_IDS, *PILOT_IDS]
@@ -88,6 +89,7 @@ def evaluate_nutrition_realism(
     row: dict[str, Any],
     ingredients: list[dict[str, Any]],
     steps: list[dict[str, Any]],
+    manifest_item: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     values = nutrition_for(row)
     servings = serving_count_for(row)
@@ -130,18 +132,21 @@ def evaluate_nutrition_realism(
         if fat is not None and fat < 5:
             flags.append("omelet_fat_too_low")
 
+    manifest_has_basis = bool(manifest_item and manifest_item.get("nutrition_basis") and manifest_item.get("serving_weight_g"))
+    manifest_has_yield = bool(manifest_item and manifest_item.get("yield_notes"))
+
     if not row.get("nutrition_coverage_json"):
         flags.append("no_nutrition_coverage_metadata")
     if not row.get("nutrition_serving_size_text") and not row.get("serving_size_amount"):
-        flags.append("no_portion_basis")
+        flags.append("db_no_portion_basis_manifest_available" if manifest_has_basis else "no_portion_basis")
     if has_any(blob, GRAIN_WORDS) and not row.get("yield_type"):
-        flags.append("dry_grain_yield_unknown")
+        flags.append("db_dry_grain_yield_unknown_manifest_available" if manifest_has_yield else "dry_grain_yield_unknown")
     if ("масло" in blob or "жар" in blob or "обжар" in blob) and not row.get("nutrition_coverage_json"):
         flags.append("oil_or_frying_basis_unclear")
     if has_soup_term(blob) and not row.get("yield_type"):
-        flags.append("soup_or_stew_yield_unknown")
+        flags.append("db_soup_or_stew_yield_unknown_manifest_available" if manifest_has_yield else "soup_or_stew_yield_unknown")
     elif has_any(blob, STEW_WORDS) and not row.get("yield_type"):
-        flags.append("braise_or_stew_yield_unknown")
+        flags.append("db_braise_or_stew_yield_unknown_manifest_available" if manifest_has_yield else "braise_or_stew_yield_unknown")
 
     hard_markers = [flag for flag in flags if flag.startswith("nutrition_missing") or flag == "serving_count_missing_or_invalid"]
     outlier_markers = [
@@ -193,11 +198,20 @@ def evaluate_nutrition_realism(
         "category": category,
         "ingredient_count": len(ingredients),
         "step_count": len(steps),
+        "manifest_basis_available": manifest_has_basis,
     }
 
 
-def build_report(database_url: str | None = None) -> dict[str, Any]:
+def load_correction_manifest(path: Path | None) -> dict[int, dict[str, Any]]:
+    if not path or not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {int(item["recipe_id"]): item for item in data.get("recipes") or []}
+
+
+def build_report(database_url: str | None = None, manifest_path: Path | None = None) -> dict[str, Any]:
     database_url = database_url or os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+    manifest_by_id = load_correction_manifest(manifest_path)
     if import_sqlalchemy() is None:
         return {
             "generated_at": now(),
@@ -207,6 +221,7 @@ def build_report(database_url: str | None = None) -> dict[str, Any]:
             "error": "sqlalchemy_unavailable",
             "recipes_checked": 0,
             "items": [],
+            "manifest_basis_available_count": 0,
         }
     try:
         rows, ingredients_by_id, steps_by_id = fetch_recipe_rows(GOLD_V3_IDS, database_url)
@@ -219,6 +234,7 @@ def build_report(database_url: str | None = None) -> dict[str, Any]:
             "error": repr(exc),
             "recipes_checked": 0,
             "items": [],
+            "manifest_basis_available_count": len(manifest_by_id),
         }
 
     found_ids = {int(row["id"]) for row in rows}
@@ -228,6 +244,7 @@ def build_report(database_url: str | None = None) -> dict[str, Any]:
             row,
             ingredients_by_id.get(int(row["id"])) or [],
             steps_by_id.get(int(row["id"])) or [],
+            manifest_by_id.get(int(row["id"])),
         )
         for row in rows
     ]
@@ -252,6 +269,8 @@ def build_report(database_url: str | None = None) -> dict[str, Any]:
         "missing_ids": missing_ids,
         "summary": counts,
         "top_issues": sorted(flag_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:20],
+        "manifest_path": str(manifest_path) if manifest_path else None,
+        "manifest_basis_available_count": sum(1 for item in items if item.get("manifest_basis_available")),
         "items": items,
     }
 
@@ -266,6 +285,7 @@ def render(report: dict[str, Any]) -> str:
         f"DB available: `{report.get('db_available')}`",
         f"recipes_checked: `{report.get('recipes_checked')}`",
         f"missing_ids: `{report.get('missing_ids')}`",
+        f"manifest_basis_available_count: `{report.get('manifest_basis_available_count', 0)}`",
         "",
         "## Summary",
         "",
@@ -353,8 +373,9 @@ def render_correction_plan(report: dict[str, Any]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--database-url", default=None)
+    parser.add_argument("--manifest", type=Path, default=None)
     args = parser.parse_args()
-    report = build_report(args.database_url)
+    report = build_report(args.database_url, args.manifest)
     write_json(REPORT_JSON, report)
     REPORT_MD.parent.mkdir(parents=True, exist_ok=True)
     REPORT_MD.write_text(render(report), encoding="utf-8")
