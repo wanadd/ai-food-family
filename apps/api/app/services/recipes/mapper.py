@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from app.models.recipe import Recipe
 from app.services.recipes.description_display import public_description
+from app.services.recipes.step_display import public_recipe_steps
 from app.services.recipes.title_display import public_recipe_title_for_recipe
 from app.schemas.recipe import (
     NutritionSummary,
@@ -158,6 +159,7 @@ def to_summary(
 def to_detail(recipe: Recipe, favorite_ids: set[int]) -> RecipeDetail:
     summary = to_summary(recipe, favorite_ids)
     structured = get_structured_ingredients(recipe)
+    raw_steps = get_structured_steps(recipe)
     return RecipeDetail(
         **summary.model_dump(),
         original_title=public_original_title(recipe, shown_title=summary.title),
@@ -172,7 +174,7 @@ def to_detail(recipe: Recipe, favorite_ids: set[int]) -> RecipeDetail:
             )
             for i in structured
         ],
-        steps=get_structured_steps(recipe),
+        steps=public_recipe_steps(recipe.id, raw_steps, structured),
         allergens=get_allergens(recipe),
         restrictions=get_restrictions(recipe),
         sugar_g=recipe.sugar_g,

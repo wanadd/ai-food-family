@@ -13,8 +13,11 @@ from typing import Any
 
 ROOT = Path(os.environ.get("PLANAM_ROOT") or Path(__file__).resolve().parents[2])
 SCRIPTS = ROOT / "backend" / "scripts"
+API_ROOT = ROOT / "apps" / "api"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
+if (API_ROOT / "app").is_dir() and str(API_ROOT) not in sys.path:
+    sys.path.insert(0, str(API_ROOT))
 
 from audit_gold_v3_nutrition_realism import GOLD_V3_IDS  # noqa: E402
 from audit_gold_v3_post_apply_common import (  # noqa: E402
@@ -27,6 +30,9 @@ from audit_gold_v3_post_apply_common import (  # noqa: E402
     title_garbage,
     write_json,
 )
+
+from app.services.recipes.step_display import public_recipe_steps  # noqa: E402
+from app.services.recipes.title_display import public_recipe_title  # noqa: E402
 
 
 REPORT_JSON = ROOT / "reports" / "SPRINT_1_6_RECIPE_CONSISTENCY_AUDIT.json"
@@ -41,7 +47,7 @@ MAIN_INGREDIENT_HINTS: dict[str, tuple[str, ...]] = {
     "банан": ("банан",),
     "рис": ("рис",),
     "индейк": ("индейк",),
-    "куриц": ("куриц", "курин"),
+    "куриц": ("куриц", "курин", "кури"),
     "греч": ("греч",),
     "фасол": ("фасол",),
     "кревет": ("кревет",),
@@ -65,6 +71,15 @@ def step_texts(steps: list[dict[str, Any]]) -> list[str]:
     return [normalize(item.get("text")) for item in steps if normalize(item.get("text"))]
 
 
+def display_step_texts(
+    recipe_id: int,
+    steps: list[dict[str, Any]],
+    ingredients: list[dict[str, Any]],
+) -> list[str]:
+    raw_steps = [str(item.get("text") or "") for item in steps if str(item.get("text") or "").strip()]
+    return [normalize(step) for step in public_recipe_steps(recipe_id, raw_steps, ingredients) if normalize(step)]
+
+
 def title_main_terms(title: str) -> list[str]:
     lowered = normalize(title)
     return [term for term in MAIN_INGREDIENT_HINTS if term in lowered]
@@ -76,11 +91,13 @@ def evaluate_recipe_consistency(
     steps: list[dict[str, Any]],
 ) -> dict[str, Any]:
     recipe_id = int(row["id"])
-    title = str(row.get("display_title") or row.get("title") or "").strip()
+    raw_title = str(row.get("display_title") or row.get("title") or "").strip()
+    title = public_recipe_title(raw_title, recipe_id=recipe_id)
     title_l = normalize(title)
     description = normalize(row.get("description"))
     ing_names = ingredient_names(ingredients)
-    step_values = step_texts(steps)
+    raw_step_values = step_texts(steps)
+    step_values = display_step_texts(recipe_id, steps, ingredients)
     ingredient_blob = " ".join(ing_names)
     step_blob = " ".join(step_values)
     all_text = " ".join([title_l, description, ingredient_blob, step_blob, json.dumps(row.get("tags") or [], ensure_ascii=False)]).lower()
@@ -158,8 +175,11 @@ def evaluate_recipe_consistency(
     return {
         "recipe_id": recipe_id,
         "title": title,
+        "raw_title": raw_title,
+        "title_display_clean": title == public_recipe_title(title, recipe_id=recipe_id),
         "ingredient_count": len(ing_names),
         "step_count": len(step_values),
+        "raw_steps_changed": raw_step_values != step_values,
         "hard_fail": sorted(set(hard_fail)),
         "warnings": sorted(set(warnings)),
         "ok": not hard_fail,
