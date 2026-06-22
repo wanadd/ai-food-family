@@ -26,6 +26,7 @@ REPORTS = ROOT / "reports"
 REPORT_MD = REPORTS / "SPRINT_1_3E_GOLD_V3_UPGRADE_PLAN.md"
 REPORT_JSON = REPORTS / "SPRINT_1_3E_GOLD_V3_UPGRADE_PLAN.json"
 PLAN_JSON = ROOT / "data" / "recipe_v2" / "gold_v3_existing_recipe_upgrade_plan.json"
+MANUAL_DECISIONS_JSON = ROOT / "data" / "recipe_v2" / "gold_v3_manual_review_7_decisions.json"
 SOURCE_MARKERS = ("source_url", "original_url", "http://", "https://", "http", "povarenok", "поваренок")
 RELATION_TABLE_HINTS = (
     "meal_plan",
@@ -63,6 +64,32 @@ def load_candidates_by_index(candidates: list[dict[str, Any]] | None = None) -> 
     return {index: record for index, record in enumerate(records, start=1)}
 
 
+def load_manual_decisions(path: Path = MANUAL_DECISIONS_JSON) -> tuple[bool, dict[tuple[str, int], dict[str, Any]], str | None]:
+    if not path.exists():
+        return False, {}, None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if has_source_leakage(data):
+        raise RuntimeError("manual decisions file contains source leakage")
+    decisions: dict[tuple[str, int], dict[str, Any]] = {}
+    for row in data.get("decisions") or []:
+        if row.get("decision") != "upgrade_existing_recipe":
+            continue
+        if row.get("new_recipe_import_allowed") is not False:
+            raise RuntimeError("manual decision allows new recipe import")
+        key = (duplicates.normalize(row.get("candidate_title")), int(row["existing_recipe_id"]))
+        decisions[key] = row
+    return True, decisions, str(path.relative_to(ROOT))
+
+
+def manual_decision_for(item: dict[str, Any], decisions: dict[tuple[str, int], dict[str, Any]]) -> dict[str, Any] | None:
+    title = duplicates.normalize(item.get("candidate_title"))
+    for match in item.get("duplicate_matches") or []:
+        decision = decisions.get((title, int(match["db_id"])))
+        if decision:
+            return decision
+    return None
+
+
 def fields_to_replace(candidate: dict[str, Any], match: dict[str, Any]) -> list[str]:
     fields = ["ingredients", "steps", "nutrition", "tags", "source_type_gold_v3_metadata", "shopping_readiness"]
     if candidate.get("title") and candidate.get("title") != match.get("db_title"):
@@ -93,15 +120,27 @@ def confidence_for_match(match: dict[str, Any]) -> str:
     return "low"
 
 
-def build_upgrade_action(item: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
-    match = item["duplicate_matches"][0]
+def build_upgrade_action(
+    item: dict[str, Any],
+    candidate: dict[str, Any],
+    manual_decision: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    if manual_decision:
+        existing_recipe_id = int(manual_decision["existing_recipe_id"])
+        match = next(
+            (candidate_match for candidate_match in item["duplicate_matches"] if int(candidate_match["db_id"]) == existing_recipe_id),
+            item["duplicate_matches"][0],
+        )
+    else:
+        match = item["duplicate_matches"][0]
     return {
         "candidate_index": item["candidate_index"],
         "candidate_title": item["candidate_title"],
         "existing_recipe_id": match["db_id"],
         "existing_title": match["db_title"],
-        "confidence": confidence_for_match(match),
-        "reason": item["reason"],
+        "confidence": manual_decision.get("confidence", "high") if manual_decision else confidence_for_match(match),
+        "reason": manual_decision.get("reason", item["reason"]) if manual_decision else item["reason"],
+        "source": "manual_decision" if manual_decision else "duplicate_audit",
         "proposed_action": "upgrade_existing_recipe",
         "fields_to_replace": fields_to_replace(candidate, match),
         "fields_to_preserve": fields_to_preserve(match),
@@ -243,12 +282,15 @@ def build_plan(
     duplicate_report: dict[str, Any] | None = None,
     candidates: list[dict[str, Any]] | None = None,
     *,
+    manual_decisions_path: Path = MANUAL_DECISIONS_JSON,
     relation_snapshot: dict[str, Any] | None = None,
     write_reports: bool = True,
     write_plan: bool = False,
 ) -> dict[str, Any]:
     candidates_by_index = load_candidates_by_index(candidates)
     duplicate_report = duplicate_report or load_duplicate_report(candidates)
+    manual_decisions_loaded, manual_decisions, manual_decisions_input = load_manual_decisions(manual_decisions_path)
+    manual_decisions_applied = 0
     upgrade_actions = []
     manual_review_cards = []
     do_not_upgrade = []
@@ -262,9 +304,16 @@ def build_plan(
             upgrade_actions.append(action)
             plan_decision = "upgrade_existing_recipe"
         elif decision == "manual_review":
-            action = build_manual_review_card(item, candidate)
-            manual_review_cards.append(action)
-            plan_decision = "manual_review"
+            manual_decision = manual_decision_for(item, manual_decisions)
+            if manual_decision:
+                action = build_upgrade_action(item, candidate, manual_decision)
+                upgrade_actions.append(action)
+                manual_decisions_applied += 1
+                plan_decision = "upgrade_existing_recipe"
+            else:
+                action = build_manual_review_card(item, candidate)
+                manual_review_cards.append(action)
+                plan_decision = "manual_review"
         elif decision == "skip_exact_duplicate":
             action = build_do_not_upgrade(item)
             do_not_upgrade.append(action)
@@ -302,6 +351,11 @@ def build_plan(
         "total_candidates": len(duplicate_report.get("items") or []),
         "duplicate_risk_count": duplicate_report.get("duplicate_risk_count"),
         "action_counts": action_counts,
+        "manual_decisions_loaded": manual_decisions_loaded,
+        "manual_decisions_input": manual_decisions_input,
+        "manual_decisions_count": len(manual_decisions),
+        "manual_decisions_applied": manual_decisions_applied,
+        "unresolved_manual_review": len(manual_review_cards),
         "planned_existing_recipe_ids": planned_ids,
         "upgrade_actions": upgrade_actions,
         "manual_review_cards": manual_review_cards,
@@ -345,7 +399,7 @@ def recommendation(action_counts: dict[str, int], future_apply_blocked: bool) ->
         return "classify_manual_review_7_before_apply"
     if future_apply_blocked:
         return "do_not_apply"
-    return "prepare_controlled_upgrade_apply_sprint"
+    return "ready_for_controlled_upgrade_apply_planning"
 
 
 def write_commit_safe_plan(report: dict[str, Any]) -> None:
@@ -391,6 +445,9 @@ def render(report: dict[str, Any]) -> str:
         f"DB writes: `{report['db_writes']}`",
         f"total_candidates: `{report['total_candidates']}`",
         f"duplicate_risk_count: `{report['duplicate_risk_count']}`",
+        f"manual_decisions_loaded: `{report['manual_decisions_loaded']}`",
+        f"manual_decisions_applied: `{report['manual_decisions_applied']}`",
+        f"unresolved_manual_review: `{report['unresolved_manual_review']}`",
         f"future_apply_blocked: `{report['future_apply_blocked']}`",
         f"future_apply_blockers: `{report['future_apply_blockers']}`",
         f"recommendation: `{report['recommendation']}`",
@@ -455,13 +512,14 @@ def render(report: dict[str, Any]) -> str:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manual-decisions", default=str(MANUAL_DECISIONS_JSON))
     parser.add_argument("--write-plan", action="store_true", help="Write commit-safe data plan JSON.")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    report = build_plan(write_plan=args.write_plan)
+    report = build_plan(manual_decisions_path=Path(args.manual_decisions), write_plan=args.write_plan)
     print(f"Wrote {REPORT_MD}")
     return 0 if report["total_candidates"] == 30 else 1
 

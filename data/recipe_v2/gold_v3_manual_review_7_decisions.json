@@ -1,0 +1,84 @@
+{
+  "source": "SPRINT_1_3E_GOLD_V3_UPGRADE_PLAN",
+  "decision_date": "2026-06-21",
+  "policy": "manual_review_7_are_existing_recipe_upgrades_no_new_import",
+  "decisions": [
+    {
+      "candidate_title": "Творожная боул с фруктами",
+      "existing_recipe_id": 228,
+      "existing_title": "Творожная bowl с фруктами",
+      "decision": "upgrade_existing_recipe",
+      "confidence": "high",
+      "reason": "Same dish; user-facing title cleanup from English bowl to Russian боул.",
+      "title_cleanup": true,
+      "metadata_cleanup": false,
+      "new_recipe_import_allowed": false
+    },
+    {
+      "candidate_title": "Говядина с брокколи",
+      "existing_recipe_id": 242,
+      "existing_title": "High protein: говядина с брокколи",
+      "decision": "upgrade_existing_recipe",
+      "confidence": "high",
+      "reason": "Same dish; remove English high-protein prefix from user-facing title and keep meaning in metadata.",
+      "title_cleanup": true,
+      "metadata_cleanup": true,
+      "new_recipe_import_allowed": false
+    },
+    {
+      "candidate_title": "Индейка с овощами",
+      "existing_recipe_id": 245,
+      "existing_title": "Индейка с овощами без свинины",
+      "decision": "upgrade_existing_recipe",
+      "confidence": "high",
+      "reason": "Same dish; remove restriction wording from title and keep no-pork meaning in metadata.",
+      "title_cleanup": true,
+      "metadata_cleanup": true,
+      "new_recipe_import_allowed": false
+    },
+    {
+      "candidate_title": "Банан с арахисовой пастой",
+      "existing_recipe_id": 251,
+      "existing_title": "Pre-workout: банан с арахисовой пастой",
+      "decision": "upgrade_existing_recipe",
+      "confidence": "high",
+      "reason": "Same dish; remove English pre-workout prefix from user-facing title and keep scenario in metadata.",
+      "title_cleanup": true,
+      "metadata_cleanup": true,
+      "new_recipe_import_allowed": false
+    },
+    {
+      "candidate_title": "Куриная грудка и киноа",
+      "existing_recipe_id": 253,
+      "existing_title": "Pro high protein: куриная грудка и киноа",
+      "decision": "upgrade_existing_recipe",
+      "confidence": "high",
+      "reason": "Same dish; remove English pro/high-protein prefix from user-facing title and keep meaning in metadata.",
+      "title_cleanup": true,
+      "metadata_cleanup": true,
+      "new_recipe_import_allowed": false
+    },
+    {
+      "candidate_title": "Салат с индейкой",
+      "existing_recipe_id": 254,
+      "existing_title": "Pro weight loss: салат с индейкой",
+      "decision": "upgrade_existing_recipe",
+      "confidence": "high",
+      "reason": "Same dish; remove English weight-loss prefix from user-facing title and keep meaning in metadata.",
+      "title_cleanup": true,
+      "metadata_cleanup": true,
+      "new_recipe_import_allowed": false
+    },
+    {
+      "candidate_title": "Яйца с авокадо",
+      "existing_recipe_id": 255,
+      "existing_title": "Pro small portion: яйца с авокадо",
+      "decision": "upgrade_existing_recipe",
+      "confidence": "high",
+      "reason": "Same dish; remove English small-portion prefix from user-facing title and keep meaning in metadata.",
+      "title_cleanup": true,
+      "metadata_cleanup": true,
+      "new_recipe_import_allowed": false
+    }
+  ]
+}
