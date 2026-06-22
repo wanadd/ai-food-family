@@ -182,3 +182,29 @@ def test_report_includes_transaction_design():
     report = _report()
     assert report["transaction_design"]["report_only"] is True
     assert report["transaction_design"]["executable_apply_implemented"] is False
+
+
+def test_count_child_rows_uses_sqlalchemy_text_without_name_error():
+    mod = _load_script("dry_run_gold_v3_existing_recipe_upgrades")
+
+    class FakeInspector:
+        def get_table_names(self):
+            return ["recipe_steps"]
+
+        def get_columns(self, _table_name):
+            return [{"name": "recipe_id"}]
+
+    class FakeResult:
+        def mappings(self):
+            return self
+
+        def all(self):
+            return [{"recipe_id": 2, "count": 3}]
+
+    class FakeConn:
+        def execute(self, statement, params):
+            assert "recipe_steps" in str(statement)
+            assert params == {"ids": [2]}
+            return FakeResult()
+
+    assert mod.count_child_rows(FakeConn(), FakeInspector(), "recipe_steps", [2]) == {2: 3}

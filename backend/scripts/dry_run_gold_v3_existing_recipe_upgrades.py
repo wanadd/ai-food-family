@@ -223,6 +223,8 @@ def collect_db_state(planned_ids: list[int], database_url: str | None = None) ->
 
 
 def count_child_rows(conn: Any, inspector: Any, table_name: str, planned_ids: list[int]) -> dict[int, int]:
+    from sqlalchemy import text
+
     if table_name not in set(inspector.get_table_names()):
         return {}
     columns = {column["name"] for column in inspector.get_columns(table_name)}
