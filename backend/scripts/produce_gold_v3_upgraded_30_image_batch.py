@@ -9,7 +9,7 @@ Writes WebP derivatives to a staging root, default:
 Examples:
   python backend/scripts/produce_gold_v3_upgraded_30_image_batch.py --dry-run
   python backend/scripts/produce_gold_v3_upgraded_30_image_batch.py --generate --max-cost-usd 3
-  python backend/scripts/produce_gold_v3_upgraded_30_image_batch.py --generate --recipe-id 2
+  python backend/scripts/produce_gold_v3_upgraded_30_image_batch.py --generate --recipe-ids 2,235,254 --overwrite --max-cost-usd 1
 """
 
 from __future__ import annotations
@@ -90,6 +90,46 @@ def resolve_prompt(recipe: dict[str, Any]) -> str:
 
 def derivatives_complete(recipe_dir: Path) -> bool:
     return recipe_dir.is_dir() and all((recipe_dir / name).is_file() for name in REQUIRED_FILES)
+
+
+def parse_recipe_ids(
+    manifest: dict[str, Any],
+    *,
+    recipe_ids_arg: str | None,
+    recipe_id_args: list[int],
+) -> tuple[list[int] | None, list[str]]:
+    """Resolve and validate selective recipe IDs against the manifest."""
+    errors: list[str] = []
+    if recipe_ids_arg:
+        raw_parts = [part.strip() for part in recipe_ids_arg.split(",") if part.strip()]
+        try:
+            parsed = [int(part) for part in raw_parts]
+        except ValueError:
+            return None, ["invalid_recipe_ids:not_integers"]
+        if not parsed:
+            return None, ["invalid_recipe_ids:empty"]
+        recipe_id_args = parsed
+    if not recipe_id_args:
+        return None, []
+    seen: set[int] = set()
+    duplicates: list[int] = []
+    for recipe_id in recipe_id_args:
+        if recipe_id in seen:
+            duplicates.append(recipe_id)
+        seen.add(recipe_id)
+    if duplicates:
+        errors.append(f"duplicate_recipe_ids:{sorted(set(duplicates))}")
+    manifest_ids = {int(recipe["id"]) for recipe in manifest.get("recipes") or []}
+    allowed = set(EXPECTED_UPGRADE_IDS)
+    unknown = sorted({recipe_id for recipe_id in recipe_id_args if recipe_id not in manifest_ids})
+    if unknown:
+        errors.append(f"unknown_recipe_ids:{unknown}")
+    disallowed = sorted({recipe_id for recipe_id in recipe_id_args if recipe_id not in allowed})
+    if disallowed:
+        errors.append(f"recipe_ids_not_in_upgrade_set:{disallowed}")
+    if errors:
+        return None, errors
+    return recipe_id_args, []
 
 
 def plan_batch(
@@ -176,12 +216,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
-    parser.add_argument("--recipe-id", type=int, action="append", default=[])
+    parser.add_argument("--recipe-id", type=int, action="append", default=[], help="Repeatable recipe ID")
+    parser.add_argument(
+        "--recipe-ids",
+        default=None,
+        help="Comma-separated recipe IDs from manifest (e.g. 2,235,254)",
+    )
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--size", default=DEFAULT_SIZE)
     parser.add_argument("--quality", default=DEFAULT_QUALITY)
     parser.add_argument("--max-cost-usd", type=float, default=None)
     parser.add_argument("--skip-existing", action="store_true", default=True)
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Regenerate even when derivatives exist (alias for --force)",
+    )
     parser.add_argument("--force", action="store_true", help="Regenerate even when derivatives exist")
     parser.add_argument("--dry-run", action="store_true", help="Plan only (default)")
     parser.add_argument("--generate", action="store_true", help="Call OpenAI and write WebP files")
@@ -196,8 +246,17 @@ def main(argv: list[str] | None = None) -> int:
     generate_mode = bool(args.generate)
     manifest = load_manifest(args.manifest)
     output_root = args.output_root.resolve()
-    recipe_ids = [int(rid) for rid in args.recipe_id] if args.recipe_id else None
-    skip_existing = args.skip_existing and not args.force
+    recipe_ids, id_errors = parse_recipe_ids(
+        manifest,
+        recipe_ids_arg=args.recipe_ids,
+        recipe_id_args=[int(rid) for rid in args.recipe_id],
+    )
+    if id_errors:
+        for err in id_errors:
+            print(f"ERROR: {err}", file=sys.stderr)
+        return 2
+    overwrite = bool(args.overwrite or args.force)
+    skip_existing = args.skip_existing and not overwrite
     plan = plan_batch(manifest, output_root=output_root, recipe_ids=recipe_ids, skip_existing=skip_existing)
 
     report: dict[str, Any] = {

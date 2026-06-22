@@ -289,3 +289,57 @@ def test_plan_id_is_deterministic():
     second = common.plan_id_for(manifest)
     assert first == second
     assert first.startswith("gold-v3-image-urls-")
+
+
+def test_selective_batch_rejects_unknown_and_duplicate_ids():
+    produce = _load_script("produce_gold_v3_upgraded_30_image_batch")
+    manifest = _load_manifest()
+    _, errors = produce.parse_recipe_ids(manifest, recipe_ids_arg="2,2,999", recipe_id_args=[])
+    assert any("duplicate_recipe_ids" in err for err in errors)
+    assert any("unknown_recipe_ids" in err for err in errors)
+
+
+def test_selective_batch_plan_counts_only_requested_ids(tmp_path: Path):
+    produce = _load_script("produce_gold_v3_upgraded_30_image_batch")
+    manifest = _load_manifest()
+    plan = produce.plan_batch(
+        manifest,
+        output_root=tmp_path,
+        recipe_ids=[2, 235, 254],
+        skip_existing=True,
+    )
+    assert plan["recipe_ids"] == [2, 235, 254]
+    assert plan["to_generate_count"] == 3
+    assert plan["estimated_cost_usd"] == round(3 * 0.063, 4)
+
+
+def test_selective_batch_skips_existing_without_overwrite(tmp_path: Path):
+    produce = _load_script("produce_gold_v3_upgraded_30_image_batch")
+    manifest = _load_manifest()
+    for recipe_id in (2, 235, 254):
+        for filename in REQUIRED_FILES:
+            _write_webp(tmp_path / str(recipe_id) / filename, WIDTHS[filename])
+    plan = produce.plan_batch(
+        manifest,
+        output_root=tmp_path,
+        recipe_ids=[2, 235, 254],
+        skip_existing=True,
+    )
+    assert plan["to_generate_count"] == 0
+    assert plan["to_skip_count"] == 3
+
+
+def test_selective_batch_overwrite_regenerates_existing(tmp_path: Path):
+    produce = _load_script("produce_gold_v3_upgraded_30_image_batch")
+    manifest = _load_manifest()
+    for recipe_id in (2,):
+        for filename in REQUIRED_FILES:
+            _write_webp(tmp_path / str(recipe_id) / filename, WIDTHS[filename])
+    plan = produce.plan_batch(
+        manifest,
+        output_root=tmp_path,
+        recipe_ids=[2],
+        skip_existing=False,
+    )
+    assert plan["to_generate_count"] == 1
+    assert plan["to_skip_count"] == 0
