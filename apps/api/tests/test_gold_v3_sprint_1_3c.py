@@ -16,6 +16,7 @@ if str(API_ROOT) not in sys.path:
     sys.path.insert(0, str(API_ROOT))
 
 from app.services.recipes.mapper import image_ready, is_gold_v3_recipe, recipe_schema, to_summary  # noqa: E402
+from app.services.recipe_storage import get_tags  # noqa: E402
 from app.nutrition.restriction_safety import recipe_is_allowed_for_profile  # noqa: E402
 
 
@@ -44,6 +45,10 @@ def _seed_recipe(**overrides):
         diets=[],
         tags=["gold_v3", "recipe_schema_v3", "status:gold"],
         tag_rows=None,
+        ingredient_rows=[],
+        step_rows=[],
+        ingredients=[],
+        steps=[],
         is_drink=False,
         is_alcoholic=False,
         calories_per_serving=320,
@@ -81,6 +86,25 @@ def test_mapper_gold_v3_flags_do_not_break_summary():
     assert summary.is_gold_v3 is True
     assert summary.recipe_schema == "gold_v3"
     assert summary.image_ready is True
+
+
+def test_mapper_gold_v3_flags_merge_row_and_jsonb_tags():
+    recipe = _seed_recipe(
+        id=227,
+        source_type="import",
+        tags=["gold_v3", "recipe_schema_v3", "upgraded_from_legacy"],
+        tag_rows=[SimpleNamespace(tag="legacy")],
+    )
+    assert get_tags(recipe) == [
+        "legacy",
+        "gold_v3",
+        "recipe_schema_v3",
+        "upgraded_from_legacy",
+    ]
+    assert is_gold_v3_recipe(recipe) is True
+    summary = to_summary(recipe, set())
+    assert summary.is_gold_v3 is True
+    assert summary.recipe_schema == "gold_v3"
 
 
 def test_asset_verify_public_url_mode_mocked():

@@ -97,9 +97,19 @@ def get_structured_steps(recipe: Recipe) -> list[str]:
 
 
 def get_tags(recipe: Recipe) -> list[str]:
-    if recipe.tag_rows:
-        return [row.tag for row in recipe.tag_rows]
-    return list(recipe.tags or [])
+    tags: list[str] = []
+    seen: set[str] = set()
+    for row in getattr(recipe, "tag_rows", None) or []:
+        tag = str(getattr(row, "tag", "")).strip()
+        if tag and tag not in seen:
+            seen.add(tag)
+            tags.append(tag)
+    for raw in getattr(recipe, "tags", None) or []:
+        tag = str(raw).strip()
+        if tag and tag not in seen:
+            seen.add(tag)
+            tags.append(tag)
+    return tags
 
 
 def get_allergens(recipe: Recipe) -> list[str]:
