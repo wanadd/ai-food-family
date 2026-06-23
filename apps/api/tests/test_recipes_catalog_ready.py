@@ -21,6 +21,7 @@ from app.services.app_scope import AppScope  # noqa: E402
 from app.services.recipes import catalog  # noqa: E402
 from app.services.recipes.catalog_ready import (  # noqa: E402
     CATALOG_READY_SOURCE_TYPES,
+    GOLD_V3_CATALOG_READY_TAGS,
     filter_catalog_ready_recipes,
     is_catalog_ready_recipe,
 )
@@ -33,12 +34,15 @@ def _recipe(
     title: str,
     source_type: str = "import",
     hero_image_url: str | None = None,
+    tags: list[str] | None = None,
 ):
     return SimpleNamespace(
         id=rid,
         title=title,
         source_type=source_type,
         hero_image_url=hero_image_url,
+        tags=tags or [],
+        tag_rows=[],
         is_active=True,
     )
 
@@ -46,6 +50,7 @@ def _recipe(
 def test_catalog_ready_source_types():
     assert "seed" in CATALOG_READY_SOURCE_TYPES
     assert "import" not in CATALOG_READY_SOURCE_TYPES
+    assert "gold_v3" in GOLD_V3_CATALOG_READY_TAGS
 
 
 @pytest.mark.parametrize(
@@ -74,6 +79,26 @@ def test_filter_catalog_ready_hides_legacy_import_without_hero():
     assert [r.id for r in result] == [256]
 
 
+def test_filter_catalog_ready_includes_gold_v3_import_with_hero():
+    recipes = [
+        _recipe(
+            rid=227,
+            title="Gold V3 import",
+            source_type="import",
+            hero_image_url="/recipe-images/227/hero.webp",
+            tags=["gold_v3", "recipe_schema_v3", "upgraded_from_legacy"],
+        ),
+        _recipe(
+            rid=20,
+            title="Legacy import with photo",
+            source_type="import",
+            hero_image_url="/recipe-images/20/hero.webp",
+        ),
+    ]
+    result = filter_catalog_ready_recipes(recipes)
+    assert [r.id for r in result] == [227]
+
+
 def test_filter_catalog_ready_include_legacy_returns_all():
     recipes = [
         _recipe(rid=12, title="Old import", source_type="import"),
@@ -100,6 +125,36 @@ def test_seed_batch_256_265_only_in_default_pool():
     result = filter_catalog_ready_recipes(recipes)
     assert len(result) == 10
     assert {r.id for r in result} == set(range(256, 266))
+
+
+def test_gold_v3_batch_2_227_265_visible_in_default_pool():
+    recipes = [
+        _recipe(rid=2, title="Gold 2", source_type="import", hero_image_url="/2.webp", tags=["gold_v3"]),
+        *[
+            _recipe(
+                rid=rid,
+                title=f"Gold {rid}",
+                source_type="import",
+                hero_image_url=f"/recipe-images/{rid}/hero.webp",
+                tags=["gold_v3", "recipe_schema_v3"],
+            )
+            for rid in range(227, 256)
+        ],
+        *[
+            _recipe(
+                rid=rid,
+                title=f"Seed {rid}",
+                source_type="seed",
+                hero_image_url=f"/recipe-images/{rid}/hero.webp",
+                tags=["gold_v3", "recipe_schema_v3"],
+            )
+            for rid in range(256, 266)
+        ],
+        _recipe(rid=20, title="Legacy import with photo", source_type="import", hero_image_url="/x.webp"),
+    ]
+    result = filter_catalog_ready_recipes(recipes)
+    assert len(result) == 40
+    assert {r.id for r in result} == {2, *range(227, 266)}
 
 
 def test_repository_query_applies_catalog_ready_filter():
