@@ -34,6 +34,8 @@ import { CATALOG_MEAL_FILTERS } from "@/lib/recipes/labels";
 import type { RecipeFilters, RecipeQuery, RecipeSummary } from "@/lib/recipes/types";
 import { cn } from "@/lib/planam/cn";
 
+const CATALOG_PAGE_SIZE = 40;
+
 function queryFromParams(sp: URLSearchParams): RecipeQuery {
   const query: RecipeQuery = {};
   const q = sp.get("q");
@@ -75,6 +77,7 @@ export function RecipeCatalog2026() {
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(query.q ?? "");
   const [togglingId, setTogglingId] = useState<number | null>(null);
@@ -125,7 +128,7 @@ export function RecipeCatalog2026() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetchRecipes(initData, query)
+    fetchRecipes(initData, { ...query, limit: CATALOG_PAGE_SIZE, offset: 0 })
       .then((list) => {
         if (cancelled) return;
         setRecipes(list.items);
@@ -144,6 +147,31 @@ export function RecipeCatalog2026() {
       cancelled = true;
     };
   }, [initData, query, paramString]);
+
+  const hasMoreRecipes = recipes.length < total;
+
+  async function handleLoadMore() {
+    if (!initData || loadingMore || !hasMoreRecipes) return;
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const list = await fetchRecipes(initData, {
+        ...query,
+        limit: CATALOG_PAGE_SIZE,
+        offset: recipes.length,
+      });
+      setRecipes((prev) => {
+        const seen = new Set(prev.map((recipe) => recipe.id));
+        const next = list.items.filter((recipe) => !seen.has(recipe.id));
+        return [...prev, ...next];
+      });
+      setTotal(list.total);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось загрузить рецепты");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   useEffect(() => {
     if (!initData || loading || recipes.length > 0) {
@@ -389,6 +417,7 @@ export function RecipeCatalog2026() {
         ) : (
           <>
             <p className="pa26-caption mb-3 text-pa-muted">
+              Показано {displayRecipes.length} из{" "}
               {pluralRuWithCount(total, "рецепт", "рецепта", "рецептов")}
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -420,6 +449,16 @@ export function RecipeCatalog2026() {
                 />
               ))}
             </div>
+            {hasMoreRecipes ? (
+              <button
+                type="button"
+                onClick={() => void handleLoadMore()}
+                disabled={loadingMore}
+                className="mt-4 w-full rounded-control border border-pa-border bg-pa-surface px-4 py-3 text-sm font-semibold text-pa-text disabled:opacity-60"
+              >
+                {loadingMore ? "Загружаем…" : "Показать ещё"}
+              </button>
+            ) : null}
           </>
         )}
       </div>

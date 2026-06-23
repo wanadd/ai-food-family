@@ -51,7 +51,7 @@ export type Nav2026RouteMeta = {
   planned?: boolean;
 };
 
-/** Нижняя навигация: Меню · Покупки · ПланАм · Здоровье · События */
+/** Нижняя навигация: Меню · Покупки · ПланАм · Здоровье */
 export const NAV_TABS_2026: Nav2026Tab[] = [
   {
     id: "plan",
@@ -81,13 +81,6 @@ export const NAV_TABS_2026: Nav2026Tab[] = [
     label: "Здоровье",
     icon: "wellness",
     matchPrefixes: ["/wellness"],
-  },
-  {
-    id: "events",
-    href: "/events",
-    label: "События",
-    icon: "events",
-    matchPrefixes: ["/events"],
   },
 ];
 
