@@ -43,7 +43,7 @@ export function EventsV2() {
   return (
     <div className="space-y-4 px-4 pb-6 pt-[max(0.5rem,env(safe-area-inset-top))]">
       <header>
-        <h1 className="pa26-page-title">События</h1>
+        <h1 className="pa26-page-title">Раздел скоро появится</h1>
         <p className="pa26-micro mt-0.5 text-pa-muted">
           Меню для гостей, праздников, постов и особых дней
         </p>
@@ -78,7 +78,7 @@ export function EventsV2() {
       </div>
 
       <V2Button variant="ghost" onClick={() => router.push("/")}>
-        На главную
+        Вернуться на главную
       </V2Button>
     </div>
   );
