@@ -73,35 +73,19 @@ function RecipeDescription({ text }: { text: string }) {
   );
 }
 
-function nutritionLine(recipe: RecipeDetail): string {
+function nutritionMetrics(recipe: RecipeDetail): Array<{ label: string; value: string }> {
   const summary = recipe.nutrition_summary;
-  if (summary && summary.confidence && summary.confidence !== "unavailable") {
-    const k = summary.kcal_per_serving;
-    const p = summary.protein_per_serving;
-    const f = summary.fat_per_serving;
-    const c = summary.carbs_per_serving;
-    const approx = summary.confidence === "low_confidence" ? "≈" : "";
-    const parts: string[] = [];
-    if (k != null) parts.push(`${approx}${Math.round(k)} ккал`);
-    if (p != null) parts.push(`Б ${Math.round(p)}`);
-    if (f != null) parts.push(`Ж ${Math.round(f)}`);
-    if (c != null) parts.push(`У ${Math.round(c)}`);
-    if (parts.length) return parts.join(" · ");
-  }
-  const parts: string[] = [];
-  if (recipe.calories_per_serving != null) {
-    parts.push(`${Math.round(recipe.calories_per_serving)} ккал`);
-  }
-  if (recipe.protein_g != null) {
-    parts.push(`Б ${Math.round(recipe.protein_g)}`);
-  }
-  if (recipe.fat_g != null) {
-    parts.push(`Ж ${Math.round(recipe.fat_g)}`);
-  }
-  if (recipe.carbs_g != null) {
-    parts.push(`У ${Math.round(recipe.carbs_g)}`);
-  }
-  return parts.length ? parts.join(" · ") : "—";
+  const approx = summary?.confidence === "low_confidence" ? "≈" : "";
+  const kcal = summary?.kcal_per_serving ?? recipe.calories_per_serving;
+  const protein = summary?.protein_per_serving ?? recipe.protein_g;
+  const fat = summary?.fat_per_serving ?? recipe.fat_g;
+  const carbs = summary?.carbs_per_serving ?? recipe.carbs_g;
+  return [
+    { label: "Калории", value: kcal != null ? `${approx}${Math.round(kcal)} ккал` : "—" },
+    { label: "Белки", value: protein != null ? `${approx}${Math.round(protein)} г` : "—" },
+    { label: "Жиры", value: fat != null ? `${approx}${Math.round(fat)} г` : "—" },
+    { label: "Углеводы", value: carbs != null ? `${approx}${Math.round(carbs)} г` : "—" },
+  ];
 }
 
 function NutritionBlock({ recipe }: { recipe: RecipeDetail }) {
@@ -310,6 +294,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const meal = mealLabel(recipe.meal_type);
   const category = categoryLabel(recipe.category);
   const diets = Array.isArray(recipe.diets) ? recipe.diets : [];
+  const nutrition = nutritionMetrics(recipe);
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
 
@@ -346,8 +331,13 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
           <RecipeDescription text={recipe.description} />
         ) : null}
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <MetricChip label="КБЖУ" value={nutritionLine(recipe)} />
+        <div className="mt-4 grid grid-cols-4 gap-2">
+          {nutrition.map((metric) => (
+            <MetricChip key={metric.label} label={metric.label} value={metric.value} />
+          ))}
+        </div>
+
+        <div className="mt-2 grid grid-cols-3 gap-2">
           <MetricChip label="Время" value={`${prep} мин`} />
           <MetricChip label="Сложность" value={difficultyLabel(recipe.difficulty)} />
           {meal ? <MetricChip label="Приём" value={meal} /> : null}

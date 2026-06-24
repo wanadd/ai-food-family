@@ -27,6 +27,7 @@ from app.services.shopping_item_utils import (
     display_amount,
     item_from_menu_ingredient,
     make_item_id,
+    new_manual_item_id,
     normalize_item,
     predict_menu_item_id,
     should_skip_menu_ingredient_for_shopping,

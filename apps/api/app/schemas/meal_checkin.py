@@ -21,6 +21,7 @@ class MealCheckinResponse(BaseModel):
     actual_status: str
     actual_description: str | None
     leftover_servings_delta: int | None
+    recipe_id: int | None = None
     family_member_id: int | None = None
     member_name: str | None = None
     created_at: datetime

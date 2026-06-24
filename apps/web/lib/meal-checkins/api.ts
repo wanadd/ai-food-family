@@ -10,6 +10,7 @@ export type MealCheckin = {
   actual_status: string;
   actual_description: string | null;
   leftover_servings_delta: number | null;
+  recipe_id?: number | null;
   family_member_id?: number | null;
   member_name?: string | null;
   created_at: string;

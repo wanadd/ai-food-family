@@ -53,13 +53,21 @@ function looksLikeFormattedAmount(text: string): boolean {
   return /\d/.test(text) && /[a-zа-яё.%/]/i.test(text);
 }
 
+function cleanupDuplicateUnit(text: string): string {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  return normalized.replace(
+    /^(\d+(?:[,.]\d+)?)\s*(г|кг|мл|л|шт|уп|упаковка|пачка|банка|бутылка)\s+\2$/i,
+    "$1 $2",
+  );
+}
+
 /**
  * Returns a user-facing quantity line, or empty string when nothing valid to show.
  */
 export function formatProductQuantity(input: ProductQuantityInput): string {
   const amount = normalizePart(input.amount);
   if (amount && looksLikeFormattedAmount(amount)) {
-    return amount;
+    return cleanupDuplicateUnit(amount);
   }
 
   const quantity = normalizePart(input.quantity);
@@ -70,11 +78,11 @@ export function formatProductQuantity(input: ProductQuantityInput): string {
   }
 
   if (quantity && unit && unitAlreadyInQuantity(quantity, unit)) {
-    return quantity;
+    return cleanupDuplicateUnit(quantity);
   }
 
   if (quantity && unit) {
-    return `${quantity} ${unit}`.trim();
+    return cleanupDuplicateUnit(`${quantity} ${unit}`);
   }
 
   if (quantity) {

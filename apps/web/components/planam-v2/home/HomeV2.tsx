@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { MealOutcomeSheet2026 } from "@/components/dom-2026";
 import { HomeHeroV2 } from "@/components/planam-v2/home/HomeHeroV2";
-import { V2AiTip, V2EmptyState } from "@/components/planam-v2/ui/V2Primitives";
+import { V2AiTip, V2Button, V2EmptyState } from "@/components/planam-v2/ui/V2Primitives";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
   cacheKey,
@@ -169,6 +169,35 @@ export function HomeV2() {
         }}
       />
 
+      <section className="px-4 pt-3" aria-label="Быстрые действия">
+        <div className="grid grid-cols-2 gap-2">
+          <V2Button
+            variant="primary"
+            onClick={() => router.push(PLANAM_ROUTES.planToday)}
+          >
+            Открыть меню
+          </V2Button>
+          <V2Button
+            variant="secondary"
+            onClick={() => router.push(PLANAM_ROUTES.shopping)}
+          >
+            Список покупок
+          </V2Button>
+          <V2Button
+            variant="secondary"
+            onClick={() => router.push(PLANAM_ROUTES.pantry)}
+          >
+            Запасы
+          </V2Button>
+          <V2Button
+            variant="secondary"
+            onClick={() => router.push(PLANAM_ROUTES.wellness)}
+          >
+            Здоровье
+          </V2Button>
+        </div>
+      </section>
+
       <section className="px-4 pt-2" aria-label="Статусы дня">
         <ul className="grid grid-cols-3 gap-2">
           <StatusCard
@@ -277,7 +306,7 @@ function Greeting({
           type="button"
           onClick={onSettings}
           aria-label="Профиль и настройки"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-pa-border bg-pa-surface text-pa-muted transition active:scale-95"
+          className="flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-pa-border bg-pa-surface px-3 text-pa-muted transition active:scale-95"
         >
           <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
             <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.75" />
@@ -288,6 +317,7 @@ function Greeting({
               strokeLinecap="round"
             />
           </svg>
+          <span className="pa26-micro font-semibold">Профиль</span>
         </button>
       ) : null}
     </header>

@@ -295,6 +295,24 @@ export function ShoppingV2() {
             onClick={() => void handleSync()}
           />
         </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2" aria-label="Действия списка покупок">
+          <V2Button
+            variant="primary"
+            data-testid="shopping-add-open-top"
+            onClick={() => setAddOpen(true)}
+          >
+            Добавить продукт
+          </V2Button>
+          <V2Button
+            variant="secondary"
+            data-testid="shopping-sync-from-menu-top"
+            loading={syncing}
+            onClick={() => void handleSync()}
+          >
+            Добавить из меню
+          </V2Button>
+        </div>
       </div>
 
       <div className="px-4 pt-3">
@@ -356,6 +374,14 @@ export function ShoppingV2() {
             onClick={() => setAddOpen(true)}
           >
             Добавить продукт
+          </V2Button>
+          <V2Button
+            variant="secondary"
+            size="wide"
+            loading={syncing}
+            onClick={() => void handleSync()}
+          >
+            Обновить из меню
           </V2Button>
         </div>
       </div>

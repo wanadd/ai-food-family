@@ -39,13 +39,13 @@ export function WaterIntake2026({
     void load();
   }, [load]);
 
-  async function addGlass() {
+  async function addWater(amountMl: number) {
     if (!initData) {
       return;
     }
     setSaving(true);
     try {
-      const data = await addWaterIntake(initData, mode, GLASS_ML);
+      const data = await addWaterIntake(initData, mode, amountMl);
       setTotal(data.total_ml);
       setTarget(data.target_ml);
       invalidateCache("progress-overview");
@@ -62,17 +62,28 @@ export function WaterIntake2026({
 
   if (compact) {
     return (
-      <button
-        type="button"
-        disabled={saving || !initData}
-        onClick={() => void addGlass()}
-        className="flex w-full items-center justify-between gap-2 rounded-card border border-pa-border bg-pa-surface px-3 py-2 text-left active:scale-[0.99] dark:shadow-none"
-      >
-        <span className="pa26-caption text-pa-muted">Вода</span>
-        <span className="pa26-card-title tabular-nums">
-          {(total / 1000).toFixed(1)} л{pct != null ? ` · ${pct}%` : ""}
-        </span>
-      </button>
+      <section className="rounded-card border border-pa-border bg-pa-surface px-3 py-2 dark:shadow-none">
+        <div className="flex items-center justify-between gap-2">
+          <span className="pa26-caption text-pa-muted">Вода</span>
+          <span className="pa26-card-title tabular-nums">
+            {(total / 1000).toFixed(1)} л{pct != null ? ` · ${pct}%` : ""}
+          </span>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {[250, 500].map((amount) => (
+            <button
+              key={amount}
+              type="button"
+              disabled={saving || !initData}
+              onClick={() => void addWater(amount)}
+              data-testid={`water-add-${amount}`}
+              className="rounded-pill border border-sage-300 bg-sage-50 px-3 py-2 pa26-micro font-semibold text-sage-700 disabled:opacity-50 dark:border-sage-700/50 dark:bg-sage-900/20 dark:text-sage-300"
+            >
+              +{amount} мл
+            </button>
+          ))}
+        </div>
+      </section>
     );
   }
 
@@ -101,9 +112,9 @@ export function WaterIntake2026({
           size="compact"
           variant="secondary"
           disabled={saving || !initData}
-          onClick={() => void addGlass()}
+          onClick={() => void addWater(GLASS_ML)}
         >
-          + стакан
+          +250 мл
         </Button2026>
       </div>
       {pct != null ? (

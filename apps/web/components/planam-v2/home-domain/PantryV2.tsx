@@ -37,6 +37,7 @@ import {
 } from "@/lib/planam/productTaxonomy";
 import { PLANAM_ROUTES } from "@/lib/planam/routes";
 import {
+  discardCookingBatch,
   fetchStocksOverview,
   formatPreparedLeftoverAmount,
   type PreparedDish,
@@ -49,6 +50,7 @@ import {
 import type { PantryItem, PantryItemDraft } from "@/lib/pantry/types";
 import { EMPTY_PANTRY_DRAFT } from "@/lib/pantry/types";
 import { fetchShoppingCategories } from "@/lib/shopping/api";
+import { SHOPPING_CATEGORIES_V1 } from "@/lib/shopping/categories-v1";
 import { categoryMeta } from "@/lib/shopping/labels";
 import type { ShoppingCategory } from "@/lib/shopping/types";
 
@@ -184,6 +186,24 @@ export function PantryV2() {
     }
   }
 
+  async function handleDiscardPrepared(dish: PreparedDish) {
+    if (!initData || !dish.can_manage) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await discardCookingBatch(initData, mode, dish.id);
+      invalidateCache("pantry");
+      invalidateCache("menu-overview");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось убрать готовое блюдо");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleAdd() {
     if (!initData || !draft.name.trim()) {
       return;
@@ -251,6 +271,19 @@ export function PantryV2() {
           placeholder="Поиск продукта"
           className="mt-3 w-full rounded-control border border-pa-border bg-pa-surface px-3 py-2.5 pa26-body outline-none focus:border-sage-400"
         />
+
+        <div className="mt-3 grid grid-cols-2 gap-2" aria-label="Действия запасов">
+          <V2Button variant="primary" onClick={() => setAddOpen(true)}>
+            Добавить продукт
+          </V2Button>
+          <V2Button
+            variant="secondary"
+            data-testid="pantry-cook-from-available-top"
+            onClick={() => router.push(`${PLANAM_ROUTES.recipes}?from_pantry=true`)}
+          >
+            Приготовить из запасов
+          </V2Button>
+        </div>
 
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {FILTERS.map((f) => (
@@ -327,21 +360,33 @@ export function PantryV2() {
               <li
                 key={dish.id}
                 className={cn(
-                  "px-4 py-3",
+                  "flex items-center justify-between gap-3 px-4 py-3",
                   idx > 0 && "border-t border-pa-border",
                 )}
               >
-                <p className="pa26-body font-medium">
-                  {stripAuditSuffix(dish.recipe_title ?? "Блюдо")}
-                </p>
-                <p className="pa26-caption text-pa-muted">
-                  {formatPreparedLeftoverAmount(
-                    dish.remaining_servings,
-                    dish.total_servings,
-                    dish.serving_unit,
-                    dish,
-                  )}
-                </p>
+                <div className="min-w-0">
+                  <p className="pa26-body truncate font-medium">
+                    {stripAuditSuffix(dish.recipe_title ?? "Блюдо")}
+                  </p>
+                  <p className="pa26-caption text-pa-muted">
+                    {formatPreparedLeftoverAmount(
+                      dish.remaining_servings,
+                      dish.total_servings,
+                      dish.serving_unit,
+                      dish,
+                    )}
+                  </p>
+                </div>
+                {dish.can_manage ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void handleDiscardPrepared(dish)}
+                    className="shrink-0 rounded-pill border border-pa-border px-2.5 py-1.5 pa26-micro font-semibold text-pa-muted disabled:opacity-50"
+                  >
+                    Убрать
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -444,7 +489,13 @@ export function PantryV2() {
             <input
               type="text"
               value={draft.name}
-              onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+              onChange={(e) =>
+                setDraft((d) => ({
+                  ...d,
+                  name: e.target.value,
+                  category: detectProductCategory(e.target.value, d.category),
+                }))
+              }
               placeholder="Например: творог"
               className="mt-1 w-full rounded-control border border-pa-border bg-pa-surface px-3 py-2.5 pa26-body outline-none focus:border-sage-400"
             />
@@ -475,6 +526,20 @@ export function PantryV2() {
               </select>
             </label>
           </div>
+          <label className="block">
+            <span className="pa26-micro font-semibold text-pa-muted">Категория</span>
+            <select
+              value={draft.category}
+              onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
+              className="mt-1 w-full rounded-control border border-pa-border bg-pa-surface px-3 py-2.5 pa26-body outline-none focus:border-sage-400"
+            >
+              {SHOPPING_CATEGORIES_V1.map((category) => (
+                <option key={category.slug} value={category.slug}>
+                  {category.emoji} {category.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="block">
             <span className="pa26-micro font-semibold text-pa-muted">
               Срок годности (необязательно)

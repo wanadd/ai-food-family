@@ -80,7 +80,11 @@ export function enrichMealsForDay(
     if (rowMember !== memberId) {
       continue;
     }
-    statusByType.set(row.meal_type, row.actual_status);
+    if (row.recipe_id != null) {
+      statusByType.set(`${row.meal_type}:${row.recipe_id}`, row.actual_status);
+    } else {
+      statusByType.set(row.meal_type, row.actual_status);
+    }
   }
 
   const dateIso = dateIsoForDayIndex(menu, dayIndex);
@@ -96,7 +100,14 @@ export function enrichMealsForDay(
         meal.name.includes("(audit)")
           ? { ...meal, name: stripAuditSuffix(meal.name) }
           : meal;
-    const statusCode = statusByType.get(displayMeal.meal_type) ?? null;
+    const recipeStatus =
+      displayMeal.recipe_id != null
+        ? statusByType.get(`${displayMeal.meal_type}:${displayMeal.recipe_id}`)
+        : null;
+    const statusCode =
+      displayMeal.recipe_id != null
+        ? recipeStatus ?? null
+        : statusByType.get(displayMeal.meal_type) ?? null;
     const statusLabel = mealCheckinStatusLabel(statusCode);
     const imageUrl =
       displayMeal.image_url ??
