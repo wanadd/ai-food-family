@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import {
   ACCOUNT_HUB_ITEMS_2026,
   getActiveTabId2026,
   getRouteMeta2026,
+  isBottomNavHidden2026,
   NAV_TABS_2026,
 } from "./nav-config-2026";
 import { resolveMigrationTarget } from "./route-migration-2026";
@@ -35,6 +38,31 @@ describe("account surfaces 2026 navigation", () => {
     expect(getRouteMeta2026("/account/settings/about")?.title).toBe(
       "О приложении",
     );
+  });
+
+  it("hides bottom nav on deep account forms only", () => {
+    expect(isBottomNavHidden2026("/")).toBe(false);
+    expect(isBottomNavHidden2026("/plan/today")).toBe(false);
+    expect(isBottomNavHidden2026("/home/shopping")).toBe(false);
+    expect(isBottomNavHidden2026("/wellness")).toBe(false);
+    expect(isBottomNavHidden2026("/account")).toBe(false);
+    expect(isBottomNavHidden2026("/account/family")).toBe(true);
+    expect(isBottomNavHidden2026("/account/nutrition")).toBe(true);
+    expect(isBottomNavHidden2026("/account/notifications")).toBe(true);
+    expect(isBottomNavHidden2026("/account/settings")).toBe(true);
+    expect(isBottomNavHidden2026("/account/settings/support")).toBe(true);
+  });
+
+  it("keeps notification settings free of calendar CTAs", () => {
+    const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+    const source = readFileSync(
+      `${repoRoot}/components/notifications/NotificationSettingsForm.tsx`,
+      "utf8",
+    );
+
+    expect(source).not.toContain("Добавить в календарь");
+    expect(source).not.toContain("downloadIcs");
+    expect(source).not.toContain("buildIcsFile");
   });
 
   it("keeps legacy redirects on account stack", () => {

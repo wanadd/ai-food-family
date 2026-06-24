@@ -6,6 +6,7 @@ type ChipSelectProps = {
   onChange: (value: string[]) => void;
   multiple?: boolean;
   exclusiveNone?: string;
+  compact?: boolean;
 };
 
 export function ChipSelect({
@@ -14,6 +15,7 @@ export function ChipSelect({
   onChange,
   multiple = true,
   exclusiveNone,
+  compact = false,
 }: ChipSelectProps) {
   function toggle(optionValue: string) {
     if (!multiple) {
@@ -39,7 +41,7 @@ export function ChipSelect({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className={compact ? "flex flex-wrap gap-1.5" : "flex flex-wrap gap-2"}>
       {options.map((option) => {
         const selected = value.includes(option.value);
         return (
@@ -47,11 +49,19 @@ export function ChipSelect({
             key={option.value}
             type="button"
             onClick={() => toggle(option.value)}
-            className={`rounded-full border px-4 py-2 text-left text-sm transition ${
-              selected
-                ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"
-            }`}
+            className={
+              compact
+                ? `rounded-pill border px-3 py-1.5 text-left text-xs transition ${
+                    selected
+                      ? "border-sage-600 bg-sage-50 text-sage-900 dark:border-sage-500 dark:bg-sage-900/20 dark:text-sage-200"
+                      : "border-pa-border bg-pa-surface text-pa-muted hover:bg-sage-50 dark:hover:bg-pa-elevated/40"
+                  }`
+                : `rounded-full border px-4 py-2 text-left text-sm transition ${
+                    selected
+                      ? "border-emerald-600 bg-emerald-50 text-emerald-900"
+                      : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"
+                  }`
+            }
           >
             <span className="font-medium">{option.label}</span>
             {option.hint ? (

@@ -118,7 +118,7 @@ export function FamilyDashboard() {
                 {subtitle}
               </p>
             ) : null}
-            {children}
+            <div className="space-y-4">{children}</div>
           </div>
           {footer}
         </>
@@ -453,14 +453,16 @@ export function FamilyDashboard() {
             </section>
 
             {isAdmin ? (
-              <button
-                type="button"
-                onClick={() => setShowAddPerson(true)}
-                data-testid="family-add-member"
-                className="min-h-[48px] w-full rounded-control bg-sage-600 px-4 py-3 text-sm font-semibold text-white shadow-soft active:scale-[0.99]"
-              >
-                + Добавить человека
-              </button>
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowAddPerson(true)}
+                  data-testid="family-add-member"
+                  className="min-h-[48px] w-full rounded-control bg-sage-600 px-4 py-3 text-sm font-semibold text-white shadow-soft active:scale-[0.99]"
+                >
+                  + Добавить человека
+                </button>
+              </div>
             ) : null}
 
             {lastInvite ? (
@@ -472,7 +474,7 @@ export function FamilyDashboard() {
             ) : null}
 
             <section className="space-y-3">
-              <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-pa-muted">
+              <h3 className="px-1 pt-1 text-xs font-semibold uppercase tracking-wide text-pa-muted">
                 Участники
               </h3>
               {family.members.map((member) => (

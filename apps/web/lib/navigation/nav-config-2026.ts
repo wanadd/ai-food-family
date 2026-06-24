@@ -220,6 +220,15 @@ export const ACCOUNT_LEGACY_PREFIXES_2026 = [
 /** Маршруты без нижней навигации. */
 export const HIDDEN_NAV_PREFIXES_2026 = ["/onboarding", "/admin", "/dev"];
 
+const HIDDEN_BOTTOM_NAV_EXACT_2026 = new Set([
+  "/account/family",
+  "/account/nutrition",
+  "/account/notifications",
+  "/account/settings",
+]);
+
+const HIDDEN_BOTTOM_NAV_PREFIXES_2026 = ["/account/settings/"];
+
 /** Immersive recipe detail — full-bleed hero. */
 export function isImmersiveRecipeDetailPath(pathname: string): boolean {
   return /^\/plan\/recipes\/\d+/.test(pathname);
@@ -300,6 +309,14 @@ export function getActiveTabId2026(pathname: string): Nav2026TabId | null {
 
 export function isNavHidden2026(pathname: string): boolean {
   return HIDDEN_NAV_PREFIXES_2026.some((prefix) => pathname.startsWith(prefix));
+}
+
+export function isBottomNavHidden2026(pathname: string): boolean {
+  return (
+    isNavHidden2026(pathname) ||
+    HIDDEN_BOTTOM_NAV_EXACT_2026.has(pathname) ||
+    HIDDEN_BOTTOM_NAV_PREFIXES_2026.some((prefix) => pathname.startsWith(prefix))
+  );
 }
 
 export function getRouteMeta2026(pathname: string): Nav2026RouteMeta | null {

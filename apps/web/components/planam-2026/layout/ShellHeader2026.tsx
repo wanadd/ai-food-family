@@ -24,11 +24,6 @@ export function ShellHeader2026() {
       <div className="mx-auto flex max-w-lg items-center gap-2 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <ScreenBack2026 />
         <h1 className="pa26-page-title min-w-0 flex-1 truncate">{title}</h1>
-        {pathname !== "/" ? (
-          <span className="shrink-0 rounded-control px-2 py-1 pa26-micro font-semibold text-pa-muted">
-            PLANAM
-          </span>
-        ) : null}
       </div>
     </header>
   );

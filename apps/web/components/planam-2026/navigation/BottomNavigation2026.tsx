@@ -8,13 +8,13 @@ import { cn } from "@/lib/planam/cn";
 import {
   NAV_TABS_2026,
   getActiveTabId2026,
-  isNavHidden2026,
+  isBottomNavHidden2026,
 } from "@/lib/navigation/nav-config-2026";
 
 export function BottomNavigation2026() {
   const pathname = usePathname();
 
-  if (isNavHidden2026(pathname)) {
+  if (isBottomNavHidden2026(pathname)) {
     return null;
   }
 

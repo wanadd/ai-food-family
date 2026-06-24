@@ -205,13 +205,6 @@ export function CareSettingsPanel() {
               <p className="mt-1 text-[11px] font-medium text-sage-700">
                 {modeOption.frequency}
               </p>
-              <ul className="mt-2 space-y-1 border-t border-pa-border pt-2">
-                {modeOption.examples.map((ex) => (
-                  <li key={ex} className="text-[11px] leading-snug text-pa-muted">
-                    {ex}
-                  </li>
-                ))}
-              </ul>
             </button>
           ))}
         </div>
