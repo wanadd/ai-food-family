@@ -232,6 +232,34 @@ export function NutritionProfileForm() {
         </div>
       </section>
 
+      <section className="rounded-card border border-pa-border bg-pa-surface p-4 shadow-soft dark:shadow-none">
+        <h2 className="text-sm font-bold text-pa-foreground">
+          Что PLANAM учитывает в меню
+        </h2>
+        <p className="mt-1 text-xs leading-relaxed text-pa-muted">
+          Ограничения, аллергии, любимые и нелюбимые продукты используются при
+          подборе рецептов и списке покупок.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            "Аллергии",
+            "Не ем",
+            "Люблю",
+            "Не люблю",
+            "Медицинские ограничения",
+            "Религия и этика",
+            "Спорт-цели",
+          ].map((label) => (
+            <span
+              key={label}
+              className="rounded-pill bg-cream-deep px-2.5 py-1 text-xs font-medium text-pa-muted dark:bg-pa-elevated"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      </section>
+
       {error ? (
         <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
@@ -429,6 +457,10 @@ export function NutritionProfileForm() {
           <div className="space-y-5">
             <div>
               <p className="mb-2 text-sm font-medium text-graphite-700">Бюджет</p>
+              <p className="mb-2 text-xs leading-relaxed text-pa-muted">
+                Бюджет влияет на подбор продуктов и замен, но не скрывает
+                ограничения безопасности.
+              </p>
               <OptionCards
                 options={BUDGET_OPTIONS}
                 value={data.budget}
@@ -437,6 +469,10 @@ export function NutritionProfileForm() {
             </div>
             <div>
               <p className="mb-2 text-sm font-medium text-graphite-700">Время готовки</p>
+              <p className="mb-2 text-xs leading-relaxed text-pa-muted">
+                Помогает выбирать быстрые блюда в будни и более спокойные
+                рецепты на свободные дни.
+              </p>
               <ChipSelect
                 options={COOKING_TIME_OPTIONS}
                 value={data.cooking_time ? [data.cooking_time] : []}
@@ -537,7 +573,7 @@ export function NutritionProfileForm() {
 
   if (embedded) {
     return (
-      <div className="mx-auto max-w-lg px-4 pb-24">
+      <div className="mx-auto max-w-lg px-4 pb-24 pt-[max(0.75rem,env(safe-area-inset-top))]">
         {content}
         {saveBar}
       </div>

@@ -9,7 +9,7 @@ import {
 import type { FamilyInvite } from "@/lib/family/invite-types";
 
 const INPUT_CLS =
-  "w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-sm text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200 dark:border-pa-border dark:bg-pa-surface dark:text-pa-foreground dark:focus:border-sage-500 dark:focus:ring-sage-700/40";
+  "w-full rounded-control border border-pa-border bg-pa-surface px-4 py-3 text-sm text-pa-foreground outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200 dark:focus:border-sage-500 dark:focus:ring-sage-700/40";
 
 type InviteSheetProps = {
   open: boolean;
@@ -110,14 +110,14 @@ export function InviteSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-graphite-900/40 p-4 dark:bg-black/50">
       <div
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-card bg-cream-surface p-6 shadow-lift dark:border dark:border-pa-border dark:bg-pa-surface"
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-card border border-pa-border bg-pa-surface p-6 shadow-lift"
         role="dialog"
         aria-labelledby="invite-title"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2
             id="invite-title"
-            className="text-lg font-bold text-graphite-900 dark:text-pa-foreground"
+            className="text-lg font-bold text-pa-foreground"
           >
             Пригласить в семью
           </h2>
@@ -125,7 +125,7 @@ export function InviteSheet({
             type="button"
             onClick={handleClose}
             disabled={step === "loading"}
-            className="text-sm font-semibold text-graphite-500 disabled:opacity-40 dark:text-pa-muted"
+            className="text-sm font-semibold text-pa-muted disabled:opacity-40"
           >
             Закрыть
           </button>
@@ -139,10 +139,10 @@ export function InviteSheet({
 
         {step === "loading" ? (
           <div className="py-8 text-center">
-            <p className="text-sm font-semibold text-graphite-900 dark:text-pa-foreground">
+            <p className="text-sm font-semibold text-pa-foreground">
               Готовим приглашение…
             </p>
-            <p className="mt-1 text-sm text-graphite-500 dark:text-pa-muted">
+            <p className="mt-1 text-sm text-pa-muted">
               Создаём ссылку для Telegram
             </p>
           </div>
@@ -154,7 +154,7 @@ export function InviteSheet({
               type="button"
               onClick={() => setStep("phone")}
               data-testid="family-invite-phone"
-              className="pa-card w-full px-4 py-4 text-left text-sm font-semibold text-graphite-900 hover:border-sage-200 dark:text-pa-foreground dark:hover:border-sage-700/50"
+              className="w-full rounded-card border border-pa-border bg-pa-surface px-4 py-4 text-left text-sm font-semibold text-pa-foreground shadow-soft hover:bg-sage-50 dark:shadow-none dark:hover:bg-pa-elevated/40"
             >
               Ввести номер телефона
             </button>
@@ -189,7 +189,7 @@ export function InviteSheet({
               type="button"
               onClick={() => void handlePhoneInvite()}
               disabled={!phone.trim()}
-              className="pa-btn-primary w-full disabled:opacity-50"
+              className="min-h-[44px] w-full rounded-control bg-sage-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
               Пригласить по номеру
             </button>
@@ -198,29 +198,29 @@ export function InviteSheet({
 
         {step === "share" && lastInvite ? (
           <section className="space-y-4">
-            <p className="text-sm text-graphite-700 dark:text-pa-muted">
+            <p className="text-sm text-pa-muted">
               Ссылка готова. Отправьте её человеку в Telegram — он сможет
               принять приглашение в боте.
             </p>
             <div className="rounded-card border border-warm/30 bg-warm/10 p-4 dark:border-food/30 dark:bg-food-soft/40">
-              <p className="text-xs font-bold uppercase text-graphite-700 dark:text-pa-muted">
+              <p className="text-xs font-bold uppercase text-pa-muted">
                 Ссылка-приглашение
               </p>
-              <p className="mt-2 break-all text-xs text-graphite-700 dark:text-pa-foreground">
+              <p className="mt-2 break-all text-xs text-pa-foreground">
                 {lastInvite.deep_link}
               </p>
             </div>
             <button
               type="button"
               onClick={handleShare}
-              className="pa-btn-primary w-full"
+              className="min-h-[44px] w-full rounded-control bg-sage-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Отправить приглашение в Telegram
             </button>
             <button
               type="button"
               onClick={() => setStep("menu")}
-              className="pa-btn-ghost w-full"
+              className="min-h-[44px] w-full rounded-control border border-pa-border bg-pa-surface px-4 py-2 text-sm font-semibold text-pa-foreground"
             >
               Создать другое приглашение
             </button>
@@ -240,7 +240,7 @@ export function InviteSheet({
                 в Telegram.
               </p>
             )}
-            <button type="button" onClick={handleClose} className="pa-btn-primary w-full">
+            <button type="button" onClick={handleClose} className="min-h-[44px] w-full rounded-control bg-sage-600 px-4 py-2 text-sm font-semibold text-white">
               Готово
             </button>
           </section>
