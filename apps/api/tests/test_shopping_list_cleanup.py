@@ -23,6 +23,7 @@ from app.services.shopping_item_utils import (  # noqa: E402
     should_skip_menu_ingredient_for_shopping,
 )
 from app.services.shopping_list import build_items_from_ingredients  # noqa: E402
+from app.services import shopping_list as shopping_list_service  # noqa: E402
 
 
 def _ing(name, amount, category=None):
@@ -74,6 +75,11 @@ def test_normalize_quantity_keeps_measurements():
     assert normalize_shopping_quantity("125", "г", "x") == ("125", "г")
     assert normalize_shopping_quantity("0.6000000000000001", "кг", "x") == ("0.6", "кг")
     assert normalize_shopping_quantity("2.5", "ст.л.", "x") == ("2.5", "ст.л.")
+
+
+def test_manual_item_id_helper_is_available_for_create_item():
+    assert callable(shopping_list_service.new_manual_item_id)
+    assert len(shopping_list_service.new_manual_item_id()) >= 8
 
 
 def test_normalize_category_overrides():

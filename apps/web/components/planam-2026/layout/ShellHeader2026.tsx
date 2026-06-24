@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 
 import { ScreenBack2026 } from "@/components/planam-2026/navigation/ScreenBack2026";
-import Link from "next/link";
 
 import {
   getScreenTitle2026,
@@ -26,13 +25,9 @@ export function ShellHeader2026() {
         <ScreenBack2026 />
         <h1 className="pa26-page-title min-w-0 flex-1 truncate">{title}</h1>
         {pathname !== "/" ? (
-          <Link
-            href="/"
-            className="shrink-0 rounded-control px-2 py-1 pa26-micro font-semibold text-sage-700 transition hover:bg-sage-50 dark:text-sage-300 dark:hover:bg-pa-elevated/50"
-            aria-label="На главную"
-          >
-            🏠
-          </Link>
+          <span className="shrink-0 rounded-control px-2 py-1 pa26-micro font-semibold text-pa-muted">
+            PLANAM
+          </span>
         ) : null}
       </div>
     </header>

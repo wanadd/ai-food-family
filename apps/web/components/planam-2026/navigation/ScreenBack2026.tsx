@@ -16,9 +16,9 @@ type ScreenBack2026Props = {
 export function ScreenBack2026({ className }: ScreenBack2026Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { goBack, useTelegramBack } = useTelegramBackButton2026(pathname);
+  const { goBack } = useTelegramBackButton2026(pathname, { wireTelegram: false });
 
-  if (!shouldShowBack2026(pathname) || useTelegramBack) {
+  if (!shouldShowBack2026(pathname)) {
     return null;
   }
 

@@ -286,6 +286,7 @@ export function MenuTodayV2() {
         actual_status: "skipped",
         planned_date: plannedDate || undefined,
         actual_description: menuMealHeading(meal.meal),
+        recipe_id: meal.meal.recipe_id ?? undefined,
       });
       invalidateCache(cacheKey.menuOverview(mode));
       showToast("Приём пищи пропущен — КБЖУ не учитываем");

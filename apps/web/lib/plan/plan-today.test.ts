@@ -63,4 +63,47 @@ describe("enrichMealsForDay images", () => {
     expect(day2[0]?.imageUrl).toBe("/recipe-images/257/card_800.webp");
     expect(day1[0]?.imageUrl).not.toBe(day2[0]?.imageUrl);
   });
+
+  it("does not apply stale checkin status from an old recipe to a replacement", () => {
+    const rows = enrichMealsForDay(
+      menuWithImages(),
+      1,
+      [
+        {
+          id: 1,
+          meal_type: "breakfast",
+          planned_date: "2026-06-10",
+          actual_status: "skipped",
+          actual_description: "Старый завтрак",
+          leftover_servings_delta: null,
+          recipe_id: 111,
+          created_at: "2026-06-10T08:00:00Z",
+        },
+      ],
+      new Map(),
+    );
+    expect(rows[0]?.statusCode).toBeNull();
+    expect(rows[0]?.statusLabel).toBe("В плане");
+  });
+
+  it("applies checkin status only to the matching recipe in the active slot", () => {
+    const rows = enrichMealsForDay(
+      menuWithImages(),
+      1,
+      [
+        {
+          id: 1,
+          meal_type: "breakfast",
+          planned_date: "2026-06-10",
+          actual_status: "cooked",
+          actual_description: "Котлеты",
+          leftover_servings_delta: null,
+          recipe_id: 256,
+          created_at: "2026-06-10T08:00:00Z",
+        },
+      ],
+      new Map(),
+    );
+    expect(rows[0]?.statusCode).toBe("cooked");
+  });
 });

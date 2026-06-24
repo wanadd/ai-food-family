@@ -12,6 +12,8 @@ describe("formatProductQuantity", () => {
   it("does not duplicate unit in quantity", () => {
     expect(formatProductQuantity({ quantity: "1 л", unit: "л" })).toBe("1 л");
     expect(formatProductQuantity({ quantity: "500 г", unit: "г" })).toBe("500 г");
+    expect(formatProductQuantity({ amount: "1 л л" })).toBe("1 л");
+    expect(formatProductQuantity({ amount: "500 г г" })).toBe("500 г");
   });
 
   it("joins quantity and unit when separate", () => {

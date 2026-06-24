@@ -33,6 +33,7 @@ def checkin_to_response(
         actual_status=row.actual_status,
         actual_description=row.actual_description,
         leftover_servings_delta=row.leftover_servings_delta,
+        recipe_id=row.recipe_id,
         family_member_id=row.family_member_id,
         member_name=member_name,
         created_at=row.created_at,

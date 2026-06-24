@@ -79,6 +79,7 @@ export function HomeHeroV2({ loading = false, state, onChanged }: HomeHeroV2Prop
         meal_type: meal.meal_type,
         actual_status: "skipped",
         actual_description: meal.name,
+        recipe_id: meal.recipe_id ?? undefined,
       });
       invalidateCache("menu-overview");
       showToast("Приём пищи пропущен — КБЖУ не учитываем");

@@ -27,10 +27,14 @@ function getBackButton(): TelegramBackButton | null {
   return wa?.BackButton ?? null;
 }
 
-export function useTelegramBackButton2026(pathname: string) {
+export function useTelegramBackButton2026(
+  pathname: string,
+  options: { wireTelegram?: boolean } = {},
+) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const hasReturnTo = Boolean(searchParams.get(RETURN_TO_PARAM));
+  const wireTelegram = options.wireTelegram ?? true;
 
   const goBack = useCallback(() => {
     const target = resolveBackTarget2026(pathname, searchParams);
@@ -46,6 +50,9 @@ export function useTelegramBackButton2026(pathname: string) {
   }, [pathname, searchParams, hasReturnTo, router]);
 
   useEffect(() => {
+    if (!wireTelegram) {
+      return;
+    }
     const back = getBackButton();
     if (!back || !shouldShowBack2026(pathname)) {
       back?.hide();
@@ -58,7 +65,7 @@ export function useTelegramBackButton2026(pathname: string) {
       back.offClick(goBack);
       back.hide();
     };
-  }, [pathname, goBack]);
+  }, [pathname, goBack, wireTelegram]);
 
-  return { goBack, useTelegramBack: Boolean(getBackButton()) };
+  return { goBack, useTelegramBack: wireTelegram && Boolean(getBackButton()) };
 }
