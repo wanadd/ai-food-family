@@ -10,11 +10,6 @@ import {
   setCached,
 } from "@/lib/cache/session-cache";
 import {
-  buildIcsFile,
-  downloadIcs,
-  nextOccurrence,
-} from "@/lib/notifications/calendar";
-import {
   fetchNotificationSettings,
   updateNotificationSettings,
 } from "@/lib/notifications/api";
@@ -31,7 +26,6 @@ type ReminderCardProps = {
   daysLabel: string;
   onEnabledChange: (value: boolean) => void;
   onTimeChange: (value: string) => void;
-  onAddToCalendar: () => void;
   disabled: boolean;
 };
 
@@ -45,7 +39,6 @@ function ReminderCard({
   daysLabel,
   onEnabledChange,
   onTimeChange,
-  onAddToCalendar,
   disabled,
 }: ReminderCardProps) {
   return (
@@ -91,14 +84,6 @@ function ReminderCard({
                   className="mt-1 w-full rounded-control border border-pa-border bg-pa-surface px-3 py-2.5 text-base text-pa-foreground focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                 />
               </label>
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={onAddToCalendar}
-                className="mt-3 w-full rounded-control border border-pa-border bg-pa-surface py-2.5 text-sm font-semibold text-pa-foreground"
-              >
-                Добавить в календарь
-              </button>
             </>
           ) : null}
         </div>
@@ -227,9 +212,6 @@ export function NotificationSettingsForm() {
             Время — с вашего устройства ({deviceTz})
           </span>
         </summary>
-        <p className="mt-3 text-xs text-pa-muted">
-          Если удобно, добавьте событие в календарь телефона.
-        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
@@ -264,10 +246,6 @@ export function NotificationSettingsForm() {
             Готовка каждый день
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-pa-muted">
-          Дни недели для Telegram-рассылки настраиваются на сервере; в календарь
-          можно экспортировать ближайшее событие по кнопке ниже.
-        </p>
 
         <div className="mt-4 space-y-3">
 
@@ -282,16 +260,6 @@ export function NotificationSettingsForm() {
         disabled={saving}
         onEnabledChange={(value) => persist({ buy_reminder_enabled: value })}
         onTimeChange={(value) => persist({ buy_reminder_time: value })}
-        onAddToCalendar={() => {
-          const ics = buildIcsFile([
-            {
-              title: "ПланАм: покупки",
-              description: "Проверьте список покупок в приложении",
-              start: nextOccurrence(settings.buy_reminder_time, 1),
-            },
-          ]);
-          downloadIcs("planam-shopping.ics", ics);
-        }}
       />
 
       <ReminderCard
@@ -305,17 +273,6 @@ export function NotificationSettingsForm() {
         disabled={saving}
         onEnabledChange={(value) => persist({ cook_breakfast_enabled: value })}
         onTimeChange={(value) => persist({ cook_breakfast_time: value })}
-        onAddToCalendar={() => {
-          downloadIcs(
-            "planam-breakfast.ics",
-            buildIcsFile([
-              {
-                title: "ПланАм: завтрак",
-                start: nextOccurrence(settings.cook_breakfast_time, new Date().getDay()),
-              },
-            ]),
-          );
-        }}
       />
 
       <ReminderCard
@@ -329,17 +286,6 @@ export function NotificationSettingsForm() {
         disabled={saving}
         onEnabledChange={(value) => persist({ cook_lunch_enabled: value })}
         onTimeChange={(value) => persist({ cook_lunch_time: value })}
-        onAddToCalendar={() => {
-          downloadIcs(
-            "planam-lunch.ics",
-            buildIcsFile([
-              {
-                title: "ПланАм: обед",
-                start: nextOccurrence(settings.cook_lunch_time, new Date().getDay()),
-              },
-            ]),
-          );
-        }}
       />
 
       <ReminderCard
@@ -353,17 +299,6 @@ export function NotificationSettingsForm() {
         disabled={saving}
         onEnabledChange={(value) => persist({ cook_dinner_enabled: value })}
         onTimeChange={(value) => persist({ cook_dinner_time: value })}
-        onAddToCalendar={() => {
-          downloadIcs(
-            "planam-dinner.ics",
-            buildIcsFile([
-              {
-                title: "ПланАм: ужин",
-                start: nextOccurrence(settings.cook_dinner_time, new Date().getDay()),
-              },
-            ]),
-          );
-        }}
       />
 
         </div>
