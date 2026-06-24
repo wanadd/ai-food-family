@@ -40,6 +40,7 @@ export const ROUTE_MIGRATION_2026: RouteMigrationEntry[] = [
   { from: "/menu", to: "/plan", note: "Menu hub → Plan week" },
   { from: "/recipes", to: "/plan/recipes", note: "Legacy recipes list" },
   { from: "/subscription", to: "/account/subscription", exact: true },
+  { from: "/shopping", to: "/home/shopping", exact: true },
   { from: "/shopping/pantry", to: "/home/pantry", exact: true },
   { from: "/pantry", to: "/home/pantry", exact: true },
   { from: "/health", to: "/wellness", exact: true },
