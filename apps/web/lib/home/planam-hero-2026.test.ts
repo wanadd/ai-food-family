@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { MenuOverview } from "@/lib/menu/overview-types";
+import { PLANAM_ROUTES } from "@/lib/planam/routes";
 
 import type { Home2026TodayMeal } from "./home-2026-data";
 import {
@@ -167,7 +168,7 @@ describe("planam-hero-2026", () => {
     const overview = baseOverview({ shopping_unchecked_count: 10 });
     const state = resolvePlanAmHeroState(overview, [], true);
     expect(state.variant).toBe("shopping");
-    expect(state.ctaHref).toBe("/shopping");
+    expect(state.ctaHref).toBe(PLANAM_ROUTES.shopping);
   });
 
   it("resolve P3 pantry expiry hero", () => {

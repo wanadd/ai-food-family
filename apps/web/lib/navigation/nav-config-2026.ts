@@ -62,7 +62,7 @@ export const NAV_TABS_2026: Nav2026Tab[] = [
   },
   {
     id: "shopping",
-    href: "/shopping",
+    href: "/home/shopping",
     label: "Покупки",
     icon: "shopping",
     matchPrefixes: ["/shopping", "/home/shopping"],
@@ -169,8 +169,8 @@ export const ACCOUNT_HUB_ITEMS_2026: AccountHubItem[] = [
 export const ROUTES_2026: Nav2026RouteMeta[] = [
   { href: "/", title: "Дом", sectionId: "home" },
   { href: "/home", title: "Дом", sectionId: "home" },
-  { href: "/shopping", title: "Список покупок", tabId: "shopping", sectionId: "shopping" },
   { href: "/home/shopping", title: "Список покупок", tabId: "shopping", sectionId: "shopping" },
+  { href: "/shopping", title: "Список покупок", tabId: "shopping", sectionId: "shopping" },
   { href: "/home/pantry", title: "Запасы", sectionId: "pantry" },
   {
     href: "/home/leftovers",
@@ -243,7 +243,7 @@ export function isShellHeaderHidden2026(pathname: string): boolean {
 export const LEGACY_FALLBACK_BY_2026_PATH: Record<string, string> = {
   "/": "/",
   "/home": "/",
-  "/home/shopping": "/shopping",
+  "/home/shopping": "/home/shopping",
   "/home/pantry": "/shopping/pantry",
   "/plan": "/menu",
   "/plan/today": "/menu/current",

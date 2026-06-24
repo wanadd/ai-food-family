@@ -26,7 +26,7 @@ export const PLANAM_ROUTES = {
   planCollections: "/plan/collections",
   recipes: "/plan/recipes",
   wellnessProgress: "/wellness/progress",
-  shopping: "/shopping",
+  shopping: "/home/shopping",
   pantry: "/home/pantry",
   /** Cook from pantry stock at home (not meal portions). */
   homeLeftovers: "/home/leftovers",
@@ -69,6 +69,7 @@ export const DEPRECATED_REDIRECT_ROUTES: readonly string[] = [
   "/menu/generate",
   "/menu/recipes",
   "/recipes",
+  "/shopping",
   "/pantry",
   "/health",
   "/health/today",
