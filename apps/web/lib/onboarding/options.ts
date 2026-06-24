@@ -42,9 +42,21 @@ export const RESTRICTION_OPTIONS: SelectOption[] = [
 ];
 
 export const BUDGET_OPTIONS: SelectOption[] = [
-  { value: "economy", label: "Эконом", hint: "До 500 ₽ / день" },
-  { value: "medium", label: "Средний", hint: "500–900 ₽ / день" },
-  { value: "premium", label: "Премиум", hint: "900+ ₽ / день" },
+  {
+    value: "economy",
+    label: "Эконом",
+    hint: "Простые продукты, меньше редких ингредиентов",
+  },
+  {
+    value: "medium",
+    label: "Средний",
+    hint: "Баланс цены и разнообразия",
+  },
+  {
+    value: "premium",
+    label: "Премиум",
+    hint: "Больше рыбы, ягод, орехов и специальных продуктов",
+  },
 ];
 
 export const COOKING_TIME_OPTIONS: SelectOption[] = [

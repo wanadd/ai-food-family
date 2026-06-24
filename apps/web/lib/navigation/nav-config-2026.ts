@@ -229,6 +229,15 @@ const HIDDEN_BOTTOM_NAV_EXACT_2026 = new Set([
 
 const HIDDEN_BOTTOM_NAV_PREFIXES_2026 = ["/account/settings/"];
 
+const HIDDEN_SHELL_HEADER_EXACT_2026 = new Set([
+  "/account/family",
+  "/account/nutrition",
+  "/account/notifications",
+  "/account/settings",
+]);
+
+const HIDDEN_SHELL_HEADER_PREFIXES_2026 = ["/account/settings/"];
+
 /** Immersive recipe detail — full-bleed hero. */
 export function isImmersiveRecipeDetailPath(pathname: string): boolean {
   return /^\/plan\/recipes\/\d+/.test(pathname);
@@ -236,6 +245,12 @@ export function isImmersiveRecipeDetailPath(pathname: string): boolean {
 
 export function isShellHeaderHidden2026(pathname: string): boolean {
   if (isImmersiveRecipeDetailPath(pathname)) {
+    return true;
+  }
+  if (
+    HIDDEN_SHELL_HEADER_EXACT_2026.has(pathname) ||
+    HIDDEN_SHELL_HEADER_PREFIXES_2026.some((prefix) => pathname.startsWith(prefix))
+  ) {
     return true;
   }
   return (

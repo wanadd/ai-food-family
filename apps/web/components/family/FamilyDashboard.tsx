@@ -113,8 +113,9 @@ export function FamilyDashboard() {
       return (
         <>
           <div className="mx-auto max-w-lg px-4 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <h1 className="pa26-page-title mb-2">Семья</h1>
             {subtitle ? (
-              <p className="mb-3 rounded-card border border-pa-border bg-pa-surface p-4 text-sm leading-relaxed text-pa-muted shadow-soft dark:shadow-none">
+              <p className="mb-4 text-sm leading-relaxed text-pa-muted">
                 {subtitle}
               </p>
             ) : null}
@@ -453,7 +454,7 @@ export function FamilyDashboard() {
             </section>
 
             {isAdmin ? (
-              <div className="pt-1">
+              <div className="mt-4">
                 <button
                   type="button"
                   onClick={() => setShowAddPerson(true)}
@@ -473,8 +474,8 @@ export function FamilyDashboard() {
               </p>
             ) : null}
 
-            <section className="space-y-3">
-              <h3 className="px-1 pt-1 text-xs font-semibold uppercase tracking-wide text-pa-muted">
+            <section className="mt-6 space-y-4">
+              <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-pa-muted">
                 Участники
               </h3>
               {family.members.map((member) => (
