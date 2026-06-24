@@ -31,28 +31,30 @@ export function MemberCard({
     ? "Заполнен"
     : "Не заполнен";
   const statusColor = member.nutrition_profile_complete
-    ? "bg-sage-50 text-sage-700"
-    : "bg-warm/10 text-graphite-700";
+    ? "bg-sage-50 text-sage-700 dark:bg-sage-700/30 dark:text-sage-200"
+    : "bg-warm/10 text-pa-muted";
 
   return (
-    <article className="pa-card p-4">
+    <article className="rounded-card border border-pa-border bg-pa-surface p-4 shadow-soft dark:shadow-none">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-bold text-graphite-900">
+          <h3 className="truncate text-base font-bold text-pa-foreground">
             {displayName || "Участник"}
             {member.is_you ? (
-              <span className="ml-1.5 text-sm font-medium text-graphite-400">
+              <span className="ml-1.5 text-sm font-medium text-pa-muted">
                 (вы)
               </span>
             ) : null}
           </h3>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            <span className="pa-chip">{typeLabel}</span>
-            <span className="rounded-pill bg-olive/20 px-2.5 py-0.5 text-xs font-medium text-graphite-700">
+            <span className="rounded-pill bg-cream-deep px-2.5 py-1 text-xs font-medium text-pa-muted dark:bg-pa-elevated">
+              {typeLabel}
+            </span>
+            <span className="rounded-pill bg-olive/20 px-2.5 py-1 text-xs font-medium text-pa-foreground">
               {roleLabel}
             </span>
             <span
-              className={`rounded-pill px-2.5 py-0.5 text-xs font-medium ${statusColor}`}
+              className={`rounded-pill px-2.5 py-1 text-xs font-medium ${statusColor}`}
             >
               Профиль: {profileStatus}
             </span>
@@ -62,15 +64,15 @@ export function MemberCard({
 
       <dl className="mt-3 space-y-1.5 text-sm">
         <div className="flex justify-between gap-2">
-          <dt className="text-graphite-500">Цель питания</dt>
-          <dd className="text-right font-medium text-graphite-900">
+          <dt className="text-pa-muted">Цель питания</dt>
+          <dd className="text-right font-medium text-pa-foreground">
             {member.nutrition_goal_label ?? "—"}
           </dd>
         </div>
         {member.is_virtual && member.virtual_kind ? (
           <div className="flex justify-between gap-2">
-            <dt className="text-graphite-500">Кто</dt>
-            <dd className="text-right text-graphite-900">
+            <dt className="text-pa-muted">Кто</dt>
+            <dd className="text-right text-pa-foreground">
               {member.virtual_kind === "child"
                 ? "Ребёнок"
                 : member.virtual_kind === "elder"
@@ -81,8 +83,8 @@ export function MemberCard({
         ) : null}
         {member.is_virtual && member.age_label ? (
           <div className="flex justify-between gap-2">
-            <dt className="text-graphite-500">Возраст</dt>
-            <dd className="text-right font-medium text-graphite-900">
+            <dt className="text-pa-muted">Возраст</dt>
+            <dd className="text-right font-medium text-pa-foreground">
               {member.age_label}
             </dd>
           </div>
@@ -90,7 +92,7 @@ export function MemberCard({
         {!member.is_virtual &&
         member.nutrition_summary &&
         !member.is_you ? (
-          <p className="rounded-control bg-cream-deep px-3 py-2 text-xs text-graphite-500">
+          <p className="rounded-control bg-cream-deep px-3 py-2 text-xs text-pa-muted dark:bg-pa-elevated">
             {member.nutrition_summary.nutrition_goal_label
               ? `Цель: ${String(member.nutrition_summary.nutrition_goal_label)}`
               : "Профиль ещё не настроен"}
@@ -105,7 +107,7 @@ export function MemberCard({
         {member.is_you && !member.is_virtual ? (
           <Link
             href="/account/nutrition"
-            className="pa-btn-primary px-3 py-2 text-xs"
+            className="rounded-control bg-sage-600 px-3 py-2 text-xs font-semibold text-white"
           >
             Мой профиль питания
           </Link>
@@ -115,7 +117,7 @@ export function MemberCard({
             type="button"
             onClick={onEditNutrition}
             data-testid="family-member-edit"
-            className="pa-btn-ghost px-3 py-2 text-xs"
+            className="rounded-control border border-pa-border bg-pa-surface px-3 py-2 text-xs font-semibold text-pa-foreground"
           >
             {member.is_virtual ? "Профиль питания" : "Изменить профиль"}
           </button>

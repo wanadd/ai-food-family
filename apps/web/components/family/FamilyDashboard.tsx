@@ -113,12 +113,11 @@ export function FamilyDashboard() {
       return (
         <>
           <div className="mx-auto max-w-lg px-4 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            <header className="mb-3">
-              <h1 className="pa26-page-title">Семья</h1>
-              {subtitle ? (
-                <p className="pa26-micro mt-0.5 text-pa-muted">{subtitle}</p>
-              ) : null}
-            </header>
+            {subtitle ? (
+              <p className="mb-3 rounded-card border border-pa-border bg-pa-surface p-4 text-sm leading-relaxed text-pa-muted shadow-soft dark:shadow-none">
+                {subtitle}
+              </p>
+            ) : null}
             {children}
           </div>
           {footer}
@@ -263,14 +262,14 @@ export function FamilyDashboard() {
 
   if (loading) {
     return (
-      <p className="py-20 text-center text-sm text-graphite-500">Загрузка…</p>
+      <p className="py-20 text-center text-sm text-pa-muted">Загрузка…</p>
     );
   }
 
   if (!initData) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center sm:px-5">
-        <p className="text-sm text-graphite-600">
+        <p className="text-sm text-pa-muted">
           Семья доступна в Telegram Mini App.
         </p>
         <Link
@@ -368,62 +367,86 @@ export function FamilyDashboard() {
         ) : null}
 
         {!family ? (
-          <section className="pa-card p-5">
-            <h2 className="text-lg font-bold text-graphite-900">Создать семью</h2>
-            <p className="mt-2 text-sm leading-relaxed text-graphite-500">
-              Общее меню и покупки для близких. Личный режим останется доступен.
-            </p>
-            <input
-              value={familyName}
-              onChange={(e) => setFamilyName(e.target.value)}
-              placeholder="Например: Семья Ивановых"
-              className="mt-4 w-full rounded-control border border-cream-border bg-cream-surface px-4 py-3 text-base text-graphite-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
-            />
-            <label className="mt-4 flex items-start gap-3 text-sm text-graphite-700">
+          <div className="space-y-3">
+            <section className="rounded-card border border-pa-border bg-pa-surface p-5 shadow-soft dark:shadow-none">
+              <span className="rounded-pill bg-sage-50 px-3 py-1 text-xs font-semibold text-sage-700 dark:bg-sage-700/30 dark:text-sage-200">
+                Семейный режим
+              </span>
+              <h2 className="mt-4 text-lg font-bold text-pa-foreground">Создать семью</h2>
+              <p className="mt-2 text-sm leading-relaxed text-pa-muted">
+                Общее меню, покупки и профили участников. Личный режим останется
+                доступен.
+              </p>
+              <div className="mt-4 grid gap-2 text-sm text-pa-muted">
+                <p className="rounded-control bg-cream-deep px-3 py-2 dark:bg-pa-elevated">
+                  Учитывайте аллергии, цели и ограничения каждого участника.
+                </p>
+                <p className="rounded-control bg-cream-deep px-3 py-2 dark:bg-pa-elevated">
+                  Приглашайте по ссылке или добавляйте виртуальные профили детей.
+                </p>
+              </div>
               <input
-                type="checkbox"
-                checked={adminConsent}
-                onChange={(e) => setAdminConsent(e.target.checked)}
-                className="mt-1 rounded border-cream-border text-sage-500"
+                value={familyName}
+                onChange={(e) => setFamilyName(e.target.value)}
+                placeholder="Например: Семья Ивановых"
+                className="mt-4 w-full rounded-control border border-pa-border bg-pa-surface px-4 py-3 text-base text-pa-foreground outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
               />
-              <span>Я подтверждаю право управлять семейным аккаунтом</span>
-            </label>
-            <button
-              type="button"
-              onClick={() => void handleCreateFamily()}
-              disabled={creating || !familyName.trim() || !adminConsent}
-              className="pa-btn-primary mt-4 w-full disabled:opacity-50"
-            >
-              {creating ? "Создание…" : "Создать семью"}
-            </button>
-          </section>
+              <label className="mt-4 flex items-start gap-3 text-sm text-pa-foreground">
+                <input
+                  type="checkbox"
+                  checked={adminConsent}
+                  onChange={(e) => setAdminConsent(e.target.checked)}
+                  className="mt-1 rounded border-pa-border text-sage-500"
+                />
+                <span>Я подтверждаю право управлять семейным аккаунтом</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => void handleCreateFamily()}
+                disabled={creating || !familyName.trim() || !adminConsent}
+                className="mt-4 min-h-[48px] w-full rounded-control bg-sage-600 px-4 py-3 text-sm font-semibold text-white shadow-soft transition active:scale-[0.99] disabled:opacity-50"
+              >
+                {creating ? "Создание…" : "Создать семью"}
+              </button>
+            </section>
+
+            <section className="rounded-card border border-pa-border bg-pa-surface p-4 shadow-soft dark:shadow-none">
+              <h3 className="text-sm font-bold text-pa-foreground">
+                Присоединиться по приглашению
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-pa-muted">
+                Откройте ссылку-приглашение в Telegram. PLANAM сам привяжет вас
+                к семье после подтверждения.
+              </p>
+            </section>
+          </div>
         ) : (
           <>
-            <section className="pa-card border-sage-200 bg-sage-50/40 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
+            <section className="rounded-card border border-sage-200 bg-sage-50/50 p-5 shadow-soft dark:border-sage-700/40 dark:bg-sage-900/20 dark:shadow-none">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sage-700 dark:text-sage-200">
                 Ваша семья
               </p>
-              <h2 className="mt-1 text-xl font-bold text-graphite-900">
+              <h2 className="mt-1 break-words text-xl font-bold text-pa-foreground">
                 {sanitizeFamilyName(family.name)}
               </h2>
               <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                <span className="pa-chip">
+                <span className="rounded-pill bg-pa-surface px-2.5 py-1 text-xs font-semibold text-pa-foreground">
                   {memberCountLabel(family.members_count)}
                 </span>
-                <span className="pa-chip">
+                <span className="rounded-pill bg-pa-surface px-2.5 py-1 text-xs font-semibold text-pa-foreground">
                   Тариф: {family.plan_label}
                 </span>
-                <span className="pa-chip">
+                <span className="rounded-pill bg-pa-surface px-2.5 py-1 text-xs font-semibold text-pa-foreground">
                   {isAdmin ? "Админ" : "Взрослый участник"}
                 </span>
               </div>
-              <p className="mt-3 text-sm text-graphite-700">
+              <p className="mt-3 text-sm leading-relaxed text-pa-muted">
                 Семейное меню и общий список покупок будут учитывать участников и их профили.
               </p>
               <button
                 type="button"
                 onClick={() => setShowManage(true)}
-                className="pa-btn-ghost mt-4 w-full"
+                className="mt-4 min-h-[44px] w-full rounded-control border border-pa-border bg-pa-surface px-4 py-2 text-sm font-semibold text-pa-foreground transition active:scale-[0.99]"
               >
                 Управление семьёй
               </button>
@@ -434,14 +457,14 @@ export function FamilyDashboard() {
                 type="button"
                 onClick={() => setShowAddPerson(true)}
                 data-testid="family-add-member"
-                className="pa-btn-primary w-full active:scale-[0.99]"
+                className="min-h-[48px] w-full rounded-control bg-sage-600 px-4 py-3 text-sm font-semibold text-white shadow-soft active:scale-[0.99]"
               >
                 + Добавить человека
               </button>
             ) : null}
 
             {lastInvite ? (
-              <p className="rounded-control border border-warm/30 bg-warm/10 px-4 py-3 text-sm text-graphite-900 dark:border-sage-700/40 dark:bg-sage-900/20 dark:text-pa-foreground">
+              <p className="rounded-control border border-warm/30 bg-warm/10 px-4 py-3 text-sm text-pa-foreground dark:border-sage-700/40 dark:bg-sage-900/20">
                 {lastInvite.invitee_notified
                   ? "Приглашение отправлено — ожидаем ответ в Telegram"
                   : "Ссылка отправлена — ожидаем, когда человек примет приглашение"}
@@ -449,7 +472,7 @@ export function FamilyDashboard() {
             ) : null}
 
             <section className="space-y-3">
-              <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-graphite-400">
+              <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-pa-muted">
                 Участники
               </h3>
               {family.members.map((member) => (
@@ -467,11 +490,11 @@ export function FamilyDashboard() {
               ))}
             </section>
 
-            <section className="pa-card border-sage-200 bg-sage-50/50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
+            <section className="rounded-card border border-sage-200 bg-sage-50/50 p-4 shadow-soft dark:border-sage-700/40 dark:bg-sage-900/20 dark:shadow-none">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sage-700 dark:text-sage-200">
                 Следующий шаг
               </p>
-              <p className="mt-1 text-sm text-graphite-700">
+              <p className="mt-1 text-sm leading-relaxed text-pa-muted">
                 {family.members_count <= 1
                   ? "Добавьте ещё участника или соберите семейное меню — оба шага не обязательны."
                   : "Соберите меню для семьи — ПланАм учтёт всех участников и их ограничения."}
@@ -479,7 +502,7 @@ export function FamilyDashboard() {
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link
                   href={generateHref}
-                  className="pa-btn-primary inline-flex min-h-[40px] items-center px-4 active:scale-[0.99]"
+                  className="inline-flex min-h-[40px] items-center rounded-control bg-sage-600 px-4 text-sm font-semibold text-white active:scale-[0.99]"
                 >
                   Составить семейное меню
                 </Link>
@@ -488,7 +511,7 @@ export function FamilyDashboard() {
                     type="button"
                     onClick={() => setShowAddPerson(true)}
                     data-testid="family-add-member-secondary"
-                    className="pa-btn-ghost inline-flex min-h-[40px] items-center px-4"
+                    className="inline-flex min-h-[40px] items-center rounded-control border border-pa-border bg-pa-surface px-4 text-sm font-semibold text-pa-foreground"
                   >
                     + Добавить участника
                   </button>

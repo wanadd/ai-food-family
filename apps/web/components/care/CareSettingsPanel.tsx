@@ -146,12 +146,12 @@ export function CareSettingsPanel() {
   }
 
   if (loading) {
-    return <p className="text-sm text-graphite-500">Загрузка…</p>;
+    return <p className="text-sm text-pa-muted">Загрузка…</p>;
   }
 
   if (!settings) {
     return (
-      <p className="text-sm text-graphite-500">
+      <p className="text-sm text-pa-muted">
         Настройки доступны в Telegram Mini App
       </p>
     );
@@ -169,14 +169,14 @@ export function CareSettingsPanel() {
   return (
     <div className="space-y-4">
       {/* Summary line — one card showing current care state. */}
-      <section className="pa-card border-sage-200 bg-sage-50/40 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
+      <section className="rounded-card border border-sage-200 bg-sage-50/50 p-4 shadow-soft dark:border-sage-700/40 dark:bg-sage-900/20 dark:shadow-none">
+        <p className="text-xs font-semibold uppercase tracking-wide text-sage-700 dark:text-sage-200">
           Режим заботы
         </p>
-        <p className="mt-1 text-sm font-semibold text-graphite-900">
+        <p className="mt-1 text-sm font-semibold text-pa-foreground">
           {activeMode?.label ?? "Не задано"}
         </p>
-        <p className="mt-0.5 text-xs text-graphite-600">
+        <p className="mt-0.5 text-xs text-pa-muted">
           Активных напоминаний: {activeRemindersCount}
           {quietRange ? ` · тихие часы ${quietRange}` : ""}
         </p>
@@ -185,8 +185,8 @@ export function CareSettingsPanel() {
         ) : null}
       </section>
 
-      <section className="pa-card p-4">
-        <h2 className="text-sm font-bold text-graphite-900">Режим заботы</h2>
+      <section className="rounded-card border border-pa-border bg-pa-surface p-4 shadow-soft dark:shadow-none">
+        <h2 className="text-sm font-bold text-pa-foreground">Режим заботы</h2>
         <div className="mt-3 space-y-2">
           {CARE_MODES.map((modeOption) => (
             <button
@@ -197,17 +197,17 @@ export function CareSettingsPanel() {
               className={`w-full rounded-control border px-4 py-3 text-left transition ${
                 settings.care_level === modeOption.value
                   ? "border-sage-500 bg-sage-50"
-                  : "border-cream-border bg-cream-surface"
+                  : "border-pa-border bg-pa-surface"
               }`}
             >
-              <p className="font-semibold text-graphite-900">{modeOption.label}</p>
-              <p className="mt-0.5 text-xs text-graphite-600">{modeOption.description}</p>
+              <p className="font-semibold text-pa-foreground">{modeOption.label}</p>
+              <p className="mt-0.5 text-xs text-pa-muted">{modeOption.description}</p>
               <p className="mt-1 text-[11px] font-medium text-sage-700">
                 {modeOption.frequency}
               </p>
-              <ul className="mt-2 space-y-1 border-t border-cream-border pt-2">
+              <ul className="mt-2 space-y-1 border-t border-pa-border pt-2">
                 {modeOption.examples.map((ex) => (
-                  <li key={ex} className="text-[11px] leading-snug text-graphite-500">
+                  <li key={ex} className="text-[11px] leading-snug text-pa-muted">
                     {ex}
                   </li>
                 ))}
@@ -217,19 +217,19 @@ export function CareSettingsPanel() {
         </div>
       </section>
 
-      <details className="group pa-card p-4">
+      <details className="group rounded-card border border-pa-border bg-pa-surface p-4 shadow-soft dark:shadow-none">
         <summary className="cursor-pointer list-none">
           <span className="flex items-center justify-between">
-            <span className="text-sm font-bold text-graphite-900">Что напоминать</span>
-            <span className="text-xs text-graphite-400 group-open:rotate-180 transition">
+            <span className="text-sm font-bold text-pa-foreground">Что напоминать</span>
+            <span className="text-xs text-pa-muted group-open:rotate-180 transition">
               ▼
             </span>
           </span>
-          <span className="mt-0.5 block text-xs text-graphite-500">
+          <span className="mt-0.5 block text-xs text-pa-muted">
             Активных: {activeRemindersCount} из {TOGGLE_ITEMS.length}
           </span>
         </summary>
-        <p className="mt-3 text-xs text-graphite-500">
+        <p className="mt-3 text-xs text-pa-muted">
           Если что-то не нужно — отключите. Можно вернуть в любой момент.
         </p>
         <ul className="mt-3 space-y-2">
@@ -248,14 +248,14 @@ export function CareSettingsPanel() {
                 key={item.key}
                 className={`flex items-center justify-between rounded-control px-3 py-2.5 ${
                   disabledByMinimal || locked
-                    ? "bg-cream-deep/50 opacity-70"
-                    : "bg-cream-deep/40"
+                    ? "bg-cream-deep/50 opacity-70 dark:bg-pa-elevated/40"
+                    : "bg-cream-deep/40 dark:bg-pa-elevated/40"
                 }`}
               >
-                <span className="text-sm font-medium text-graphite-800">
+                <span className="text-sm font-medium text-pa-foreground">
                   {item.label}
                   {locked ? (
-                    <span className="ml-2 text-[10px] font-bold text-graphite-400">
+                    <span className="ml-2 text-[10px] font-bold text-pa-muted">
                       PRO
                     </span>
                   ) : null}
@@ -279,24 +279,24 @@ export function CareSettingsPanel() {
         </ul>
       </details>
 
-      <details className="group pa-card p-4">
+      <details className="group rounded-card border border-pa-border bg-pa-surface p-4 shadow-soft dark:shadow-none">
         <summary className="cursor-pointer list-none">
           <span className="flex items-center justify-between">
-            <span className="text-sm font-bold text-graphite-900">Тихие часы</span>
-            <span className="text-xs text-graphite-400 group-open:rotate-180 transition">
+            <span className="text-sm font-bold text-pa-foreground">Тихие часы</span>
+            <span className="text-xs text-pa-muted group-open:rotate-180 transition">
               ▼
             </span>
           </span>
-          <span className="mt-0.5 block text-xs text-graphite-500">
+          <span className="mt-0.5 block text-xs text-pa-muted">
             {quietRange ?? "ПланАм может писать в любое время"}
           </span>
         </summary>
-        <p className="mt-3 text-xs text-graphite-500">
+        <p className="mt-3 text-xs text-pa-muted">
           В это время ПланАм ничего не присылает.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-xs font-medium text-graphite-600">С</span>
+            <span className="text-xs font-medium text-pa-muted">С</span>
             <input
               type="time"
               value={settings.quiet_hours_start ?? ""}
@@ -304,11 +304,11 @@ export function CareSettingsPanel() {
               onChange={(e) =>
                 void patch({ quiet_hours_start: e.target.value || null })
               }
-              className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 text-base text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
+              className="mt-1 w-full rounded-control border border-pa-border bg-pa-surface px-3 py-2.5 text-base text-pa-foreground focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-graphite-600">До</span>
+            <span className="text-xs font-medium text-pa-muted">До</span>
             <input
               type="time"
               value={settings.quiet_hours_end ?? ""}
@@ -316,12 +316,12 @@ export function CareSettingsPanel() {
               onChange={(e) =>
                 void patch({ quiet_hours_end: e.target.value || null })
               }
-              className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 text-base text-graphite-900 focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
+              className="mt-1 w-full rounded-control border border-pa-border bg-pa-surface px-3 py-2.5 text-base text-pa-foreground focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
             />
           </label>
         </div>
         {settings.quiet_hours_start && settings.quiet_hours_end ? (
-          <p className="mt-2 text-[11px] text-graphite-500">
+          <p className="mt-2 text-[11px] text-pa-muted">
             С {settings.quiet_hours_start} до {settings.quiet_hours_end} ПланАм
             будет молчать.
           </p>
@@ -335,7 +335,7 @@ export function CareSettingsPanel() {
                 quiet_hours_end: "08:00",
               })
             }
-            className="pa-btn mt-3 inline-flex items-center justify-center px-3 py-2 text-xs"
+            className="mt-3 inline-flex items-center justify-center rounded-control border border-pa-border bg-pa-surface px-3 py-2 text-xs font-semibold text-pa-foreground"
           >
             Поставить 22:00–08:00
           </button>
@@ -346,7 +346,7 @@ export function CareSettingsPanel() {
         type="button"
         disabled={testing}
         onClick={() => void handleTest()}
-        className="pa-btn w-full min-h-[48px] border-sage-200 bg-sage-50 py-3 text-sm text-sage-800"
+        className="w-full min-h-[48px] rounded-control border border-sage-200 bg-sage-50 py-3 text-sm font-semibold text-sage-800"
       >
         {testing ? "Отправляем…" : "Тестовое уведомление в Telegram"}
       </button>

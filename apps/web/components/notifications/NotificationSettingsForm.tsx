@@ -50,10 +50,10 @@ function ReminderCard({
 }: ReminderCardProps) {
   return (
     <section
-      className={`pa-card p-5 transition ${
+      className={`rounded-card border p-5 shadow-soft transition dark:shadow-none ${
         enabled
-          ? "border-sage-200 bg-sage-50/30"
-          : "border-cream-border bg-cream-surface"
+          ? "border-sage-200 bg-sage-50/30 dark:border-sage-700/40 dark:bg-sage-900/20"
+          : "border-pa-border bg-pa-surface"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -62,7 +62,7 @@ function ReminderCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-semibold text-graphite-900">{title}</h3>
+            <h3 className="font-semibold text-pa-foreground">{title}</h3>
             <label className="relative inline-flex cursor-pointer items-center">
               <input
                 type="checkbox"
@@ -71,31 +71,31 @@ function ReminderCard({
                 disabled={disabled}
                 onChange={(e) => onEnabledChange(e.target.checked)}
               />
-              <span className="h-7 w-12 rounded-full bg-cream-deep transition peer-checked:bg-sage-600 peer-disabled:opacity-50" />
-              <span className="absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-cream-surface shadow-soft transition peer-checked:translate-x-5" />
+              <span className="h-7 w-12 rounded-full bg-cream-deep transition peer-checked:bg-sage-600 peer-disabled:opacity-50 dark:bg-pa-elevated" />
+              <span className="absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-pa-surface shadow-soft transition peer-checked:translate-x-5" />
             </label>
           </div>
-          <p className="mt-1 text-sm text-graphite-500">{description}</p>
-          <p className="mt-1 text-xs text-graphite-400">
+          <p className="mt-1 text-sm text-pa-muted">{description}</p>
+          <p className="mt-1 text-xs text-pa-muted">
             {category} · {daysLabel}
           </p>
           {enabled ? (
             <>
               <label className="mt-4 block">
-                <span className="text-xs font-medium text-graphite-600">Время</span>
+                <span className="text-xs font-medium text-pa-muted">Время</span>
                 <input
                   type="time"
                   value={time}
                   disabled={disabled}
                   onChange={(e) => onTimeChange(e.target.value)}
-                  className="mt-1 w-full rounded-control border border-cream-border bg-cream-surface px-3 py-2.5 text-base focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
+                  className="mt-1 w-full rounded-control border border-pa-border bg-pa-surface px-3 py-2.5 text-base text-pa-foreground focus:border-sage-400 focus:ring-2 focus:ring-sage-200"
                 />
               </label>
               <button
                 type="button"
                 disabled={disabled}
                 onClick={onAddToCalendar}
-                className="pa-btn mt-3 w-full py-2.5 text-sm"
+                className="mt-3 w-full rounded-control border border-pa-border bg-pa-surface py-2.5 text-sm font-semibold text-pa-foreground"
               >
                 Добавить в календарь
               </button>
@@ -191,7 +191,7 @@ export function NotificationSettingsForm() {
 
   if (loading || !settings) {
     return (
-      <p className="py-10 text-center text-sm text-graphite-500">
+      <p className="py-10 text-center text-sm text-pa-muted">
         Загрузка расписания…
       </p>
     );
@@ -213,21 +213,21 @@ export function NotificationSettingsForm() {
         </p>
       ) : null}
 
-      <details className="group pa-card p-4">
+      <details className="group rounded-card border border-pa-border bg-pa-surface p-4 shadow-soft dark:shadow-none">
         <summary className="cursor-pointer list-none">
           <span className="flex items-center justify-between">
-            <span className="text-sm font-bold text-graphite-900">
+            <span className="text-sm font-bold text-pa-foreground">
               Готовка и покупки по расписанию
             </span>
-            <span className="text-xs text-graphite-400 group-open:rotate-180 transition">
+            <span className="text-xs text-pa-muted group-open:rotate-180 transition">
               ▼
             </span>
           </span>
-          <span className="mt-0.5 block text-xs text-graphite-500">
+          <span className="mt-0.5 block text-xs text-pa-muted">
             Время — с вашего устройства ({deviceTz})
           </span>
         </summary>
-        <p className="mt-3 text-xs text-graphite-500">
+        <p className="mt-3 text-xs text-pa-muted">
           Если удобно, добавьте событие в календарь телефона.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -242,7 +242,7 @@ export function NotificationSettingsForm() {
                 cook_dinner_time: "17:30",
               })
             }
-            className="pa-chip px-3 py-2 text-xs"
+            className="rounded-pill bg-cream-deep px-3 py-2 text-xs font-semibold text-pa-foreground dark:bg-pa-elevated"
           >
             Покупки Пн/Ср/Пт 18:00
           </button>
@@ -259,12 +259,12 @@ export function NotificationSettingsForm() {
                 cook_dinner_time: "18:00",
               })
             }
-            className="pa-chip px-3 py-2 text-xs"
+            className="rounded-pill bg-cream-deep px-3 py-2 text-xs font-semibold text-pa-foreground dark:bg-pa-elevated"
           >
             Готовка каждый день
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-graphite-400">
+        <p className="mt-2 text-[11px] text-pa-muted">
           Дни недели для Telegram-рассылки настраиваются на сервере; в календарь
           можно экспортировать ближайшее событие по кнопке ниже.
         </p>
@@ -369,7 +369,7 @@ export function NotificationSettingsForm() {
         </div>
       </details>
 
-      <p className="text-center text-xs text-graphite-400">
+      <p className="text-center text-xs text-pa-muted">
         {saving
           ? "Сохраняем…"
           : "Чтобы напоминания приходили, разрешите боту писать вам в Telegram."}

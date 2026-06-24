@@ -14,7 +14,11 @@ type SettingsScaffoldProps = {
 };
 
 function SettingsFrame({ children }: { children: ReactNode }) {
-  return <div className="mx-auto max-w-lg space-y-4 px-4 pb-6">{children}</div>;
+  return (
+    <div className="mx-auto max-w-lg space-y-4 px-4 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      {children}
+    </div>
+  );
 }
 
 export function SettingsScaffold({
@@ -82,17 +86,17 @@ export function SettingsMenuItem({
       : href;
 
   const className =
-    "flex min-h-[56px] items-center gap-3 rounded-2xl border border-stone-100 bg-white px-4 py-3.5 shadow-sm transition active:scale-[0.99] hover:border-emerald-200 dark:border-pa-border dark:bg-pa-surface";
+    "flex min-h-[58px] items-center gap-3 rounded-card border border-pa-border bg-pa-surface px-4 py-3 shadow-soft transition active:scale-[0.99] hover:bg-sage-50 dark:shadow-none dark:hover:bg-pa-elevated/40";
 
   const content = (
     <>
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-stone-900 dark:text-pa-foreground">{label}</p>
+        <p className="text-sm font-semibold text-pa-foreground">{label}</p>
         {description ? (
-          <p className="mt-0.5 text-sm text-stone-500 dark:text-pa-muted">{description}</p>
+          <p className="mt-0.5 text-xs text-pa-muted">{description}</p>
         ) : null}
       </div>
-      <span className="shrink-0 text-stone-400" aria-hidden>
+      <span className="shrink-0 text-pa-muted" aria-hidden>
         ›
       </span>
     </>
