@@ -7,6 +7,7 @@ import {
   getActiveTabId2026,
   getRouteMeta2026,
   isBottomNavHidden2026,
+  isShellHeaderHidden2026,
   NAV_TABS_2026,
 } from "./nav-config-2026";
 import { resolveMigrationTarget } from "./route-migration-2026";
@@ -53,16 +54,81 @@ describe("account surfaces 2026 navigation", () => {
     expect(isBottomNavHidden2026("/account/settings/support")).toBe(true);
   });
 
+  it("hides shell header on nested account forms", () => {
+    expect(isShellHeaderHidden2026("/account")).toBe(true);
+    expect(isShellHeaderHidden2026("/account/family")).toBe(true);
+    expect(isShellHeaderHidden2026("/account/nutrition")).toBe(true);
+    expect(isShellHeaderHidden2026("/account/notifications")).toBe(true);
+    expect(isShellHeaderHidden2026("/account/settings")).toBe(true);
+    expect(isShellHeaderHidden2026("/account/settings/support")).toBe(true);
+    expect(isShellHeaderHidden2026("/plan/today")).toBe(true);
+    expect(isShellHeaderHidden2026("/")).toBe(true);
+  });
+
   it("keeps notification settings free of calendar CTAs", () => {
     const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
-    const source = readFileSync(
+    const settingsSource = readFileSync(
       `${repoRoot}/components/notifications/NotificationSettingsForm.tsx`,
       "utf8",
     );
+    const viewSource = readFileSync(
+      `${repoRoot}/components/notifications/NotificationsView.tsx`,
+      "utf8",
+    );
 
-    expect(source).not.toContain("Добавить в календарь");
-    expect(source).not.toContain("downloadIcs");
-    expect(source).not.toContain("buildIcsFile");
+    expect(settingsSource).not.toContain("Добавить в календарь");
+    expect(settingsSource).not.toContain("downloadIcs");
+    expect(settingsSource).not.toContain("buildIcsFile");
+    expect(viewSource).not.toContain("Добавить в календарь");
+    expect(viewSource).not.toContain("NOTIFICATION_SECTIONS");
+  });
+
+  it("renders compact notification toggles in care panel", () => {
+    const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+    const source = readFileSync(
+      `${repoRoot}/components/care/CareSettingsPanel.tsx`,
+      "utf8",
+    );
+
+    expect(source).toContain("Что напоминать");
+    expect(source).toContain("Покупки");
+    expect(source).toContain("Готовка");
+    expect(source).toContain("Тестовое уведомление");
+    expect(source).not.toContain("examples:");
+  });
+
+  it("renders family layout with separated sections", () => {
+    const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+    const source = readFileSync(
+      `${repoRoot}/components/family/FamilyDashboard.tsx`,
+      "utf8",
+    );
+
+    expect(source).toContain("Ваша семья");
+    expect(source).toContain('data-testid="family-add-member"');
+    expect(source).toContain("Участники");
+    expect(source).toContain("MemberCard");
+    expect(source).toMatch(/mt-4[\s\S]*family-add-member/);
+    expect(source).toContain("mt-6 space-y-4");
+  });
+
+  it("renders nutrition as compact accordion dashboard", () => {
+    const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+    const formSource = readFileSync(
+      `${repoRoot}/components/nutrition-profile/NutritionProfileForm.tsx`,
+      "utf8",
+    );
+    const optionsSource = readFileSync(
+      `${repoRoot}/lib/onboarding/options.ts`,
+      "utf8",
+    );
+
+    expect(formSource).toContain('useState<NutritionSectionId | null>(null)');
+    expect(formSource).toContain("NutritionSection");
+    expect(formSource).toContain("isDirty ?");
+    expect(formSource).toContain('pa26-page-title mb-4">Питание');
+    expect(optionsSource).toContain("Простые продукты");
+    expect(optionsSource).not.toContain("₽ / день");
   });
 
   it("keeps legacy redirects on account stack", () => {

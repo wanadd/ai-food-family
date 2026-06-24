@@ -599,6 +599,7 @@ export function NutritionProfileForm() {
           isDirty ? "pb-32" : "pb-6"
         }`}
       >
+        <h1 className="pa26-page-title mb-4">Питание</h1>
         {content}
         {saveBar}
       </div>
