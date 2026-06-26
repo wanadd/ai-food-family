@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
-import { useToast } from "@/components/ui/ToastProvider";
 import { SkeletonCard, SkeletonList } from "@/components/ui/Skeleton";
 import { useTelegram } from "@/components/TelegramProvider";
 import { formatAmasBalance } from "@/lib/profile/billing";
-import { selectPlanStub } from "@/lib/subscription/api";
 import { AMA_ACTION_LABELS, formatAmaCost } from "@/lib/subscription/ama";
 import type { SubscriptionOverview } from "@/lib/subscription/types";
 
@@ -45,40 +42,16 @@ function planHighlights(plan: SubscriptionOverview["plans"][0]): string[] {
 }
 
 export function SubscriptionDashboard() {
-  const { showToast } = useToast();
   const { initData, isTelegram } = useTelegram();
-  const { mode } = useAppMode();
   const {
     overview: data,
     loading,
     ensureLoaded: ensureSubscriptionLoaded,
-    patchOverview,
   } = useSubscriptionOverview();
-  const [selecting, setSelecting] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (initData) ensureSubscriptionLoaded();
   }, [initData, ensureSubscriptionLoaded]);
-
-  async function handleSelectPlan(planCode: string) {
-    if (!initData) return;
-    setSelecting(planCode);
-    setMessage(null);
-    try {
-      const updated = await selectPlanStub(initData, mode, planCode);
-      patchOverview(updated);
-      await showToast("✓ Тариф сохранён");
-    } catch (err) {
-      setMessage(
-        err instanceof Error
-          ? err.message
-          : "Не получилось сменить тариф. Попробуйте ещё раз через минуту.",
-      );
-    } finally {
-      setSelecting(null);
-    }
-  }
 
   if (!initData && !isTelegram && !loading) {
     return (
@@ -109,12 +82,6 @@ export function SubscriptionDashboard() {
       back={{ label: "Профиль", href: "/profile" }}
       contentClassName="space-y-3"
     >
-        {message ? (
-          <p className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {message}
-          </p>
-        ) : null}
-
         <section className="pa-card border-sage-200 bg-sage-50/50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-sage-700">
             Текущий тариф
@@ -127,10 +94,13 @@ export function SubscriptionDashboard() {
           ) : null}
           {!data.ai_actions_enabled ? (
             <p className="mt-2 text-sm font-medium text-warm">
-              Сейчас AI-действия временно недоступны. Можно выбрать тариф —
-              просмотр меню, покупок и запасов остаётся свободным.
+              Сейчас AI-действия временно недоступны. Для смены тарифа обратитесь
+              к администратору — просмотр меню, покупок и запасов остаётся свободным.
             </p>
           ) : null}
+          <p className="mt-2 text-xs text-graphite-500">
+            Тариф управляется администратором.
+          </p>
         </section>
 
         <section className="grid grid-cols-2 gap-2">
@@ -238,23 +208,12 @@ export function SubscriptionDashboard() {
                       <li key={line}>· {line}</li>
                     ))}
                   </ul>
-                  {!isCurrent &&
-                  (!data.is_family_billing || data.is_family_admin) ? (
-                    <button
-                      type="button"
-                      disabled={Boolean(selecting)}
-                      onClick={() => void handleSelectPlan(plan.code)}
-                      className="mt-3 w-full rounded-control border border-cream-border py-2.5 text-sm font-semibold text-graphite-800 disabled:opacity-50"
-                    >
-                      {selecting === plan.code ? "…" : "Выбрать тариф"}
-                    </button>
-                  ) : null}
                 </li>
               );
             })}
           </ul>
           <p className="mt-2 px-1 text-xs text-graphite-500">
-            Оплата пока не подключена — выбор тарифа для теста без списания.
+            Смена тарифа — только через администратора.
           </p>
         </details>
 

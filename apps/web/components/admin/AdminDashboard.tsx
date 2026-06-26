@@ -279,6 +279,27 @@ export function AdminDashboard({ forcedTab = "summary" }: { forcedTab?: AdminTab
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-semibold text-stone-900">{user.display_name}</p>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                      user.status === "blocked"
+                        ? "bg-red-100 text-red-800"
+                        : user.plan_status === "trial"
+                          ? "bg-amber-100 text-amber-900"
+                          : user.plan_code && user.plan_code !== "trial"
+                            ? "bg-teal-100 text-teal-900"
+                            : "bg-emerald-100 text-emerald-900"
+                    }`}
+                  >
+                    {user.status === "blocked"
+                      ? "Blocked"
+                      : user.plan_status === "trial"
+                        ? "Trial"
+                        : user.plan_code
+                          ? user.plan_code
+                          : "Active"}
+                  </span>
+                </div>
+                <div className="mt-1 flex justify-end">
                   <Link
                     href={`/admin/users/${user.id}`}
                     className="shrink-0 text-xs font-medium text-teal-700"

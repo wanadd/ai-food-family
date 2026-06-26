@@ -83,6 +83,7 @@ export function ShoppingV2() {
     [],
   );
   const [boughtTodayOpen, setBoughtTodayOpen] = useState(false);
+  const [menuLinkedOpen, setMenuLinkedOpen] = useState(false);
   const [loading, setLoading] = useState(list == null);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -147,9 +148,18 @@ export function ShoppingV2() {
     });
   }, [list, filter]);
 
+  const listForMain = useMemo(() => {
+    if (filter === "from-menu") {
+      return filtered;
+    }
+    return filtered.filter(
+      (item) => item.source !== "menu" && item.source !== "recipe",
+    );
+  }, [filtered, filter]);
+
   const groups = useMemo(
-    () => groupShoppingItems(filtered, list?.categories ?? []),
-    [filtered, list?.categories],
+    () => groupShoppingItems(listForMain, list?.categories ?? []),
+    [listForMain, list?.categories],
   );
 
   const uncheckedCount = list ? list.total_count - list.checked_count : 0;
@@ -305,7 +315,7 @@ export function ShoppingV2() {
   }
 
   const emptyList = list && list.total_count === 0;
-  const noResults = list && list.total_count > 0 && filtered.length === 0;
+  const noResults = list && list.total_count > 0 && listForMain.length === 0;
 
   return (
     <div className="pb-6">
@@ -353,27 +363,16 @@ export function ShoppingV2() {
               onClick={() => setFilter(f.id)}
             />
           ))}
-          <V2Chip
-            label={syncing ? "Обновляем…" : "Из меню"}
-            data-testid="shopping-sync-from-menu"
-            onClick={() => void handleSync()}
-          />
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2" aria-label="Действия списка покупок">
+        <div className="mt-3" aria-label="Действия списка покупок">
           <V2Button
             variant="primary"
+            className="w-full"
             data-testid="shopping-add-open-top"
             onClick={() => setAddOpen(true)}
           >
             Добавить товар
-          </V2Button>
-          <V2Button
-            variant="secondary"
-            data-testid="shopping-go-pantry"
-            onClick={() => router.push(PLANAM_ROUTES.pantry)}
-          >
-            Перейти к запасам
           </V2Button>
         </div>
       </div>
@@ -387,42 +386,55 @@ export function ShoppingV2() {
 
         {flowStatus.menuLinkedItems > 0 ? (
           <section className="mb-4" data-testid="shopping-menu-linked">
-            <h2 className="pa26-section-title">Связано с меню</h2>
-            <p className="pa26-micro mt-0.5 text-pa-muted">
-              {flowStatus.menuTitle
-                ? `Для «${flowStatus.menuTitle}»`
-                : `Для ${flowStatus.menuLinkedItems} ${plural(flowStatus.menuLinkedItems, "блюда", "блюд", "блюд")} на этой неделе`}
-            </p>
-            <div className="mt-2 space-y-3">
-              {menuLinkedGroups.map((group) => (
-                <div key={`menu-${group.category}`}>
-                  <h3 className="pa26-micro font-semibold text-pa-muted">
-                    {group.emoji} {group.label}
-                  </h3>
-                  <ul className="mt-1 overflow-hidden rounded-card border border-pa-border/70 bg-pa-surface/80">
-                    {group.items.slice(0, 4).map((item, idx) => (
-                      <li
-                        key={item.id}
-                        className={cn(
-                          "flex items-center justify-between gap-2 px-3 py-2 pa26-caption",
-                          idx > 0 && "border-t border-pa-border/50",
-                        )}
-                      >
-                        <span className="truncate">{normalizeProductName(item.name)}</span>
-                        <span className="shrink-0 text-pa-muted">
-                          {formatProductQuantity({
-                            quantity: item.quantity,
-                            unit: item.unit,
-                            amount: item.amount,
-                            name: item.name,
-                          })}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={() => setMenuLinkedOpen((v) => !v)}
+              className="flex w-full items-center justify-between rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left"
+            >
+              <div>
+                <h2 className="pa26-caption font-semibold">Связано с меню</h2>
+                <p className="pa26-micro mt-0.5 text-pa-muted">
+                  {flowStatus.menuTitle
+                    ? flowStatus.menuTitle
+                    : `${flowStatus.menuLinkedItems} ${plural(flowStatus.menuLinkedItems, "товар", "товара", "товаров")}`}
+                </p>
+              </div>
+              <span className="pa26-micro text-pa-muted">
+                {menuLinkedOpen ? "Свернуть" : "Показать блюда"}
+              </span>
+            </button>
+            {menuLinkedOpen ? (
+              <div className="mt-2 space-y-3">
+                {menuLinkedGroups.map((group) => (
+                  <div key={`menu-${group.category}`}>
+                    <h3 className="pa26-micro font-semibold text-pa-muted">
+                      {group.emoji} {group.label}
+                    </h3>
+                    <ul className="mt-1 overflow-hidden rounded-card border border-pa-border/70 bg-pa-surface/80">
+                      {group.items.map((item, idx) => (
+                        <li
+                          key={item.id}
+                          className={cn(
+                            "flex items-center justify-between gap-2 px-3 py-2 pa26-caption",
+                            idx > 0 && "border-t border-pa-border/50",
+                          )}
+                        >
+                          <span className="truncate">{normalizeProductName(item.name)}</span>
+                          <span className="shrink-0 text-pa-muted">
+                            {formatProductQuantity({
+                              quantity: item.quantity,
+                              unit: item.unit,
+                              amount: item.amount,
+                              name: item.name,
+                            })}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -509,19 +521,12 @@ export function ShoppingV2() {
           </section>
         ) : null}
 
-        <div className="mt-5 space-y-2">
+        <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 mt-5 border-t border-pa-border bg-pa-background/95 px-0 py-3 backdrop-blur-sm">
           <V2Button
             variant="primary"
             size="wide"
-            data-testid="shopping-add-open"
-            onClick={() => setAddOpen(true)}
-          >
-            Добавить продукт
-          </V2Button>
-          <V2Button
-            variant="secondary"
-            size="wide"
             loading={syncing}
+            data-testid="shopping-sync-from-menu-sticky"
             onClick={() => void handleSync()}
           >
             Обновить из меню

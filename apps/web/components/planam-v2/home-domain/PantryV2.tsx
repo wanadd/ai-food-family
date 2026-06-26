@@ -318,16 +318,9 @@ export function PantryV2() {
           className="mt-3 w-full rounded-control border border-pa-border bg-pa-surface px-3 py-2.5 pa26-body outline-none focus:border-sage-400"
         />
 
-        <div className="mt-3 grid grid-cols-2 gap-2" aria-label="Действия запасов">
-          <V2Button variant="primary" onClick={() => setAddOpen(true)}>
+        <div className="mt-3" aria-label="Действия запасов">
+          <V2Button variant="primary" className="w-full" onClick={() => setAddOpen(true)}>
             Добавить продукт
-          </V2Button>
-          <V2Button
-            variant="secondary"
-            data-testid="pantry-go-shopping"
-            onClick={() => router.push(PLANAM_ROUTES.shopping)}
-          >
-            Список покупок
           </V2Button>
         </div>
 
@@ -465,12 +458,9 @@ export function PantryV2() {
           </>
         ) : null}
 
-        <div className="mt-5 space-y-2">
-          <V2Button variant="primary" size="wide" onClick={() => setAddOpen(true)}>
-            Добавить продукт
-          </V2Button>
+        <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 mt-5 border-t border-pa-border bg-pa-background/95 py-3 backdrop-blur-sm">
           <V2Button
-            variant="secondary"
+            variant="primary"
             size="wide"
             data-testid="pantry-cook-from-available"
             onClick={() =>

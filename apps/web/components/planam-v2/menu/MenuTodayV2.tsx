@@ -6,7 +6,7 @@
  * компактные rows c thumb и «+» quick actions (bottom sheet).
  */
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { MealOutcomeSheet2026 } from "@/components/dom-2026/MealOutcomeSheet2026";
@@ -78,6 +78,7 @@ type CachedSelected = { menu: MenuVariant | null; selected_at: string | null };
 
 export function MenuTodayV2() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { initData, user } = useTelegram();
   const { mode, context, loading: modeLoading } = useAppMode();
@@ -98,6 +99,7 @@ export function MenuTodayV2() {
   const [actionMeal, setActionMeal] = useState<PlanTodayMeal | null>(null);
   const [portionMultiplier, setPortionMultiplier] = useState(1);
   const [shoppingBusy, setShoppingBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [ateOtherMeal, setAteOtherMeal] = useState<PlanTodayMeal | null>(null);
   const [skipBusy, setSkipBusy] = useState(false);
   const [checkinBusy, setCheckinBusy] = useState<string | null>(null);
@@ -620,21 +622,29 @@ export function MenuTodayV2() {
             ) : null}
             {actionMeal.slotId ? (
               <SheetAction
-                label="Удалить из меню"
+                label={deleteBusy ? "Удаляем…" : "Удалить из меню"}
                 destructive
                 onClick={async () => {
-                  if (!initData || !actionMeal.slotId) {
+                  if (!initData || !actionMeal.slotId || deleteBusy) {
                     return;
                   }
+                  setDeleteBusy(true);
                   try {
                     await deleteMenuItem(initData, mode, actionMeal.slotId);
                     invalidateCache(cacheKey.menuOverview(mode));
                     invalidateCache(cacheKey.selectedMenu(mode));
                     showToast("Блюдо удалено из меню");
                     setActionMeal(null);
+                    const params = new URLSearchParams(searchParams.toString());
+                    params.delete("action");
+                    params.delete("meal");
+                    const qs = params.toString();
+                    router.replace(qs ? `${pathname}?${qs}` : pathname);
                     await load();
                   } catch {
                     showToast("Не удалось удалить блюдо. Попробуйте ещё раз.");
+                  } finally {
+                    setDeleteBusy(false);
                   }
                 }}
               />

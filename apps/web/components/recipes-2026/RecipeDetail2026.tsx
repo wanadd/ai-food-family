@@ -249,14 +249,23 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
     if (!initData || !recipe) {
       return;
     }
+    const count = ingredients.length;
+    if (count === 0) {
+      showToast("Нет ингредиентов для добавления");
+      return;
+    }
     setShoppingBusy(true);
     try {
       await addRecipeToShopping(initData, recipe.id, undefined, mode);
       invalidateCache("shopping-list");
       invalidateCache("menu-overview");
-      showToast("Ингредиенты добавлены в список покупок");
+      showToast(
+        count === 1
+          ? "1 товар добавлен в покупки"
+          : `${count} товаров добавлено в покупки`,
+      );
     } catch {
-      showToast("Не удалось добавить ингредиенты. Попробуйте ещё раз.");
+      showToast("Не удалось добавить в покупки. Попробуйте ещё раз.");
     } finally {
       setShoppingBusy(false);
     }

@@ -1,16 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 
-import { useAppMode } from "@/components/app-mode/AppModeProvider";
-import { PlanCard2026 } from "@/components/monetization-2026/PlanCard2026";
 import { SubscriptionOffline2026 } from "@/components/monetization-2026/SubscriptionOffline2026";
 import { TrialStatus2026 } from "@/components/monetization-2026/TrialStatus2026";
-import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { Card2026 } from "@/components/planam-2026/ui/Card2026";
-import { EmptyState2026 } from "@/components/planam-2026/ui/EmptyState2026";
 import { Skeleton2026 } from "@/components/planam-2026/ui/Skeleton2026";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
 import { useTelegram } from "@/components/TelegramProvider";
@@ -18,27 +13,13 @@ import {
   formatPeriodEnd,
   isOnTrial,
 } from "@/lib/monetization/billing-status";
-import {
-  catalogEntryForCode,
-  filterRetailPlans,
-  isDowngradePlan,
-  isRetailPlanCode,
-  planDisplayName,
-  sortRetailPlans,
-} from "@/lib/monetization/plan-catalog-2026";
-import {
-  MONETIZATION_PATHS,
-  subscriptionCheckoutPath,
-} from "@/lib/monetization/paths";
+import { planDisplayName } from "@/lib/monetization/plan-catalog-2026";
+import { MONETIZATION_PATHS } from "@/lib/monetization/paths";
 import { PLAN_CATALOG_2026 } from "@/lib/monetization/plan-catalog-2026";
 import { formatAmasBalance } from "@/lib/profile/billing";
 
 export function SubscriptionHub2026() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const highlight = searchParams.get("highlight");
-  const { initData, isTelegram } = useTelegram();
-  const { mode } = useAppMode();
+  const { initData } = useTelegram();
   const {
     overview: data,
     loading,
@@ -46,24 +27,12 @@ export function SubscriptionHub2026() {
     ensureLoaded,
     refresh,
   } = useSubscriptionOverview();
-  const [selecting, setSelecting] = useState<string | null>(null);
 
   useEffect(() => {
     if (initData) {
       ensureLoaded();
     }
   }, [initData, ensureLoaded]);
-
-  const retailPlans = useMemo(() => {
-    if (!data?.plans) {
-      return [];
-    }
-    return sortRetailPlans(filterRetailPlans(data.plans));
-  }, [data?.plans]);
-
-  function handleUpgrade(planCode: string) {
-    router.push(subscriptionCheckoutPath(planCode));
-  }
 
   if (!initData) {
     return <SubscriptionOffline2026 />;
@@ -145,43 +114,18 @@ export function SubscriptionHub2026() {
       </div>
 
       <section>
-        <h2 className="pa26-section-title px-1">Тарифы</h2>
-        <p className="pa26-caption mb-3 px-1 text-pa-muted">
-          Старт · Пара · Семья · PRO — без скрытых комиссий
-        </p>
-        <div className="space-y-3">
-          {retailPlans.map((apiPlan) => {
-            const catalog = catalogEntryForCode(apiPlan.code);
-            if (!catalog) {
-              return null;
-            }
-            const isHighlight =
-              highlight === apiPlan.code ||
-              (highlight === "pro" && catalog.isPro);
-            return (
-              <div
-                key={apiPlan.code}
-                id={isHighlight ? "plan-highlight" : undefined}
-                className={
-                  isHighlight ? "scroll-mt-4 rounded-card ring-2 ring-sage-400/60" : undefined
-                }
-              >
-                <PlanCard2026
-                  catalog={catalog}
-                  apiPlan={apiPlan}
-                  isCurrent={apiPlan.is_current}
-                  isDowngrade={isDowngradePlan(data.plan_code, apiPlan.code)}
-                  selecting={selecting === apiPlan.code}
-                  onSelect={(code) => {
-                    setSelecting(code);
-                    handleUpgrade(code);
-                    setSelecting(null);
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
+        <h2 className="pa26-section-title px-1">Тариф</h2>
+        <Card2026 padding="md">
+          <p className="pa26-body text-pa-muted">
+            Смена тарифа доступна только через администратора. Напишите в поддержку,
+            если нужно изменить план или продлить доступ.
+          </p>
+          {trial && periodEnd ? (
+            <p className="pa26-caption mt-2 text-pa-muted">
+              Стартовый доступ до {periodEnd}
+            </p>
+          ) : null}
+        </Card2026>
       </section>
 
       <Card2026 className="border-dashed">
@@ -193,22 +137,7 @@ export function SubscriptionHub2026() {
             </li>
           ))}
         </ul>
-        {data.plan_code !== "pro" ? (
-          <Button2026
-            size="wide"
-            className="mt-4"
-            data-testid="subscription-upgrade-cta"
-            onClick={() => handleUpgrade("pro")}
-          >
-            Перейти на PRO
-          </Button2026>
-        ) : null}
       </Card2026>
-
-      <p className="px-1 text-center pa26-micro text-pa-muted">
-        Оплата картой и Telegram Stars — в следующем обновлении. Сейчас выбор
-        тарифа сохраняется в приложении.
-      </p>
     </div>
   );
 }

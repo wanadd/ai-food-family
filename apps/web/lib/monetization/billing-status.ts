@@ -105,8 +105,8 @@ export function buildHomeMonetizationBanner(
     return {
       id: "trial_ending",
       title: "Пробный период заканчивается",
-      description: `${daysText} · ${overview.ama_balance} Амов — сохраните ритм без спешки.`,
-      ctaLabel: "Посмотреть тарифы",
+      description: `${daysText} · ${overview.ama_balance} Амов. Для продления обратитесь к администратору.`,
+      ctaLabel: "Ваш тариф",
       href: MONETIZATION_PATHS.subscription,
       tone: "soft",
     };
@@ -117,8 +117,8 @@ export function buildHomeMonetizationBanner(
       id: "trial_ended",
       title: "Пробный период завершён",
       description:
-        "Выберите тариф, чтобы продолжить генерации и AI без ограничений.",
-      ctaLabel: "Выбрать тариф",
+        "Доступ к расширенным функциям ограничен. Для продления обратитесь к администратору.",
+      ctaLabel: "Ваш тариф",
       href: MONETIZATION_PATHS.subscription,
       tone: "soft",
     };
@@ -128,8 +128,8 @@ export function buildHomeMonetizationBanner(
     return {
       id: "low_amas",
       title: "Амов почти не осталось",
-      description: `На балансе ${overview.ama_balance} — хватит на 1–2 действия. Тариф PRO даёт больше каждый месяц.`,
-      ctaLabel: "Баланс и тарифы",
+      description: `На балансе ${overview.ama_balance} — хватит на 1–2 действия. Тариф управляется администратором.`,
+      ctaLabel: "Баланс",
       href: MONETIZATION_PATHS.ams,
       tone: "neutral",
     };

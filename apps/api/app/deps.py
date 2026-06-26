@@ -68,7 +68,7 @@ def get_current_user(
         if getattr(user, "is_deleted", False) or getattr(user, "is_blocked", False):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Доступ временно ограничен",
+                detail="Аккаунт ограничен. Напишите в поддержку.",
             )
         return user
 
@@ -84,12 +84,12 @@ def get_current_user(
     if getattr(user, "is_deleted", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Доступ временно ограничен",
+            detail="Аккаунт ограничен. Напишите в поддержку.",
         )
     if getattr(user, "is_blocked", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Доступ временно ограничен",
+            detail="Аккаунт ограничен. Напишите в поддержку.",
         )
     return user
 
@@ -100,7 +100,7 @@ def get_verified_user(
     if getattr(user, "is_blocked", False) or getattr(user, "is_deleted", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Доступ временно ограничен",
+            detail="Аккаунт ограничен. Напишите в поддержку.",
         )
     from app.services import family as family_service
 
@@ -110,7 +110,7 @@ def get_verified_user(
         if family and getattr(family, "is_blocked", False):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Доступ временно ограничен",
+                detail="Аккаунт ограничен. Напишите в поддержку.",
             )
     if not user_can_access_app(user):
         from app.services.legal_consent import user_has_legal_consent
