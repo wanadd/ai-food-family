@@ -116,6 +116,15 @@ describe("sprint 1.8g admin hotfix", () => {
     expect(source).toContain("Trial");
   });
 
+  it("checkout stub has no self-service plan select", () => {
+    const source = readFileSync(
+      `${repoRoot}/components/monetization-2026/PaymentStub2026.tsx`,
+      "utf8",
+    );
+    expect(source).not.toContain("selectPlanStub");
+    expect(source).toContain("администратором");
+  });
+
   it("pantry synonyms normalize картошка to картофель", () => {
     expect(PANTRY_SYNONYMS["картошка"]).toBe("картофель");
     expect(normalizePantryMatchKey("Картошка")).toBe("картофель");
