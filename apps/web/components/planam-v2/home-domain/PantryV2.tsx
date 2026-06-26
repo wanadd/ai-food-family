@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { stripAuditSuffix } from "@/lib/display/sanitize-label";
 
+import { CookFromPantryBlockV2 } from "@/components/planam-v2/home-domain/CookFromPantryBlockV2";
 import { HomeDomainSegmentV2 } from "@/components/planam-v2/home-domain/HomeDomainSegmentV2";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -28,7 +29,8 @@ import {
   invalidate as invalidateCache,
   setCached,
 } from "@/lib/cache/session-cache";
-import { isExcessPantryItem } from "@/lib/dom/pantry-sections";
+import { groupPantryItems } from "@/lib/dom/pantry-groups";
+import { withReturnTo } from "@/lib/navigation/return-to";
 import { cn } from "@/lib/planam/cn";
 import {
   detectProductCategory,
@@ -53,14 +55,16 @@ import { fetchShoppingCategories } from "@/lib/shopping/api";
 import { SHOPPING_CATEGORIES_V1 } from "@/lib/shopping/categories-v1";
 import { categoryMeta } from "@/lib/shopping/labels";
 import type { ShoppingCategory } from "@/lib/shopping/types";
+import { fetchRecipesFromPantry } from "@/lib/recipes/api";
+import type { FromPantryRecipe } from "@/lib/recipes/types";
 
-type PantryV2Filter = "all" | "expiring" | "excess" | "expired";
+type PantryV2Filter = "all" | "products" | "prepared" | "expiring";
 
 const FILTERS: { id: PantryV2Filter; label: string }[] = [
   { id: "all", label: "Все" },
-  { id: "expiring", label: "Скоро заканчивается" },
-  { id: "excess", label: "Много" },
-  { id: "expired", label: "Просрочено" },
+  { id: "products", label: "Продукты" },
+  { id: "prepared", label: "Готовые блюда" },
+  { id: "expiring", label: "Скоро закончится" },
 ];
 
 export function PantryV2() {
@@ -85,6 +89,8 @@ export function PantryV2() {
   const [addOpen, setAddOpen] = useState(false);
   const [draft, setDraft] = useState<PantryItemDraft>(EMPTY_PANTRY_DRAFT);
   const [preparedLoadError, setPreparedLoadError] = useState<string | null>(null);
+  const [fromPantryRecipes, setFromPantryRecipes] = useState<FromPantryRecipe[]>([]);
+  const [fromPantryLoading, setFromPantryLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!initData) {
@@ -104,6 +110,12 @@ export function PantryV2() {
       });
       setItems(data.items);
       setCategories(cats);
+
+      setFromPantryLoading(true);
+      void fetchRecipesFromPantry(initData, mode)
+        .then((data) => setFromPantryRecipes(data.items ?? []))
+        .catch(() => setFromPantryRecipes([]))
+        .finally(() => setFromPantryLoading(false));
 
       try {
         const stocks = await fetchStocksOverview(initData, mode, {
@@ -151,22 +163,39 @@ export function PantryV2() {
       if (q && !item.name.toLowerCase().includes(q)) {
         return false;
       }
-      switch (filter) {
-        case "expiring":
-          return (
-            !item.is_expired &&
-            item.expires_at != null &&
-            item.days_until_expiry <= 3
-          );
-        case "excess":
-          return !item.is_expired && isExcessPantryItem(item);
-        case "expired":
-          return item.is_expired;
-        default:
-          return !item.is_expired;
+      if (filter === "expiring") {
+        return (
+          !item.is_expired &&
+          item.expires_at != null &&
+          item.days_until_expiry <= 3
+        );
       }
+      if (filter === "products" || filter === "all") {
+        return !item.is_expired;
+      }
+      return !item.is_expired;
     });
   }, [items, search, filter]);
+
+  const productGroups = useMemo(
+    () => groupPantryItems(filtered, categories),
+    [filtered, categories],
+  );
+
+  const expiringSoonCount = useMemo(
+    () =>
+      items.filter(
+        (i) =>
+          !i.is_expired &&
+          i.expires_at != null &&
+          i.days_until_expiry <= 3,
+      ).length,
+    [items],
+  );
+
+  const showProducts = filter === "all" || filter === "products" || filter === "expiring";
+  const showPrepared = filter === "all" || filter === "prepared";
+  const showCookBlock = filter === "all" || filter === "products";
 
   async function handleDelete(item: PantryItem) {
     if (!initData) {
@@ -256,11 +285,28 @@ export function PantryV2() {
     <div className="pb-6">
       <div className="px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <h1 className="pa26-page-title">Запасы</h1>
-        <p className="pa26-micro mt-0.5 text-pa-muted">
-          {activeCount > 0
-            ? `${activeCount} ${plural(activeCount, "продукт", "продукта", "продуктов")} дома`
-            : "Продукты, которые уже есть дома"}
-        </p>
+
+        <div
+          className="mt-2 space-y-1 rounded-card border border-pa-border bg-pa-surface px-3 py-2.5"
+          data-testid="pantry-status-strip"
+        >
+          <p className="pa26-caption text-pa-foreground">
+            {activeCount > 0
+              ? `${activeCount} ${plural(activeCount, "продукт", "продукта", "продуктов")}`
+              : "Продукты, которые уже есть дома"}
+          </p>
+          {expiringSoonCount > 0 ? (
+            <p className="pa26-micro text-warm">
+              {expiringSoonCount} скоро закончатся
+            </p>
+          ) : null}
+          {preparedDishes.length > 0 ? (
+            <p className="pa26-micro text-pa-muted">
+              {preparedDishes.length}{" "}
+              {plural(preparedDishes.length, "готовое блюдо", "готовых блюда", "готовых блюд")}
+            </p>
+          ) : null}
+        </div>
 
         <HomeDomainSegmentV2 active="pantry" className="mt-3" />
 
@@ -278,10 +324,10 @@ export function PantryV2() {
           </V2Button>
           <V2Button
             variant="secondary"
-            data-testid="pantry-cook-from-available-top"
-            onClick={() => router.push(`${PLANAM_ROUTES.recipes}?from_pantry=true`)}
+            data-testid="pantry-go-shopping"
+            onClick={() => router.push(PLANAM_ROUTES.shopping)}
           >
-            Приготовить из запасов
+            Список покупок
           </V2Button>
         </div>
 
@@ -292,8 +338,8 @@ export function PantryV2() {
               label={f.label}
               active={filter === f.id}
               data-testid={
-                f.id === "excess"
-                  ? "pantry-filter-many"
+                f.id === "expiring"
+                  ? "pantry-filter-expiring"
                   : `pantry-filter-${f.id}`
               }
               onClick={() => setFilter(f.id)}
@@ -309,40 +355,65 @@ export function PantryV2() {
           </p>
         ) : null}
 
-        <h2 className="pa26-section-title">Продукты</h2>
+        {showCookBlock ? (
+          <div className="mb-5">
+            <CookFromPantryBlockV2
+              recipes={fromPantryRecipes}
+              loading={fromPantryLoading}
+              returnTo={PLANAM_ROUTES.pantry}
+            />
+          </div>
+        ) : null}
 
-        {items.length === 0 ? (
-          <V2EmptyState
-            icon={<span aria-hidden>📦</span>}
-            title="Добавим первые продукты?"
-            description="PLANAM будет точнее составлять меню и покупки, если знает, что уже есть дома. Начните с 5–10 продуктов — остальное добавим позже."
-            actionLabel="Добавить продукт"
-            onAction={() => setAddOpen(true)}
-          />
-        ) : filtered.length === 0 ? (
-          <V2EmptyState
-            title="Ничего не нашли"
-            description="Попробуйте другой запрос или фильтр."
-            actionLabel="Показать все"
-            onAction={() => {
-              setSearch("");
-              setFilter("all");
-            }}
-          />
-        ) : (
-          <ul className="overflow-hidden rounded-card border border-pa-border bg-pa-surface">
-            {filtered.map((item, idx) => (
-              <PantryRowV2
-                key={item.id}
-                item={item}
-                divider={idx > 0}
-                onClick={() => setSelected(item)}
+        {showProducts ? (
+          <>
+            <h2 className="pa26-section-title">Продукты</h2>
+
+            {items.length === 0 ? (
+              <V2EmptyState
+                icon={<span aria-hidden>📦</span>}
+                title="Добавим первые продукты?"
+                description="PLANAM будет точнее составлять меню и покупки, если знает, что уже есть дома."
+                actionLabel="Добавить продукт"
+                onAction={() => setAddOpen(true)}
               />
-            ))}
-          </ul>
-        )}
+            ) : filtered.length === 0 ? (
+              <V2EmptyState
+                title="Ничего не нашли"
+                description="Попробуйте другой запрос или фильтр."
+                actionLabel="Показать все"
+                onAction={() => {
+                  setSearch("");
+                  setFilter("all");
+                }}
+              />
+            ) : (
+              <div className="space-y-4" data-testid="pantry-product-groups">
+                {productGroups.map((group) => (
+                  <section key={group.category}>
+                    <h3 className="pa26-micro font-semibold text-pa-muted">
+                      {group.emoji} {group.label}
+                    </h3>
+                    <ul className="mt-2 overflow-hidden rounded-card border border-pa-border bg-pa-surface">
+                      {group.items.map((item, idx) => (
+                        <PantryRowV2
+                          key={item.id}
+                          item={item}
+                          divider={idx > 0}
+                          onClick={() => setSelected(item)}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            )}
+          </>
+        ) : null}
 
-        <h2 className="pa26-section-title mt-6">Готовая еда</h2>
+        {showPrepared ? (
+          <>
+            <h2 className="pa26-section-title mt-6">Готовая еда</h2>
 
         {preparedLoadError ? (
           <p className="mb-2 rounded-card border border-pa-error/30 bg-pa-error/5 px-3 py-2 pa26-caption text-pa-error">
@@ -391,6 +462,8 @@ export function PantryV2() {
             ))}
           </ul>
         )}
+          </>
+        ) : null}
 
         <div className="mt-5 space-y-2">
           <V2Button variant="primary" size="wide" onClick={() => setAddOpen(true)}>
@@ -400,9 +473,11 @@ export function PantryV2() {
             variant="secondary"
             size="wide"
             data-testid="pantry-cook-from-available"
-            onClick={() => router.push(`${PLANAM_ROUTES.recipes}?from_pantry=true`)}
+            onClick={() =>
+              router.push(withReturnTo(PLANAM_ROUTES.homeLeftovers, PLANAM_ROUTES.pantry))
+            }
           >
-            Приготовить из того, что есть
+            Что приготовить
           </V2Button>
         </div>
       </div>
@@ -450,7 +525,9 @@ export function PantryV2() {
               size="wide"
               onClick={() => {
                 setSelected(null);
-                router.push(PLANAM_ROUTES.homeLeftovers);
+                router.push(
+                  withReturnTo(PLANAM_ROUTES.homeLeftovers, PLANAM_ROUTES.pantry),
+                );
               }}
             >
               Найти рецепт

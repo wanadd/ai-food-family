@@ -62,6 +62,12 @@ export function getBackFallback2026(pathname: string): string {
   ) {
     return "/account";
   }
+  if (pathname.startsWith("/home/leftovers") || pathname.startsWith("/shopping/leftovers")) {
+    return "/home/pantry";
+  }
+  if (pathname.startsWith("/home/pantry") || pathname.startsWith("/shopping/pantry")) {
+    return "/home/shopping";
+  }
   if (pathname.startsWith("/home/")) {
     return "/";
   }
