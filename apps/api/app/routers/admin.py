@@ -23,6 +23,7 @@ from app.schemas.admin import (
     AdminGrantAmsRequest,
     AdminGrantFamilyAmsRequest,
     AdminGrantResponse,
+    AdminHardDeleteRequest,
     AdminGrantSubscriptionRequest,
     AdminOpenAiStats,
     AdminPingResponse,
@@ -87,7 +88,7 @@ def admin_delete_user(
     db: Session = Depends(get_db),
 ) -> AdminGrantResponse:
     manage.delete_user(db, user_id=user_id, admin=admin)
-    return AdminGrantResponse(user_id=user_id, message="Пользователь удалён")
+    return AdminGrantResponse(user_id=user_id, message="Пользователь архивирован (скрыт из списка)")
 
 
 @router.post("/users/{user_id}/block", response_model=AdminGrantResponse)
@@ -109,6 +110,42 @@ def admin_unblock_user(
 ) -> AdminGrantResponse:
     manage.unblock_user(db, user_id=user_id, admin=admin)
     return AdminGrantResponse(user_id=user_id, message="Пользователь разблокирован")
+
+
+@router.post("/users/{user_id}/clear-data", response_model=AdminGrantResponse)
+def admin_clear_user_data(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.clear_user_data(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(user_id=user_id, message="Данные пользователя очищены")
+
+
+@router.post("/users/{user_id}/reset-as-new", response_model=AdminGrantResponse)
+def admin_reset_user_as_new(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.reset_user_as_new(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(
+        user_id=user_id,
+        message="Пользователь сброшен. При следующем входе создастся новый аккаунт с 7 днями доступа.",
+    )
+
+
+@router.post("/users/{user_id}/hard-delete", response_model=AdminGrantResponse)
+def admin_hard_delete_user(
+    user_id: int,
+    payload: AdminHardDeleteRequest,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.hard_delete_user(
+        db, user_id=user_id, admin=admin, confirmation=payload.confirmation
+    )
+    return AdminGrantResponse(user_id=user_id, message="Пользователь удалён навсегда")
 
 
 @router.post("/users/{user_id}/reset/onboarding", response_model=AdminGrantResponse)

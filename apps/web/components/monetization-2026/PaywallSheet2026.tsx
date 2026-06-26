@@ -6,30 +6,13 @@ import { BottomSheet2026 } from "@/components/planam-2026/ui/BottomSheet2026";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import type { PaywallOpenOptions } from "@/lib/monetization/paywall";
 import { paywallCopy } from "@/lib/monetization/paywall";
-import {
-  MONETIZATION_PATHS,
-  subscriptionCheckoutPath,
-} from "@/lib/monetization/paths";
-import type { RetailPlanCode } from "@/lib/monetization/plan-catalog-2026";
+import { MONETIZATION_PATHS } from "@/lib/monetization/paths";
 
 type PaywallSheet2026Props = {
   open: boolean;
   options: PaywallOpenOptions | null;
   onClose: () => void;
 };
-
-function defaultPlanForReason(
-  reason: PaywallOpenOptions["reason"],
-  suggested?: RetailPlanCode,
-): RetailPlanCode {
-  if (suggested) {
-    return suggested;
-  }
-  if (reason === "pro_feature") {
-    return "pro";
-  }
-  return "personal";
-}
 
 export function PaywallSheet2026({
   open,
@@ -43,22 +26,10 @@ export function PaywallSheet2026({
   }
 
   const copy = paywallCopy(options.reason, options.featureLabel);
-  const planCode = defaultPlanForReason(
-    options.reason,
-    options.suggestedPlanCode,
-  );
 
-  function goPlans() {
+  function goSubscription() {
     onClose();
-    const q = options?.returnTo
-      ? `?returnTo=${encodeURIComponent(options.returnTo)}`
-      : "";
-    router.push(`${MONETIZATION_PATHS.subscription}${q}`);
-  }
-
-  function goCheckout() {
-    onClose();
-    router.push(subscriptionCheckoutPath(planCode));
+    router.push(MONETIZATION_PATHS.subscription);
   }
 
   function goAms() {
@@ -70,11 +41,11 @@ export function PaywallSheet2026({
     <BottomSheet2026 open={open} title={copy.title} onClose={onClose}>
       <p className="pa26-body text-pa-muted">{copy.description}</p>
       <div className="mt-5 flex flex-col gap-2">
-        <Button2026 size="wide" onClick={goCheckout}>
+        <Button2026 size="wide" onClick={onClose}>
           {copy.primaryCta}
         </Button2026>
-        <Button2026 size="wide" variant="secondary" onClick={goPlans}>
-          Сравнить тарифы
+        <Button2026 size="wide" variant="secondary" onClick={goSubscription}>
+          Ваш тариф
         </Button2026>
         {copy.amsLinkLabel ? (
           <button

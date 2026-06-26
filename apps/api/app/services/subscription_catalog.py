@@ -2,8 +2,8 @@
 
 from typing import Any
 
-# PLANAM 2026 (DR-001): 3-day trial, 50 welcome AMS — see docs/PLANAM_2026_DECISION_RECORD.md
-TRIAL_DAYS = 3
+# PLANAM 2026: 7-day starter access for new users
+TRIAL_DAYS = 7
 TRIAL_MENU_GENERATIONS = 5
 TRIAL_WELCOME_AMS = 50
 

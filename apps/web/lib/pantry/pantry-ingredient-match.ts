@@ -3,10 +3,12 @@
  * Exact normalized name + simple singular/plural variants only — no fuzzy substring.
  */
 
+import { normalizePantryMatchKey } from "@/lib/pantry/pantry-synonyms";
+
 export type IngredientPantryStatus = "home" | "buy" | "unknown";
 
 function normalizeKey(name: string): string {
-  return name.trim().toLowerCase().replace(/\s+/g, " ");
+  return normalizePantryMatchKey(name);
 }
 
 /** Minimal RU plural/singular keys for exact-set lookup. */

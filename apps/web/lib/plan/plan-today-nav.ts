@@ -97,5 +97,6 @@ export function buildPlanTodaySearchParams(
   next.delete("replace");
   next.delete("outcome");
   next.delete("saved");
+  next.delete("action");
   return next;
 }

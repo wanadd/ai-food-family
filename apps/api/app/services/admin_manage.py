@@ -343,6 +343,7 @@ def unblock_user(db: Session, *, user_id: int, admin: User) -> dict:
 
 
 def delete_user(db: Session, *, user_id: int, admin: User) -> dict:
+    """Soft-archive user (hidden from admin list). Does not block."""
     target = _get_user_or_404(db, user_id)
     _guard_delete_user(db, target, admin)
 
@@ -361,18 +362,84 @@ def delete_user(db: Session, *, user_id: int, admin: User) -> dict:
     target.is_deleted = True
     target.deleted_at = _now()
     target.deleted_by_admin_id = admin.id
-    target.is_blocked = True
     db.commit()
 
     log_admin_action(
         db,
         admin_user_id=admin.id,
-        action_type="user_delete",
+        action_type="user_archive",
         target_type="user",
         target_id=user_id,
         metadata={"telegram_id": target.telegram_id},
     )
-    return {"user_id": user_id, "deleted": True}
+    return {"user_id": user_id, "archived": True}
+
+
+def clear_user_data(db: Session, *, user_id: int, admin: User) -> dict:
+    from app.services.user_data_purge import purge_user_data
+
+    target = _get_user_or_404(db, user_id)
+    _guard_target_user(db, target, admin)
+    stats = purge_user_data(db, target.id, include_subscriptions=False)
+    target.is_blocked = False
+    target.blocked_at = None
+    target.blocked_reason = None
+    db.commit()
+    log_admin_action(
+        db,
+        admin_user_id=admin.id,
+        action_type="user_clear_data",
+        target_type="user",
+        target_id=user_id,
+        metadata=stats,
+    )
+    return {"user_id": user_id, "cleared": stats}
+
+
+def reset_user_as_new(db: Session, *, user_id: int, admin: User) -> dict:
+    from app.services.user_data_purge import hard_delete_user_row, purge_user_data
+
+    target = db.get(User, user_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _guard_delete_user(db, target, admin)
+    telegram_id = target.telegram_id
+    purge_user_data(db, target.id, include_subscriptions=True)
+    hard_delete_user_row(db, target)
+    db.commit()
+    log_admin_action(
+        db,
+        admin_user_id=admin.id,
+        action_type="user_reset_as_new",
+        target_type="user",
+        target_id=user_id,
+        metadata={"telegram_id": telegram_id},
+    )
+    return {"user_id": user_id, "reset": True, "telegram_id": telegram_id}
+
+
+def hard_delete_user(
+    db: Session,
+    *,
+    user_id: int,
+    admin: User,
+    confirmation: str,
+) -> dict:
+    if confirmation.strip() != "DELETE":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Подтвердите вводом DELETE",
+        )
+    result = reset_user_as_new(db, user_id=user_id, admin=admin)
+    log_admin_action(
+        db,
+        admin_user_id=admin.id,
+        action_type="user_hard_delete",
+        target_type="user",
+        target_id=user_id,
+        metadata={"telegram_id": result.get("telegram_id")},
+    )
+    return result
 
 
 def reset_user_onboarding(db: Session, *, user_id: int, admin: User) -> dict:

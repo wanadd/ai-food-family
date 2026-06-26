@@ -169,35 +169,6 @@ export function HomeV2() {
         }}
       />
 
-      <section className="px-4 pt-3" aria-label="Быстрые действия">
-        <div className="grid grid-cols-2 gap-2">
-          <V2Button
-            variant="primary"
-            onClick={() => router.push(PLANAM_ROUTES.planToday)}
-          >
-            Открыть меню
-          </V2Button>
-          <V2Button
-            variant="secondary"
-            onClick={() => router.push(PLANAM_ROUTES.shopping)}
-          >
-            Список покупок
-          </V2Button>
-          <V2Button
-            variant="secondary"
-            onClick={() => router.push(PLANAM_ROUTES.pantry)}
-          >
-            Запасы
-          </V2Button>
-          <V2Button
-            variant="secondary"
-            onClick={() => router.push(PLANAM_ROUTES.wellness)}
-          >
-            Здоровье
-          </V2Button>
-        </div>
-      </section>
-
       <section className="px-4 pt-2" aria-label="Статусы дня">
         <ul className="grid grid-cols-3 gap-2">
           <StatusCard

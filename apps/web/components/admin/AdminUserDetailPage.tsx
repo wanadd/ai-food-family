@@ -89,7 +89,10 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
         </p>
         <p className="mt-1 text-xs text-stone-600">
           {card.family_name ? `Семья: ${card.family_name}` : "Без семьи"} ·{" "}
-          {card.is_blocked ? "заблокирован" : "активен"}
+          <span className={card.is_blocked ? "text-red-700 font-semibold" : "text-emerald-700 font-semibold"}>
+            {card.is_blocked ? "Заблокирован" : "Активен"}
+          </span>
+          {sub ? ` · ${sub.plan_code} (${sub.status})` : " · без подписки"}
         </p>
         <p className="text-[11px] text-stone-400">
           Рег: {formatDate(card.created_at)} · Активность:{" "}
@@ -199,13 +202,13 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
                 run(() =>
                   adminUserSubscription(initData || null, userId, "grant", {
                     plan_code: "trial",
-                    days: Number(days) || 14,
+                    days: 7,
                     as_trial: true,
                   }),
                 )
               }
             >
-              Пробный период
+              Пробный 7 дней
             </button>
           </div>
         </div>
@@ -329,13 +332,42 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
         )}
         <AdminConfirmDialog
           danger
-          triggerLabel="Удалить пользователя"
-          title={`Удалить пользователя ${card.display_name}?`}
-          description="Будут удалены личные данные пользователя, личные меню, покупки, запасы, профиль питания и сессии. Если пользователь состоит в семье, он будет удалён из семьи. Семейные данные других участников не удаляются."
-          confirmLabel="Удалить"
+          triggerLabel="Очистить данные"
+          title={`Очистить данные ${card.display_name}?`}
+          description="Меню, покупки, запасы и настройки будут сброшены. Telegram-аккаунт останется."
+          confirmLabel="Очистить"
           onConfirm={() =>
-            run(() => adminUserAction(initData || null, userId, "", "DELETE"))
+            run(() => adminUserAction(initData || null, userId, "/clear-data", "POST"))
           }
+        />
+        <AdminConfirmDialog
+          danger
+          triggerLabel="Сбросить как нового"
+          title={`Сбросить ${card.display_name} как нового?`}
+          description="Удалит аккаунт и все данные. При следующем входе в Telegram создастся новый пользователь с 7 днями стартового доступа."
+          confirmLabel="Сбросить"
+          onConfirm={() =>
+            run(() => adminUserAction(initData || null, userId, "/reset-as-new", "POST"))
+          }
+        />
+        <AdminConfirmDialog
+          danger
+          triggerLabel="Удалить навсегда"
+          title={`Удалить ${card.display_name} навсегда?`}
+          description='Введите DELETE в поле подтверждения на следующем шаге. Действие необратимо.'
+          confirmLabel="Далее"
+          onConfirm={() => {
+            const typed = window.prompt('Введите DELETE для подтверждения');
+            if (typed !== "DELETE") {
+              setError("Подтверждение не совпало");
+              return;
+            }
+            void run(() =>
+              adminUserAction(initData || null, userId, "/hard-delete", "POST", {
+                confirmation: "DELETE",
+              }),
+            );
+          }}
         />
       </section>
     </div>

@@ -359,6 +359,12 @@ async def handle_start(
         language_code=from_user.get("language_code"),
     )
 
+    if getattr(user, "is_blocked", False) or getattr(user, "is_deleted", False):
+        await send_telegram_message(
+            chat_id, "Аккаунт ограничен. Напишите в поддержку."
+        )
+        return
+
     if _is_invite_flow_start(text):
         await handle_invite_family_button(db, chat_id, from_user)
         return
@@ -865,7 +871,9 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
         )
 
     if getattr(user, "is_deleted", False) or getattr(user, "is_blocked", False):
-        await send_telegram_message(chat_id, "Доступ временно ограничен.")
+        await send_telegram_message(
+            chat_id, "Аккаунт ограничен. Напишите в поддержку."
+        )
         return
 
     from app.models.family import Family
@@ -875,7 +883,9 @@ async def process_telegram_update(db: Session, update: dict[str, Any]) -> None:
     if membership:
         family = db.get(Family, membership.family_id)
         if family and getattr(family, "is_blocked", False):
-            await send_telegram_message(chat_id, "Доступ временно ограничен.")
+            await send_telegram_message(
+            chat_id, "Аккаунт ограничен. Напишите в поддержку."
+        )
             return
 
     text = (message.get("text") or "").strip()
