@@ -13,9 +13,17 @@ from app.schemas.subscription import (
 from app.models.subscription import SubscriptionPlan
 from app.services.app_scope import AppScope
 from app.services import subscription as subscription_service
-from app.services.subscription_catalog import AMA_COSTS, TRIAL_MENU_GENERATIONS
+from app.services.plan_codes import (
+    DEPRECATED_PLAN_CODES,
+    public_plan_code,
+    public_plan_name,
+    is_start_access_plan,
+)
+from app.services.subscription_catalog import AMA_COSTS, START_MENU_GENERATIONS
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
+
+_USER_SELECTABLE_PLAN_EXCLUDE = DEPRECATED_PLAN_CODES | {"start"}
 
 
 @router.get("/me", response_model=SubscriptionOverviewResponse)
@@ -50,8 +58,8 @@ def get_subscription_overview(
     tx_rows = subscription_service.list_ama_transactions(db, wallet, limit=25)
 
     return SubscriptionOverviewResponse(
-        plan_code=sub.plan_code,
-        plan_name=plan.name,
+        plan_code=public_plan_code(sub.plan_code),
+        plan_name=public_plan_name(sub.plan_code, plan.name),
         status=sub.status,
         price_rub=plan.price_rub,
         trial_ends_at=sub.trial_ends_at,
@@ -64,21 +72,21 @@ def get_subscription_overview(
         trial_days_left=trial_days_left,
         plans=[
             SubscriptionPlanResponse(
-                code=p.code,
-                name=p.name,
+                code=public_plan_code(p.code),
+                name=public_plan_name(p.code, p.name),
                 price_rub=p.price_rub,
                 max_profiles=p.max_profiles,
                 monthly_menu_generations=(
-                    TRIAL_MENU_GENERATIONS
-                    if p.code == "trial"
+                    START_MENU_GENERATIONS
+                    if is_start_access_plan(p.code)
                     else p.monthly_menu_generations
                 ),
                 monthly_ams=p.monthly_ams,
                 features=p.features or {},
-                is_current=p.code == sub.plan_code,
+                is_current=public_plan_code(p.code) == public_plan_code(sub.plan_code),
             )
             for p in all_plans
-            if p.code != "trial"
+            if p.code not in _USER_SELECTABLE_PLAN_EXCLUDE
         ],
         ama_costs=AMA_COSTS,
         is_family_billing=billing_meta["is_family_billing"],
@@ -96,15 +104,9 @@ def select_plan_stub(
     scope: AppScope = Depends(get_app_scope),
     db: Session = Depends(get_db),
 ) -> SubscriptionOverviewResponse:
-    family_id = scope.family_id if scope.is_family else None
-    if family_id and not subscription_service.is_family_admin(db, user, family_id):
-        from fastapi import HTTPException, status
+    from fastapi import HTTPException, status
 
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Менять семейный тариф может только администратор",
-        )
-    subscription_service.select_plan_stub(
-        db, user, payload.plan_code, family_id=family_id
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Тариф управляется администратором",
     )
-    return get_subscription_overview(user=user, scope=scope, db=db)

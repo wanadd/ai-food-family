@@ -89,8 +89,8 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
         </p>
         <p className="mt-1 text-xs text-stone-600">
           {card.family_name ? `Семья: ${card.family_name}` : "Без семьи"} ·{" "}
-          <span className={card.is_blocked ? "text-red-700 font-semibold" : "text-emerald-700 font-semibold"}>
-            {card.is_blocked ? "Заблокирован" : "Активен"}
+          <span className={card.is_blocked ? "text-red-700 font-semibold" : card.is_deleted ? "text-amber-700 font-semibold" : "text-emerald-700 font-semibold"}>
+            {card.is_blocked ? "Заблокирован" : card.is_deleted ? "В архиве" : "Активен"}
           </span>
           {sub ? ` · ${sub.plan_code} (${sub.status})` : " · без подписки"}
         </p>
@@ -201,14 +201,14 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
               onClick={() =>
                 run(() =>
                   adminUserSubscription(initData || null, userId, "grant", {
-                    plan_code: "trial",
+                    plan_code: "start",
                     days: 7,
                     as_trial: true,
                   }),
                 )
               }
             >
-              Пробный 7 дней
+              Старт 7 дней
             </button>
           </div>
         </div>
@@ -329,6 +329,26 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
           >
             Разблокировать
           </button>
+        )}
+        {card.is_deleted ? (
+          <button
+            type="button"
+            className="rounded-lg bg-amber-700 px-3 py-2 text-xs text-white"
+            onClick={() => run(() => adminUserAction(initData || null, userId, "/restore", "POST"))}
+          >
+            Восстановить из архива
+          </button>
+        ) : (
+          <AdminConfirmDialog
+            danger
+            triggerLabel="В архив"
+            title={`Архивировать ${card.display_name}?`}
+            description="Аккаунт скроется из списка. Это не блокировка — пользователь не сможет войти, пока не восстановите."
+            confirmLabel="В архив"
+            onConfirm={() =>
+              run(() => adminUserAction(initData || null, userId, "", "DELETE"))
+            }
+          />
         )}
         <AdminConfirmDialog
           danger

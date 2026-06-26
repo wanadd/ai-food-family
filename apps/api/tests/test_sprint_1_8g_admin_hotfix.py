@@ -70,8 +70,8 @@ def test_reset_user_as_new_removes_row(db):
     target = _make_user(db, telegram_id=910_002, blocked=True)
     target_id = target.id
 
-    def _hard_delete_row(session, user):
-        session.query(User).filter(User.id == user.id).delete(synchronize_session=False)
+    def _hard_delete_row(session, uid):
+        session.query(User).filter(User.id == uid).delete(synchronize_session=False)
 
     with patch.object(purge_mod, "purge_user_data", return_value={}), patch.object(
         purge_mod, "hard_delete_user_row", side_effect=_hard_delete_row

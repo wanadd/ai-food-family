@@ -12,19 +12,24 @@ source of truth for "is this a recognized plan".
 
 from __future__ import annotations
 
-# Mirrors subscription_catalog.PLAN_SEEDS codes (+ historic "free").
+# Canonical retail + start access codes.
 KNOWN_PLAN_CODES: frozenset[str] = frozenset(
-    {"trial", "free", "personal", "shared", "family", "pro"}
+    {"start", "personal", "shared", "family", "pro", "trial", "free", "demo"}
 )
 
 # Aliases seen in legacy data → canonical code.
 _PLAN_ALIASES: dict[str, str] = {
     "basic": "personal",
     "premium": "pro",
-    "пробный": "trial",
+    "пробный": "start",
+    "пробный период": "start",
+    "trial": "start",
+    "free": "start",
+    "demo": "start",
     "личный": "personal",
     "совместный": "shared",
     "семейный": "family",
+    "старт": "start",
 }
 
 KNOWN_STATUSES: frozenset[str] = frozenset(
@@ -38,10 +43,10 @@ _STATUS_ALIASES: dict[str, str] = {
 
 
 def normalize_plan_code(code: str | None) -> str:
-    """Trim/lowercase a plan code and map known aliases. Default: ``free``."""
+    """Trim/lowercase a plan code and map known aliases. Default: ``start``."""
     raw = (code or "").strip().lower()
     if not raw:
-        return "free"
+        return "start"
     raw = _PLAN_ALIASES.get(raw, raw)
     return raw
 

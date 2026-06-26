@@ -22,8 +22,17 @@ from app.services.app_scope import AppScope
 from app.services.subscription_catalog import (
     AMA_COSTS,
     PLAN_SEEDS,
+    START_MENU_GENERATIONS,
+    START_PLAN_CODE,
+    START_WELCOME_AMS,
     TRIAL_DAYS,
-    TRIAL_MENU_GENERATIONS,
+)
+from app.services.plan_codes import (
+    START_PLAN_CODE as CANONICAL_START,
+    is_start_access_plan,
+    public_plan_code,
+    public_plan_name,
+    resolve_storage_plan_code,
 )
 
 AMA_REASON_LABELS: dict[str, str] = {
@@ -32,7 +41,7 @@ AMA_REASON_LABELS: dict[str, str] = {
     "menu_generate": "Генерация меню",
     "dish_replace": "Замена блюда",
     "voice_input": "Голосовой ввод",
-    "trial_welcome": "Приветственные Амы",
+    "start_welcome": "Приветственные Амы",
     "plan_change_grant": "Пополнение по тарифу",
 }
 
@@ -64,11 +73,19 @@ def seed_subscription_plans(db: Session) -> None:
 
 
 def get_plan(db: Session, plan_code: str) -> SubscriptionPlan | None:
-    return (
+    resolved = resolve_storage_plan_code(plan_code)
+    plan = (
         db.query(SubscriptionPlan)
-        .filter(SubscriptionPlan.code == plan_code, SubscriptionPlan.is_active.is_(True))
+        .filter(SubscriptionPlan.code == resolved, SubscriptionPlan.is_active.is_(True))
         .one_or_none()
     )
+    if plan is None and resolved == CANONICAL_START:
+        plan = (
+            db.query(SubscriptionPlan)
+            .filter(SubscriptionPlan.code == "trial", SubscriptionPlan.is_active.is_(True))
+            .one_or_none()
+        )
+    return plan
 
 
 def _now() -> datetime:
@@ -98,7 +115,7 @@ def ensure_user_billing(db: Session, user: User) -> UserSubscription:
     now = _now()
     sub = UserSubscription(
         user_id=user.id,
-        plan_code="trial",
+        plan_code=START_PLAN_CODE,
         status="trial",
         started_at=now,
         trial_ends_at=now + timedelta(days=TRIAL_DAYS),
@@ -108,18 +125,16 @@ def ensure_user_billing(db: Session, user: User) -> UserSubscription:
     db.commit()
     db.refresh(sub)
 
-    from app.services.subscription_catalog import TRIAL_WELCOME_AMS
-
-    trial_plan = get_plan(db, "trial")
-    initial_ams = trial_plan.monthly_ams if trial_plan else TRIAL_WELCOME_AMS
+    start_plan = get_plan(db, START_PLAN_CODE)
+    initial_ams = start_plan.monthly_ams if start_plan else START_WELCOME_AMS
     wallet = _get_or_create_user_wallet(db, user.id)
     if wallet.balance == 0:
         add_ams(
             db,
             wallet,
             initial_ams,
-            reason="trial_welcome",
-            metadata={"plan_code": "trial"},
+            reason="start_welcome",
+            metadata={"plan_code": START_PLAN_CODE},
         )
     return sub
 
@@ -261,11 +276,11 @@ def list_ama_transactions(
 def _refresh_subscription_status(db: Session, sub: UserSubscription) -> None:
     if sub.status not in ("active", "trial", "manually_granted"):
         return
-    if sub.plan_code == "trial":
+    if is_start_access_plan(sub.plan_code):
         expired = False
         if sub.trial_ends_at and _now() > sub.trial_ends_at:
             expired = True
-        if sub.menu_generations_used >= TRIAL_MENU_GENERATIONS:
+        if sub.menu_generations_used >= START_MENU_GENERATIONS:
             expired = True
         if expired and sub.status == "trial":
             sub.status = "expired"
@@ -327,8 +342,8 @@ def check_feature_access(
 def _menu_generation_limit(plan: SubscriptionPlan, sub: UserSubscription) -> int | None:
     if plan.monthly_menu_generations is None:
         return None
-    if sub.plan_code == "trial":
-        return TRIAL_MENU_GENERATIONS
+    if is_start_access_plan(sub.plan_code):
+        return START_MENU_GENERATIONS
     return plan.monthly_menu_generations
 
 
@@ -344,10 +359,9 @@ def evaluate_menu_generation(
             allowed=False,
             uses_quota=False,
             uses_ams=False,
-            code="trial_expired",
+            code="access_expired",
             message=(
-                "Пробный период закончился. Выберите тариф, чтобы снова "
-                "генерировать меню и использовать AI."
+                "Доступ истёк. Напишите в поддержку для продления тарифа."
             ),
         )
 
@@ -449,10 +463,9 @@ def require_ai_action(
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail={
-                "code": "trial_expired",
+                "code": "access_expired",
                 "message": (
-                    "Пробный период закончился. Выберите тариф для "
-                    "дополнительных AI-действий."
+                    "Доступ истёк. Напишите в поддержку для продления тарифа."
                 ),
             },
         )
@@ -591,44 +604,8 @@ def reset_monthly_limits(db: Session) -> None:
 def select_plan_stub(
     db: Session, user: User, plan_code: str, *, family_id: int | None = None
 ) -> UserSubscription:
-    """UI stub: switch plan without payment (for testing / preview)."""
-    plan = get_plan(db, plan_code)
-    if plan is None or plan_code == "trial":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Этот тариф нельзя выбрать вручную",
-        )
-
-    old = get_active_subscription(db, user)
-    if old is not None:
-        old.status = "cancelled"
-        db.commit()
-
-    now = _now()
-    sub = UserSubscription(
-        user_id=user.id,
-        family_id=family_id,
-        plan_code=plan_code,
-        status="active",
-        started_at=now,
-        current_period_ends_at=now + timedelta(days=30),
-        menu_generations_used=0,
+    """Self-service plan switching is disabled; tariffs are admin-managed."""
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Тариф управляется администратором",
     )
-    db.add(sub)
-    db.commit()
-    db.refresh(sub)
-
-    wallet = (
-        _get_or_create_family_wallet(db, family_id)
-        if family_id
-        else get_wallet_for_user(db, user.id)
-    )
-    if wallet.balance < plan.monthly_ams:
-        add_ams(
-            db,
-            wallet,
-            plan.monthly_ams - wallet.balance,
-            reason="plan_change_grant",
-            metadata={"plan_code": plan_code, "user_id": user.id},
-        )
-    return sub

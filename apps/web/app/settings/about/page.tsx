@@ -16,7 +16,7 @@ export default function SettingsAboutPage() {
     <SettingsScaffold title="О PLANAM" subtitle="Семейный AI-помощник по питанию">
       <section className="rounded-card border border-sage-100 bg-gradient-to-b from-sage-50/80 to-pa-surface p-5 shadow-soft dark:border-sage-700/40 dark:from-sage-900/20 dark:to-pa-surface dark:shadow-none">
         <span className="rounded-pill bg-sage-600 px-3 py-1 text-xs font-bold text-white">
-          Закрытое тестирование
+          PLANAM
         </span>
         <h2 className="mt-4 text-2xl font-bold text-pa-foreground">PLANAM</h2>
         <p className="mt-2 text-sm leading-relaxed text-pa-muted">

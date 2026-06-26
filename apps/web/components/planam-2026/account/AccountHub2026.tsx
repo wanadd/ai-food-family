@@ -127,14 +127,6 @@ export function AccountHub2026() {
             <p className="pa26-caption text-pa-muted">
               {user ? usernameLabel : "Откройте Mini App в Telegram для полного профиля"}
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className="rounded-pill bg-sage-50 px-2.5 py-1 text-xs font-semibold text-sage-700 dark:bg-sage-700/30 dark:text-sage-200">
-                Free
-              </span>
-              <span className="rounded-pill bg-cream-deep px-2.5 py-1 text-xs font-medium text-pa-muted dark:bg-pa-elevated">
-                Закрытое тестирование
-              </span>
-            </div>
           </div>
         </div>
       </Card2026>

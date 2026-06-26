@@ -96,12 +96,12 @@ export function planDisplayName(
   planCode: string,
   apiName?: string | null,
 ): string {
+  if (planCode === "start" || planCode === "trial" || planCode === "free" || planCode === "demo") {
+    return "Старт";
+  }
   const key = CODE_ALIASES[planCode];
   if (key && key !== "trial" && key in PLAN_CATALOG_2026) {
     return PLAN_CATALOG_2026[key].displayName;
-  }
-  if (planCode === "trial") {
-    return "Пробный период";
   }
   return apiName?.trim() || planCode;
 }

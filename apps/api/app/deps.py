@@ -84,7 +84,7 @@ def get_current_user(
     if getattr(user, "is_deleted", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Аккаунт ограничен. Напишите в поддержку.",
+            detail="Аккаунт архивирован. Обратитесь в поддержку для восстановления.",
         )
     if getattr(user, "is_blocked", False):
         raise HTTPException(
@@ -98,9 +98,14 @@ def get_verified_user(
     user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> User:
     if getattr(user, "is_blocked", False) or getattr(user, "is_deleted", False):
+        detail = (
+            "Аккаунт архивирован. Обратитесь в поддержку для восстановления."
+            if getattr(user, "is_deleted", False)
+            else "Аккаунт ограничен. Напишите в поддержку."
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Аккаунт ограничен. Напишите в поддержку.",
+            detail=detail,
         )
     from app.services import family as family_service
 

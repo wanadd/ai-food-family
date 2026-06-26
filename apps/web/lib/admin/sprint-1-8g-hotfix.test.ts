@@ -28,7 +28,8 @@ describe("sprint 1.8g admin hotfix", () => {
     expect(source).toContain("Очистить данные");
     expect(source).toContain("Сбросить как нового");
     expect(source).toContain("Удалить навсегда");
-    expect(source).not.toContain('adminUserAction(initData || null, userId, "", "DELETE")');
+    expect(source).toContain("В архив");
+    expect(source).toContain("/restore");
   });
 
   it("home has no duplicate 2x2 CTA grid", () => {
@@ -123,6 +124,40 @@ describe("sprint 1.8g admin hotfix", () => {
     );
     expect(source).not.toContain("selectPlanStub");
     expect(source).toContain("администратором");
+  });
+
+  it("account hub has no free or closed testing badges", () => {
+    const source = readFileSync(
+      `${repoRoot}/components/planam-2026/account/AccountHub2026.tsx`,
+      "utf8",
+    );
+    expect(source).not.toContain("Free");
+    expect(source).not.toContain("Закрытое тестирование");
+  });
+
+  it("about page has no closed testing badge", () => {
+    const source = readFileSync(
+      `${repoRoot}/app/settings/about/page.tsx`,
+      "utf8",
+    );
+    expect(source).not.toContain("Закрытое тестирование");
+  });
+
+  it("plan display maps start legacy codes to Старт", async () => {
+    const { planDisplayName } = await import("@/lib/monetization/plan-catalog-2026");
+    expect(planDisplayName("start")).toBe("Старт");
+    expect(planDisplayName("trial")).toBe("Старт");
+    expect(planDisplayName("free")).toBe("Старт");
+  });
+
+  it("admin user detail has restore and start 7 days", () => {
+    const source = readFileSync(
+      `${repoRoot}/components/admin/AdminUserDetailPage.tsx`,
+      "utf8",
+    );
+    expect(source).toContain("Восстановить из архива");
+    expect(source).toContain("Старт 7 дней");
+    expect(source).toContain('plan_code: "start"');
   });
 
   it("pantry synonyms normalize картошка to картофель", () => {
