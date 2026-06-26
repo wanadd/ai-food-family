@@ -33,6 +33,8 @@ from app.models.water_intake import WaterIntakeLog
 
 
 def _delete_by_user_id(db: Session, model: Any, user_id: int, *, column: str = "user_id") -> int:
+    if not hasattr(model, column):
+        return 0
     return (
         db.query(model)
         .filter(getattr(model, column) == user_id)
