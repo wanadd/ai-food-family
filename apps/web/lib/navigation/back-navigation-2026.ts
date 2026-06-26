@@ -36,7 +36,13 @@ export function shouldShowBack2026(pathname: string): boolean {
   return true;
 }
 
+const RECIPE_COOK = /^\/plan\/recipes\/(\d+)\/cook/;
+
 export function getBackFallback2026(pathname: string): string {
+  const cookMatch = pathname.match(RECIPE_COOK);
+  if (cookMatch?.[1]) {
+    return `/plan/recipes/${cookMatch[1]}`;
+  }
   if (RECIPE_DETAIL.test(pathname)) {
     return "/plan/recipes";
   }

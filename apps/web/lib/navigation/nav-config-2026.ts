@@ -243,6 +243,10 @@ export function isImmersiveRecipeDetailPath(pathname: string): boolean {
   return /^\/plan\/recipes\/\d+/.test(pathname);
 }
 
+export function isRecipeCookingModePath(pathname: string): boolean {
+  return /^\/plan\/recipes\/\d+\/cook/.test(pathname);
+}
+
 export function isShellHeaderHidden2026(pathname: string): boolean {
   if (isImmersiveRecipeDetailPath(pathname)) {
     return true;
@@ -329,6 +333,7 @@ export function isNavHidden2026(pathname: string): boolean {
 export function isBottomNavHidden2026(pathname: string): boolean {
   return (
     isNavHidden2026(pathname) ||
+    isRecipeCookingModePath(pathname) ||
     HIDDEN_BOTTOM_NAV_EXACT_2026.has(pathname) ||
     HIDDEN_BOTTOM_NAV_PREFIXES_2026.some((prefix) => pathname.startsWith(prefix))
   );
@@ -354,6 +359,9 @@ const LEGACY_SCREEN_TITLES: Record<string, string> = {
 };
 
 export function getScreenTitle2026(pathname: string): string {
+  if (isRecipeCookingModePath(pathname)) {
+    return "Готовка";
+  }
   if (/^\/plan\/recipes\/\d+/.test(pathname)) {
     return "Рецепт";
   }
