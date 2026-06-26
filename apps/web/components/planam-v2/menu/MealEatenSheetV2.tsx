@@ -8,7 +8,7 @@
  */
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import {
@@ -24,6 +24,10 @@ import { MEAL_TYPE_LABELS } from "@/lib/meal-checkins/constants";
 import { PLANAM_ROUTES } from "@/lib/planam/routes";
 import { cn } from "@/lib/planam/cn";
 
+type Step = "actions" | "other" | "done";
+
+type Outcome = "ate_home" | "cooked" | "skipped" | "ate_other";
+
 export type MealEatenSheetV2Props = {
   open: boolean;
   onClose: () => void;
@@ -36,12 +40,10 @@ export type MealEatenSheetV2Props = {
   plannedDate?: string | null;
   /** "actions" — полный выбор после готовки; "other" — сразу форма «Ел другое». */
   initialStep?: "actions" | "other";
+  /** Сразу записать исход (с wellness quick actions). */
+  autoOutcome?: Outcome | null;
   title?: string;
 };
-
-type Step = "actions" | "other" | "done";
-
-type Outcome = "ate_home" | "cooked" | "skipped" | "ate_other";
 
 const PORTION_OPTIONS = [
   { id: "small", label: "мало" },
@@ -58,6 +60,15 @@ const DONE_TEXT: Record<Outcome, string> = {
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 
+const FOOD_QUICK_CHIPS = [
+  "суп",
+  "салат",
+  "мясо",
+  "каша",
+  "бутерброд",
+  "напиток",
+] as const;
+
 export function MealEatenSheetV2({
   open,
   onClose,
@@ -67,6 +78,7 @@ export function MealEatenSheetV2({
   recipeId = null,
   plannedDate = null,
   initialStep = "actions",
+  autoOutcome = null,
   title,
 }: MealEatenSheetV2Props) {
   const router = useRouter();
@@ -82,6 +94,7 @@ export function MealEatenSheetV2({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneText, setDoneText] = useState("");
+  const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
     if (open) {
@@ -93,33 +106,57 @@ export function MealEatenSheetV2({
       setPortion("normal");
       setError(null);
       setBusy(false);
+      autoSubmittedRef.current = false;
     }
   }, [open, initialStep, mealType]);
 
-  async function submit(outcome: Outcome, description?: string | null) {
-    if (!initData) {
+  const submit = useCallback(
+    async (outcome: Outcome, description?: string | null) => {
+      if (!initData) {
+        return;
+      }
+      setBusy(true);
+      setError(null);
+      try {
+        await createMealCheckin(initData, mode, {
+          meal_type: selectedMealType,
+          actual_status: outcome,
+          planned_date: plannedDate ?? undefined,
+          actual_description: description ?? mealName ?? undefined,
+          recipe_id:
+            outcome === "ate_other" ? undefined : (recipeId ?? undefined),
+        });
+        invalidateCache("menu-overview");
+        setDoneText(DONE_TEXT[outcome]);
+        setStep("done");
+        onSaved?.();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Не удалось сохранить");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [
+      initData,
+      mode,
+      selectedMealType,
+      plannedDate,
+      mealName,
+      recipeId,
+      onSaved,
+    ],
+  );
+
+  useEffect(() => {
+    if (!open || !autoOutcome || autoOutcome === "ate_other") {
       return;
     }
-    setBusy(true);
-    setError(null);
-    try {
-      await createMealCheckin(initData, mode, {
-        meal_type: selectedMealType,
-        actual_status: outcome,
-        planned_date: plannedDate ?? undefined,
-        actual_description: description ?? mealName ?? undefined,
-        recipe_id: outcome === "ate_other" ? undefined : (recipeId ?? undefined),
-      });
-      invalidateCache("menu-overview");
-      setDoneText(DONE_TEXT[outcome]);
-      setStep("done");
-      onSaved?.();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось сохранить");
-    } finally {
-      setBusy(false);
+    if (autoSubmittedRef.current) {
+      return;
     }
-  }
+    autoSubmittedRef.current = true;
+    void submit(autoOutcome);
+  }, [open, autoOutcome, submit]);
 
   const sheetTitle =
     title ??
@@ -221,6 +258,16 @@ export function MealEatenSheetV2({
               placeholder="Например: салат и кофе"
               className="w-full rounded-control border border-pa-border bg-pa-surface px-3.5 py-3 pa26-body text-pa-foreground outline-none placeholder:text-pa-muted focus:border-sage-500"
             />
+            <div className="mt-2 flex flex-wrap gap-2">
+              {FOOD_QUICK_CHIPS.map((chip) => (
+                <V2Chip
+                  key={chip}
+                  label={chip}
+                  active={otherText.toLowerCase() === chip}
+                  onClick={() => setOtherText(chip)}
+                />
+              ))}
+            </div>
           </div>
           <div>
             <p className="pa26-caption mb-1.5 font-semibold">Количество</p>

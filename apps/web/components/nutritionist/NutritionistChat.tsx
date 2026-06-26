@@ -102,7 +102,7 @@ export function NutritionistChat({
           setPendingPrompt(null);
           return;
         }
-        answer = buildFallbackReply(trimmed, profile, menu);
+        answer = `AI-нутрициолог временно недоступен. Данные дня сохранены, рекомендации PLANAM остаются на экране.\n\n${buildFallbackReply(trimmed, profile, menu)}`;
       }
     } else {
       answer = buildFallbackReply(trimmed, profile, menu);
