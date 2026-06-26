@@ -20,6 +20,11 @@ import { recipeCookPath } from "@/lib/recipes/recipe-meal-context";
 import { defaultDayIndex } from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
 import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
+import { fetchPantry } from "@/lib/pantry/api";
+import {
+  addMissingIngredientsToShopping,
+  filterMissingIngredients,
+} from "@/lib/shopping/add-missing-ingredients";
 import { RecipeImage2026 } from "@/components/recipes-2026/RecipeImage2026";
 import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { Card2026 } from "@/components/planam-2026/ui/Card2026";
@@ -162,6 +167,8 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const [addOpen, setAddOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [replaceBusy, setReplaceBusy] = useState(false);
+  const [pantryNames, setPantryNames] = useState<string[] | null>(null);
+  const [missingBusy, setMissingBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!initData || !recipeId) {
@@ -185,11 +192,58 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   }, [load]);
 
   useEffect(() => {
+    if (!initData) {
+      setPantryNames(null);
+      return;
+    }
+    void fetchPantry(initData, mode)
+      .then((data) =>
+        setPantryNames(
+          data.items.filter((i) => !i.is_expired).map((i) => i.name),
+        ),
+      )
+      .catch(() => setPantryNames(null));
+  }, [initData, mode]);
+
+  useEffect(() => {
     if (!initData || !replaceOpen) {
       return;
     }
     void fetchSelectedMenu(initData, mode).then((s) => setMenu(s?.menu ?? null));
   }, [initData, mode, replaceOpen]);
+
+  async function handleAddMissingShopping() {
+    if (!initData || !recipe || !pantryNames) {
+      return;
+    }
+    const missing = filterMissingIngredients(
+      Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
+      pantryNames,
+    );
+    if (missing.length === 0) {
+      return;
+    }
+    setMissingBusy(true);
+    try {
+      await addMissingIngredientsToShopping(
+        initData,
+        mode,
+        Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
+        pantryNames,
+      );
+      invalidateCache("shopping-list");
+      invalidateCache("menu-overview");
+      showToast(
+        missing.length === 1
+          ? "1 ингредиент добавлен в покупки"
+          : `${missing.length} ингредиентов добавлено в покупки`,
+      );
+    } catch {
+      showToast("Не удалось добавить в покупки. Попробуйте ещё раз.");
+    } finally {
+      setMissingBusy(false);
+    }
+  }
 
   async function handleAddShopping() {
     if (!initData || !recipe) {
@@ -276,6 +330,10 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const nutrition = nutritionMetrics(recipe);
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
+  const missingIngredientCount =
+    pantryNames === null
+      ? 0
+      : filterMissingIngredients(ingredients, pantryNames).length;
   const backLabel = backLabelForReturnTo(returnTo);
   const cookHref = recipeCookPath(recipeId, searchParams);
 
@@ -401,7 +459,20 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
           <RecipeIngredientsChecklist
             ingredients={ingredients}
             storageKey={`recipe-ingredients-${recipeId}`}
+            pantryNames={pantryNames}
           />
+          {pantryNames !== null && missingIngredientCount > 0 ? (
+            <Button2026
+              variant="secondary"
+              size="wide"
+              className="mt-3"
+              loading={missingBusy}
+              data-testid="recipe-add-missing-shopping"
+              onClick={() => void handleAddMissingShopping()}
+            >
+              Добавить недостающее в покупки
+            </Button2026>
+          ) : null}
         </section>
 
         <section id="recipe-cooking-steps" className="mt-6 scroll-mt-4">

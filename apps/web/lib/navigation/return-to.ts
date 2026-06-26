@@ -60,9 +60,13 @@ export function backLabelForReturnTo(returnTo: string): string {
   if (
     returnTo.startsWith("/home/shopping") ||
     returnTo.startsWith("/shopping") ||
-    returnTo.startsWith("/pantry")
+    returnTo.startsWith("/pantry") ||
+    returnTo.startsWith("/home/pantry")
   ) {
     return "Покупки";
+  }
+  if (returnTo.startsWith("/home/leftovers")) {
+    return "Запасы";
   }
   if (returnTo.startsWith("/account") || returnTo.startsWith("/profile")) {
     return "Профиль";

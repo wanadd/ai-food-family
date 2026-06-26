@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
 import { AiProcessLoadingV2 } from "@/components/planam-v2/ai/AiProcessLoadingV2";
 import { HomeDomainSegmentV2 } from "@/components/planam-v2/home-domain/HomeDomainSegmentV2";
+import { useToast } from "@/components/ui/ToastProvider";
 import {
   V2BottomSheet,
   V2Button,
@@ -27,6 +28,10 @@ import {
   setCached,
 } from "@/lib/cache/session-cache";
 import { groupShoppingItems } from "@/lib/dom/shopping-groups";
+import { fetchPantry } from "@/lib/pantry/api";
+import type { PantryItem } from "@/lib/pantry/types";
+import { fetchRecipesFromPantry } from "@/lib/recipes/api";
+import type { FromPantryRecipe } from "@/lib/recipes/types";
 import { cn } from "@/lib/planam/cn";
 import {
   formatProductQuantity,
@@ -49,6 +54,10 @@ import type {
   ShoppingListItem,
 } from "@/lib/shopping/types";
 import { EMPTY_SHOPPING_DRAFT } from "@/lib/shopping/types";
+import {
+  computeShoppingFlowStatus,
+  isBoughtToday,
+} from "@/lib/shopping/shopping-flow-summary";
 
 type ShoppingFilter = "to-buy" | "all" | "bought" | "from-menu";
 
@@ -63,11 +72,17 @@ export function ShoppingV2() {
   const router = useRouter();
   const { initData } = useTelegram();
   const { mode } = useAppMode();
+  const { showToast } = useToast();
   const cacheK = cacheKey.shoppingList(mode);
 
   const [list, setList] = useState<ShoppingList | null>(() =>
     initData ? getCached<ShoppingList>(cacheK) : null,
   );
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
+  const [fromPantryRecipes, setFromPantryRecipes] = useState<FromPantryRecipe[]>(
+    [],
+  );
+  const [boughtTodayOpen, setBoughtTodayOpen] = useState(false);
   const [loading, setLoading] = useState(list == null);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,9 +100,11 @@ export function ShoppingV2() {
     setError(null);
     setLoading(true);
     try {
-      const [data, extraCats] = await Promise.all([
+      const [data, extraCats, pantryData, fromPantry] = await Promise.all([
         fetchShoppingList(initData, mode),
         fetchShoppingCategories(initData, mode).catch(() => []),
+        fetchPantry(initData, mode).catch(() => null),
+        fetchRecipesFromPantry(initData, mode).catch(() => ({ items: [] })),
       ]);
       const catMap = new Map<number, ShoppingList["categories"][number]>();
       for (const c of [...(data.categories ?? []), ...extraCats]) {
@@ -99,6 +116,8 @@ export function ShoppingV2() {
       };
       setCached(cacheK, merged);
       setList(merged);
+      setPantryItems(pantryData?.items ?? []);
+      setFromPantryRecipes(fromPantry.items ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось загрузить список");
     } finally {
@@ -138,6 +157,25 @@ export function ShoppingV2() {
     list && list.total_count > 0
       ? Math.round((list.checked_count / list.total_count) * 100)
       : 0;
+  const flowStatus = useMemo(
+    () => computeShoppingFlowStatus(list, pantryItems, fromPantryRecipes),
+    [list, pantryItems, fromPantryRecipes],
+  );
+
+  const boughtToday = useMemo(
+    () => list?.items.filter((i) => i.checked && isBoughtToday(i.checked_at)) ?? [],
+    [list],
+  );
+
+  const menuLinkedGroups = useMemo(() => {
+    if (!list) {
+      return [];
+    }
+    const menuItems = list.items.filter(
+      (i) => !i.checked && (i.source === "menu" || i.source === "recipe"),
+    );
+    return groupShoppingItems(menuItems, list.categories ?? []);
+  }, [list]);
 
   async function handleSync() {
     if (!initData) {
@@ -180,6 +218,14 @@ export function ShoppingV2() {
       if (nextChecked || removeFromPantry) {
         invalidateCache("pantry");
         invalidateCache("menu-overview");
+      }
+      const updated = data.items.find((i) => i.id === item.id);
+      if (nextChecked) {
+        if (updated?.added_to_pantry) {
+          showToast("Куплено · добавлено в запасы");
+        } else {
+          showToast("Куплено");
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось обновить");
@@ -264,14 +310,32 @@ export function ShoppingV2() {
   return (
     <div className="pb-6">
       <div className="px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <h1 className="pa26-page-title">Список покупок</h1>
-        <p className="pa26-micro mt-0.5 text-pa-muted">
-          {uncheckedCount > 0
-            ? `${uncheckedCount} ${plural(uncheckedCount, "товар", "товара", "товаров")} к покупке`
-            : list && list.total_count > 0
-              ? "Всё куплено"
-              : "Список пуст"}
-        </p>
+        <h1 className="pa26-page-title">Покупки</h1>
+
+        <div
+          className="mt-2 space-y-1 rounded-card border border-pa-border bg-pa-surface px-3 py-2.5"
+          data-testid="shopping-status-strip"
+        >
+          <p className="pa26-caption text-pa-foreground">
+            {flowStatus.toBuy > 0
+              ? `${flowStatus.toBuy} ${plural(flowStatus.toBuy, "товар", "товара", "товаров")} к покупке`
+              : list && list.total_count > 0
+                ? "Всё куплено"
+                : "Список пуст"}
+          </p>
+          {flowStatus.atHome > 0 ? (
+            <p className="pa26-micro text-pa-muted">
+              {flowStatus.atHome} уже есть дома
+            </p>
+          ) : null}
+          {flowStatus.dishesCovered > 0 ? (
+            <p className="pa26-micro text-pa-muted">
+              {flowStatus.dishesCovered}{" "}
+              {plural(flowStatus.dishesCovered, "блюдо", "блюда", "блюд")} покрыты
+              запасами
+            </p>
+          ) : null}
+        </div>
 
         <HomeDomainSegmentV2 active="shopping" className="mt-3" />
 
@@ -302,15 +366,14 @@ export function ShoppingV2() {
             data-testid="shopping-add-open-top"
             onClick={() => setAddOpen(true)}
           >
-            Добавить продукт
+            Добавить товар
           </V2Button>
           <V2Button
             variant="secondary"
-            data-testid="shopping-sync-from-menu-top"
-            loading={syncing}
-            onClick={() => void handleSync()}
+            data-testid="shopping-go-pantry"
+            onClick={() => router.push(PLANAM_ROUTES.pantry)}
           >
-            Добавить из меню
+            Перейти к запасам
           </V2Button>
         </div>
       </div>
@@ -320,6 +383,47 @@ export function ShoppingV2() {
           <p className="mb-3 rounded-card border border-pa-error/30 bg-pa-error/5 px-3 py-2 pa26-caption text-pa-error">
             {error}
           </p>
+        ) : null}
+
+        {flowStatus.menuLinkedItems > 0 ? (
+          <section className="mb-4" data-testid="shopping-menu-linked">
+            <h2 className="pa26-section-title">Связано с меню</h2>
+            <p className="pa26-micro mt-0.5 text-pa-muted">
+              {flowStatus.menuTitle
+                ? `Для «${flowStatus.menuTitle}»`
+                : `Для ${flowStatus.menuLinkedItems} ${plural(flowStatus.menuLinkedItems, "блюда", "блюд", "блюд")} на этой неделе`}
+            </p>
+            <div className="mt-2 space-y-3">
+              {menuLinkedGroups.map((group) => (
+                <div key={`menu-${group.category}`}>
+                  <h3 className="pa26-micro font-semibold text-pa-muted">
+                    {group.emoji} {group.label}
+                  </h3>
+                  <ul className="mt-1 overflow-hidden rounded-card border border-pa-border/70 bg-pa-surface/80">
+                    {group.items.slice(0, 4).map((item, idx) => (
+                      <li
+                        key={item.id}
+                        className={cn(
+                          "flex items-center justify-between gap-2 px-3 py-2 pa26-caption",
+                          idx > 0 && "border-t border-pa-border/50",
+                        )}
+                      >
+                        <span className="truncate">{normalizeProductName(item.name)}</span>
+                        <span className="shrink-0 text-pa-muted">
+                          {formatProductQuantity({
+                            quantity: item.quantity,
+                            unit: item.unit,
+                            amount: item.amount,
+                            name: item.name,
+                          })}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
         ) : null}
 
         {emptyList ? (
@@ -365,6 +469,45 @@ export function ShoppingV2() {
             ))}
           </div>
         )}
+
+        {boughtToday.length > 0 ? (
+          <section className="mt-5" data-testid="shopping-bought-today">
+            <button
+              type="button"
+              onClick={() => setBoughtTodayOpen((v) => !v)}
+              className="flex w-full items-center justify-between rounded-card border border-pa-border bg-pa-surface px-4 py-3 text-left"
+            >
+              <span className="pa26-caption font-semibold">
+                Куплено сегодня · {boughtToday.length}
+              </span>
+              <span className="pa26-micro text-pa-muted">
+                {boughtTodayOpen ? "Свернуть" : "Показать"}
+              </span>
+            </button>
+            {boughtTodayOpen ? (
+              <ul className="mt-2 overflow-hidden rounded-card border border-pa-border bg-pa-surface">
+                {boughtToday.map((item, idx) => (
+                  <li
+                    key={item.id}
+                    className={cn(
+                      "flex items-center justify-between gap-2 px-4 py-2.5 pa26-caption text-pa-muted",
+                      idx > 0 && "border-t border-pa-border/70",
+                    )}
+                  >
+                    <span className="truncate line-through">
+                      {normalizeProductName(item.name)}
+                    </span>
+                    {item.added_to_pantry ? (
+                      <span className="shrink-0 pa26-micro text-sage-700 dark:text-sage-300">
+                        в запасах
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
 
         <div className="mt-5 space-y-2">
           <V2Button
