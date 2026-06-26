@@ -81,7 +81,7 @@ def main() -> int:
 
     for user in users:
         purge_user_data(db, user.id, include_subscriptions=True)
-        hard_delete_user_row(db, user)
+        hard_delete_user_row(db, user.id)
     db.commit()
 
     remaining = db.query(User).filter(User.is_blocked.is_(True)).count()

@@ -112,6 +112,16 @@ def admin_unblock_user(
     return AdminGrantResponse(user_id=user_id, message="Пользователь разблокирован")
 
 
+@router.post("/users/{user_id}/restore", response_model=AdminGrantResponse)
+def admin_restore_user(
+    user_id: int,
+    admin: User = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> AdminGrantResponse:
+    manage.restore_user(db, user_id=user_id, admin=admin)
+    return AdminGrantResponse(user_id=user_id, message="Пользователь восстановлен из архива")
+
+
 @router.post("/users/{user_id}/clear-data", response_model=AdminGrantResponse)
 def admin_clear_user_data(
     user_id: int,

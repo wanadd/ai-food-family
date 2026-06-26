@@ -2,10 +2,14 @@
 
 from typing import Any
 
-# PLANAM 2026: 7-day starter access for new users
-TRIAL_DAYS = 7
-TRIAL_MENU_GENERATIONS = 5
-TRIAL_WELCOME_AMS = 50
+from app.services.plan_codes import START_DAYS, START_PLAN_CODE
+
+# PLANAM: 7-day «Старт» access for new users
+TRIAL_DAYS = START_DAYS
+START_MENU_GENERATIONS = 5
+TRIAL_MENU_GENERATIONS = START_MENU_GENERATIONS
+START_WELCOME_AMS = 50
+TRIAL_WELCOME_AMS = START_WELCOME_AMS
 
 # AMA costs for expensive AI actions (not navigation / CRUD views).
 AMA_COSTS: dict[str, int] = {
@@ -25,13 +29,14 @@ AMA_COSTS: dict[str, int] = {
 
 PLAN_SEEDS: list[dict[str, Any]] = [
     {
-        "code": "trial",
-        "name": "Пробный",
+        "code": START_PLAN_CODE,
+        "name": "Старт",
         "price_rub": 0,
         "max_profiles": 1,
-        "monthly_menu_generations": TRIAL_MENU_GENERATIONS,
-        "monthly_ams": TRIAL_WELCOME_AMS,
+        "monthly_menu_generations": START_MENU_GENERATIONS,
+        "monthly_ams": START_WELCOME_AMS,
         "sort_order": 0,
+        "is_active": True,
         "features": {
             "shopping": True,
             "pantry": True,

@@ -118,7 +118,12 @@ def _subscription_payload(sub: UserSubscription | None) -> dict[str, Any] | None
         "family_id": sub.family_id,
         "grant_source": meta.get("grant_source", "system"),
         "grant_reason": meta.get("grant_reason"),
-        "kind": meta.get("kind", "paid" if sub.plan_code not in ("trial", "free") else sub.plan_code),
+        "kind": meta.get(
+            "kind",
+            "paid"
+            if sub.plan_code not in ("start", "trial", "free", "demo")
+            else "start",
+        ),
     }
 
 
@@ -375,6 +380,26 @@ def delete_user(db: Session, *, user_id: int, admin: User) -> dict:
     return {"user_id": user_id, "archived": True}
 
 
+def restore_user(db: Session, *, user_id: int, admin: User) -> dict:
+    """Restore soft-archived user."""
+    target = db.get(User, user_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    target.is_deleted = False
+    target.deleted_at = None
+    target.deleted_by_admin_id = None
+    db.commit()
+    log_admin_action(
+        db,
+        admin_user_id=admin.id,
+        action_type="user_restore",
+        target_type="user",
+        target_id=user_id,
+        metadata={"telegram_id": target.telegram_id},
+    )
+    return {"user_id": user_id, "restored": True}
+
+
 def clear_user_data(db: Session, *, user_id: int, admin: User) -> dict:
     from app.services.user_data_purge import purge_user_data
 
@@ -405,7 +430,7 @@ def reset_user_as_new(db: Session, *, user_id: int, admin: User) -> dict:
     _guard_delete_user(db, target, admin)
     telegram_id = target.telegram_id
     purge_user_data(db, target.id, include_subscriptions=True)
-    hard_delete_user_row(db, target)
+    hard_delete_user_row(db, target.id)
     db.commit()
     log_admin_action(
         db,
@@ -598,6 +623,11 @@ def grant_user_subscription(
     as_trial: bool = False,
 ) -> dict:
     user = _get_user_or_404(db, user_id)
+    if as_trial:
+        from app.services.plan_codes import START_DAYS, START_PLAN_CODE
+
+        plan_code = START_PLAN_CODE
+        days = START_DAYS
     status = "trial" if as_trial else "manually_granted"
     sub = _create_subscription(
         db,

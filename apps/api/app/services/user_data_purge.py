@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy import delete, or_
 from sqlalchemy.orm import Session
 
 from app.models.admin import AdminSession
@@ -32,7 +33,13 @@ from app.models.user_profile import UserProfile
 from app.models.water_intake import WaterIntakeLog
 
 
-def _delete_by_user_id(db: Session, model: Any, user_id: int, *, column: str = "user_id") -> int:
+def _delete_by_user_id(
+    db: Session,
+    model: Any,
+    user_id: int,
+    *,
+    column: str = "user_id",
+) -> int:
     if not hasattr(model, column):
         return 0
     return (
@@ -42,55 +49,96 @@ def _delete_by_user_id(db: Session, model: Any, user_id: int, *, column: str = "
     )
 
 
-def purge_user_data(db: Session, user_id: int, *, include_subscriptions: bool = True) -> dict[str, int]:
+def _delete_by_columns(
+    db: Session,
+    model: Any,
+    user_id: int,
+    columns: tuple[str, ...],
+) -> int:
+    total = 0
+    for column in columns:
+        total += _delete_by_user_id(db, model, user_id, column=column)
+    return total
+
+
+def purge_user_data(
+    db: Session,
+    user_id: int,
+    *,
+    include_subscriptions: bool = True,
+) -> dict[str, int]:
     """Remove user-owned rows; keep users row."""
     stats: dict[str, int] = {}
 
-    member = (
-        db.query(FamilyMember)
-        .filter(FamilyMember.user_id == user_id)
-        .one_or_none()
-    )
-    if member:
-        db.delete(member)
-        stats["family_members"] = 1
+    stats["family_members"] = _delete_by_user_id(db, FamilyMember, user_id)
 
     stats["family_invites"] = (
         db.query(FamilyInvite)
         .filter(
-            (FamilyInvite.invited_by_user_id == user_id)
-            | (FamilyInvite.invited_user_id == user_id)
+            or_(
+                FamilyInvite.invited_by_user_id == user_id,
+                FamilyInvite.invited_user_id == user_id,
+            )
         )
         .delete(synchronize_session=False)
     )
 
     stats["menu_selections"] = _delete_by_user_id(db, FamilyMenuSelection, user_id)
 
-    shopping = (
+    stats["shopping_lists"] = (
         db.query(FamilyShoppingList)
         .filter(FamilyShoppingList.user_id == user_id)
-        .one_or_none()
-    )
-    if shopping:
-        shopping.items = []
-        stats["shopping_lists"] = 1
-
-    stats["pantry_items"] = (
-        db.query(FamilyPantryItem)
-        .filter(FamilyPantryItem.user_id == user_id)
         .delete(synchronize_session=False)
     )
 
+    stats["pantry_items"] = _delete_by_user_id(db, FamilyPantryItem, user_id)
     stats["shopping_categories"] = _delete_by_user_id(db, ShoppingCategory, user_id)
-    stats["meal_consumption_logs"] = _delete_by_user_id(db, MealConsumptionLog, user_id)
+    stats["meal_consumption_logs"] = _delete_by_columns(
+        db,
+        MealConsumptionLog,
+        user_id,
+        ("user_id", "logged_by_user_id"),
+    )
     stats["meal_checkins"] = _delete_by_user_id(db, MealCheckin, user_id)
-    stats["meal_leftovers"] = _delete_by_user_id(db, MealLeftover, user_id)
-    stats["cooking_batches"] = _delete_by_user_id(db, CookingBatch, user_id)
-    stats["cooking_batch_events"] = (
+    stats["meal_leftovers"] = _delete_by_columns(
+        db,
+        MealLeftover,
+        user_id,
+        ("user_id", "added_by_user_id"),
+    )
+
+    batch_ids = [
+        row[0]
+        for row in db.query(CookingBatch.id)
+        .filter(
+            or_(
+                CookingBatch.created_by_user_id == user_id,
+                CookingBatch.owner_user_id == user_id,
+            )
+        )
+        .all()
+    ]
+    if batch_ids:
+        stats["cooking_batch_events"] = (
+            db.query(CookingBatchEvent)
+            .filter(CookingBatchEvent.batch_id.in_(batch_ids))
+            .delete(synchronize_session=False)
+        )
+        stats["cooking_batches"] = (
+            db.query(CookingBatch)
+            .filter(CookingBatch.id.in_(batch_ids))
+            .delete(synchronize_session=False)
+        )
+    else:
+        stats["cooking_batch_events"] = 0
+        stats["cooking_batches"] = 0
+
+    stats["cooking_batch_events"] = stats.get("cooking_batch_events", 0) + (
         db.query(CookingBatchEvent)
         .filter(CookingBatchEvent.actor_user_id == user_id)
         .delete(synchronize_session=False)
     )
+
     stats["water_intake"] = _delete_by_user_id(db, WaterIntakeLog, user_id)
     stats["external_food_logs"] = _delete_by_user_id(db, ExternalFoodLog, user_id)
     stats["deferred_advice"] = _delete_by_user_id(db, DeferredNutritionAdvice, user_id)
@@ -108,60 +156,50 @@ def purge_user_data(db: Session, user_id: int, *, include_subscriptions: bool = 
         db, MealConsumptionReminderEvent, user_id
     )
 
-    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).one_or_none()
-    if profile:
-        profile.current_step = 0
-        profile.completed = False
-        profile.goals = []
-        profile.diets = []
-        profile.allergies = []
-        profile.restrictions = []
-        stats["user_profile"] = 1
+    stats["user_profiles"] = _delete_by_user_id(db, UserProfile, user_id)
+    stats["user_preferences"] = _delete_by_user_id(db, UserPreferences, user_id)
+    stats["notification_settings"] = _delete_by_user_id(
+        db, UserNotificationSettings, user_id
+    )
 
-    prefs = (
-        db.query(UserPreferences)
-        .filter(UserPreferences.user_id == user_id)
+    wallet = (
+        db.query(AmaWallet)
+        .filter(AmaWallet.user_id == user_id, AmaWallet.family_id.is_(None))
         .one_or_none()
     )
-    if prefs:
-        db.delete(prefs)
-        stats["user_preferences"] = 1
-
-    notif = (
-        db.query(UserNotificationSettings)
-        .filter(UserNotificationSettings.user_id == user_id)
-        .one_or_none()
-    )
-    if notif:
-        db.delete(notif)
-        stats["notification_settings"] = 1
-
-    wallet = db.query(AmaWallet).filter(AmaWallet.user_id == user_id).one_or_none()
     if wallet:
         stats["ama_transactions"] = (
             db.query(AmaTransaction)
             .filter(AmaTransaction.wallet_id == wallet.id)
             .delete(synchronize_session=False)
         )
-        wallet.balance = 0
-
-    if include_subscriptions:
-        stats["subscriptions"] = (
-            db.query(UserSubscription)
-            .filter(UserSubscription.user_id == user_id)
+        stats["ama_wallets"] = (
+            db.query(AmaWallet)
+            .filter(AmaWallet.id == wallet.id)
             .delete(synchronize_session=False)
         )
+    else:
+        stats["ama_transactions"] = 0
+        stats["ama_wallets"] = 0
 
-    db.query(AdminSession).filter(AdminSession.user_id == user_id).update(
-        {"is_active": False}
+    if include_subscriptions:
+        stats["subscriptions"] = _delete_by_user_id(db, UserSubscription, user_id)
+
+    stats["admin_sessions"] = (
+        db.query(AdminSession)
+        .filter(AdminSession.user_id == user_id)
+        .delete(synchronize_session=False)
     )
 
+    db.flush()
     return stats
 
 
-def hard_delete_user_row(db: Session, user: User) -> None:
-    """Delete user row; DB cascades handle remaining FK children."""
-    db.delete(user)
+def hard_delete_user_row(db: Session, user_id: int) -> int:
+    """Delete user row via bulk delete (avoids ORM relationship nulling)."""
+    result = db.execute(delete(User).where(User.id == user_id))
+    db.flush()
+    return int(result.rowcount or 0)
 
 
 def snapshot_user_for_backup(user: User) -> dict[str, Any]:
