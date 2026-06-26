@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { MenuSlotSheet2026 } from "@/components/recipes-2026/MenuSlotSheet2026";
-import { MealEatenSheetV2 } from "@/components/planam-v2/menu/MealEatenSheetV2";
+import { RecipeIngredientsChecklist } from "@/components/recipes-2026/RecipeIngredientsChecklist";
 import { ReplaceDishSheet2026 } from "@/components/plan-2026/ReplaceDishSheet2026";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -15,7 +15,8 @@ import {
   parseCurrentRecipeId,
   parseReplaceSlot,
 } from "@/lib/menu/replace-slot";
-import { readReturnTo } from "@/lib/navigation/return-to";
+import { readReturnTo, backLabelForReturnTo } from "@/lib/navigation/return-to";
+import { recipeCookPath } from "@/lib/recipes/recipe-meal-context";
 import { defaultDayIndex } from "@/lib/menu/menu-days";
 import type { MenuVariant } from "@/lib/menu/types";
 import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
@@ -28,7 +29,6 @@ import { useTelegram } from "@/components/TelegramProvider";
 import {
   addRecipeToShopping,
   fetchRecipe,
-  markRecipeCooked,
   toggleRecipeFavorite,
 } from "@/lib/recipes/api";
 import {
@@ -43,8 +43,8 @@ import {
   perServingMacros,
   totalMacrosLine,
 } from "@/lib/recipes/nutrition";
-import { formatIngredientAmount } from "@/lib/recipes/ingredient-amount";
 import type { RecipeDetail } from "@/lib/recipes/types";
+
 type RecipeDetail2026Props = {
   recipeId: number;
 };
@@ -162,10 +162,6 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const [addOpen, setAddOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [replaceBusy, setReplaceBusy] = useState(false);
-  const [cookedOpen, setCookedOpen] = useState(false);
-  const [cookingStarted, setCookingStarted] = useState(false);
-  const [cookedSaved, setCookedSaved] = useState(false);
-  const [cookingBusy, setCookingBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!initData || !recipeId) {
@@ -246,23 +242,6 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
     }
   }
 
-  async function handleCooked() {
-    if (!initData || !recipe) return;
-    setCookingBusy(true);
-    try {
-      await markRecipeCooked(initData, mode, recipe.id, {
-        servings: recipe.servings ?? 1,
-      });
-      setCookedSaved(true);
-      showToast("Приготовлено — это ещё не считается съеденным");
-    } catch {
-      setCookedSaved(true);
-      showToast("Приготовлено. Отметку питания можно добавить отдельно.");
-    } finally {
-      setCookingBusy(false);
-    }
-  }
-
   if (loading) {
     return (
       <div className="pb-8">
@@ -297,6 +276,8 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
   const nutrition = nutritionMetrics(recipe);
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const steps = Array.isArray(recipe.steps) ? recipe.steps : [];
+  const backLabel = backLabelForReturnTo(returnTo);
+  const cookHref = recipeCookPath(recipeId, searchParams);
 
   return (
     <div className="pb-4">
@@ -321,7 +302,7 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
           }
           className="absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] rounded-control bg-pa-surface/90 px-3 py-1.5 pa26-micro font-semibold shadow-soft backdrop-blur-sm"
         >
-          ← Каталог
+          ← {backLabel}
         </Link>
       </div>
 
@@ -374,12 +355,8 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
               <Button2026
                 variant="primary"
                 className="w-full"
-                onClick={() => {
-                  setCookingStarted(true);
-                  document
-                    .getElementById("recipe-cooking-steps")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
+                data-testid="recipe-start-cook"
+                onClick={() => router.push(cookHref)}
               >
                 Начать готовить
               </Button2026>
@@ -421,22 +398,14 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
 
         <section className="mt-6">
           <h2 className="pa26-section-title mb-3">Ингредиенты</h2>
-          <Card2026 padding="none">
-            <ul className="divide-y divide-pa-border">
-              {ingredients.map((ing, i) => (
-                <li key={`${ing.name}-${i}`} className="flex justify-between gap-3 px-4 py-3 pa26-body">
-                  <span>{ing.name}</span>
-                  <span className="shrink-0 text-pa-muted">
-                    {formatIngredientAmount(ing)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card2026>
+          <RecipeIngredientsChecklist
+            ingredients={ingredients}
+            storageKey={`recipe-ingredients-${recipeId}`}
+          />
         </section>
 
         <section id="recipe-cooking-steps" className="mt-6 scroll-mt-4">
-          <h2 className="pa26-section-title mb-3">Приготовление</h2>
+          <h2 className="pa26-section-title mb-3">Шаги</h2>
           {steps.length === 0 ? (
             <Card2026 padding="md">
               <p className="pa26-body text-pa-muted">
@@ -444,46 +413,35 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
               </p>
             </Card2026>
           ) : (
-            <ol className="space-y-2">
-              {steps.map((step, index) => (
-                <li
-                  key={index}
-                  className="flex gap-3 rounded-card border border-pa-border bg-pa-surface p-3.5"
-                >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sage-500 text-sm font-bold text-white dark:bg-sage-400">
-                    {index + 1}
-                  </span>
-                  <p className="pa26-body flex-1 leading-snug">{step}</p>
-                </li>
-              ))}
-            </ol>
-          )}
-          {!replaceMode ? (
-            <div className="mt-4 space-y-2">
-              {cookingStarted ? (
-                <p className="rounded-card border border-sage-200 bg-sage-50 px-3 py-2 pa26-caption text-sage-800 dark:border-sage-700/40 dark:bg-sage-700/20 dark:text-sage-300">
-                  Режим готовки открыт. Следуйте шагам и отметьте блюдо готовым, когда закончите.
+            <>
+              <ol className="space-y-2">
+                {steps.slice(0, 3).map((step, index) => (
+                  <li
+                    key={index}
+                    className="flex gap-3 rounded-card border border-pa-border bg-pa-surface p-3.5"
+                  >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
+                      {index + 1}
+                    </span>
+                    <p className="pa26-body flex-1 line-clamp-3 leading-snug">{step}</p>
+                  </li>
+                ))}
+              </ol>
+              {steps.length > 3 ? (
+                <p className="mt-2 pa26-micro text-pa-muted">
+                  Ещё {steps.length - 3} шаг(ов) — в режиме готовки
                 </p>
               ) : null}
               <Button2026
-                variant="primary"
+                variant="secondary"
                 size="wide"
-                loading={cookingBusy}
-                onClick={() => void handleCooked()}
+                className="mt-4"
+                onClick={() => router.push(cookHref)}
               >
-                Приготовлено
+                Открыть режим готовки
               </Button2026>
-              {cookedSaved ? (
-                <Button2026
-                  variant="secondary"
-                  size="wide"
-                  onClick={() => setCookedOpen(true)}
-                >
-                  Отметить, кто съел
-                </Button2026>
-              ) : null}
-            </div>
-          ) : null}
+            </>
+          )}
         </section>
       </div>
 
@@ -508,19 +466,6 @@ export function RecipeDetail2026({ recipeId }: RecipeDetail2026Props) {
             dayIndex={menu ? defaultDayIndex(menu) : 1}
             onClose={() => setReplaceOpen(false)}
             onSuccess={() => router.push("/plan/today")}
-          />
-          <MealEatenSheetV2
-            open={cookedOpen}
-            onClose={() => setCookedOpen(false)}
-            mealType={
-              ["breakfast", "lunch", "dinner", "snack"].includes(
-                recipe.meal_type ?? "",
-              )
-                ? recipe.meal_type
-                : null
-            }
-            mealName={heading}
-            recipeId={recipe.id}
           />
         </>
       ) : null}
