@@ -21,6 +21,7 @@ from app.schemas.care import (
 from app.services import subscription as subscription_service
 from app.services.app_scope import resolve_scope
 from app.services.menu_selection import get_selected_menu
+from app.services.care_guard import PANTRY_SEMANTIC_KEY, can_send_care_notification
 from app.services.notifications import get_or_create_settings as get_notif_settings_row
 from app.services.onboarding import get_or_create_profile
 from app.services import pantry as pantry_service
@@ -158,11 +159,13 @@ def get_or_create_care_settings(db: Session, user: User) -> CareSettings:
         notif = get_notif_settings_row(db, user)
         row = CareSettings(
             user_id=user.id,
-            timezone=notif.timezone,
-            menu_enabled=True,
-            shopping_enabled=True,
-            pantry_enabled=True,
-            care_level="standard",
+            timezone=notif.timezone or "Europe/Moscow",
+            menu_enabled=False,
+            shopping_enabled=False,
+            pantry_enabled=False,
+            care_level="off",
+            quiet_hours_start="22:00",
+            quiet_hours_end="09:00",
         )
         db.add(row)
         db.commit()
@@ -259,6 +262,8 @@ def _type_enabled(settings_row: CareSettings, notification_type: str) -> bool:
 
 
 def _level_allows_type(care_level: str, notification_type: str) -> bool:
+    if care_level == "off":
+        return False
     if care_level == "minimal":
         return notification_type in MINIMAL_TYPES
     if care_level == "standard":
@@ -294,7 +299,18 @@ def should_send_notification(
     *,
     ignore_quiet_hours: bool = False,
     ignore_cooldown: bool = False,
+    semantic_key: str | None = None,
 ) -> bool:
+    if not can_send_care_notification(
+        db,
+        user,
+        notification_type,
+        semantic_key=semantic_key or (
+            PANTRY_SEMANTIC_KEY if notification_type == "pantry" else None
+        ),
+    ):
+        return False
+
     settings_row = get_or_create_care_settings(db, user)
 
     if not _type_enabled(settings_row, notification_type):
@@ -326,7 +342,27 @@ def create_care_notification(
     family_id: int | None = None,
     payload: dict[str, Any] | None = None,
     scheduled_at: datetime | None = None,
-) -> CareNotification:
+    semantic_key: str | None = None,
+) -> CareNotification | None:
+    sk = semantic_key or (
+        PANTRY_SEMANTIC_KEY if notification_type == "pantry" else None
+    )
+    if sk:
+        since = datetime.now(timezone.utc) - timedelta(hours=24)
+        existing = (
+            db.query(CareNotification)
+            .filter(
+                CareNotification.user_id == user.id,
+                CareNotification.type == notification_type,
+                CareNotification.semantic_key == sk,
+                CareNotification.status.in_(("pending", "sent")),
+                CareNotification.created_at >= since,
+            )
+            .first()
+        )
+        if existing is not None:
+            return None
+
     template = CARE_TEMPLATES.get(notification_type, CARE_TEMPLATES["water"])
     row = CareNotification(
         user_id=user.id,
@@ -337,6 +373,7 @@ def create_care_notification(
         payload=payload,
         status="pending",
         scheduled_at=scheduled_at,
+        semantic_key=sk,
     )
     db.add(row)
     db.commit()
@@ -371,6 +408,9 @@ async def send_telegram_care_notification(
     notification: CareNotification,
     user: User,
 ) -> bool:
+    if notification.status != "pending":
+        return notification.status == "sent"
+
     if not user.telegram_id:
         notification.status = "failed"
         db.commit()
@@ -444,20 +484,21 @@ def generate_basic_care_tips(
     ctx = context or build_care_context(db, user)
     tips: list[CareTipPreview] = []
 
-    if ctx.shopping_unchecked > 0:
+    if ctx.shopping_unchecked > 0 and ctx.has_menu:
         t = CARE_TEMPLATES["shopping"]
         tips.append(
             CareTipPreview(type="shopping", title=t["title"], message=t["message"])
         )
-    if ctx.pantry_expiring > 0 or ctx.pantry_count == 0:
+    if ctx.pantry_expiring > 0 and ctx.has_menu:
         t = CARE_TEMPLATES["pantry"]
-        msg = t["message"]
-        if ctx.pantry_expiring > 0:
-            msg = (
-                f"Скоро истекает {ctx.pantry_expiring} продуктов. "
-                "Обновите запасы для точного меню."
-            )
+        msg = (
+            f"Скоро истекает {ctx.pantry_expiring} продуктов. "
+            "Обновите запасы для точного меню."
+        )
         tips.append(CareTipPreview(type="pantry", title=t["title"], message=msg))
+    elif ctx.pantry_count > 0 and ctx.has_menu:
+        t = CARE_TEMPLATES["pantry"]
+        tips.append(CareTipPreview(type="pantry", title=t["title"], message=t["message"]))
     if ctx.has_menu:
         t = CARE_TEMPLATES["menu"]
         tips.append(CareTipPreview(type="menu", title=t["title"], message=t["message"]))
@@ -506,7 +547,10 @@ async def send_care_notification_by_type(
             "web_app_path": template["web_app_path"],
             "button_text": template["button_text"],
         },
+        semantic_key=PANTRY_SEMANTIC_KEY if notification_type == "pantry" else None,
     )
+    if notification is None:
+        return False, "Такое напоминание уже отправлялось недавно.", None
     sent = await send_telegram_care_notification(db, notification, user)
     if sent:
         return True, "Сообщение отправлено в Telegram.", notification
@@ -532,7 +576,14 @@ async def maybe_notify_menu_ready(db: Session, user: User) -> None:
 
 async def process_care_reminders_for_user(db: Session, user: User) -> None:
     """Send at most one contextual care tip per scheduler tick."""
+    from app.services.care_guard import notifications_onboarded
+
+    if not notifications_onboarded(db, user):
+        return
+
     settings_row = get_or_create_care_settings(db, user)
+    if settings_row.care_level == "off":
+        return
     if settings_row.care_level == "minimal" and not any(
         [
             settings_row.menu_enabled,

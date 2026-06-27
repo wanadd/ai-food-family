@@ -202,19 +202,32 @@ async def handle_phone_skip(db: Session, user: User, chat_id: int) -> None:
     await send_registration_complete(db, user, chat_id)
 
 
-async def send_registration_complete(db: Session, user: User, chat_id: int) -> None:
-    from app.services.bot_menu import send_main_menu
-
-    bot_session_service.clear_session_state(db, user.telegram_id)
+async def send_fresh_start_welcome(db: Session, user: User, chat_id: int) -> None:
+    """First-time welcome after access is granted — no proactive care nudges."""
+    base = (settings.telegram_webapp_url or "https://planam.ru").rstrip("/")
     await send_telegram_message(
         chat_id,
-        "🚀 Регистрация завершена!\n\nОткройте ПланАм:",
-        reply_markup=webapp_inline_keyboard(),
+        "Готово, я открыл доступ к PLANAM на 7 дней.\n\n"
+        "Начните с меню — после этого я помогу собрать покупки, "
+        "учесть запасы и настроить напоминания.",
+        reply_markup={
+            "inline_keyboard": [
+                [{"text": "Создать меню", "web_app": {"url": f"{base}/plan/generate"}}],
+                [{"text": "Открыть приложение", "web_app": {"url": base}}],
+                [{"text": "Настроить уведомления", "web_app": {"url": f"{base}/account/notifications"}}],
+            ],
+        },
     )
-    await send_main_menu(chat_id)
 
 
-async def route_after_start(db: Session, user: User, chat_id: int) -> None:
+async def send_registration_complete(db: Session, user: User, chat_id: int) -> None:
+    bot_session_service.clear_session_state(db, user.telegram_id)
+    await send_fresh_start_welcome(db, user, chat_id)
+
+
+async def route_after_start(
+    db: Session, user: User, chat_id: int, *, is_new: bool = False
+) -> None:
     from app.services.users import user_has_verified_phone
 
     if not user_has_legal_consent(user):
@@ -225,11 +238,14 @@ async def route_after_start(db: Session, user: User, chat_id: int) -> None:
         return
     from app.services.bot_menu import send_main_menu
 
-    await send_main_menu(chat_id)
-    await send_telegram_message(
-        chat_id,
-        "С возвращением в ПланАм! 👋",
-        reply_markup=entry_inline_keyboard(
-            include_phone=not user_has_verified_phone(user)
-        ),
-    )
+    if is_new:
+        await send_fresh_start_welcome(db, user, chat_id)
+    else:
+        await send_main_menu(chat_id)
+        await send_telegram_message(
+            chat_id,
+            "С возвращением в ПланАм! 👋",
+            reply_markup=entry_inline_keyboard(
+                include_phone=not user_has_verified_phone(user)
+            ),
+        )

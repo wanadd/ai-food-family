@@ -2,6 +2,7 @@ import { apiUrl } from "@/lib/api";
 import { buildProtectedRequestHeaders } from "@/lib/audit/audit-mode";
 
 import type {
+  NotificationOnboardingPayload,
   NotificationSettings,
   NotificationSettingsUpdate,
 } from "./types";
@@ -36,6 +37,20 @@ export async function fetchNotificationSettings(
   return notificationFetch<NotificationSettings>(
     "/notifications/settings",
     initData,
+  );
+}
+
+export async function saveNotificationOnboarding(
+  initData: string,
+  payload: NotificationOnboardingPayload,
+): Promise<NotificationSettings> {
+  return notificationFetch<NotificationSettings>(
+    "/notifications/onboarding",
+    initData,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
   );
 }
 

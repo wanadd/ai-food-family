@@ -7,10 +7,12 @@ from app.config import settings
 from app.database import SessionLocal
 from app.models.notification_settings import UserNotificationSettings
 from app.models.user import User
+from app.services.care_guard import can_send_scheduled_reminder
 from app.services.notification_messages import (
     build_buy_reminder_text,
     build_meal_cook_reminder_text,
 )
+from app.services.scheduler_lock import notification_scheduler_lock
 from app.telegram.messages import send_telegram_message
 
 logger = logging.getLogger(__name__)
@@ -43,44 +45,51 @@ async def _process_due_reminders() -> None:
 
     db = SessionLocal()
     try:
-        rows = (
-            db.query(UserNotificationSettings, User)
-            .join(User, User.id == UserNotificationSettings.user_id)
-            .all()
-        )
+        with notification_scheduler_lock(db) as locked:
+            if not locked:
+                return
 
-        for notification_settings, user in rows:
-            await _maybe_send_buy(db, notification_settings, user)
-            for meal_type, enabled_key, time_key, sent_key in MEAL_REMINDERS:
-                await _maybe_send_meal_cook(
-                    db,
-                    notification_settings,
-                    user,
-                    meal_type,
-                    enabled_key,
-                    time_key,
-                    sent_key,
-                )
-
-        from app.services.care import process_all_care_reminders
-
-        await process_all_care_reminders(db)
-
-        global _last_meal_consumption_reminder_run
-        now_utc = datetime.now(timezone.utc)
-        if (
-            _last_meal_consumption_reminder_run is None
-            or (now_utc - _last_meal_consumption_reminder_run).total_seconds()
-            >= MEAL_CONSUMPTION_REMINDER_INTERVAL_SECONDS
-        ):
-            from app.services.meal_consumption_reminders import (
-                process_meal_consumption_reminders,
+            rows = (
+                db.query(UserNotificationSettings, User)
+                .join(User, User.id == UserNotificationSettings.user_id)
+                .filter(User.is_blocked.is_(False), User.is_deleted.is_(False))
+                .all()
             )
 
-            await process_meal_consumption_reminders(db)
-            _last_meal_consumption_reminder_run = now_utc
+            for notification_settings, user in rows:
+                if not can_send_scheduled_reminder(db, user):
+                    continue
+                await _maybe_send_buy(db, notification_settings, user)
+                for meal_type, enabled_key, time_key, sent_key in MEAL_REMINDERS:
+                    await _maybe_send_meal_cook(
+                        db,
+                        notification_settings,
+                        user,
+                        meal_type,
+                        enabled_key,
+                        time_key,
+                        sent_key,
+                    )
 
-        db.commit()
+            from app.services.care import process_all_care_reminders
+
+            await process_all_care_reminders(db)
+
+            global _last_meal_consumption_reminder_run
+            now_utc = datetime.now(timezone.utc)
+            if (
+                _last_meal_consumption_reminder_run is None
+                or (now_utc - _last_meal_consumption_reminder_run).total_seconds()
+                >= MEAL_CONSUMPTION_REMINDER_INTERVAL_SECONDS
+            ):
+                from app.services.meal_consumption_reminders import (
+                    process_meal_consumption_reminders,
+                )
+
+                await process_meal_consumption_reminders(db)
+                _last_meal_consumption_reminder_run = now_utc
+
+            db.commit()
     finally:
         db.close()
 

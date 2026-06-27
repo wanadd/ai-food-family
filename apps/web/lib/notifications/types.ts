@@ -1,4 +1,17 @@
+export type CareModeOption = "off" | "minimal" | "normal" | "active";
+
+export type NotificationTypeOption =
+  | "menu"
+  | "shopping"
+  | "pantry"
+  | "water"
+  | "health"
+  | "family";
+
 export type NotificationSettings = {
+  notifications_onboarded: boolean;
+  care_mode: CareModeOption;
+  enabled_notification_types: NotificationTypeOption[];
   buy_reminder_enabled: boolean;
   cook_reminder_enabled: boolean;
   cook_breakfast_enabled: boolean;
@@ -29,3 +42,11 @@ export type NotificationSettingsUpdate = Partial<
     | "timezone"
   >
 >;
+
+export type NotificationOnboardingPayload = {
+  care_mode: CareModeOption;
+  enabled_notification_types: NotificationTypeOption[];
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
+  timezone?: string;
+};
