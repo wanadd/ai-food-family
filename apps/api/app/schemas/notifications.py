@@ -1,13 +1,19 @@
 import re
 from datetime import datetime
+from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, Field, field_validator
 
 TIME_PATTERN = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
+CareModeOption = Literal["off", "minimal", "normal", "active"]
+
 
 class NotificationSettingsResponse(BaseModel):
+    notifications_onboarded: bool = False
+    care_mode: CareModeOption = "off"
+    enabled_notification_types: list[str] = Field(default_factory=list)
     buy_reminder_enabled: bool
     cook_reminder_enabled: bool
     cook_breakfast_enabled: bool
@@ -20,6 +26,14 @@ class NotificationSettingsResponse(BaseModel):
     cook_dinner_time: str
     timezone: str
     updated_at: datetime | None = None
+
+
+class NotificationOnboardingRequest(BaseModel):
+    care_mode: CareModeOption = "off"
+    enabled_notification_types: list[str] = Field(default_factory=list)
+    quiet_hours_start: str | None = Field(default="22:00", max_length=5)
+    quiet_hours_end: str | None = Field(default="09:00", max_length=5)
+    timezone: str | None = Field(default=None, max_length=64)
 
 
 class NotificationSettingsUpdate(BaseModel):

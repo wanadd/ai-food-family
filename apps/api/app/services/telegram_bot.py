@@ -350,7 +350,7 @@ async def handle_start(
     from app.services.legal_consent import user_has_legal_consent, user_can_access_app
 
     logger.info("/start user_id=%s", from_user.get("id"))
-    user, _ = upsert_user_from_bot(
+    user, is_new = upsert_user_from_bot(
         db,
         telegram_id=from_user["id"],
         username=from_user.get("username"),
@@ -385,7 +385,7 @@ async def handle_start(
             await bot_registration.send_welcome_legal(db, user, chat_id)
         return
 
-    await bot_registration.route_after_start(db, user, chat_id)
+    await bot_registration.route_after_start(db, user, chat_id, is_new=is_new)
 
 
 async def handle_own_contact(

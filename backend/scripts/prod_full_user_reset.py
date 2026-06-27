@@ -193,25 +193,22 @@ def main() -> int:
         )
         print(f"Backup written: {backup_path}")
 
-        trans = conn.begin()
-        try:
-            if _table_exists(inspector, "recipes"):
-                nulled = conn.execute(
-                    text("UPDATE recipes SET user_id = NULL WHERE user_id IS NOT NULL")
-                ).rowcount
-                print(f"recipes user_id nulled: {nulled}")
-            for table in _PURGE_TABLES:
-                if table in _PROTECTED_TABLES:
-                    continue
-                if not _table_exists(inspector, table):
-                    continue
-                deleted = conn.execute(text(f"DELETE FROM {table}")).rowcount
-                print(f"deleted {table}: {deleted}")
-            trans.commit()
-        except Exception:
-            trans.rollback()
-            raise
+    # Apply in a fresh transaction (dry-run reads above must not share autobegin with writes).
+    with engine.begin() as conn:
+        if _table_exists(inspector, "recipes"):
+            nulled = conn.execute(
+                text("UPDATE recipes SET user_id = NULL WHERE user_id IS NOT NULL")
+            ).rowcount
+            print(f"recipes user_id nulled: {nulled}")
+        for table in _PURGE_TABLES:
+            if table in _PROTECTED_TABLES:
+                continue
+            if not _table_exists(inspector, table):
+                continue
+            deleted = conn.execute(text(f"DELETE FROM {table}")).rowcount
+            print(f"deleted {table}: {deleted}")
 
+    with engine.connect() as conn:
         users_after = _count_table(conn, "users")
         subs_after = _count_table(conn, "user_subscriptions")
         recipes_after = _count_table(conn, "recipes")

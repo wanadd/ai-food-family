@@ -110,7 +110,7 @@ async def handle_menu_text(
     if text == MENU_SHOPPING:
         await send_telegram_message(
             chat_id,
-            "Список покупок:",
+            "Список покупок откроется в приложении.",
             reply_markup={
                 "inline_keyboard": [
                     [{"text": "Открыть покупки", "web_app": {"url": _webapp_url("/shopping")}}],
@@ -122,7 +122,7 @@ async def handle_menu_text(
     if text == MENU_PANTRY:
         await send_telegram_message(
             chat_id,
-            "Запасы дома:",
+            "Запасы можно вести в приложении.",
             reply_markup={
                 "inline_keyboard": [
                     [{"text": "Открыть запасы", "web_app": {"url": _webapp_url("/pantry")}}],

@@ -9,6 +9,7 @@ from app.config import settings
 WEBHOOK_SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
 from app.database import get_db
 from app.services.telegram_bot import process_telegram_update
+from app.services.telegram_update_dedup import should_process_telegram_update
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
@@ -55,6 +56,9 @@ async def _telegram_webhook_handler(
         text,
         has_contact,
     )
+
+    if not should_process_telegram_update(update):
+        return {"ok": True}
 
     try:
         await process_telegram_update(db, update)

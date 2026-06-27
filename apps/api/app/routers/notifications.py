@@ -5,6 +5,7 @@ from app.database import get_db
 from app.deps import get_verified_user
 from app.models.user import User
 from app.schemas.notifications import (
+    NotificationOnboardingRequest,
     NotificationSettingsResponse,
     NotificationSettingsUpdate,
 )
@@ -28,3 +29,12 @@ def update_notification_settings(
     db: Session = Depends(get_db),
 ) -> NotificationSettingsResponse:
     return notifications_service.update_settings(db, user, payload)
+
+
+@router.post("/onboarding", response_model=NotificationSettingsResponse)
+def save_notification_onboarding(
+    payload: NotificationOnboardingRequest,
+    user: User = Depends(get_verified_user),
+    db: Session = Depends(get_db),
+) -> NotificationSettingsResponse:
+    return notifications_service.apply_onboarding(db, user, payload)

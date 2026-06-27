@@ -1010,6 +1010,44 @@ def _schema_statements() -> list[str]:
         """,
         "CREATE INDEX IF NOT EXISTS ix_external_food_logs_user_date ON external_food_logs (user_id, planned_date);",
         "CREATE INDEX IF NOT EXISTS ix_external_food_logs_family_date ON external_food_logs (family_id, planned_date);",
+        # Hotfix 1.8H: notification onboarding + quiet defaults
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS notifications_onboarded BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS care_mode VARCHAR(16) NOT NULL DEFAULT 'off'",
+        "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS enabled_notification_types JSONB NOT NULL DEFAULT '[]'",
+        "ALTER TABLE care_notifications ADD COLUMN IF NOT EXISTS semantic_key VARCHAR(64)",
+        "CREATE INDEX IF NOT EXISTS ix_care_notifications_semantic ON care_notifications (user_id, type, semantic_key, created_at)",
+        "ALTER TABLE user_notification_settings ALTER COLUMN buy_reminder_enabled SET DEFAULT FALSE",
+        "ALTER TABLE user_notification_settings ALTER COLUMN cook_reminder_enabled SET DEFAULT FALSE",
+        "ALTER TABLE user_notification_settings ALTER COLUMN cook_breakfast_enabled SET DEFAULT FALSE",
+        "ALTER TABLE user_notification_settings ALTER COLUMN cook_lunch_enabled SET DEFAULT FALSE",
+        "ALTER TABLE user_notification_settings ALTER COLUMN cook_dinner_enabled SET DEFAULT FALSE",
+        "ALTER TABLE care_settings ALTER COLUMN menu_enabled SET DEFAULT FALSE",
+        "ALTER TABLE care_settings ALTER COLUMN shopping_enabled SET DEFAULT FALSE",
+        "ALTER TABLE care_settings ALTER COLUMN pantry_enabled SET DEFAULT FALSE",
+        "ALTER TABLE care_settings ALTER COLUMN care_level SET DEFAULT 'off'",
+        """
+        UPDATE user_notification_settings u SET
+            notifications_onboarded = TRUE,
+            care_mode = CASE COALESCE(cs.care_level, 'off')
+                WHEN 'minimal' THEN 'minimal'
+                WHEN 'standard' THEN 'normal'
+                WHEN 'active' THEN 'active'
+                ELSE 'off'
+            END
+        FROM care_settings cs
+        WHERE cs.user_id = u.user_id
+          AND u.notifications_onboarded = FALSE
+          AND (
+            u.buy_reminder_enabled OR u.cook_reminder_enabled
+            OR cs.menu_enabled OR cs.shopping_enabled OR cs.pantry_enabled
+            OR cs.care_level NOT IN ('off')
+          );
+        """,
+        """
+        UPDATE user_notification_settings SET notifications_onboarded = TRUE
+        WHERE notifications_onboarded = FALSE
+          AND (buy_reminder_enabled OR cook_reminder_enabled);
+        """,
     ]
 
 

@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { CareSettingsPanel } from "@/components/care/CareSettingsPanel";
+import { NotificationOnboardingPanel } from "@/components/notifications/NotificationOnboardingPanel";
 import { ScreenLayout } from "@/components/layout/ScreenLayout";
 import { NotificationSettingsForm } from "@/components/notifications/NotificationSettingsForm";
 import { useTelegram } from "@/components/TelegramProvider";
 import { usePlanam2026Embedded } from "@/lib/planam/embedded-2026";
+import { fetchNotificationSettings } from "@/lib/notifications/api";
+import type { NotificationSettings } from "@/lib/notifications/types";
 
 function NotificationsFrame({ children }: { children: ReactNode }) {
   const embedded = usePlanam2026Embedded("/account/notifications");
@@ -39,6 +43,33 @@ function NotificationsFrame({ children }: { children: ReactNode }) {
 export function NotificationsView() {
   const { initData } = useTelegram();
   const embedded = usePlanam2026Embedded("/account/notifications");
+  const [settings, setSettings] = useState<NotificationSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const reloadSettings = useCallback(async () => {
+    if (!initData) return;
+    const row = await fetchNotificationSettings(initData);
+    setSettings(row);
+  }, [initData]);
+
+  useEffect(() => {
+    if (!initData) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const row = await fetchNotificationSettings(initData);
+        if (!cancelled) setSettings(row);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initData]);
 
   if (!initData) {
     if (embedded) {
@@ -77,9 +108,20 @@ export function NotificationsView() {
 
   return (
     <NotificationsFrame>
-      <CareSettingsPanel />
+      {loading ? (
+        <p className="text-sm text-pa-muted">Загрузка настроек…</p>
+      ) : settings && !settings.notifications_onboarded ? (
+        <NotificationOnboardingPanel onSaved={() => void reloadSettings()} />
+      ) : (
+        <>
+          {settings?.care_mode === "off" ? (
+            <p className="rounded-card border border-pa-border bg-pa-surface p-4 text-sm text-pa-muted">
+              Уведомления выключены. Включите категории ниже, когда будете готовы.
+            </p>
+          ) : null}
+          <CareSettingsPanel />
 
-      <details className="group rounded-card border border-pa-border bg-pa-surface p-4 shadow-soft dark:shadow-none">
+          <details className="group rounded-card border border-pa-border bg-pa-surface p-4 shadow-soft dark:shadow-none">
         <summary className="cursor-pointer list-none">
           <span className="flex items-center justify-between">
             <span className="text-sm font-bold text-pa-foreground">
@@ -97,6 +139,8 @@ export function NotificationsView() {
           <NotificationSettingsForm />
         </div>
       </details>
+        </>
+      )}
     </NotificationsFrame>
   );
 }

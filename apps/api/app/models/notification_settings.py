@@ -1,6 +1,8 @@
 from datetime import date, datetime
+from typing import Any
 
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -13,11 +15,16 @@ class UserNotificationSettings(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True
     )
-    buy_reminder_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    cook_reminder_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    cook_breakfast_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    cook_lunch_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    cook_dinner_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    notifications_onboarded: Mapped[bool] = mapped_column(Boolean, default=False)
+    care_mode: Mapped[str] = mapped_column(String(16), default="off")
+    enabled_notification_types: Mapped[list[Any]] = mapped_column(
+        JSONB, default=list
+    )
+    buy_reminder_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    cook_reminder_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    cook_breakfast_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    cook_lunch_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    cook_dinner_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     buy_reminder_time: Mapped[str] = mapped_column(String(5), default="09:00")
     cook_reminder_time: Mapped[str] = mapped_column(String(5), default="17:30")
     cook_breakfast_time: Mapped[str] = mapped_column(String(5), default="08:00")
