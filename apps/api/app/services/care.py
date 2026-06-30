@@ -21,7 +21,13 @@ from app.schemas.care import (
 from app.services import subscription as subscription_service
 from app.services.app_scope import resolve_scope
 from app.services.menu_selection import get_selected_menu
-from app.services.care_guard import PANTRY_SEMANTIC_KEY, can_send_care_notification
+from app.services.care_guard import (
+    DEDUP_STATUSES,
+    PROACTIVE_CARE_SEMANTIC_KEYS,
+    can_send_care_notification,
+    dedup_hours_for_semantic_key,
+    semantic_key_for_type,
+)
 from app.services.notifications import get_or_create_settings as get_notif_settings_row
 from app.services.onboarding import get_or_create_profile
 from app.services import pantry as pantry_service
@@ -301,14 +307,8 @@ def should_send_notification(
     ignore_cooldown: bool = False,
     semantic_key: str | None = None,
 ) -> bool:
-    if not can_send_care_notification(
-        db,
-        user,
-        notification_type,
-        semantic_key=semantic_key or (
-            PANTRY_SEMANTIC_KEY if notification_type == "pantry" else None
-        ),
-    ):
+    sk = semantic_key or semantic_key_for_type(notification_type)
+    if not can_send_care_notification(db, user, notification_type, semantic_key=sk):
         return False
 
     settings_row = get_or_create_care_settings(db, user)
@@ -344,18 +344,34 @@ def create_care_notification(
     scheduled_at: datetime | None = None,
     semantic_key: str | None = None,
 ) -> CareNotification | None:
-    sk = semantic_key or (
-        PANTRY_SEMANTIC_KEY if notification_type == "pantry" else None
-    )
+    sk = semantic_key or semantic_key_for_type(notification_type)
+    if notification_type in PROACTIVE_CARE_SEMANTIC_KEYS and sk is None:
+        logger.info(
+            "Care notification blocked: missing semantic key for user %s type %s",
+            user.id,
+            notification_type,
+        )
+        return None
+    if not can_send_care_notification(db, user, notification_type, semantic_key=sk):
+        logger.info(
+            "Care notification blocked by guard for user %s type %s",
+            user.id,
+            notification_type,
+        )
+        return None
+
     if sk:
-        since = datetime.now(timezone.utc) - timedelta(hours=24)
+        since = datetime.now(timezone.utc) - timedelta(
+            hours=dedup_hours_for_semantic_key(sk)
+        )
         existing = (
             db.query(CareNotification)
             .filter(
                 CareNotification.user_id == user.id,
                 CareNotification.type == notification_type,
+                CareNotification.family_id == family_id,
                 CareNotification.semantic_key == sk,
-                CareNotification.status.in_(("pending", "sent")),
+                CareNotification.status.in_(DEDUP_STATUSES),
                 CareNotification.created_at >= since,
             )
             .first()
@@ -412,10 +428,28 @@ async def send_telegram_care_notification(
         return notification.status == "sent"
 
     if not user.telegram_id:
-        notification.status = "failed"
+        _mark_notification_failed(
+            notification,
+            error_type="missing_telegram_id",
+            error_message="User has no telegram_id",
+        )
         db.commit()
         logger.info("Care notification skipped: no telegram_id for user %s", user.id)
         return False
+
+    claimed = (
+        db.query(CareNotification)
+        .filter(
+            CareNotification.id == notification.id,
+            CareNotification.status == "pending",
+        )
+        .update({"status": "sending"}, synchronize_session=False)
+    )
+    db.commit()
+    if claimed != 1:
+        db.refresh(notification)
+        return notification.status == "sent"
+    db.refresh(notification)
 
     template = CARE_TEMPLATES.get(notification.type, {})
     web_path = (notification.payload or {}).get(
@@ -426,15 +460,42 @@ async def send_telegram_care_notification(
     )
     text = f"<b>{notification.title}</b>\n\n{notification.message}"
 
-    sent = await send_telegram_message(
-        user.telegram_id,
-        text,
-        web_app_path=web_path,
-        button_text=button,
-    )
+    try:
+        sent = await send_telegram_message(
+            user.telegram_id,
+            text,
+            web_app_path=web_path,
+            button_text=button,
+        )
+    except Exception as exc:
+        logger.exception(
+            "Telegram care notification failed for user %s notification %s",
+            user.id,
+            notification.id,
+        )
+        _mark_notification_failed(
+            notification,
+            error_type=exc.__class__.__name__,
+            error_message=str(exc),
+        )
+        db.commit()
+        log_care_event(
+            db,
+            user,
+            f"care_{notification.type}_failed",
+            payload={"notification_id": notification.id},
+        )
+        return False
 
-    notification.status = "sent" if sent else "failed"
-    notification.sent_at = datetime.now(timezone.utc) if sent else None
+    if sent:
+        notification.status = "sent"
+        notification.sent_at = datetime.now(timezone.utc)
+    else:
+        _mark_notification_failed(
+            notification,
+            error_type="telegram_not_ok",
+            error_message="Telegram send returned false",
+        )
     db.commit()
 
     log_care_event(
@@ -444,6 +505,23 @@ async def send_telegram_care_notification(
         payload={"notification_id": notification.id},
     )
     return sent
+
+
+def _mark_notification_failed(
+    notification: CareNotification,
+    *,
+    error_type: str,
+    error_message: str,
+) -> None:
+    payload = notification.payload if isinstance(notification.payload, dict) else {}
+    notification.payload = {
+        **payload,
+        "error_type": error_type,
+        "error_message": error_message[:500],
+        "failed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    notification.status = "failed"
+    notification.sent_at = None
 
 
 def build_care_context(db: Session, user: User) -> CareContext:
@@ -528,12 +606,14 @@ async def send_care_notification_by_type(
     ignore_cooldown: bool = False,
     custom_message: str | None = None,
 ) -> tuple[bool, str, CareNotification | None]:
+    semantic_key = semantic_key_for_type(notification_type)
     if not should_send_notification(
         db,
         user,
         notification_type,
         ignore_quiet_hours=ignore_quiet_hours,
         ignore_cooldown=ignore_cooldown,
+        semantic_key=semantic_key,
     ):
         return False, "Сейчас это напоминание отправить нельзя (настройки или пауза).", None
 
@@ -547,7 +627,7 @@ async def send_care_notification_by_type(
             "web_app_path": template["web_app_path"],
             "button_text": template["button_text"],
         },
-        semantic_key=PANTRY_SEMANTIC_KEY if notification_type == "pantry" else None,
+        semantic_key=semantic_key,
     )
     if notification is None:
         return False, "Такое напоминание уже отправлялось недавно.", None
