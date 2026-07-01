@@ -220,8 +220,8 @@ export function resolvePlanAmHeroState(
       priority: "P2",
       ctaLabel: "Собрать меню",
       ctaHref: PLANAM_ROUTES.planGenerate,
-      title: "Соберём меню на неделю?",
-      subtitle: "PLANAM предложит варианты и сразу подготовит список покупок.",
+      title: "Соберём меню на нужный период?",
+      subtitle: "Выберите 1, 3, 5 или 7 дней — PLANAM сразу подготовит покупки.",
     };
   }
 

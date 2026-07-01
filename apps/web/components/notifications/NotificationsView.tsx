@@ -116,7 +116,8 @@ export function NotificationsView() {
         <>
           {settings?.care_mode === "off" ? (
             <p className="rounded-card border border-pa-border bg-pa-surface p-4 text-sm text-pa-muted">
-              Уведомления выключены. Включите категории ниже, когда будете готовы.
+              Уведомления выключены. Включите категории ниже, когда будете готовы;
+              это не обязательный шаг первого запуска.
             </p>
           ) : null}
           <CareSettingsPanel />

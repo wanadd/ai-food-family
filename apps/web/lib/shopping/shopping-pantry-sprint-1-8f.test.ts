@@ -31,6 +31,20 @@ describe("shopping pantry sprint 1.8f", () => {
     expect(source).toContain('data-testid="shopping-bought-today"');
   });
 
+  it("shopping first-run empty states avoid hardcoded seven days", () => {
+    const source = readFileSync(
+      `${repoRoot}/components/planam-v2/shopping/ShoppingV2.tsx`,
+      "utf8",
+    );
+    expect(source).toContain("Покупок пока нет");
+    expect(source).toContain("Сначала соберите меню");
+    expect(source).toContain("Список пока пуст");
+    expect(source).toContain("Всё куплено");
+    expect(source).toContain("Покупки готовы");
+    expect(source).toContain("для меню на выбранный период");
+    expect(source).not.toContain("для меню на 7 дней");
+  });
+
   it("shopping groups by category via groupShoppingItems", () => {
     const source = readFileSync(
       `${repoRoot}/components/planam-v2/shopping/ShoppingV2.tsx`,
@@ -53,6 +67,18 @@ describe("shopping pantry sprint 1.8f", () => {
     expect(source).toContain('data-testid="pantry-product-groups"');
     expect(source).toContain("preparedDishes");
     expect(source).toContain('id: "prepared"');
+  });
+
+  it("pantry hides cooking CTA while stock is empty", () => {
+    const source = readFileSync(
+      `${repoRoot}/components/planam-v2/home-domain/PantryV2.tsx`,
+      "utf8",
+    );
+    expect(source).toContain("hasActiveProducts");
+    expect(source).toContain("Добавить первый продукт");
+    expect(source).toContain("Запасы помогут PLANAM точнее составлять меню и покупки.");
+    expect(source).toContain("hasActiveProducts ? (");
+    expect(source).toContain('data-testid="pantry-cook-from-available"');
   });
 
   it("pantry add has category fallback via detectProductCategory", () => {

@@ -35,6 +35,7 @@ import {
   fetchTodayMealCheckins,
 } from "@/lib/meal-checkins/api";
 import { deleteMenuItem, fetchSelectedMenu } from "@/lib/menu/api";
+import { formatMenuDuration } from "@/lib/menu/duration-options";
 import { buildReplaceCatalogUrl } from "@/lib/menu/replace-slot";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import {
@@ -73,6 +74,7 @@ import { menuMealHeading } from "@/lib/menu/meal-heading";
 import { addRecipeToShopping } from "@/lib/recipes/api";
 import { formatPlannedYieldLine } from "@/lib/plan/yield-format";
 import { cn } from "@/lib/planam/cn";
+import { PLANAM_ROUTES } from "@/lib/planam/routes";
 
 type CachedSelected = { menu: MenuVariant | null; selected_at: string | null };
 
@@ -373,7 +375,7 @@ export function MenuTodayV2() {
         <V2EmptyState
           icon={<span aria-hidden>🍽</span>}
           title="Меню пока не собрано"
-          description="Соберём меню на сегодня за 1 минуту."
+          description="Выберите период, а PLANAM подберёт блюда и подготовит покупки."
           actionLabel="Собрать меню"
           onAction={() => router.push(PLAN_PATHS.generate)}
         />
@@ -394,6 +396,8 @@ export function MenuTodayV2() {
 
   const dateLabel = formatPlanDayLabel(menu, dayIndex);
   const justSaved = searchParams.get("saved") === "1";
+  const firstRun = searchParams.get("firstRun") === "1";
+  const duration = formatMenuDuration(menu.plan_days ?? 7);
 
   return (
     <div className="bg-pa-canvas pb-4">
@@ -401,8 +405,29 @@ export function MenuTodayV2() {
         {justSaved ? (
           <div className="mb-3 rounded-card border border-sage-200 bg-sage-50 px-4 py-3 dark:border-sage-700/40 dark:bg-sage-700/20">
             <p className="pa26-caption font-semibold text-sage-800 dark:text-sage-300">
-              План сохранён — отмечайте приёмы пищи ниже
+              {firstRun ? "Меню готово" : "План сохранён"}
             </p>
+            <p className="pa26-caption mt-1 text-pa-foreground">
+              План на {duration} сохранён. Список покупок уже подготовлен.
+            </p>
+            {firstRun ? (
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <V2Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => router.push(PLANAM_ROUTES.shopping)}
+                >
+                  Посмотреть покупки
+                </V2Button>
+                <V2Button
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => router.push(PLANAM_ROUTES.notifications)}
+                >
+                  Уведомления позже
+                </V2Button>
+              </div>
+            ) : null}
           </div>
         ) : null}
         <h1 className="pa26-page-title">Меню</h1>

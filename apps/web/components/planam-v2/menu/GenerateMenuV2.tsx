@@ -20,6 +20,13 @@ import {
 import { useTelegram } from "@/components/TelegramProvider";
 import { ApiRequestError } from "@/lib/api-errors";
 import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
+import {
+  DEFAULT_MENU_DURATION_DAYS,
+  MENU_DURATION_OPTIONS,
+  formatMenuDuration,
+  menuDurationChipLabel,
+  type MenuDurationDays,
+} from "@/lib/menu/duration-options";
 import { generateMenus, selectMenu } from "@/lib/menu/api";
 import { VARIANT_LABELS } from "@/lib/menu/labels";
 import {
@@ -34,15 +41,13 @@ import { PLANAM_ROUTES } from "@/lib/planam/routes";
 
 type Step = "settings" | "generating" | "choose" | "done" | "error";
 
-const DAY_OPTIONS = [1, 3, 7] as const;
-
 export function GenerateMenuV2() {
   const router = useRouter();
   const { initData } = useTelegram();
   const { mode, context, loading: modeLoading } = useAppMode();
 
   const [step, setStep] = useState<Step>("settings");
-  const [planDays, setPlanDays] = useState<number>(3);
+  const [planDays, setPlanDays] = useState<MenuDurationDays>(DEFAULT_MENU_DURATION_DAYS);
   const [goal, setGoal] = useState<MenuGoalId | null>(null);
   const [usePantry, setUsePantry] = useState(true);
   const [useFamily, setUseFamily] = useState(true);
@@ -145,7 +150,11 @@ export function GenerateMenuV2() {
   if (step === "generating") {
     return (
       <div className="px-4 pb-8 pt-4">
-        <AiProcessLoadingV2 variant="menu" />
+        <AiProcessLoadingV2
+          variant="menu"
+          title={`Собираем меню на ${formatMenuDuration(planDays)}`}
+          subtitle="Подбираем блюда под цель, ограничения и запасы"
+        />
       </div>
     );
   }
@@ -173,7 +182,8 @@ export function GenerateMenuV2() {
           </span>
           <h1 className="pa26-page-title mt-3">Меню готово</h1>
           <p className="pa26-body mt-1 text-pa-muted">
-            Список покупок обновился автоматически.
+            План на {formatMenuDuration(planDays)} сохранён. Список покупок
+            обновился автоматически.
           </p>
         </div>
         <V2Button
@@ -263,12 +273,12 @@ export function GenerateMenuV2() {
       </header>
 
       <section>
-        <h2 className="pa26-section-title">На сколько дней</h2>
+        <h2 className="pa26-section-title">На сколько дней собрать меню?</h2>
         <div className="mt-2 flex gap-2">
-          {DAY_OPTIONS.map((d) => (
+          {MENU_DURATION_OPTIONS.map((d) => (
             <V2Chip
               key={d}
-              label={d === 1 ? "1 день" : d === 3 ? "3 дня" : "7 дней"}
+              label={menuDurationChipLabel(d)}
               active={planDays === d}
               onClick={() => setPlanDays(d)}
             />
@@ -320,7 +330,7 @@ export function GenerateMenuV2() {
         disabled={!goal}
         onClick={() => void runGenerate()}
       >
-        Собрать меню
+        Собрать меню на {formatMenuDuration(planDays)}
       </V2Button>
       {!goal ? (
         <p className="pa26-micro text-center text-pa-muted">

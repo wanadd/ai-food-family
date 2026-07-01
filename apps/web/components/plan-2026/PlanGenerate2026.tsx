@@ -14,7 +14,13 @@ import { ApiRequestError } from "@/lib/api-errors";
 import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
 import { generateMenus, selectMenu, fetchSelectedMenu } from "@/lib/menu/api";
 import {
-  MENU_DAY_OPTIONS,
+  DEFAULT_MENU_DURATION_DAYS,
+  MENU_DURATION_OPTIONS,
+  formatMenuDuration,
+  menuDurationChipLabel,
+  type MenuDurationDays,
+} from "@/lib/menu/duration-options";
+import {
   MENU_GOAL_OPTIONS,
   PLAN_MODE_OPTIONS,
   type MenuGoalId,
@@ -36,7 +42,7 @@ export function PlanGenerate2026() {
   const { mode, context, loading: modeLoading } = useAppMode();
 
   const [step, setStep] = useState<WizardStep>("days");
-  const [planDays, setPlanDays] = useState<number>(5);
+  const [planDays, setPlanDays] = useState<MenuDurationDays>(DEFAULT_MENU_DURATION_DAYS);
   const [goal, setGoal] = useState<MenuGoalId | null>(null);
   const [planMode, setPlanMode] = useState<PlanModeId>("healthy");
   const [usePantry, setUsePantry] = useState(true);
@@ -178,8 +184,10 @@ export function PlanGenerate2026() {
         <OnboardingGenerateStep2026
           phase={phase}
           errorMessage={genError}
+          planDays={planDays}
           onStart={() => void runGenerate()}
           onRetry={() => void runGenerate()}
+          onContinueWithoutMenu={() => router.replace("/")}
         />
       </div>
     );
@@ -191,9 +199,9 @@ export function PlanGenerate2026() {
 
       {step === "days" ? (
         <>
-          <p className="pa26-body text-pa-muted">На сколько дней составить меню?</p>
+          <p className="pa26-body text-pa-muted">На сколько дней собрать меню?</p>
           <div className="flex flex-wrap gap-2">
-            {MENU_DAY_OPTIONS.filter((d) => [3, 5, 7].includes(d)).map((d) => (
+            {MENU_DURATION_OPTIONS.map((d) => (
               <button
                 key={d}
                 type="button"
@@ -205,7 +213,7 @@ export function PlanGenerate2026() {
                     : "border-pa-border bg-pa-surface",
                 )}
               >
-                {d} дн.
+                {menuDurationChipLabel(d)}
               </button>
             ))}
           </div>
@@ -278,7 +286,7 @@ export function PlanGenerate2026() {
               disabled={!goal}
               onClick={() => setStep("generate")}
             >
-              Составить план
+              Меню на {formatMenuDuration(planDays)}
             </Button2026>
           </div>
         </>

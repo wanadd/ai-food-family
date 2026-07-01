@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 MenuVariantType = Literal["quick", "economy", "balanced"]
 MealType = Literal["breakfast", "lunch", "dinner", "snack"]
@@ -86,10 +86,19 @@ DrinkMenuMode = Literal[
 class MenuGenerateRequest(BaseModel):
     persons_count: int | None = Field(default=None, ge=1, le=20)
     plan_mode: str | None = Field(default=None, max_length=64)
-    plan_days: int | None = Field(default=None, ge=1, le=30)
+    plan_days: int | None = Field(default=None, ge=1, le=7)
     nutrition_goal: str | None = Field(default=None, max_length=32)
     drink_mode: DrinkMenuMode | None = None
     allow_alcohol: bool = False
+
+    @field_validator("plan_days")
+    @classmethod
+    def validate_plan_days(cls, value: int | None) -> int | None:
+        if value is None:
+            return value
+        if value not in {1, 3, 5, 7}:
+            raise ValueError("plan_days must be one of 1, 3, 5, 7")
+        return value
 
 
 class SelectMenuRequest(BaseModel):

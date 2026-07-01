@@ -3,6 +3,7 @@ import type { MenuGoalId, PlanModeId } from "@/lib/menu/planner-options";
 import type { PantryList } from "@/lib/pantry/types";
 
 import type { MenuGenerateOptions } from "./api";
+import { normalizeMenuDurationDays } from "./duration-options";
 
 export type BuildGeneratePayloadInput = {
   mode: AppMode;
@@ -34,7 +35,7 @@ export function buildMenuGeneratePayload(
 
   return {
     nutrition_goal: input.goal,
-    plan_days: input.planDays,
+    plan_days: normalizeMenuDurationDays(input.planDays),
     persons_count: persons,
     plan_mode: resolvePlanMode(input.wizardBudget, input.planMode),
   };

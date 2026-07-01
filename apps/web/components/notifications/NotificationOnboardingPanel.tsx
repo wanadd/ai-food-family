@@ -101,7 +101,7 @@ export function NotificationOnboardingPanel({ onSaved }: Props) {
       <h2 className="text-base font-bold text-pa-foreground">Настроить уведомления</h2>
       <p className="mt-2 text-sm leading-relaxed text-pa-muted">
         PLANAM может напоминать о готовке, покупках, запасах и здоровье. Выберите,
-        что действительно нужно.
+        что действительно нужно. Можно оставить всё выключенным и вернуться позже.
       </p>
 
       <div className="mt-4 space-y-2">
