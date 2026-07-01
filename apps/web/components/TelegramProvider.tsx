@@ -13,6 +13,7 @@ import {
 import {
   authenticateAuditLogin,
   authenticateDevLogin,
+  authenticateLocalParityLogin,
   authenticateWithTelegram,
   type AuthUser,
 } from "@/lib/api";
@@ -26,6 +27,7 @@ import {
   syncAuditPersonaFromUrl,
 } from "@/lib/audit/audit-mode";
 import { isClientDevMode, storeDevInitData } from "@/lib/dev-auth";
+import { isLocalParityModeEnabled } from "@/lib/local-parity-auth";
 import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
 import { markWowComplete } from "@/lib/planam/onboarding-gate";
 import { loadTelegramWebApp } from "@/lib/telegram-webapp";
@@ -86,6 +88,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   const [isDevMode, setIsDevMode] = useState(false);
   const [isAuditMode, setIsAuditMode] = useState(false);
   const [auditPersona, setAuditPersona] = useState<string | null>(null);
+  const [localParityBusy, setLocalParityBusy] = useState(false);
   const [platform, setPlatform] = useState("unknown");
   const [colorScheme, setColorScheme] = useState("light");
 
@@ -198,6 +201,19 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     }
 
     // Step 3: no Telegram initData. Try dev login if we look like a
+    // local prod-parity audit environment.
+    if (isLocalParityModeEnabled()) {
+      setIsTelegram(false);
+      setIsDevMode(true);
+      setIsAuditMode(false);
+      setAuditPersona(null);
+      setPlatform("local-parity");
+      setAuthError(null);
+      setIsAuthenticating(false);
+      return;
+    }
+
+    // Step 4: no Telegram initData. Try dev login if we look like a
     // local/preview environment.
     if (isClientDevMode()) {
       try {
@@ -226,7 +242,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Step 4: genuinely outside Telegram and outside dev/audit — show the
+    // Step 5: genuinely outside Telegram and outside dev/audit — show the
     // "open in Telegram" screen.
     debugAuthLog("No initData and no dev mode — falling back to TelegramRequired");
     setAuthError("Откройте приложение через Telegram");
@@ -238,6 +254,38 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     setAuditPersona(null);
     setIsAuthenticating(false);
   }, []);
+
+  const loginLocalParity = useCallback(async () => {
+    if (!isLocalParityModeEnabled() || localParityBusy) {
+      return;
+    }
+    setLocalParityBusy(true);
+    setAuthError(null);
+    try {
+      const result = await authenticateLocalParityLogin();
+      setInitData(result.local_parity_init_data);
+      setUser(result.user);
+      setIsNewUser(result.is_new);
+      setIsTelegram(false);
+      setIsDevMode(true);
+      setIsAuditMode(false);
+      setAuditPersona(null);
+      setPlatform("local-parity");
+      void prefetchAppContext(result.local_parity_init_data).catch(() => {});
+      console.info("[PlanAm] Local parity auth success", {
+        userId: result.user.id,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Local parity auth failed";
+      setAuthError(message);
+      setUser(null);
+      setInitData("");
+    } finally {
+      setLocalParityBusy(false);
+      setIsAuthenticating(false);
+    }
+  }, [localParityBusy]);
 
   useEffect(() => {
     if (!mounted) {
@@ -287,8 +335,28 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  const showLocalParityPanel = isLocalParityModeEnabled() && !user;
+
   return (
-    <TelegramContext.Provider value={value}>{children}</TelegramContext.Provider>
+    <TelegramContext.Provider value={value}>
+      {showLocalParityPanel ? (
+        <div className="fixed left-3 top-3 z-[100] rounded-lg border border-slate-300 bg-white p-3 text-sm shadow-lg">
+          <div className="font-semibold text-slate-900">Local parity login</div>
+          {authError ? (
+            <div className="mt-1 max-w-[280px] text-xs text-red-700">{authError}</div>
+          ) : null}
+          <button
+            type="button"
+            className="mt-2 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+            disabled={localParityBusy}
+            onClick={() => void loginLocalParity()}
+          >
+            {localParityBusy ? "Входим..." : "Войти как QA user"}
+          </button>
+        </div>
+      ) : null}
+      {children}
+    </TelegramContext.Provider>
   );
 }
 

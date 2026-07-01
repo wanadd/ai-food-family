@@ -43,3 +43,7 @@ class DevLoginResponse(TelegramAuthResponse):
 class AuditLoginResponse(TelegramAuthResponse):
     audit_init_data: str
     audit_persona: str
+
+
+class LocalParityLoginResponse(TelegramAuthResponse):
+    local_parity_init_data: str

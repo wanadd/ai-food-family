@@ -15,6 +15,9 @@ async def send_telegram_message(
     web_app_path: str = "/",
     button_text: str = "Открыть приложение",
 ) -> bool:
+    if not settings.telegram_outbound_allowed:
+        logger.info("Skip Telegram message: outbound disabled")
+        return False
     if not settings.telegram_bot_token:
         logger.info("Skip Telegram message: TELEGRAM_BOT_TOKEN is not set")
         return False

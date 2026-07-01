@@ -683,6 +683,8 @@ async def process_care_reminders_for_user(db: Session, user: User) -> None:
 
 
 async def process_all_care_reminders(db: Session) -> None:
+    if not settings.care_scheduler_allowed:
+        return
     if not settings.telegram_bot_token:
         return
     users = db.query(User).filter(User.phone_number.isnot(None)).all()

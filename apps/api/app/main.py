@@ -43,6 +43,8 @@ from app.telegram.bot import setup_bot_commands, setup_menu_button, setup_webhoo
 
 
 async def _startup_telegram() -> None:
+    if not settings.telegram_outbound_allowed:
+        return
     await setup_menu_button()
     await setup_bot_commands()
     await setup_webhook()
@@ -51,14 +53,23 @@ async def _startup_telegram() -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
-    scheduler_task = asyncio.create_task(run_notification_scheduler())
-    telegram_task = asyncio.create_task(_startup_telegram())
+    scheduler_task = (
+        asyncio.create_task(run_notification_scheduler())
+        if settings.notification_scheduler_allowed
+        else None
+    )
+    telegram_task = (
+        asyncio.create_task(_startup_telegram())
+        if settings.telegram_outbound_allowed
+        else None
+    )
     try:
         yield
     finally:
-        telegram_task.cancel()
-        scheduler_task.cancel()
         for task in (telegram_task, scheduler_task):
+            if task is None:
+                continue
+            task.cancel()
             try:
                 await task
             except asyncio.CancelledError:

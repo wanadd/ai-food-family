@@ -11,6 +11,7 @@ venv/
 # Environment files
 .env
 .env.local
+.env.local-parity
 .env.production
 apps/web/.env.local
 apps/api/.env
@@ -75,3 +76,6 @@ apps/web/public/recipe-images/**/*
 # Local database backups
 backup_*.sql
 *.sql
+*.dump
+*.backup
+.local-parity/

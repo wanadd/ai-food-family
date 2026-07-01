@@ -52,6 +52,23 @@ def get_current_user(
             detail="Audit auth is disabled",
         )
 
+    from app.services.local_parity_auth import (
+        get_local_parity_user_from_init_data,
+        is_local_parity_init_data,
+    )
+
+    local_parity_user = get_local_parity_user_from_init_data(
+        db, x_telegram_init_data
+    )
+    if local_parity_user is not None:
+        return local_parity_user
+
+    if is_local_parity_init_data(x_telegram_init_data):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Local parity auth is disabled",
+        )
+
     if not x_telegram_init_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
