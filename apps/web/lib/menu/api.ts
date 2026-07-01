@@ -98,10 +98,14 @@ export async function selectMenu(
   initData: string,
   mode: AppMode,
   menu: MenuVariant,
+  options?: { finalizeCatalog?: boolean },
 ): Promise<SelectedMenu> {
   return apiFetch<SelectedMenu>(initData, mode, "/menus/select", {
     method: "POST",
-    body: JSON.stringify({ menu }),
+    body: JSON.stringify({
+      menu,
+      finalize_catalog: options?.finalizeCatalog ?? true,
+    }),
   });
 }
 

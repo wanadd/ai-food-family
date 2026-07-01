@@ -142,8 +142,8 @@ export function MenuCurrentView() {
         undefined,
         dayIndex,
       );
-      const merged = mergeReplaceResult(menu, updated, dayIndex);
-      await selectMenu(initData, mode, merged);
+      const merged = mergeReplaceResult(menu, updated, dayIndex, pendingMealIndex);
+      await selectMenu(initData, mode, merged, { finalizeCatalog: false });
       invalidateCache("selected-menu");
       invalidateCache("menu-overview");
       invalidateCache("shopping-list");

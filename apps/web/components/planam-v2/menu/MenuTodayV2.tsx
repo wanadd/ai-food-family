@@ -171,6 +171,19 @@ export function MenuTodayV2() {
     router.push(withReturnTo(recipeDetailPath(recipeId), returnToToday));
   }
 
+  function closeActionSheet() {
+    setActionMeal(null);
+    setPortionMultiplier(1);
+    if (searchParams.get("action") !== "1" && !searchParams.has("meal")) {
+      return;
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("action");
+    params.delete("meal");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
+
   useEffect(() => {
     if (!loading && menu) {
       restoreScrollPosition(PLAN_PATHS.today, planTodayScrollQuery(dayIndex));
@@ -294,7 +307,7 @@ export function MenuTodayV2() {
       });
       invalidateCache(cacheKey.menuOverview(mode));
       showToast("Приём пищи пропущен. Покупки не изменены.");
-      setActionMeal(null);
+      closeActionSheet();
       void reloadCheckins();
     } catch {
       showToast("Не удалось сохранить. Попробуйте ещё раз.");
@@ -329,7 +342,7 @@ export function MenuTodayV2() {
           ? "Блюдо отмечено приготовленным — съесть можно позже"
           : "Отметили как съеденное",
       );
-      setActionMeal(null);
+      closeActionSheet();
       setNutritionRefreshKey((k) => k + 1);
       void reloadCheckins();
     } catch {
@@ -349,7 +362,7 @@ export function MenuTodayV2() {
       invalidateCache("shopping-list");
       invalidateCache("menu-overview");
       showToast("Ингредиенты добавлены в покупки");
-      setActionMeal(null);
+      closeActionSheet();
     } catch {
       showToast("Не удалось добавить в покупки. Попробуйте ещё раз.");
     } finally {
@@ -658,13 +671,9 @@ export function MenuTodayV2() {
                     await deleteMenuItem(initData, mode, actionMeal.slotId);
                     invalidateCache(cacheKey.menuOverview(mode));
                     invalidateCache(cacheKey.selectedMenu(mode));
+                    invalidateCache(cacheKey.shoppingList(mode));
                     showToast("Меню обновлено, покупки пересчитаны");
-                    setActionMeal(null);
-                    const params = new URLSearchParams(searchParams.toString());
-                    params.delete("action");
-                    params.delete("meal");
-                    const qs = params.toString();
-                    router.replace(qs ? `${pathname}?${qs}` : pathname);
+                    closeActionSheet();
                     await load();
                   } catch {
                     showToast("Не удалось удалить блюдо. Попробуйте ещё раз.");

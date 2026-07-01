@@ -186,3 +186,24 @@ def test_menu_duration_ingredient_recompute_works_for_supported_lengths():
         item = build_items_from_ingredients(recomputed.ingredients)[0]
         assert item.name.lower() == "carrot"
         assert item.quantity == str(days)
+
+
+def test_recompute_menu_ingredients_does_not_mutate_days_or_meals():
+    db = _Db(
+        {
+            1: _recipe(
+                1,
+                "Dinner",
+                [{"name": "Carrot", "amount": "1 pc", "category": "other"}],
+            )
+        }
+    )
+    menu = _menu(7, 1)
+    before_days = [day.model_dump(mode="json") for day in menu.days or []]
+    before_meals = [meal.model_dump(mode="json") for meal in menu.meals]
+
+    recomputed = recompute_menu_ingredients_from_active_meals(db, menu)
+
+    assert [day.model_dump(mode="json") for day in recomputed.days or []] == before_days
+    assert [meal.model_dump(mode="json") for meal in recomputed.meals] == before_meals
+    assert recomputed.ingredients != menu.ingredients

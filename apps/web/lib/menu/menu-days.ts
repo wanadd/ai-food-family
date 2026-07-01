@@ -52,12 +52,19 @@ export function mergeReplaceResult(
   fullMenu: MenuVariant,
   replaceResult: MenuVariant,
   dayIndex: number,
+  mealIndex?: number,
 ): MenuVariant {
   if (!fullMenu.days?.length) {
     return replaceResult;
   }
 
-  const replacedDayMeals = replaceResult.meals;
+  const currentDay = fullMenu.days.find((day) => day.day_index === dayIndex);
+  const replacedDayMeals =
+    mealIndex == null
+      ? replaceResult.meals
+      : (currentDay?.meals ?? []).map((meal, index) =>
+          index === mealIndex ? (replaceResult.meals[mealIndex] ?? meal) : meal,
+        );
   const days = fullMenu.days.map((day) =>
     day.day_index === dayIndex ? { ...day, meals: replacedDayMeals } : day,
   );

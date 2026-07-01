@@ -93,8 +93,8 @@ export function ReplaceDishSheet2026({
         undefined,
         dayIndex,
       );
-      const merged = mergeReplaceResult(menu, updated, dayIndex);
-      await selectMenu(initData, mode, merged);
+      const merged = mergeReplaceResult(menu, updated, dayIndex, mealIndex);
+      await selectMenu(initData, mode, merged, { finalizeCatalog: false });
       invalidateCache("selected-menu");
       invalidateCache("menu-overview");
       invalidateCache("shopping-list");
