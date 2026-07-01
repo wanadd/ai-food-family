@@ -19,6 +19,12 @@ import { Button2026 } from "@/components/planam-2026/ui/Button2026";
 import { useSubscriptionOverview } from "@/components/subscription/SubscriptionProvider";
 import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
 import { enrichTodayMeals } from "@/lib/home/home-2026-data";
+import {
+  DEFAULT_MENU_DURATION_DAYS,
+  MENU_DURATION_OPTIONS,
+  formatMenuDuration,
+  type MenuDurationDays,
+} from "@/lib/menu/duration-options";
 import { generateMenus, selectMenu } from "@/lib/menu/api";
 import { fetchMenuOverview } from "@/lib/menu/overview-api";
 import type { MenuVariant } from "@/lib/menu/types";
@@ -63,6 +69,7 @@ export function Onboarding2026Flow() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [wowMeals, setWowMeals] = useState<ReturnType<typeof enrichTodayMeals>>([]);
   const [menuTitle, setMenuTitle] = useState<string | null>(null);
+  const [planDays, setPlanDays] = useState<MenuDurationDays>(DEFAULT_MENU_DURATION_DAYS);
 
   const canNext = (() => {
     if (step === 1) return wizard.who != null;
@@ -100,7 +107,7 @@ export function Onboarding2026Flow() {
         mode,
         goal: nutrition_goal,
         personsCount: persons,
-        planDays: 5,
+        planDays,
         planMode: plan_mode,
         wizardBudget: "standard",
         pantry: null,
@@ -122,7 +129,7 @@ export function Onboarding2026Flow() {
       setWowMeals(enrichTodayMeals(overview));
       setMenuTitle(overview.plan_summary.menu_title ?? variant.title);
       setGeneratePhase("idle");
-      setStep(5);
+      setStep(6);
     } catch (err) {
       setGeneratePhase("error");
       if (err instanceof ApiRequestError) {
@@ -133,27 +140,43 @@ export function Onboarding2026Flow() {
         );
       }
     }
-  }, [initData, mode, wizard, ensureLoaded]);
+  }, [initData, mode, wizard, planDays, ensureLoaded]);
 
-  const handleStartDay = () => {
+  const finishOnboarding = () => {
     markWowComplete();
     invalidateCache("menu-overview");
+    invalidateCache("selected-menu");
+  };
+
+  const handleOpenMenu = () => {
+    finishOnboarding();
+    router.replace("/plan/today?saved=1&firstRun=1");
+  };
+
+  const handleOpenShopping = () => {
+    finishOnboarding();
+    router.replace("/home/shopping?firstRun=1");
+  };
+
+  const handleNotificationsLater = () => {
+    finishOnboarding();
+    router.replace("/account/notifications");
+  };
+
+  const handleContinueWithoutMenu = () => {
+    finishOnboarding();
     router.replace("/");
   };
 
   const handleNext = () => {
-    if (step < 3) {
+    if (step < 4) {
       setStep((s) => s + 1);
-      return;
-    }
-    if (step === 3) {
-      setStep(4);
       return;
     }
   };
 
   const handleBack = () => {
-    if (step > 1 && step < 5) {
+    if (step > 1 && step < 6) {
       setStep((s) => s - 1);
     }
   };
@@ -164,9 +187,20 @@ export function Onboarding2026Flow() {
       <div className="flex-1 px-4 pb-8">
         {step === 1 ? (
           <StepShell
-            title="Кто будет пользоваться?"
-            subtitle="Один тап — без длинной анкеты"
+            title="Стартовый сценарий PLANAM"
+            subtitle="Ответьте на несколько вопросов — и мы соберём первое меню и покупки."
           >
+            <div className="mb-5 rounded-card border border-sage-200 bg-sage-50/80 p-4 dark:border-sage-700/40 dark:bg-sage-900/20">
+              <p className="pa26-micro font-semibold uppercase tracking-wide text-sage-700 dark:text-sage-300">
+                Первый запуск
+              </p>
+              <p className="pa26-card-title mt-1">
+                Выберите длительность меню: 1, 3, 5 или 7 дней.
+              </p>
+              <p className="pa26-caption mt-1 text-pa-muted">
+                Достаточно выбрать цель и ограничения — детали можно заполнить позже.
+              </p>
+            </div>
             <OnboardingChipGrid2026
               options={WHO_OPTIONS}
               value={wizard.who}
@@ -244,30 +278,70 @@ export function Onboarding2026Flow() {
         ) : null}
 
         {step === 4 ? (
-          <StepShell title="Ваш первый план" subtitle="Реальная генерация на сервере">
+          <StepShell
+            title="На сколько дней собрать меню?"
+            subtitle="7 дней — рекомендуемый вариант, но можно выбрать короче."
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {MENU_DURATION_OPTIONS.map((days) => (
+                <button
+                  key={days}
+                  type="button"
+                  onClick={() => setPlanDays(days)}
+                  className={`rounded-card border px-4 py-3 text-left transition active:scale-[0.99] ${
+                    planDays === days
+                      ? "border-sage-500 bg-sage-50 shadow-soft dark:border-sage-400 dark:bg-sage-700/25"
+                      : "border-pa-border bg-pa-surface hover:bg-sage-50/80 dark:hover:bg-pa-elevated/40"
+                  }`}
+                  aria-pressed={planDays === days}
+                >
+                  <span className="pa26-card-title block">
+                    {formatMenuDuration(days)}
+                  </span>
+                  <span className="pa26-caption mt-0.5 block text-pa-muted">
+                    {days === DEFAULT_MENU_DURATION_DAYS
+                      ? "Рекомендуем для первой недели"
+                      : "Можно изменить позже"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </StepShell>
+        ) : null}
+
+        {step === 5 ? (
+          <StepShell
+            title="Ваш первый план"
+            subtitle={`Собираем меню на ${formatMenuDuration(planDays)} и список покупок.`}
+          >
             <OnboardingGenerateStep2026
               phase={generatePhase}
               errorMessage={generateError}
+              planDays={planDays}
               onStart={() => void runGenerate()}
               onRetry={() => {
                 setGeneratePhase("idle");
                 void runGenerate();
               }}
+              onContinueWithoutMenu={handleContinueWithoutMenu}
             />
           </StepShell>
         ) : null}
 
-        {step === 5 ? (
+        {step === 6 ? (
           <OnboardingWowReveal2026
             meals={wowMeals}
             menuTitle={menuTitle}
             amaBalance={subscription?.ama_balance ?? null}
-            onStartDay={handleStartDay}
+            planDays={planDays}
+            onOpenMenu={handleOpenMenu}
+            onOpenShopping={handleOpenShopping}
+            onNotificationsLater={handleNotificationsLater}
           />
         ) : null}
       </div>
 
-      {step >= 1 && step <= 3 ? (
+      {step >= 1 && step <= 4 ? (
         <footer className="flex gap-2 border-t border-pa-border bg-pa-surface px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {step > 1 ? (
             <Button2026 variant="ghost" className="flex-1" onClick={handleBack}>
@@ -282,7 +356,7 @@ export function Onboarding2026Flow() {
             disabled={!canNext}
             onClick={handleNext}
           >
-            Далее
+            {step === 4 ? `Меню на ${formatMenuDuration(planDays)}` : "Далее"}
           </Button2026>
         </footer>
       ) : null}

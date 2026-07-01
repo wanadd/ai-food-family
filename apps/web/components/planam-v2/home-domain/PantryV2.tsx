@@ -195,7 +195,8 @@ export function PantryV2() {
 
   const showProducts = filter === "all" || filter === "products" || filter === "expiring";
   const showPrepared = filter === "all" || filter === "prepared";
-  const showCookBlock = filter === "all" || filter === "products";
+  const hasActiveProducts = items.some((item) => !item.is_expired);
+  const showCookBlock = hasActiveProducts && (filter === "all" || filter === "products");
 
   async function handleDelete(item: PantryItem) {
     if (!initData) {
@@ -320,10 +321,11 @@ export function PantryV2() {
 
         <div className="mt-3" aria-label="Действия запасов">
           <V2Button variant="primary" className="w-full" onClick={() => setAddOpen(true)}>
-            Добавить продукт
+            {hasActiveProducts ? "Добавить продукт" : "Добавить первый продукт"}
           </V2Button>
         </div>
 
+        {hasActiveProducts ? (
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {FILTERS.map((f) => (
             <V2Chip
@@ -339,6 +341,7 @@ export function PantryV2() {
             />
           ))}
         </div>
+        ) : null}
       </div>
 
       <div className="px-4 pt-3">
@@ -366,8 +369,8 @@ export function PantryV2() {
               <V2EmptyState
                 icon={<span aria-hidden>📦</span>}
                 title="Добавим первые продукты?"
-                description="PLANAM будет точнее составлять меню и покупки, если знает, что уже есть дома."
-                actionLabel="Добавить продукт"
+                description="Запасы помогут PLANAM точнее составлять меню и покупки."
+                actionLabel="Добавить первый продукт"
                 onAction={() => setAddOpen(true)}
               />
             ) : filtered.length === 0 ? (
@@ -458,6 +461,7 @@ export function PantryV2() {
           </>
         ) : null}
 
+        {hasActiveProducts ? (
         <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 mt-5 border-t border-pa-border bg-pa-background/95 py-3 backdrop-blur-sm">
           <V2Button
             variant="primary"
@@ -470,6 +474,7 @@ export function PantryV2() {
             Что приготовить
           </V2Button>
         </div>
+        ) : null}
       </div>
 
       <V2BottomSheet

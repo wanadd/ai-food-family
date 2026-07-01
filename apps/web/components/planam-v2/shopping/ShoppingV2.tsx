@@ -6,7 +6,7 @@
  * категории (taxonomy guard), full-row toggle, один page scroll.
  */
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppMode } from "@/components/app-mode/AppModeProvider";
@@ -70,6 +70,7 @@ const FILTERS: { id: ShoppingFilter; label: string }[] = [
 
 export function ShoppingV2() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { initData } = useTelegram();
   const { mode } = useAppMode();
   const { showToast } = useToast();
@@ -315,6 +316,9 @@ export function ShoppingV2() {
   }
 
   const emptyList = list && list.total_count === 0;
+  const hasMenuContext = Boolean(list?.menu_title);
+  const firstRun = searchParams.get("firstRun") === "1";
+  const allBought = Boolean(list && list.total_count > 0 && uncheckedCount === 0);
   const noResults = list && list.total_count > 0 && listForMain.length === 0;
 
   return (
@@ -347,7 +351,9 @@ export function ShoppingV2() {
           ) : null}
         </div>
 
-        <HomeDomainSegmentV2 active="shopping" className="mt-3" />
+        <div data-testid="shopping-go-pantry">
+          <HomeDomainSegmentV2 active="shopping" className="mt-3" />
+        </div>
 
         {list && list.total_count > 0 ? (
           <V2ProgressBar percent={percent} className="mt-3" />
@@ -439,24 +445,55 @@ export function ShoppingV2() {
         ) : null}
 
         {emptyList ? (
-          <V2EmptyState
-            icon={<span aria-hidden>🛒</span>}
-            title="Список пуст"
-            description="Соберите меню или добавьте продукт вручную."
-            actionLabel="Собрать меню"
-            onAction={() => router.push(PLANAM_ROUTES.planGenerate)}
+          hasMenuContext ? (
+            <ShoppingEmptyPanel
+              icon="🛒"
+              title="Список пока пуст"
+              description="Можно добавить продукты вручную или пересобрать меню."
+              primaryLabel="Добавить продукт"
+              onPrimary={() => setAddOpen(true)}
+              secondaryLabel="Пересобрать меню"
+              onSecondary={() => router.push(PLANAM_ROUTES.planGenerate)}
+            />
+          ) : (
+            <ShoppingEmptyPanel
+              icon="🛒"
+              title="Покупок пока нет"
+              description="Сначала соберите меню — PLANAM сам добавит продукты в список."
+              primaryLabel="Собрать меню"
+              onPrimary={() => router.push(PLANAM_ROUTES.planGenerate)}
+            />
+          )
+        ) : firstRun && flowStatus.menuLinkedItems > 0 ? (
+          <ShoppingEmptyPanel
+            icon="🛒"
+            title="Покупки готовы"
+            description="Мы собрали продукты для меню на выбранный период."
+            primaryLabel="Начать покупки"
+            onPrimary={() => setMenuLinkedOpen(true)}
+            secondaryLabel="Открыть меню"
+            onSecondary={() => router.push(PLANAM_ROUTES.planToday)}
           />
         ) : noResults ? (
-          <V2EmptyState
-            title={filter === "bought" ? "Куплено пока ничего" : "Всё куплено"}
-            description={
-              filter === "bought"
-                ? "Отмечайте товары — они появятся здесь."
-                : "Можно собрать меню или добавить продукт вручную."
-            }
-            actionLabel="Показать все"
-            onAction={() => setFilter("all")}
-          />
+          allBought && filter === "to-buy" ? (
+            <ShoppingEmptyPanel
+              title="Всё куплено"
+              description="Отлично, список на это меню закрыт."
+              primaryLabel="Открыть меню"
+              onPrimary={() => router.push(PLANAM_ROUTES.planToday)}
+            />
+          ) : (
+            <V2EmptyState
+              title={filter === "bought" ? "Куплено пока ничего" : "Ничего не найдено"}
+              description={
+                filter === "bought"
+                  ? "Отмечайте товары — они появятся здесь."
+                  : "Попробуйте другой фильтр или покажите весь список."
+              }
+              actionLabel="Показать все"
+              onAction={() => setFilter("all")}
+            />
+          )
         ) : (
           <div className="space-y-4">
             {groups.map((group) => (
@@ -521,6 +558,7 @@ export function ShoppingV2() {
           </section>
         ) : null}
 
+        {!emptyList ? (
         <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 mt-5 border-t border-pa-border bg-pa-background/95 px-0 py-3 backdrop-blur-sm">
           <V2Button
             variant="primary"
@@ -532,6 +570,7 @@ export function ShoppingV2() {
             Обновить из меню
           </V2Button>
         </div>
+        ) : null}
       </div>
 
       <V2BottomSheet
@@ -611,6 +650,46 @@ export function ShoppingV2() {
           </label>
         </div>
       </V2BottomSheet>
+    </div>
+  );
+}
+
+function ShoppingEmptyPanel({
+  icon,
+  title,
+  description,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
+}: {
+  icon?: string;
+  title: string;
+  description: string;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+      {icon ? (
+        <div className="flex size-14 items-center justify-center rounded-card bg-sage-50 text-2xl dark:bg-sage-700/20">
+          <span aria-hidden>{icon}</span>
+        </div>
+      ) : null}
+      <h3 className="pa26-section-title">{title}</h3>
+      <p className="pa26-body max-w-[300px] text-pa-muted">{description}</p>
+      <div className="mt-2 flex w-full max-w-xs flex-col gap-2">
+        <V2Button variant="primary" size="wide" onClick={onPrimary}>
+          {primaryLabel}
+        </V2Button>
+        {secondaryLabel && onSecondary ? (
+          <V2Button variant="secondary" size="wide" onClick={onSecondary}>
+            {secondaryLabel}
+          </V2Button>
+        ) : null}
+      </div>
     </div>
   );
 }

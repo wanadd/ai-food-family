@@ -247,7 +247,8 @@ export function NutritionProfileForm() {
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-pa-muted">
           Ограничения, аллергии, любимые и нелюбимые продукты используются при
-          подборе рецептов и списке покупок.
+          подборе рецептов и списке покупок. Достаточно выбрать цель и ограничения —
+          детали можно заполнить позже.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {[
