@@ -7,6 +7,7 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from app.models.meal_checkin import MealCheckin
+from app.models.meal_consumption_log import MealConsumptionLog
 from app.models.user import User
 from app.schemas.progress import NutritionActualResponse
 from app.services.app_scope import AppScope
@@ -22,7 +23,6 @@ EATEN_STATUSES = frozenset(
         "ate_delivery",
         "ate_other",
         "completed",
-        "saved_as_leftover",
     }
 )
 
@@ -58,12 +58,39 @@ def _latest_checkins_by_meal(checkins: list[MealCheckin]) -> dict[str, MealCheck
     return out
 
 
+def _scope_consumption_filter(db: Session, scope: AppScope, on_date: date):
+    q = db.query(MealConsumptionLog).filter(MealConsumptionLog.planned_date == on_date)
+    if scope.is_family and scope.family_id:
+        return q.filter(MealConsumptionLog.family_id == scope.family_id)
+    return q.filter(
+        MealConsumptionLog.user_id == scope.user_id,
+        MealConsumptionLog.family_id.is_(None),
+    )
+
+
+def _latest_consumption_by_meal(
+    logs: list[MealConsumptionLog],
+) -> dict[str, MealConsumptionLog]:
+    out: dict[str, MealConsumptionLog] = {}
+    for row in logs:
+        key = f"{row.family_member_id or 0}:{row.meal_type or ''}"
+        if key not in out:
+            out[key] = row
+    return out
+
+
 def compute_today_nutrition_actual(
     db: Session, user: User, scope: AppScope
 ) -> NutritionActualResponse:
     today = date.today()
     checkins = list_checkins_for_date(db, scope, today)
     by_meal = _latest_checkins_by_meal(checkins)
+    consumption_logs = (
+        _scope_consumption_filter(db, scope, today)
+        .order_by(MealConsumptionLog.updated_at.desc(), MealConsumptionLog.id.desc())
+        .all()
+    )
+    by_consumption_meal = _latest_consumption_by_meal(consumption_logs)
 
     calories = 0
     protein = 0
@@ -71,7 +98,22 @@ def compute_today_nutrition_actual(
     carbs = 0
     meals_logged = 0
 
+    for row in by_consumption_meal.values():
+        if row.status != "eaten":
+            continue
+        if row.calories_estimated is None or row.calories_estimated <= 0:
+            continue
+        cal = int(row.calories_estimated)
+        calories += cal
+        protein += int(row.protein_estimated or 0)
+        fat += int(row.fat_estimated or 0)
+        carbs += int(row.carbs_estimated or 0)
+        meals_logged += 1
+
     for row in by_meal.values():
+        key = f"{row.family_member_id or 0}:{row.meal_type}"
+        if key in by_consumption_meal:
+            continue
         if row.actual_status not in EATEN_STATUSES:
             continue
         if row.actual_calories and row.actual_calories > 0:

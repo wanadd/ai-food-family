@@ -20,6 +20,7 @@ from app.services.app_scope import AppScope
 from app.services.menu_days import day_label
 from app.services.menu_selection import get_selected_menu
 from app.services.recipe_storage import get_structured_ingredients
+from app.services.recipe_storage import aggregate_ingredients_for_shopping, scale_ingredients
 from app.services.recipes.mapper import public_title
 from app.services.recipes.title_normalize import catalog_meal_type
 
@@ -173,6 +174,58 @@ def _merge_ingredients(menu: MenuVariant, recipe: Recipe, servings: int) -> list
     return merged
 
 
+def _active_recipe_servings(menu: MenuVariant) -> dict[int, int]:
+    """Collect current active recipe ids from menu slots.
+
+    The selected menu's ingredient aggregate is derived from active slots only;
+    stale `menu.ingredients` must not be treated as source of truth after
+    replace/delete/add operations.
+    """
+    recipe_servings: dict[int, int] = {}
+    source_days = list(menu.days or [])
+    meal_groups = [day.meals for day in source_days] if source_days else [menu.meals]
+    for meals in meal_groups:
+        for meal in meals:
+            if meal.recipe_id is None:
+                continue
+            if not meal.name.strip() or meal.name == PLACEHOLDER_NAME:
+                continue
+            servings = meal.servings or DEFAULT_SERVINGS
+            recipe_servings[int(meal.recipe_id)] = recipe_servings.get(
+                int(meal.recipe_id), 0
+            ) + int(max(servings, 1))
+    return recipe_servings
+
+
+def recompute_menu_ingredients_from_active_meals(
+    db: Session,
+    menu: MenuVariant,
+    *,
+    preserve_existing_if_no_active: bool = False,
+) -> MenuVariant:
+    """Return menu with fresh ingredients rebuilt from active recipe slots."""
+    recipe_servings = _active_recipe_servings(menu)
+    if not recipe_servings:
+        if preserve_existing_if_no_active:
+            return menu
+        return menu.model_copy(update={"ingredients": []})
+
+    scaled: list[dict] = []
+    for recipe_id, servings in recipe_servings.items():
+        recipe = db.get(Recipe, recipe_id)
+        if recipe is None:
+            continue
+        recipe_servings_base = getattr(recipe, "servings", None)
+        if not isinstance(recipe_servings_base, (int, float)):
+            continue
+        scaled.extend(scale_ingredients(recipe, max(servings, 1)))
+
+    ingredients = [
+        MenuIngredient(**item) for item in aggregate_ingredients_for_shopping(scaled)
+    ]
+    return menu.model_copy(update={"ingredients": ingredients})
+
+
 def _sync_flat_meals(menu: MenuVariant, target_date: date) -> list[MenuMeal]:
     date_iso = target_date.isoformat()
     if menu.days:
@@ -252,17 +305,16 @@ def add_recipe_to_plan(
         else day_plan
         for day_plan in (menu.days or [])
     ]
-    ingredients = _merge_ingredients(menu, recipe, target_servings)
     updated = menu.model_copy(
         update={
             "days": updated_days,
             "meals": _sync_flat_meals(
                 menu.model_copy(update={"days": updated_days}), target
             ),
-            "ingredients": ingredients,
             "total_prep_minutes": sum(m.prep_time_minutes for m in meals),
         }
     )
+    updated = recompute_menu_ingredients_from_active_meals(db, updated)
 
     from app.services.menu import select_menu
 
@@ -362,6 +414,7 @@ def remove_menu_item(
             ),
         }
     )
+    updated = recompute_menu_ingredients_from_active_meals(db, updated)
 
     from app.services.menu import select_menu
 
@@ -414,17 +467,16 @@ def replace_recipe_in_slot(
         else day_plan
         for day_plan in (menu.days or [])
     ]
-    ingredients = _merge_ingredients(menu, recipe, target_servings)
     updated = menu.model_copy(
         update={
             "days": updated_days,
             "meals": _sync_flat_meals(
                 menu.model_copy(update={"days": updated_days}), target
             ),
-            "ingredients": ingredients,
             "total_prep_minutes": sum(m.prep_time_minutes for m in meals),
         }
     )
+    updated = recompute_menu_ingredients_from_active_meals(db, updated)
 
     from app.services.menu import select_menu
 

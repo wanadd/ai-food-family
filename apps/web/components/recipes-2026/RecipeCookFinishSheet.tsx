@@ -125,8 +125,15 @@ export function RecipeCookFinishSheet({
         total_servings: servings,
         serving_unit: "порция",
       });
+      await createMealCheckin(initData, mode, {
+        meal_type: mealType,
+        actual_status: "cooked",
+        planned_date: mealContext.plannedDate ?? undefined,
+        actual_description: recipeTitle,
+        recipe_id: recipeId,
+      });
       invalidateCache("menu-overview");
-      setMessage("Готовое блюдо сохранено в запасах.");
+      setMessage("Готовое блюдо сохранено в запасах. КБЖУ не учтены.");
       onDone?.();
     } catch {
       setError("Не удалось сохранить в запасы. Попробуйте позже.");
