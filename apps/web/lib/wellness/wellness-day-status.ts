@@ -10,7 +10,6 @@ const EATEN = new Set([
   "ate_delivery",
   "ate_other",
   "completed",
-  "saved_as_leftover",
 ]);
 
 const DEVIATION = new Set(["skipped", "ate_other"]);

@@ -293,7 +293,7 @@ export function MenuTodayV2() {
         recipe_id: meal.meal.recipe_id ?? undefined,
       });
       invalidateCache(cacheKey.menuOverview(mode));
-      showToast("Приём пищи пропущен — КБЖУ не учитываем");
+      showToast("Приём пищи пропущен. Покупки не изменены.");
       setActionMeal(null);
       void reloadCheckins();
     } catch {
@@ -658,7 +658,7 @@ export function MenuTodayV2() {
                     await deleteMenuItem(initData, mode, actionMeal.slotId);
                     invalidateCache(cacheKey.menuOverview(mode));
                     invalidateCache(cacheKey.selectedMenu(mode));
-                    showToast("Блюдо удалено из меню");
+                    showToast("Меню обновлено, покупки пересчитаны");
                     setActionMeal(null);
                     const params = new URLSearchParams(searchParams.toString());
                     params.delete("action");
@@ -689,6 +689,8 @@ export function MenuTodayV2() {
         }}
         onSuccess={() => {
           invalidateCache(cacheKey.menuOverview(mode));
+          invalidateCache(cacheKey.shoppingList(mode));
+          showToast("Меню обновлено, покупки пересчитаны");
           void load();
         }}
       />

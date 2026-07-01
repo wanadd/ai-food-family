@@ -452,8 +452,8 @@ export function ShoppingV2() {
               description="Можно добавить продукты вручную или пересобрать меню."
               primaryLabel="Добавить продукт"
               onPrimary={() => setAddOpen(true)}
-              secondaryLabel="Пересобрать меню"
-              onSecondary={() => router.push(PLANAM_ROUTES.planGenerate)}
+              secondaryLabel={syncing ? "Обновляем..." : "Обновить из меню"}
+              onSecondary={() => void handleSync()}
             />
           ) : (
             <ShoppingEmptyPanel

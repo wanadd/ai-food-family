@@ -25,6 +25,12 @@ import {
   type MealLeftover,
 } from "@/lib/meal-leftovers/api";
 import { leftoverStatusLabel } from "@/lib/meal-leftovers/status";
+import {
+  discardCookingBatch,
+  fetchStocksOverview,
+  formatPreparedLeftoverAmount,
+  type PreparedDish,
+} from "@/lib/plan/leftovers-api";
 import { cn } from "@/lib/planam/cn";
 import { PLANAM_ROUTES, recipeDetailPath } from "@/lib/planam/routes";
 import type { PantryItem } from "@/lib/pantry/types";
@@ -47,6 +53,7 @@ export function LeftoversV2() {
   const { initData } = useTelegram();
   const { mode } = useAppMode();
   const [leftovers, setLeftovers] = useState<MealLeftover[]>([]);
+  const [preparedDishes, setPreparedDishes] = useState<PreparedDish[]>([]);
   const [recipes, setRecipes] = useState<FromPantryRecipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -67,9 +74,21 @@ export function LeftoversV2() {
         fetchMealLeftovers(initData, mode),
         fetchRecipesFromPantry(initData, mode).catch(() => ({ items: [] })),
       ]);
+      const stocks = await fetchStocksOverview(initData, mode, {
+        include_prepared: true,
+      }).catch(() => null);
+      const prepared = stocks?.prepared_dishes ?? [];
+      const preparedNames = new Set(
+        prepared
+          .map((dish) => normalizeDishName(dish.recipe_title))
+          .filter(Boolean),
+      );
+      setPreparedDishes(prepared);
       setLeftovers(
         lo.filter(
-          (l) => l.leftover_status === "active" || l.leftover_status === "frozen",
+          (l) =>
+            (l.leftover_status === "active" || l.leftover_status === "frozen") &&
+            !preparedNames.has(normalizeDishName(l.dish_name)),
         ),
       );
       setRecipes(pantryRecipes.items ?? []);
@@ -113,6 +132,21 @@ export function LeftoversV2() {
     }
   }
 
+  async function removePrepared(item: PreparedDish) {
+    if (!initData || !item.can_manage) {
+      return;
+    }
+    setBusyId(item.id);
+    try {
+      await discardCookingBatch(initData, mode, item.id);
+      invalidateCache("menu-overview");
+      invalidateCache("pantry");
+      await load();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="px-4 pb-8 pt-4">
@@ -140,15 +174,15 @@ export function LeftoversV2() {
     return d != null && d <= 2;
   });
   const rest = leftovers.filter((l) => !expiring.includes(l));
-  const empty = leftovers.length === 0 && recipes.length === 0;
+  const empty = preparedDishes.length === 0 && leftovers.length === 0 && recipes.length === 0;
 
   if (empty) {
     return (
       <div className="px-4 py-8">
         <V2EmptyState
           icon={<span aria-hidden>📦</span>}
-          title="Пока не из чего подбирать"
-          description="Добавьте продукты в запасы — и PLANAM подберёт рецепты."
+          title="Пока нет готовой еды"
+          description="Добавьте продукты в запасы или сохраните приготовленное блюдо — и PLANAM подберёт рецепты."
           actionLabel="Открыть запасы"
           onAction={() => router.push(PLANAM_ROUTES.pantry)}
         />
@@ -161,7 +195,7 @@ export function LeftoversV2() {
       <header>
         <h1 className="pa26-page-title">Из того, что есть дома</h1>
         <p className="pa26-micro mt-0.5 text-pa-muted">
-          Подберём блюда из ваших запасов
+          Готовая еда, остатки и блюда из ваших запасов
         </p>
         {pantryCount != null && pantryCount > 0 ? (
           <p className="pa26-caption mt-2 inline-flex rounded-pill border border-pa-border bg-pa-surface px-3 py-1 text-pa-muted">
@@ -201,17 +235,32 @@ export function LeftoversV2() {
         />
       )}
 
-      {leftovers.length > 0 ? (
+      {preparedDishes.length > 0 || leftovers.length > 0 ? (
         <section className="space-y-3">
           <div>
-            <h2 className="pa26-section-title">После готовки</h2>
+            <h2 className="pa26-section-title">Готовая еда и остатки</h2>
             <p className="pa26-micro mt-0.5 text-pa-muted">
-              Сохранённые порции и блюда
+              Основной учёт — готовые блюда в запасах
             </p>
           </div>
+          {preparedDishes.length > 0 ? (
+            <div>
+              <h3 className="pa26-micro font-semibold text-pa-muted">Готовая еда</h3>
+              <ul className="mt-2 space-y-2">
+                {preparedDishes.map((item) => (
+                  <PreparedDishRowV2
+                    key={item.id}
+                    item={item}
+                    busy={busyId === item.id}
+                    onRemove={() => void removePrepared(item)}
+                  />
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {expiring.length > 0 ? (
             <div>
-              <h3 className="pa26-micro font-semibold text-warm">Скоро испортится</h3>
+              <h3 className="pa26-micro font-semibold text-warm">Старые сохранённые порции</h3>
               <ul className="mt-2 space-y-2">
                 {expiring.map((item) => (
                   <LeftoverRowV2
@@ -228,7 +277,7 @@ export function LeftoversV2() {
           ) : null}
           {rest.length > 0 ? (
             <div>
-              <h3 className="pa26-micro font-semibold text-pa-muted">Что осталось</h3>
+              <h3 className="pa26-micro font-semibold text-pa-muted">Старые остатки</h3>
               <ul className="mt-2 space-y-2">
                 {rest.map((item) => (
                   <LeftoverRowV2
@@ -245,6 +294,41 @@ export function LeftoversV2() {
         </section>
       ) : null}
     </div>
+  );
+}
+
+function normalizeDishName(value: string | null | undefined): string {
+  return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function PreparedDishRowV2({
+  item,
+  busy,
+  onRemove,
+}: {
+  item: PreparedDish;
+  busy: boolean;
+  onRemove: () => void;
+}) {
+  return (
+    <li className="rounded-card border border-pa-border bg-pa-surface px-4 py-3">
+      <p className="pa26-card-title">{item.recipe_title ?? "Готовое блюдо"}</p>
+      <p className="pa26-caption text-pa-muted">
+        {formatPreparedLeftoverAmount(
+          item.remaining_servings,
+          item.total_servings,
+          item.serving_unit,
+          item,
+        )}
+      </p>
+      {item.can_manage ? (
+        <div className="mt-2 flex gap-2">
+          <V2Button variant="ghost" loading={busy} onClick={onRemove}>
+            Убрать
+          </V2Button>
+        </div>
+      ) : null}
+    </li>
   );
 }
 

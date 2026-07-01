@@ -197,6 +197,13 @@ async def replace_dish(
             scope=scope,
             persons=resolve_persons_count(db, user, scope),
         )
+        from app.services.menu_recipe_plan import (
+            recompute_menu_ingredients_from_active_meals,
+        )
+
+        updated = recompute_menu_ingredients_from_active_meals(
+            db, updated, preserve_existing_if_no_active=True
+        )
         menu_dict = updated.model_dump(mode="json")
         if isinstance(selection.menu_data, dict) and "_meta" in selection.menu_data:
             menu_dict["_meta"] = selection.menu_data["_meta"]
@@ -242,6 +249,13 @@ def select_menu(
         user=user,
         scope=scope,
         persons=persons,
+    )
+    from app.services.menu_recipe_plan import (
+        recompute_menu_ingredients_from_active_meals,
+    )
+
+    finalized_menu = recompute_menu_ingredients_from_active_meals(
+        db, finalized_menu, preserve_existing_if_no_active=True
     )
     menu_dict = finalized_menu.model_dump(mode="json")
     mode_key = plan_mode or "healthy"
