@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib.util
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -24,6 +24,7 @@ from app.schemas.notifications import NotificationOnboardingRequest  # noqa: E40
 from app.services import notifications as notif_service  # noqa: E402
 from app.services.care_guard import (  # noqa: E402
     PANTRY_SEMANTIC_KEY,
+    PROACTIVE_CARE_SEMANTIC_KEYS,
     can_send_care_notification,
     can_send_scheduled_reminder,
 )
@@ -297,22 +298,214 @@ def test_onboarded_user_with_menu_may_get_pantry(monkeypatch):
     )
 
 
+def test_scheduler_guard_blocks_water_when_not_onboarded(db_sqlite):
+    from app.services.care import create_care_notification
+
+    db = db_sqlite
+    user = _make_user(db)
+
+    assert create_care_notification(db, user, "water") is None
+
+
+def test_scheduler_guard_blocks_water_when_care_mode_off(db_sqlite):
+    from app.services.care import create_care_notification
+
+    db = db_sqlite
+    user = _make_user(db)
+    notif_service.apply_onboarding(
+        db,
+        user,
+        NotificationOnboardingRequest(
+            care_mode="off",
+            enabled_notification_types=["water"],
+        ),
+    )
+
+    assert create_care_notification(db, user, "water") is None
+
+
+def test_scheduler_guard_blocks_water_when_care_flag_off(db_sqlite):
+    from app.models.care import CareSettings
+    from app.services.care import create_care_notification
+
+    db = db_sqlite
+    user = _make_user(db)
+    notif_service.apply_onboarding(
+        db,
+        user,
+        NotificationOnboardingRequest(
+            care_mode="normal",
+            enabled_notification_types=["water"],
+        ),
+    )
+    care = db.query(CareSettings).filter(CareSettings.user_id == user.id).one()
+    care.water_enabled = False
+    db.commit()
+
+    assert create_care_notification(db, user, "water") is None
+
+
+def test_scheduler_guard_blocks_water_when_type_not_enabled(db_sqlite):
+    from app.services.care import create_care_notification
+
+    db = db_sqlite
+    user = _make_user(db)
+    notif_service.apply_onboarding(
+        db,
+        user,
+        NotificationOnboardingRequest(
+            care_mode="normal",
+            enabled_notification_types=[],
+        ),
+    )
+
+    assert create_care_notification(db, user, "water") is None
+
+
+def test_scheduler_guard_allows_one_enabled_water_notification(db_sqlite):
+    from app.services.care import create_care_notification
+
+    db = db_sqlite
+    user = _make_user(db)
+    notif_service.apply_onboarding(
+        db,
+        user,
+        NotificationOnboardingRequest(
+            care_mode="normal",
+            enabled_notification_types=["water"],
+        ),
+    )
+
+    notification = create_care_notification(db, user, "water")
+
+    assert notification is not None
+    assert notification.semantic_key == "water_reminder"
+
+
+def test_water_dedup_within_window(db_sqlite):
+    from app.services.care import create_care_notification
+
+    db = db_sqlite
+    user = _make_user(db)
+    notif_service.apply_onboarding(
+        db,
+        user,
+        NotificationOnboardingRequest(
+            care_mode="normal",
+            enabled_notification_types=["water"],
+        ),
+    )
+
+    first = create_care_notification(db, user, "water")
+    second = create_care_notification(db, user, "water")
+
+    assert first is not None
+    assert second is None
+
+
+def test_water_dedup_allows_after_window(db_sqlite):
+    from app.models.care import CareNotification
+    from app.services.care import create_care_notification
+
+    db = db_sqlite
+    user = _make_user(db)
+    notif_service.apply_onboarding(
+        db,
+        user,
+        NotificationOnboardingRequest(
+            care_mode="normal",
+            enabled_notification_types=["water"],
+        ),
+    )
+
+    first = create_care_notification(db, user, "water")
+    assert first is not None
+    first.created_at = datetime.now(timezone.utc) - timedelta(hours=3)
+    first.status = "sent"
+    db.commit()
+
+    second = create_care_notification(db, user, "water")
+
+    assert second is not None
+    assert db.query(CareNotification).filter(CareNotification.type == "water").count() == 2
+
+
+def test_all_proactive_notifications_get_semantic_key(db_sqlite, monkeypatch):
+    from app.services.care import create_care_notification
+
+    db = db_sqlite
+    user = _make_user(db)
+    monkeypatch.setattr(
+        "app.services.care.can_send_care_notification",
+        lambda *_args, **_kwargs: True,
+    )
+
+    for notification_type, semantic_key in PROACTIVE_CARE_SEMANTIC_KEYS.items():
+        notification = create_care_notification(db, user, notification_type)
+        assert notification is not None
+        assert notification.semantic_key == semantic_key
+
+
+def test_failed_send_marks_failed_and_prevents_duplicate_cycle(db_sqlite, monkeypatch):
+    import asyncio
+
+    from app.models.care import CareNotification
+    from app.services.care import create_care_notification, send_telegram_care_notification
+
+    async def fail_send(*_args, **_kwargs):
+        raise RuntimeError("telegram unavailable")
+
+    db = db_sqlite
+    user = _make_user(db)
+    notif_service.apply_onboarding(
+        db,
+        user,
+        NotificationOnboardingRequest(
+            care_mode="normal",
+            enabled_notification_types=["water"],
+        ),
+    )
+    monkeypatch.setattr("app.services.care.send_telegram_message", fail_send)
+
+    notification = create_care_notification(db, user, "water")
+    assert notification is not None
+
+    sent = asyncio.run(send_telegram_care_notification(db, notification, user))
+    duplicate = create_care_notification(db, user, "water")
+
+    db.refresh(notification)
+    statuses = [
+        row.status
+        for row in db.query(CareNotification)
+        .filter(CareNotification.user_id == user.id, CareNotification.type == "water")
+        .all()
+    ]
+    assert sent is False
+    assert notification.status == "failed"
+    assert notification.payload["error_type"] == "RuntimeError"
+    assert "failed_at" in notification.payload
+    assert "pending" not in statuses
+    assert duplicate is None
+
+
 @pytest.fixture()
 def db_sqlite():
     from sqlalchemy import JSON
     from sqlalchemy.orm import sessionmaker
 
-    from app.models.care import CareNotification, CareSettings
+    from app.models.care import CareEvent, CareNotification, CareSettings
     from app.models.notification_settings import UserNotificationSettings
 
     UserNotificationSettings.__table__.c.enabled_notification_types.type = JSON()
     CareNotification.__table__.c.payload.type = JSON()
+    CareEvent.__table__.c.payload.type = JSON()
 
     engine = create_engine("sqlite:///:memory:")
     User.__table__.create(engine)
     UserNotificationSettings.__table__.create(engine)
     CareSettings.__table__.create(engine)
     CareNotification.__table__.create(engine)
+    CareEvent.__table__.create(engine)
 
     SessionLocal = sessionmaker(bind=engine)
     session = SessionLocal()

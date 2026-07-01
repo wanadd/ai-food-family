@@ -14,8 +14,26 @@ from app.services.notifications import get_or_create_settings
 from app.services.onboarding import get_or_create_profile
 from app.services.app_scope import resolve_scope
 
-PANTRY_SEMANTIC_KEY = "pantry_update_nudge"
-DEDUP_HOURS = 24
+PROACTIVE_CARE_SEMANTIC_KEYS: dict[str, str] = {
+    "water": "water_reminder",
+    "protein": "protein_reminder",
+    "menu": "menu_reminder",
+    "shopping": "shopping_reminder",
+    "pantry": "pantry_update_nudge",
+    "progress": "progress_reminder",
+    "family": "family_reminder",
+}
+PANTRY_SEMANTIC_KEY = PROACTIVE_CARE_SEMANTIC_KEYS["pantry"]
+PROACTIVE_CARE_DEDUP_HOURS: dict[str, int] = {
+    "water_reminder": 2,
+    "protein_reminder": 6,
+    "menu_reminder": 24,
+    "shopping_reminder": 24,
+    "pantry_update_nudge": 24,
+    "progress_reminder": 24,
+    "family_reminder": 24,
+}
+DEDUP_STATUSES = ("pending", "sending", "sent", "failed")
 
 TYPE_TO_CARE_FLAG: dict[str, str] = {
     "water": "water_enabled",
@@ -26,6 +44,9 @@ TYPE_TO_CARE_FLAG: dict[str, str] = {
     "progress": "progress_enabled",
     "family": "family_enabled",
     "pro": "pro_enabled",
+}
+TYPE_TO_ENABLED_ALIASES: dict[str, set[str]] = {
+    "protein": {"protein", "health"},
 }
 
 
@@ -54,16 +75,27 @@ def _enabled_types(row: UserNotificationSettings) -> set[str]:
     return set()
 
 
+def semantic_key_for_type(notification_type: str) -> str | None:
+    return PROACTIVE_CARE_SEMANTIC_KEYS.get(notification_type)
+
+
+def dedup_hours_for_semantic_key(semantic_key: str | None) -> int:
+    if semantic_key is None:
+        return 24
+    return PROACTIVE_CARE_DEDUP_HOURS.get(semantic_key, 24)
+
+
 def _type_explicitly_enabled(
     notif: UserNotificationSettings, care: CareSettings | None, notification_type: str
 ) -> bool:
     enabled = _enabled_types(notif)
-    if enabled:
-        return notification_type in enabled
-    if care is None:
+    enabled_aliases = TYPE_TO_ENABLED_ALIASES.get(notification_type, {notification_type})
+    if enabled.isdisjoint(enabled_aliases):
         return False
     flag = TYPE_TO_CARE_FLAG.get(notification_type)
     if not flag:
+        return False
+    if care is None:
         return False
     return bool(getattr(care, flag, False))
 
@@ -122,8 +154,9 @@ def can_send_care_notification(
         else:
             return False
 
-    if notification_type == "pantry" and semantic_key:
-        if _recent_duplicate(db, user, "pantry", semantic_key):
+    sk = semantic_key or semantic_key_for_type(notification_type)
+    if sk:
+        if _recent_duplicate(db, user, notification_type, sk):
             return False
 
     return True
@@ -147,13 +180,15 @@ def _recent_duplicate(
 ) -> bool:
     from app.models.care import CareNotification
 
-    since = datetime.now(timezone.utc) - timedelta(hours=DEDUP_HOURS)
+    since = datetime.now(timezone.utc) - timedelta(
+        hours=dedup_hours_for_semantic_key(semantic_key)
+    )
     q = (
         db.query(CareNotification)
         .filter(
             CareNotification.user_id == user.id,
             CareNotification.type == notification_type,
-            CareNotification.status.in_(("pending", "sent")),
+            CareNotification.status.in_(DEDUP_STATUSES),
             CareNotification.created_at >= since,
         )
     )
