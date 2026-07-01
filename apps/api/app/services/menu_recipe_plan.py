@@ -318,7 +318,9 @@ def add_recipe_to_plan(
 
     from app.services.menu import select_menu
 
-    select_menu(db, user, scope, SelectMenuRequest(menu=updated))
+    select_menu(
+        db, user, scope, SelectMenuRequest(menu=updated, finalize_catalog=False)
+    )
     logger.info(
         "menu.add_recipe user=%s date=%s meal_type=%s recipe_id=%s created=%s",
         user.id,
@@ -369,11 +371,8 @@ def remove_menu_item(
     scope: AppScope,
     slot_id: str,
 ) -> MenuVariant:
-    if ":" not in slot_id:
-        raise ValueError("Invalid menu item id")
-
-    date_iso, meal_type = slot_id.split(":", 1)
-    meal_type_norm = _normalize_meal_type(meal_type)
+    date_iso, meal_type_norm = parse_slot_id(slot_id)
+    expected_slot = make_slot_id(date_iso, meal_type_norm)
     selected = get_selected_menu(db, scope)
     if selected is None:
         raise ValueError("Меню не найдено")
@@ -390,7 +389,7 @@ def remove_menu_item(
     found = False
     for index, meal in enumerate(meals):
         current_slot = meal.slot_id or make_slot_id(date_iso, meal.meal_type)
-        if current_slot != slot_id and meal.meal_type != meal_type_norm:
+        if current_slot != expected_slot:
             continue
         meals[index] = empty_slot(meal_type_norm, date_iso)
         found = True
@@ -418,7 +417,9 @@ def remove_menu_item(
 
     from app.services.menu import select_menu
 
-    select_menu(db, user, scope, SelectMenuRequest(menu=updated))
+    select_menu(
+        db, user, scope, SelectMenuRequest(menu=updated, finalize_catalog=False)
+    )
     return updated
 
 
@@ -438,9 +439,15 @@ def replace_recipe_in_slot(
     target_servings = servings or recipe.servings or DEFAULT_SERVINGS
 
     selected = get_selected_menu(db, scope)
-    menu = selected.menu if selected is not None else create_scaffold_menu(target)
-    menu, day = _ensure_day(menu, target)
-    meals = _slots_for_day(day, date_iso)
+    if selected is None:
+        raise ValueError("Меню не найдено")
+    menu = selected.menu
+    if not menu.days:
+        raise ValueError("Блюдо не найдено в плане")
+    day = next((d for d in menu.days if d.date_iso == date_iso), None)
+    if day is None:
+        raise ValueError("Блюдо не найдено в плане")
+    meals = list(day.meals)
 
     new_meal = recipe_to_menu_meal(
         recipe,
@@ -452,14 +459,14 @@ def replace_recipe_in_slot(
     replaced = False
     for index, meal in enumerate(meals):
         meal_slot = meal.slot_id or make_slot_id(date_iso, meal.meal_type)
-        if meal_slot != slot and meal.meal_type != meal_type_norm:
+        if meal_slot != slot:
             continue
         meals[index] = new_meal
         replaced = True
         break
 
     if not replaced:
-        meals.append(new_meal)
+        raise ValueError("Блюдо не найдено в плане")
 
     updated_days = [
         day_plan.model_copy(update={"meals": meals})
@@ -480,7 +487,9 @@ def replace_recipe_in_slot(
 
     from app.services.menu import select_menu
 
-    select_menu(db, user, scope, SelectMenuRequest(menu=updated))
+    select_menu(
+        db, user, scope, SelectMenuRequest(menu=updated, finalize_catalog=False)
+    )
     logger.info(
         "menu.replace_slot user=%s slot=%s recipe_id=%s",
         user.id,

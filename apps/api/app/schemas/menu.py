@@ -103,6 +103,7 @@ class MenuGenerateRequest(BaseModel):
 
 class SelectMenuRequest(BaseModel):
     menu: MenuVariant
+    finalize_catalog: bool = True
 
 
 class SelectedMenuResponse(BaseModel):

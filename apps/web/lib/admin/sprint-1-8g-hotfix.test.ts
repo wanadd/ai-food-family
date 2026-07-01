@@ -72,6 +72,28 @@ describe("sprint 1.8g admin hotfix", () => {
     expect(source).toContain("deleteBusy");
   });
 
+  it("menu meal actions close sheet and clear query after successful mutations", () => {
+    const source = readFileSync(
+      `${repoRoot}/components/planam-v2/menu/MenuTodayV2.tsx`,
+      "utf8",
+    );
+    expect(source).toContain("function closeActionSheet()");
+    expect(source).toContain('router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })');
+    expect(source.match(/closeActionSheet\(\);/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+    expect(source).toContain("invalidateCache(cacheKey.shoppingList(mode));");
+  });
+
+  it("replace flows persist without catalog autofill", () => {
+    const apiSource = readFileSync(`${repoRoot}/lib/menu/api.ts`, "utf8");
+    const replaceSheetSource = readFileSync(
+      `${repoRoot}/components/plan-2026/ReplaceDishSheet2026.tsx`,
+      "utf8",
+    );
+    expect(apiSource).toContain("finalize_catalog");
+    expect(replaceSheetSource).toContain("{ finalizeCatalog: false }");
+    expect(replaceSheetSource).toContain("mergeReplaceResult(menu, updated, dayIndex, mealIndex)");
+  });
+
   it("recipe add shopping shows count toast", () => {
     const source = readFileSync(
       `${repoRoot}/components/recipes-2026/RecipeDetail2026.tsx`,

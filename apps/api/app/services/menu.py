@@ -190,13 +190,6 @@ async def replace_dish(
 
     selection = _get_latest_selection(db, scope)
     if selection is not None and selection.variant == updated.variant:
-        updated = finalize_menu_variant(
-            db,
-            updated,
-            user=user,
-            scope=scope,
-            persons=resolve_persons_count(db, user, scope),
-        )
         from app.services.menu_recipe_plan import (
             recompute_menu_ingredients_from_active_meals,
         )
@@ -243,12 +236,16 @@ def select_menu(
 ) -> SelectedMenuResponse:
     existing = _get_latest_selection(db, scope)
     persons = persons_count or resolve_persons_count(db, user, scope)
-    finalized_menu = finalize_menu_variant(
-        db,
-        payload.menu,
-        user=user,
-        scope=scope,
-        persons=persons,
+    finalized_menu = (
+        finalize_menu_variant(
+            db,
+            payload.menu,
+            user=user,
+            scope=scope,
+            persons=persons,
+        )
+        if payload.finalize_catalog
+        else payload.menu
     )
     from app.services.menu_recipe_plan import (
         recompute_menu_ingredients_from_active_meals,
