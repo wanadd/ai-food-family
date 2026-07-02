@@ -19,7 +19,11 @@ import { V2Button } from "@/components/planam-v2/ui/V2Primitives";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useTelegram } from "@/components/TelegramProvider";
 import { invalidate as invalidateCache } from "@/lib/cache/session-cache";
-import { cleanMealTitle, type PlanAmHeroState } from "@/lib/home/planam-hero-2026";
+import {
+  cleanMealTitle,
+  mealPlanTodayHref,
+  type PlanAmHeroState,
+} from "@/lib/home/planam-hero-2026";
 import { formatMealMeta } from "@/lib/home/home-2026-data";
 import { createMealCheckin } from "@/lib/meal-checkins/api";
 import { Skeleton2026 } from "@/components/planam-2026/ui/Skeleton2026";
@@ -92,7 +96,7 @@ export function HomeHeroV2({ loading = false, state, onChanged }: HomeHeroV2Prop
   }
 
   function openMealAction() {
-    router.push(`/plan/today?meal=${encodeURIComponent(meal.meal_type)}&action=1`);
+    router.push(mealPlanTodayHref(meal, { action: "1" }));
   }
 
   return (

@@ -161,11 +161,29 @@ function mealHeroHref(meal: Home2026TodayMeal): string {
   if (meal.recipe_id != null) {
     return recipeDetailPath(meal.recipe_id);
   }
-  return `${PLANAM_ROUTES.planToday}?meal=${encodeURIComponent(meal.meal_type)}`;
+  return mealPlanTodayHref(meal);
 }
 
 function mealReplaceHref(meal: Home2026TodayMeal): string {
-  return `${PLANAM_ROUTES.planToday}?meal=${encodeURIComponent(meal.meal_type)}&replace=1`;
+  return `${mealPlanTodayHref(meal)}&replace=1`;
+}
+
+export function mealPlanTodayHref(
+  meal: Home2026TodayMeal,
+  params: Record<string, string> = {},
+): string {
+  const search = new URLSearchParams();
+  search.set("meal", meal.meal_type);
+  if (meal.slot_id) {
+    search.set("menuItemId", meal.slot_id);
+  }
+  if (meal.day_index != null) {
+    search.set("day", String(meal.day_index));
+  }
+  for (const [key, value] of Object.entries(params)) {
+    search.set(key, value);
+  }
+  return `${PLANAM_ROUTES.planToday}?${search.toString()}`;
 }
 
 /**
@@ -398,7 +416,10 @@ export function menuStatusLabel(overview: MenuOverview | null): string {
   if (!slots.length) {
     return "Собрать";
   }
-  const filled = slots.filter((m) => m.name?.trim()).length;
+  const filled = slots.filter((m) => {
+    const name = m.name?.trim();
+    return Boolean(name && name !== "Свободно");
+  }).length;
   if (filled === 0) {
     return "Собрать";
   }

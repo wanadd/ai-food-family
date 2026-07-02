@@ -7,8 +7,6 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 API_ROOT = Path(__file__).resolve().parents[1]
@@ -214,3 +212,33 @@ def test_null_recipe_adhoc_meal_gets_replaced(mock_pool):
     result = finalize_menu_variant(MagicMock(), variant, user=MagicMock())
     assert result.meals[0].recipe_id == 265
     assert result.meals[0].image_url
+
+
+@patch("app.services.menu_catalog_enrichment.load_menu_catalog_pool")
+def test_explicit_empty_slot_stays_empty(mock_pool):
+    mock_pool.return_value = [
+        _catalog_recipe(265, meal_type="lunch", title="Овощной суп"),
+    ]
+    variant = MenuVariant(
+        variant="quick",
+        title="Single",
+        explanation="x",
+        total_prep_minutes=0,
+        meals=[
+            MenuMeal(
+                meal_type="lunch",
+                name="Свободно",
+                description="",
+                prep_time_minutes=0,
+                recipe_id=None,
+                slot_id="2026-07-02:lunch",
+            )
+        ],
+        ingredients=[MenuIngredient(name="По плану", amount="—")],
+    )
+
+    result = finalize_menu_variant(MagicMock(), variant, user=MagicMock())
+
+    assert result.meals[0].recipe_id is None
+    assert result.meals[0].name == "Свободно"
+    assert result.meals[0].slot_id == "2026-07-02:lunch"

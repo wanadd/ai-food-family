@@ -9,6 +9,9 @@ export type Home2026TodayMeal = {
   label: string;
   name: string;
   recipe_id: number | null;
+  slot_id: string | null;
+  day_index: number | null;
+  planned_date: string | null;
   image_url: string | null;
   prep_time_minutes: number | null;
   calories: number | null;
@@ -38,6 +41,7 @@ function mealsFromSelectedMenu(
 
 export function enrichTodayMeals(overview: MenuOverview): Home2026TodayMeal[] {
   const byType = mealsFromSelectedMenu(overview);
+  const state = buildActiveMenuDayState(overview);
   const activeMenuMeals = Array.from(byType.values()).filter(
     (m) => m.name?.trim() && m.name !== "Свободно",
   );
@@ -54,6 +58,13 @@ export function enrichTodayMeals(overview: MenuOverview): Home2026TodayMeal[] {
           detail.meal_type,
         name: stripAuditSuffix(detail.name.trim()),
         recipe_id: detail.recipe_id ?? null,
+        slot_id:
+          detail.slot_id ??
+          (state.activeMenuDate
+            ? `${state.activeMenuDate}:${detail.meal_type}`
+            : null),
+        day_index: state.activeMenuDayIndex,
+        planned_date: state.activeMenuDate,
         image_url:
           detail.image_url ??
           detail.hero_image_url ??
@@ -73,6 +84,9 @@ export function enrichTodayMeals(overview: MenuOverview): Home2026TodayMeal[] {
       label: m.label,
       name: stripAuditSuffix(m.name!.trim()),
       recipe_id: m.recipe_id ?? null,
+      slot_id: null,
+      day_index: null,
+      planned_date: null,
       image_url: m.image_url ?? null,
       prep_time_minutes: null,
       calories: null,

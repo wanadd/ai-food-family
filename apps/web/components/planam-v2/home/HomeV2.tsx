@@ -31,6 +31,7 @@ import {
   cleanMealTitle,
   formatPlanAmDate,
   formatPlanAmGreeting,
+  mealPlanTodayHref,
   menuStatusLabel,
   pantryStatusLabel,
   resolvePlanAmHeroState,
@@ -216,9 +217,7 @@ export function HomeV2() {
                 key={m.meal_type}
                 meal={m}
                 onClick={() =>
-                  router.push(
-                    `${PLANAM_ROUTES.planToday}?meal=${encodeURIComponent(m.meal_type)}`,
-                  )
+                  router.push(mealPlanTodayHref(m))
                 }
               />
             ))}
