@@ -24,6 +24,12 @@ deploy/certbot/
 out/
 dist/
 build/
+*.tsbuildinfo
+
+# Generated local inventory artifacts
+nav-calls.txt
+pages.txt
+project-tree.txt
 
 # Backups and admin error logs
 backups/
@@ -44,6 +50,7 @@ Thumbs.db
 # Generated recipe datasets
 exports/*.jsonl
 exports/*.json
+reports/*
 reports/*.md
 # Authored consolidation audit reports (tracked deliverables — keep in git)
 !reports/planam_cross_branch_audit.md
@@ -74,8 +81,12 @@ apps/web/public/recipe-images/**/*
 !apps/web/public/recipe-images/.gitkeep
 
 # Local database backups
+dumps/
 backup_*.sql
 *.sql
 *.dump
 *.backup
+*.tar
+*.tar.gz
+*.zip
 .local-parity/
