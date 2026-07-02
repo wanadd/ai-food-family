@@ -1,0 +1,12 @@
+node_modules
+.next
+.turbo
+coverage
+dist
+out
+*.log
+.env*
+.env.local
+.env.production
+.local-parity
+.DS_Store

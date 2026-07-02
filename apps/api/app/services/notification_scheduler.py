@@ -30,6 +30,9 @@ MEAL_REMINDERS = (
 
 
 async def run_notification_scheduler() -> None:
+    if not settings.notification_scheduler_allowed:
+        logger.info("Notification scheduler disabled by environment flags")
+        return
     logger.info("Notification scheduler started (interval %ss)", POLL_INTERVAL_SECONDS)
     while True:
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
@@ -40,6 +43,8 @@ async def run_notification_scheduler() -> None:
 
 
 async def _process_due_reminders() -> None:
+    if not settings.notification_scheduler_allowed:
+        return
     if not settings.telegram_bot_token:
         return
 

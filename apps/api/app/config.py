@@ -29,6 +29,44 @@ class Settings(BaseSettings):
     admin_panel_enabled: bool = True
     backup_root: str = "backups"
     environment: str = "development"
+    planam_env: str = "development"
+
+    # Local prod-parity audit mode. This is intentionally separate from
+    # generic development auth and is fail-closed unless all flags are explicit.
+    local_parity_mode: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("LOCAL_PARITY_MODE", "local_parity_mode"),
+    )
+    local_parity_telegram_id: int | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "LOCAL_PARITY_TELEGRAM_ID", "local_parity_telegram_id"
+        ),
+    )
+    telegram_outbound_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "TELEGRAM_OUTBOUND_ENABLED", "telegram_outbound_enabled"
+        ),
+    )
+    care_scheduler_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "CARE_SCHEDULER_ENABLED", "care_scheduler_enabled"
+        ),
+    )
+    notification_scheduler_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "NOTIFICATION_SCHEDULER_ENABLED", "notification_scheduler_enabled"
+        ),
+    )
+    disable_external_side_effects: bool = Field(
+        default=False,
+        validation_alias=AliasChoices(
+            "DISABLE_EXTERNAL_SIDE_EFFECTS", "disable_external_side_effects"
+        ),
+    )
 
     # Local audit harness — never active when environment != development.
     planam_audit_mode: bool = Field(
@@ -81,6 +119,38 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.environment.strip().lower() == "development"
+
+    @property
+    def is_local_parity(self) -> bool:
+        if not self.local_parity_mode:
+            return False
+        if self.environment.strip().lower() == "production":
+            return False
+        return self.planam_env.strip().lower() == "local-parity"
+
+    @property
+    def telegram_outbound_allowed(self) -> bool:
+        return (
+            bool(self.telegram_outbound_enabled)
+            and not self.disable_external_side_effects
+            and not self.is_local_parity
+        )
+
+    @property
+    def notification_scheduler_allowed(self) -> bool:
+        return (
+            bool(self.notification_scheduler_enabled)
+            and not self.disable_external_side_effects
+            and not self.is_local_parity
+        )
+
+    @property
+    def care_scheduler_allowed(self) -> bool:
+        return (
+            bool(self.care_scheduler_enabled)
+            and not self.disable_external_side_effects
+            and not self.is_local_parity
+        )
 
     @property
     def effective_cors_origins(self) -> list[str]:

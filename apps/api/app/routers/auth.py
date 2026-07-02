@@ -8,6 +8,7 @@ from app.database import get_db
 from app.schemas.auth import (
     AuditLoginResponse,
     DevLoginResponse,
+    LocalParityLoginResponse,
     TelegramAuthRequest,
     TelegramAuthResponse,
     UserResponse,
@@ -19,6 +20,10 @@ from app.services.audit_auth import (
 )
 from app.services.dev_auth import DEV_INIT_DATA, dev_auth_enabled, get_or_create_dev_user
 from app.services.legal_consent import user_can_access_app, user_has_legal_consent
+from app.services.local_parity_auth import (
+    get_local_parity_user,
+    local_parity_init_data_for_telegram_id,
+)
 from app.services.users import get_or_create_user, user_has_verified_phone
 from app.telegram.validate import TelegramAuthError, validate_init_data
 
@@ -102,4 +107,21 @@ def authenticate_audit(
         can_use_app=user_can_access_app(user),
         audit_init_data=init_token,
         audit_persona=persona,
+    )
+
+
+@router.post("/local-parity-login", response_model=LocalParityLoginResponse)
+def authenticate_local_parity(
+    db: Session = Depends(get_db),
+) -> LocalParityLoginResponse:
+    user = get_local_parity_user(db)
+    init_token = local_parity_init_data_for_telegram_id(user.telegram_id)
+    logger.info("Local parity auth success user_id=%s", user.id)
+    return LocalParityLoginResponse(
+        user=UserResponse.model_validate(user),
+        is_new=False,
+        phone_verified=user_has_verified_phone(user),
+        legal_accepted=user_has_legal_consent(user),
+        can_use_app=user_can_access_app(user),
+        local_parity_init_data=init_token,
     )

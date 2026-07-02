@@ -19,6 +19,9 @@ async def send_telegram_message(
     *,
     reply_markup: dict[str, Any] | None = None,
 ) -> None:
+    if not settings.telegram_outbound_allowed:
+        logger.info("Skip Telegram sendMessage: outbound disabled")
+        return
     if not settings.telegram_bot_token:
         logger.warning("TELEGRAM_BOT_TOKEN not set, skip sendMessage")
         return
@@ -35,6 +38,8 @@ async def send_telegram_message(
 
 
 async def answer_callback_query(callback_query_id: str, text: str = "") -> None:
+    if not settings.telegram_outbound_allowed:
+        return
     if not settings.telegram_bot_token:
         return
     payload: dict[str, Any] = {"callback_query_id": callback_query_id}

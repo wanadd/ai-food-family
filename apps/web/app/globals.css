@@ -9,6 +9,8 @@
 
 @layer base {
   :root {
+    --font-manrope: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+      Roboto, sans-serif;
     --pa-cream: #ffffff;
     --pa-surface: #ffffff;
     --pa-border: #e2e8e0;

@@ -1,0 +1,115 @@
+services:
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_LOCAL_PARITY_MODE: ${NEXT_PUBLIC_LOCAL_PARITY_MODE:-true}
+        NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:-}
+        NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME: ${NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME:-}
+        NEXT_PUBLIC_PLANAM_UI_2026: ${NEXT_PUBLIC_PLANAM_UI_2026:-true}
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_LOCAL_PARITY_MODE: ${NEXT_PUBLIC_LOCAL_PARITY_MODE:-true}
+      NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:-}
+      NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME: ${NEXT_PUBLIC_TELEGRAM_APP_SHORT_NAME:-}
+      NEXT_PUBLIC_PLANAM_UI_2026: ${NEXT_PUBLIC_PLANAM_UI_2026:-true}
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8000:8000"
+    environment:
+      PLANAM_ENV: ${PLANAM_ENV:-local-parity}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOCAL_PARITY_MODE: ${LOCAL_PARITY_MODE:-true}
+      LOCAL_PARITY_TELEGRAM_ID: ${LOCAL_PARITY_TELEGRAM_ID:-}
+      DISABLE_EXTERNAL_SIDE_EFFECTS: ${DISABLE_EXTERNAL_SIDE_EFFECTS:-true}
+      TELEGRAM_OUTBOUND_ENABLED: ${TELEGRAM_OUTBOUND_ENABLED:-false}
+      CARE_SCHEDULER_ENABLED: ${CARE_SCHEDULER_ENABLED:-false}
+      NOTIFICATION_SCHEDULER_ENABLED: ${NOTIFICATION_SCHEDULER_ENABLED:-false}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_API_BASE_URL: ${TELEGRAM_API_BASE_URL:-https://api.telegram.org}
+      TELEGRAM_WEBAPP_URL: ${TELEGRAM_WEBAPP_URL:-http://localhost:3000}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
+      TELEGRAM_AUTO_SETUP_WEBHOOK: ${TELEGRAM_AUTO_SETUP_WEBHOOK:-false}
+      TELEGRAM_MENU_BUTTON_TEXT: ${TELEGRAM_MENU_BUTTON_TEXT:-Открыть ПланАм}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-aifood}:${POSTGRES_PASSWORD:-aifood}@postgres:5432/${POSTGRES_DB:-aifood}}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      ADMIN_TELEGRAM_IDS: ${ADMIN_TELEGRAM_IDS:-}
+      ADMIN_PIN: ${ADMIN_PIN:-}
+      ADMIN_PANEL_ENABLED: ${ADMIN_PANEL_ENABLED:-true}
+      BACKUP_ROOT: ${BACKUP_ROOT:-backups}
+    volumes:
+      - ./apps/api:/app
+      - ./backend:/app/backend:ro
+      - ./data:/app/data:ro
+      - ./backups:/app/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live')\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aifood}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aifood}
+      POSTGRES_DB: ${POSTGRES_DB:-aifood}
+    volumes:
+      - planam_local_parity_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aifood} -d ${POSTGRES_DB:-aifood}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - planam_local_parity_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  planam_local_parity_postgres_data:
+  planam_local_parity_redis_data:

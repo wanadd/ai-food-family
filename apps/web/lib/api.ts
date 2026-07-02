@@ -40,6 +40,10 @@ export type AuditLoginResponse = TelegramAuthResponse & {
   audit_persona: string;
 };
 
+export type LocalParityLoginResponse = TelegramAuthResponse & {
+  local_parity_init_data: string;
+};
+
 export async function authenticateAuditLogin(
   persona: string,
 ): Promise<AuditLoginResponse> {
@@ -80,6 +84,22 @@ export async function authenticateDevLogin(): Promise<DevLoginResponse> {
   }
 
   return response.json() as Promise<DevLoginResponse>;
+}
+
+export async function authenticateLocalParityLogin(): Promise<LocalParityLoginResponse> {
+  const response = await fetch(`${apiUrl}/auth/local-parity-login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { detail?: string }
+      | null;
+    throw new Error(payload?.detail ?? `HTTP ${response.status}`);
+  }
+
+  return response.json() as Promise<LocalParityLoginResponse>;
 }
 
 export async function authenticateWithTelegram(
