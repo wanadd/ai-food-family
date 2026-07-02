@@ -10,6 +10,8 @@ import {
   mealTypesForHour,
   pickNextMealByTime,
   resolvePlanAmHeroState,
+  mealPlanTodayHref,
+  menuStatusLabel,
 } from "./planam-hero-2026";
 
 const meals: Home2026TodayMeal[] = [
@@ -18,6 +20,9 @@ const meals: Home2026TodayMeal[] = [
     label: "Завтрак",
     name: "Овсянка",
     recipe_id: 1,
+    slot_id: "2026-06-03:breakfast",
+    day_index: 1,
+    planned_date: "2026-06-03",
     image_url: null,
     prep_time_minutes: 10,
     calories: 300,
@@ -27,6 +32,9 @@ const meals: Home2026TodayMeal[] = [
     label: "Обед",
     name: "Суп",
     recipe_id: 2,
+    slot_id: "2026-06-03:lunch",
+    day_index: 1,
+    planned_date: "2026-06-03",
     image_url: null,
     prep_time_minutes: 20,
     calories: 400,
@@ -36,6 +44,9 @@ const meals: Home2026TodayMeal[] = [
     label: "Ужин",
     name: "Курица",
     recipe_id: 3,
+    slot_id: "2026-06-03:dinner",
+    day_index: 1,
+    planned_date: "2026-06-03",
     image_url: null,
     prep_time_minutes: 30,
     calories: 500,
@@ -95,6 +106,12 @@ describe("planam-hero-2026", () => {
 
   it("mealTypesForHour orders lunch first at noon", () => {
     expect(mealTypesForHour(13)[0]).toBe("lunch");
+  });
+
+  it("builds plan today href with canonical slot identity", () => {
+    expect(mealPlanTodayHref(meals[1], { action: "1" })).toBe(
+      "/plan/today?meal=lunch&menuItemId=2026-06-03%3Alunch&day=1&action=1",
+    );
   });
 
   it("shopping hero when unchecked >= 8", () => {
@@ -169,6 +186,22 @@ describe("planam-hero-2026", () => {
     const state = resolvePlanAmHeroState(overview, [], true);
     expect(state.variant).toBe("shopping");
     expect(state.ctaHref).toBe(PLANAM_ROUTES.shopping);
+  });
+
+  it("does not count explicit empty slots as menu dishes", () => {
+    const overview = baseOverview({
+      today_meals: [
+        { meal_type: "lunch", label: "Обед", name: "Свободно", recipe_id: null },
+        {
+          meal_type: "dinner",
+          label: "Ужин",
+          name: "Курица с яблоками",
+          recipe_id: 259,
+        },
+      ],
+    });
+
+    expect(menuStatusLabel(overview)).toBe("1 блюдо");
   });
 
   it("resolve P3 pantry expiry hero", () => {

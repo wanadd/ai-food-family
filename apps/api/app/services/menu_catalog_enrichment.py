@@ -19,6 +19,7 @@ from app.services.menu_catalog_pool import (
 from app.services.menu_recipe_builder import _pick_one
 
 MAIN_MEAL_FALLBACK_TYPES = ("lunch", "dinner")
+EMPTY_SLOT_NAMES = {"", "Свободно"}
 
 
 def attach_recipe_images(meal: MenuMeal, recipe: Recipe) -> MenuMeal:
@@ -66,6 +67,9 @@ def ensure_meal_catalog_backed(
     *,
     persons: int,
 ) -> MenuMeal | None:
+    if meal.recipe_id is None and meal.name.strip() in EMPTY_SLOT_NAMES:
+        return meal
+
     if not pool:
         return meal if meal.recipe_id is not None else None
 

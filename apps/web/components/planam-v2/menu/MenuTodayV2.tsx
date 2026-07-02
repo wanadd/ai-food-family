@@ -180,6 +180,7 @@ export function MenuTodayV2() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("action");
     params.delete("meal");
+    params.delete("menuItemId");
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
@@ -273,9 +274,14 @@ export function MenuTodayV2() {
       return;
     }
     const requestedMeal = searchParams.get("meal");
-    const requested = flatMeals.find((item) =>
-      requestedMeal ? item.meal.meal_type === requestedMeal : true,
-    );
+    const requestedSlotId = searchParams.get("menuItemId")?.trim() || null;
+    const requested =
+      (requestedSlotId
+        ? flatMeals.find((item) => item.slotId === requestedSlotId)
+        : null) ??
+      flatMeals.find((item) =>
+        requestedMeal ? item.meal.meal_type === requestedMeal : true,
+      );
     if (requested) {
       setPortionMultiplier(1);
       setActionMeal(requested);
