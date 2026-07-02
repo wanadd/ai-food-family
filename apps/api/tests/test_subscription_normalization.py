@@ -25,7 +25,7 @@ def test_known_plan_codes_match_catalog():
 def test_normalize_plan_code_aliases_and_default():
     assert sub.normalize_plan_code("Premium") == "pro"
     assert sub.normalize_plan_code("basic") == "personal"
-    assert sub.normalize_plan_code("") == "free"
+    assert sub.normalize_plan_code("") == "start"
     assert sub.normalize_plan_code("personal") == "personal"
 
 

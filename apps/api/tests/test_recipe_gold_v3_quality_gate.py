@@ -62,6 +62,7 @@ def _valid_recipe(**overrides) -> dict:
             "source_similarity_risk": "low",
         },
         "title": "╨Ъ╤Г╤А╨╕╨╜╨╛╨╡ ╤А╨░╨│╤Г ╤Б ╨╛╨▓╨╛╤Й╨░╨╝╨╕",
+        "display_title": "Куриное рагу с овощами",
         "description": "╨б╤Л╤В╨╜╨╛╨╡ ╨┤╨╛╨╝╨░╤И╨╜╨╡╨╡ ╨▒╨╗╤О╨┤╨╛ ╤Б ╨║╤Г╤А╨╕╤Ж╨╡╨╣ ╨╕ ╨╛╨▓╨╛╤Й╨░╨╝╨╕ ╨┤╨╗╤П ╤Б╨╡╨╝╨╡╨╣╨╜╨╛╨│╨╛ ╤Г╨╢╨╕╨╜╨░.",
         "meal_type": "dinner",
         "category": "main",
@@ -104,6 +105,8 @@ def _valid_recipe(**overrides) -> dict:
         },
         "quality": {"score": 0, "flags": [], "warnings": []},
     }
+    if "title" in overrides and "display_title" not in overrides:
+        base["display_title"] = str(overrides["title"])
     base.update(overrides)
     return base
 
@@ -147,6 +150,7 @@ def test_abstract_signal_phrase_similarity_warning_not_hard_fail():
     }
     recipe = _valid_recipe(
         title="╨Ю╨▓╨╛╤Й╨╜╨╛╨╣ ╤Б╤Г╨┐ ╤Б ╨╝╨╛╤А╨║╨╛╨▓╤М╤О",
+        display_title="Овощной суп с морковью",
         source_signal_ids=["pov_sig_x"],
     )
     issues = explain_originality_against_signal(recipe, signal)
@@ -325,9 +329,10 @@ def test_diverse_batch_passes_quality_gate():
             _step(4, f"╨д╨╕╨╜╨░╨╗ {i}d: ╨╛╤Д╨╛╤А╨╝╨╕╤В╨╡ {title} ╨╕ ╨┐╨╛╨┤╨░╨╣╤В╨╡ ╤Б╨╡╨╝╤М╨╡."),
         ]
         recipes.append(
-            _valid_recipe(
-                title=title,
-                category=cat,
+                _valid_recipe(
+                    title=title,
+                    display_title=f"Домашнее семейное блюдо {i + 1}",
+                    category=cat,
                 meal_type="lunch" if i < 8 else "dinner",
                 source_signal_ids=[f"pov_sig_{i:06d}"],
                 steps=steps,
@@ -347,8 +352,8 @@ def test_diverse_batch_passes_quality_gate():
 
 
 def test_jaccard_and_title_similarity():
-    assert jaccard_similarity("╨║╤Г╤А╨╕╨╜╨╛╨╡ ╤А╨░╨│╤Г", "╨║╤Г╤А╨╕╨╜╨╛╨╡ ╤А╨░╨│╤Г ╤Б ╨╛╨▓╨╛╤Й╨░╨╝╨╕") > 0.3
-    assert title_similarity_score("╨б╤Г╨┐ ╤Б ╤Д╤А╨╕╨║╨░╨┤╨╡╨╗╤М╨║╨░╨╝╨╕", "╨б╤Г╨┐ ╤Б ╤Д╤А╨╕╨║╨░╨┤╨╡╨╗╤М╨║╨░╨╝╨╕") >= 0.8
+    assert jaccard_similarity("куриное рагу", "куриное рагу с овощами") > 0.3
+    assert title_similarity_score("Суп с фрикадельками", "Суп с фрикадельками") >= 0.8
 
 
 def test_cli_report_writes_pass(tmp_path):
@@ -357,6 +362,7 @@ def test_cli_report_writes_pass(tmp_path):
     recipes = [
         _valid_recipe(
             title="╨С╨╗╤О╨┤╨╛ ╨╛╨┤╨╕╨╜",
+            display_title="Домашнее блюдо один",
             category="main",
             ingredients=[
                 _ing("╨╕╨╜╨┤╨╡╨╣╨║╨░", category="╨╝╤П╤Б╨╛_╨┐╤В╨╕╤Ж╨░", amount=400),
@@ -373,6 +379,7 @@ def test_cli_report_writes_pass(tmp_path):
         ),
         _valid_recipe(
             title="╨С╨╗╤О╨┤╨╛ ╨┤╨▓╨░",
+            display_title="Домашнее блюдо два",
             category="soup",
             meal_type="lunch",
             ingredients=[
@@ -447,26 +454,26 @@ def test_cli_returns_nonzero_on_fail(tmp_path):
 def test_main_ingredient_family_detects_chicken_fish_legumes():
     chicken = _valid_recipe(
         ingredients=[
-            _ing("╨║╤Г╤А╨╕╨╜╨╛╨╡ ╤Д╨╕╨╗╨╡", category="╨╝╤П╤Б╨╛_╨┐╤В╨╕╤Ж╨░"),
-            _ing("╨╝╨╛╤А╨║╨╛╨▓╤М"),
-            _ing("╨╗╤Г╨║ ╤А╨╡╨┐╤З╨░╤В╤Л╨╣"),
-            _ing("╤А╨╕╤Б", category="╨║╤А╤Г╨┐╤Л"),
+            _ing("куриное филе", category="мясо_птица"),
+            _ing("морковь"),
+            _ing("лук репчатый"),
+            _ing("рис", category="крупы"),
         ]
     )
     fish = _valid_recipe(
         ingredients=[
-            _ing("╤В╤А╨╡╤Б╨║╨░", category="╤А╤Л╨▒╨░"),
-            _ing("╨║╨░╤А╤В╨╛╤Д╨╡╨╗╤М"),
-            _ing("╨╗╤Г╨║-╨┐╨╛╤А╨╡╨╣"),
-            _ing("╤Б╨╗╨╕╨▓╨║╨╕", category="╨╝╨╛╨╗╨╛╤З╨╜╤Л╨╡ ╨┐╤А╨╛╨┤╤Г╨║╤В╤Л"),
+            _ing("треска", category="рыба"),
+            _ing("картофель"),
+            _ing("лук-порей"),
+            _ing("сливки", category="молочные продукты"),
         ]
     )
     legumes = _valid_recipe(
         ingredients=[
-            _ing("╤Д╨░╤Б╨╛╨╗╤М", category="╨▒╨╛╨▒╨╛╨▓╤Л╨╡"),
-            _ing("╨╝╨╛╤А╨║╨╛╨▓╤М"),
-            _ing("╨╗╤Г╨║ ╤А╨╡╨┐╤З╨░╤В╤Л╨╣"),
-            _ing("╤В╨╛╨╝╨░╤В", category="╨╛╨▓╨╛╤Й╨╕"),
+            _ing("фасоль", category="бобовые"),
+            _ing("морковь"),
+            _ing("лук репчатый"),
+            _ing("томат", category="овощи"),
         ]
     )
     assert _main_ingredient_family(chicken) == "chicken"

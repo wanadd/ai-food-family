@@ -81,7 +81,7 @@ def is_gold_v3_for_display(recipe: Recipe) -> bool:
         "gold_v3" in tags
         or "recipe_schema_v3" in tags
         or (
-            str(recipe.source_type or "") == "seed"
+            str(getattr(recipe, "source_type", "") or "") == "seed"
             and recipe.id is not None
             and 256 <= int(recipe.id) <= 265
         )
@@ -116,12 +116,14 @@ def build_description_fallback(recipe: Recipe) -> str:
     """Deterministic Russian fallback for empty Gold V3 descriptions."""
     names = _ingredient_names(recipe)
     phrase = _ingredient_phrase(names)
-    meal = MEAL_TYPE_PHRASE.get(str(recipe.meal_type or "").strip(), "")
+    meal = MEAL_TYPE_PHRASE.get(str(getattr(recipe, "meal_type", "") or "").strip(), "")
     if phrase and meal:
         return f"Домашнее блюдо для {meal} {phrase} — удобный вариант для семейного меню."
     if phrase:
         return f"Сбалансированное блюдо {phrase} для понятного домашнего меню."
-    title = (recipe.display_title or recipe.title or "").strip()
+    title = (
+        getattr(recipe, "display_title", None) or getattr(recipe, "title", "") or ""
+    ).strip()
     if title:
         return f"Домашнее блюдо «{title}» для понятного семейного меню."
     return "Домашнее блюдо для понятного семейного меню."

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
+import { setNodeEnvForTest } from "@/lib/test/env";
+
 import {
   auditInitDataForPersona,
   auditPersonaSkipsOnboarding,
@@ -18,7 +20,7 @@ describe("audit-mode", () => {
   const env = { ...process.env };
 
   beforeEach(() => {
-    vi.stubGlobal("localStorage", {
+    const localStorageStub = {
       store: {} as Record<string, string>,
       getItem(key: string) {
         return this.store[key] ?? null;
@@ -29,7 +31,8 @@ describe("audit-mode", () => {
       removeItem(key: string) {
         delete this.store[key];
       },
-    });
+    };
+    vi.stubGlobal("localStorage", localStorageStub);
     vi.stubGlobal("window", {
       localStorage: (localStorage as unknown as Storage),
       location: { search: "" },
@@ -42,19 +45,19 @@ describe("audit-mode", () => {
   });
 
   it("audit mode off when public flag missing", () => {
-    process.env.NODE_ENV = "development";
+    setNodeEnvForTest("development");
     delete process.env.NEXT_PUBLIC_PLANAM_AUDIT_MODE;
     expect(isAuditModeEnabled()).toBe(false);
   });
 
   it("audit mode off in production even with flag", () => {
-    process.env.NODE_ENV = "production";
+    setNodeEnvForTest("production");
     process.env.NEXT_PUBLIC_PLANAM_AUDIT_MODE = "true";
     expect(isAuditModeEnabled()).toBe(false);
   });
 
   it("audit mode on in development with flag", () => {
-    process.env.NODE_ENV = "development";
+    setNodeEnvForTest("development");
     process.env.NEXT_PUBLIC_PLANAM_AUDIT_MODE = "true";
     expect(isAuditModeEnabled()).toBe(true);
   });
@@ -91,7 +94,7 @@ describe("audit-mode", () => {
   });
 
   it("getAuditHeaders uses stored persona in audit mode", () => {
-    process.env.NODE_ENV = "development";
+    setNodeEnvForTest("development");
     process.env.NEXT_PUBLIC_PLANAM_AUDIT_MODE = "true";
     process.env.NEXT_PUBLIC_PLANAM_AUDIT_SECRET = "local-secret";
     storeAuditPersona("audit_personal_day5");
@@ -101,7 +104,7 @@ describe("audit-mode", () => {
   });
 
   it("buildProtectedRequestHeaders adds audit init data and secret", () => {
-    process.env.NODE_ENV = "development";
+    setNodeEnvForTest("development");
     process.env.NEXT_PUBLIC_PLANAM_AUDIT_MODE = "true";
     process.env.NEXT_PUBLIC_PLANAM_AUDIT_SECRET = "local-secret";
     storeAuditPersona("audit_personal_day5");
