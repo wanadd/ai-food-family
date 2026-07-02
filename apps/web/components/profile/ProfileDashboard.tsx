@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
@@ -58,10 +59,13 @@ function UserAvatar({
   const initial = name.trim().charAt(0).toUpperCase() || "П";
   if (photoUrl) {
     return (
-      <img
+      <Image
         src={photoUrl}
         alt=""
+        width={56}
+        height={56}
         className="h-14 w-14 shrink-0 rounded-card object-cover shadow-soft ring-2 ring-cream-surface"
+        unoptimized
       />
     );
   }
