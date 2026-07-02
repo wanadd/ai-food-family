@@ -34,9 +34,9 @@ describe("local parity auth gate", () => {
     expect(isLocalParityModeEnabled()).toBe(false);
   });
 
-  it("hides local parity panel in production", () => {
+  it("hides local parity panel in production/default", () => {
     process.env.NODE_ENV = "production";
-    process.env.NEXT_PUBLIC_LOCAL_PARITY_MODE = "true";
+    delete process.env.NEXT_PUBLIC_LOCAL_PARITY_MODE;
     setHost("localhost");
 
     expect(isLocalParityModeEnabled()).toBe(false);

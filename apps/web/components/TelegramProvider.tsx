@@ -27,7 +27,11 @@ import {
   syncAuditPersonaFromUrl,
 } from "@/lib/audit/audit-mode";
 import { isClientDevMode, storeDevInitData } from "@/lib/dev-auth";
-import { isLocalParityModeEnabled } from "@/lib/local-parity-auth";
+import {
+  getStoredLocalParityInitData,
+  isLocalParityModeEnabled,
+  storeLocalParityInitData,
+} from "@/lib/local-parity-auth";
 import { isPlanamUi2026Enabled } from "@/lib/planam/feature-flags";
 import { markWowComplete } from "@/lib/planam/onboarding-gate";
 import { loadTelegramWebApp } from "@/lib/telegram-webapp";
@@ -203,13 +207,38 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     // Step 3: no Telegram initData. Try dev login if we look like a
     // local prod-parity audit environment.
     if (isLocalParityModeEnabled()) {
-      setIsTelegram(false);
-      setIsDevMode(true);
-      setIsAuditMode(false);
-      setAuditPersona(null);
-      setPlatform("local-parity");
-      setAuthError(null);
-      setIsAuthenticating(false);
+      const storedLocalParityInitData = getStoredLocalParityInitData();
+      if (storedLocalParityInitData) {
+        try {
+          const result = await authenticateLocalParityLogin();
+          storeLocalParityInitData(result.local_parity_init_data);
+          setInitData(result.local_parity_init_data);
+          setUser(result.user);
+          setIsNewUser(result.is_new);
+          setIsTelegram(false);
+          setIsDevMode(true);
+          setIsAuditMode(false);
+          setAuditPersona(null);
+          setPlatform("local-parity");
+          void prefetchAppContext(result.local_parity_init_data).catch(() => {});
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Local parity auth failed";
+          setAuthError(message);
+          setUser(null);
+          setInitData("");
+        } finally {
+          setIsAuthenticating(false);
+        }
+      } else {
+        setIsTelegram(false);
+        setIsDevMode(true);
+        setIsAuditMode(false);
+        setAuditPersona(null);
+        setPlatform("local-parity");
+        setAuthError(null);
+        setIsAuthenticating(false);
+      }
       return;
     }
 
@@ -263,6 +292,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     setAuthError(null);
     try {
       const result = await authenticateLocalParityLogin();
+      storeLocalParityInitData(result.local_parity_init_data);
       setInitData(result.local_parity_init_data);
       setUser(result.user);
       setIsNewUser(result.is_new);

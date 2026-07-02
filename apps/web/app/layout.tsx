@@ -1,17 +1,9 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
 
 import { AppProviders } from "@/components/AppProviders";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
-
-const manrope = Manrope({
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-manrope",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "ПланАм",
@@ -24,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={manrope.variable} suppressHydrationWarning>
+    <html lang="ru" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased">
         <AppProviders>{children}</AppProviders>
       </body>

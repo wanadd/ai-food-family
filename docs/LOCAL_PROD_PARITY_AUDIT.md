@@ -8,6 +8,7 @@ This environment runs PLANAM locally against a restored production-like PostgreS
 - API: `http://localhost:8000`
 - PostgreSQL: local Docker volume on host port `5433`
 - Redis: isolated Docker volume
+- Web uses the prod-like standalone Docker build with a small `apps/web` context.
 - Telegram outbound is disabled.
 - Care and notification schedulers are disabled.
 - Auth uses local parity mode with `LOCAL_PARITY_TELEGRAM_ID`.
@@ -65,6 +66,13 @@ The script restores into the isolated local parity Postgres volume and prints:
 - `latest_menu_selection_count`
 - `shopping_lists_count`
 
+The import is fail-fast. It only prints `Local parity import complete.` after `pg_restore`, schema check, and hard validation pass:
+
+- `recipes_total >= 250`
+- `max_recipe_id >= 265`
+- `users_count > 0`
+- `family_menu_selection_count > 0`
+
 ## Start
 
 ```powershell
@@ -90,6 +98,8 @@ Expected final line:
 ```text
 LOCAL PARITY SMOKE: PASS
 ```
+
+Smoke also enforces prod-compatible DB counts and verifies local parity auth plus disabled Telegram/care/notification side effects.
 
 ## Stop And Logs
 
