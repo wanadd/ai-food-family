@@ -75,6 +75,15 @@ def _create_backup(tmp_path: Path) -> Path:
     return create.create_backup(_fixture_data(), tmp_path)
 
 
+def test_create_backup_allocates_unique_directory_for_rapid_calls(tmp_path):
+    first = _create_backup(tmp_path)
+    second = _create_backup(tmp_path)
+
+    assert first != second
+    assert first.exists()
+    assert second.exists()
+
+
 def _candidates() -> list[dict]:
     return [
         {

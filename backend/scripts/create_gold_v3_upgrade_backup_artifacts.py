@@ -52,7 +52,19 @@ def now() -> str:
 
 
 def backup_id() -> str:
-    return "gold_v3_upgrade_" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return "gold_v3_upgrade_" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+
+
+def make_unique_backup_dir(root: Path, bid: str) -> Path:
+    for index in range(100):
+        suffix = "" if index == 0 else f"_{index:02d}"
+        candidate = root / f"{bid}{suffix}"
+        try:
+            candidate.mkdir(parents=True, exist_ok=False)
+            return candidate
+        except FileExistsError:
+            continue
+    raise RuntimeError(f"Unable to allocate unique backup directory under {root}")
 
 
 def git_commit() -> str:
@@ -238,8 +250,7 @@ def backup_root() -> Path:
 def create_backup(data: dict[str, Any], root: Path | None = None) -> Path:
     bid = backup_id()
     root = root or backup_root()
-    out_dir = root / bid
-    out_dir.mkdir(parents=True, exist_ok=False)
+    out_dir = make_unique_backup_dir(root, bid)
     relation_dir = out_dir / "relation_tables"
     relation_dir.mkdir()
 
