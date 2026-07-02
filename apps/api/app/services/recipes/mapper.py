@@ -63,8 +63,11 @@ def is_gold_v3_recipe(recipe: Recipe) -> bool:
         "gold_v3" in tags
         or "recipe_schema_v3" in tags
         or (
-            str(recipe.source_type or "") == "seed"
-            and bool(recipe.id is not None and 256 <= int(recipe.id) <= 265)
+            str(getattr(recipe, "source_type", "") or "") == "seed"
+            and bool(
+                getattr(recipe, "id", None) is not None
+                and 256 <= int(getattr(recipe, "id")) <= 265
+            )
         )
     )
 
@@ -79,7 +82,11 @@ def recipe_schema(recipe: Recipe) -> str | None:
 
 
 def image_ready(recipe: Recipe) -> bool:
-    return bool(recipe.hero_image_url or recipe.image_url or recipe.thumbnail_url)
+    return bool(
+        getattr(recipe, "hero_image_url", None)
+        or getattr(recipe, "image_url", None)
+        or getattr(recipe, "thumbnail_url", None)
+    )
 
 
 def nutrition_summary(recipe: Recipe) -> NutritionSummary | None:

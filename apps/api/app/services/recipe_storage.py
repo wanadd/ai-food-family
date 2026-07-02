@@ -42,7 +42,8 @@ def _parse_legacy_amount(amount_str: str) -> tuple[str, str]:
 
 
 def get_structured_ingredients(recipe: Recipe) -> list[dict[str, Any]]:
-    if recipe.ingredient_rows:
+    ingredient_rows = getattr(recipe, "ingredient_rows", None)
+    if ingredient_rows:
         return [
             {
                 "name": row.name,
@@ -64,10 +65,10 @@ def get_structured_ingredients(recipe: Recipe) -> list[dict[str, Any]]:
                     quantity_text=getattr(row, "quantity_text", None),
                 ),
             }
-            for row in recipe.ingredient_rows
+            for row in ingredient_rows
         ]
     result: list[dict[str, Any]] = []
-    for raw in recipe.ingredients or []:
+    for raw in getattr(recipe, "ingredients", None) or []:
         if isinstance(raw, dict):
             name = str(raw.get("name", "")).strip()
             # Legacy JSONB usually only has name + amount; use it as-is,

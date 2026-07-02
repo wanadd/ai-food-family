@@ -75,6 +75,7 @@ reports/nutrition_shopping_photo_pipeline_*.json
 reports/recipe_nutrition_summary_*.json
 reports/menu_nutrition_readiness.json
 reports/recipe_ingredient_display_amounts_audit.json
+apps/api/reports/
 
 # Recipe image assets (generated locally; do not commit heavy binaries)
 apps/web/public/recipe-images/**/*

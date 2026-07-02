@@ -8,4 +8,8 @@ export default {
       "@": fileURLToPath(new URL(".", import.meta.url)),
     },
   },
+  test: {
+    pool: "threads",
+    fileParallelism: false,
+  },
 };

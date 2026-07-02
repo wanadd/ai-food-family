@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { groupPantryItems } from "@/lib/dom/pantry-groups";
 import { getBackFallback2026, shouldShowBack2026 } from "@/lib/navigation/back-navigation-2026";
+import type { PantryItem } from "@/lib/pantry/types";
 import {
   buildPantryNameIndex,
   getIngredientPantryStatus,
@@ -17,6 +18,28 @@ import {
 import { filterMissingIngredients } from "@/lib/shopping/add-missing-ingredients";
 
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+
+function pantryItemFixture(overrides: Partial<PantryItem>): PantryItem {
+  return {
+    id: 1,
+    scope_mode: "personal",
+    user_id: 1,
+    family_id: null,
+    name: "Соль",
+    category: "специи",
+    quantity: "1",
+    unit: "шт",
+    source: "manual",
+    note: null,
+    expires_at: null,
+    is_expired: false,
+    days_until_expiry: 99,
+    added_by_name: null,
+    created_at: "",
+    updated_at: "",
+    ...overrides,
+  };
+}
 
 describe("shopping pantry sprint 1.8f", () => {
   it("shopping renders status strip and menu link", () => {
@@ -167,7 +190,7 @@ describe("shopping pantry sprint 1.8f", () => {
         checked_count: 0,
         updated_at: "",
       },
-      [{ id: 1, name: "Соль", category: "специи", quantity: "1", unit: "шт", amount: "1 шт", note: null, source: "manual", is_expired: false, expires_at: null, days_until_expiry: 99, created_at: "" }],
+      [pantryItemFixture({ name: "Соль" })],
       [{ recipe_id: 1, title: "Суп", have: 5, total: 5, missing_ingredients: [], coverage_ratio: 1 }],
     );
     expect(status.toBuy).toBe(1);
@@ -196,34 +219,22 @@ describe("shopping pantry sprint 1.8f", () => {
   it("groups pantry items by category", () => {
     const groups = groupPantryItems(
       [
-        {
+        pantryItemFixture({
           id: 1,
           name: "Морковь",
           category: "овощи",
           quantity: "1",
           unit: "кг",
-          amount: "1 кг",
-          note: null,
-          source: "manual",
-          is_expired: false,
-          expires_at: null,
           days_until_expiry: 5,
-          created_at: "",
-        },
-        {
+        }),
+        pantryItemFixture({
           id: 2,
           name: "Лук",
           category: "овощи",
           quantity: "2",
           unit: "шт",
-          amount: "2 шт",
-          note: null,
-          source: "manual",
-          is_expired: false,
-          expires_at: null,
           days_until_expiry: 5,
-          created_at: "",
-        },
+        }),
       ],
       [],
     );

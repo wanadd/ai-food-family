@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { setNodeEnvForTest } from "@/lib/test/env";
+
 import { isLocalParityModeEnabled } from "./local-parity-auth";
 
 const originalNodeEnv = process.env.NODE_ENV;
@@ -13,13 +15,13 @@ function setHost(hostname: string) {
 
 describe("local parity auth gate", () => {
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnv;
+    setNodeEnvForTest(originalNodeEnv);
     process.env.NEXT_PUBLIC_LOCAL_PARITY_MODE = originalFlag;
     vi.unstubAllGlobals();
   });
 
   it("renders local parity panel only when public flag is true on localhost", () => {
-    process.env.NODE_ENV = "development";
+    setNodeEnvForTest("development");
     process.env.NEXT_PUBLIC_LOCAL_PARITY_MODE = "true";
     setHost("localhost");
 
@@ -27,7 +29,7 @@ describe("local parity auth gate", () => {
   });
 
   it("hides local parity panel by default", () => {
-    process.env.NODE_ENV = "development";
+    setNodeEnvForTest("development");
     delete process.env.NEXT_PUBLIC_LOCAL_PARITY_MODE;
     setHost("localhost");
 
@@ -35,7 +37,7 @@ describe("local parity auth gate", () => {
   });
 
   it("hides local parity panel in production/default", () => {
-    process.env.NODE_ENV = "production";
+    setNodeEnvForTest("production");
     delete process.env.NEXT_PUBLIC_LOCAL_PARITY_MODE;
     setHost("localhost");
 
@@ -43,7 +45,7 @@ describe("local parity auth gate", () => {
   });
 
   it("hides local parity panel away from localhost", () => {
-    process.env.NODE_ENV = "development";
+    setNodeEnvForTest("development");
     process.env.NEXT_PUBLIC_LOCAL_PARITY_MODE = "true";
     setHost("planam.ru");
 
