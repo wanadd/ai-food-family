@@ -15,6 +15,10 @@ services:
       - certbot_certs:/etc/letsencrypt:ro
       # Generated recipe images are served directly by nginx.
       - ${RECIPE_IMAGES_HOST_DIR:-/var/www/ai-food-family-data/recipe-images}:/var/www/recipe-images:ro
+      - /var/www/planam_money/deploy/nginx/dengi.planam.ru.conf.template:/etc/nginx/conf.d/dengi.planam.ru.conf:ro
+    networks:
+      - default
+      - planam_ingress
     entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
     depends_on:
       web:
@@ -144,3 +148,6 @@ volumes:
   redis_data:
   certbot_www:
   certbot_certs:
+networks:
+  planam_ingress:
+    external: true
