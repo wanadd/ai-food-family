@@ -24,6 +24,7 @@ from app.services import family as family_service
 from app.services import family_member_nutrition as member_nutrition
 from app.services import subscription as subscription_service
 from app.services.app_scope import AppScope
+from app.services.nutrition.target_provenance import mark_manual_or_clinician
 from app.services.onboarding import get_or_create_profile
 
 GOAL_LABELS: dict[str, str] = {
@@ -221,6 +222,8 @@ def _estimate_targets(profile: UserProfile) -> NutritionTarget:
         fiber_target_g=25,
         water_target_ml=water_ml,
         goal_type=goal,
+        target_origin="legacy",
+        provenance_status="unreviewed",
     )
 
 
@@ -247,6 +250,8 @@ def get_nutrition_targets(
             fiber_target_g=estimated.fiber_target_g,
             water_target_ml=estimated.water_target_ml,
             goal_type=estimated.goal_type,
+            target_origin="legacy",
+            provenance_status="unreviewed",
         )
         db.add(row)
         db.commit()
@@ -275,7 +280,11 @@ def update_nutrition_targets(
         row.family_id = family_id
         db.add(row)
 
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    update_data = payload.model_dump(exclude_unset=True)
+    requested_origin = update_data.pop("target_origin", None) or "manual"
+    mark_manual_or_clinician(row, requested_origin)
+
+    for key, value in update_data.items():
         setattr(row, key, value)
 
     db.commit()
@@ -633,4 +642,12 @@ def _targets_response(row: NutritionTarget) -> NutritionTargetsResponse:
         fiber_target_g=row.fiber_target_g,
         water_target_ml=row.water_target_ml,
         goal_type=row.goal_type,
+        target_origin=row.target_origin or "legacy",
+        provenance_status=row.provenance_status or "unreviewed",
+        evidence_id=row.evidence_id,
+        source_id=row.source_id,
+        source_version=row.source_version,
+        calculation_method=row.calculation_method,
+        calculation_inputs_json=row.calculation_inputs_json,
+        calculated_at=row.calculated_at,
     )

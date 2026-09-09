@@ -1,6 +1,7 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, Date, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -77,6 +78,22 @@ class NutritionTarget(Base):
     fiber_target_g: Mapped[int | None] = mapped_column(Integer, nullable=True)
     water_target_ml: Mapped[int | None] = mapped_column(Integer, nullable=True)
     goal_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    target_origin: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="legacy", server_default="legacy"
+    )
+    provenance_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="unreviewed", server_default="unreviewed"
+    )
+    evidence_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    calculation_method: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    calculation_inputs_json: Mapped[dict | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), nullable=True
+    )
+    calculated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

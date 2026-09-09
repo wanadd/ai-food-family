@@ -347,11 +347,109 @@ def _schema_statements() -> list[str]:
             fiber_target_g INTEGER,
             water_target_ml INTEGER,
             goal_type VARCHAR(32),
+            target_origin VARCHAR(32) NOT NULL DEFAULT 'legacy',
+            provenance_status VARCHAR(32) NOT NULL DEFAULT 'unreviewed',
+            evidence_id VARCHAR(64),
+            source_id VARCHAR(64),
+            source_version VARCHAR(64),
+            calculation_method VARCHAR(128),
+            calculation_inputs_json JSONB,
+            calculated_at TIMESTAMPTZ,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_nutrition_targets_user_id ON nutrition_targets (user_id);",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS target_origin VARCHAR(32) NOT NULL DEFAULT 'legacy'",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS provenance_status VARCHAR(32) NOT NULL DEFAULT 'unreviewed'",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS evidence_id VARCHAR(64)",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS source_id VARCHAR(64)",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS source_version VARCHAR(64)",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS calculation_method VARCHAR(128)",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS calculation_inputs_json JSONB",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS calculated_at TIMESTAMPTZ",
+        """
+        UPDATE nutrition_targets
+        SET target_origin = 'legacy'
+        WHERE target_origin IS NULL;
+        """,
+        """
+        UPDATE nutrition_targets
+        SET provenance_status = 'unreviewed'
+        WHERE provenance_status IS NULL;
+        """,
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_nutrition_targets_origin'
+            ) THEN
+                ALTER TABLE nutrition_targets
+                ADD CONSTRAINT ck_nutrition_targets_origin
+                CHECK (target_origin IN ('evidence_auto', 'manual', 'clinician', 'legacy'));
+            END IF;
+        END $$;
+        """,
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_nutrition_targets_provenance_status'
+            ) THEN
+                ALTER TABLE nutrition_targets
+                ADD CONSTRAINT ck_nutrition_targets_provenance_status
+                CHECK (provenance_status IN ('unreviewed', 'valid', 'invalid', 'needs_review'));
+            END IF;
+        END $$;
+        """,
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_nutrition_targets_evidence_auto_provenance'
+            ) THEN
+                ALTER TABLE nutrition_targets
+                ADD CONSTRAINT ck_nutrition_targets_evidence_auto_provenance
+                CHECK (
+                    target_origin <> 'evidence_auto'
+                    OR (
+                        evidence_id IS NOT NULL
+                        AND source_id IS NOT NULL
+                        AND source_version IS NOT NULL
+                        AND calculation_method IS NOT NULL
+                        AND calculation_inputs_json IS NOT NULL
+                        AND calculated_at IS NOT NULL
+                    )
+                );
+            END IF;
+        END $$;
+        """,
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_nutrition_targets_non_evidence_no_provenance'
+            ) THEN
+                ALTER TABLE nutrition_targets
+                ADD CONSTRAINT ck_nutrition_targets_non_evidence_no_provenance
+                CHECK (
+                    target_origin = 'evidence_auto'
+                    OR (
+                        evidence_id IS NULL
+                        AND source_id IS NULL
+                        AND source_version IS NULL
+                        AND calculation_method IS NULL
+                        AND calculation_inputs_json IS NULL
+                        AND calculated_at IS NULL
+                    )
+                );
+            END IF;
+        END $$;
+        """,
         # Per-meal cook reminders
         "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_breakfast_enabled BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_lunch_enabled BOOLEAN NOT NULL DEFAULT TRUE",
