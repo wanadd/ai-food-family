@@ -25,9 +25,9 @@ MACROS = ("kcal", "protein", "fat", "carbs")
 MEAL_GROUPS = ("breakfast", "lunch", "dinner", "snack")
 USABLE_CONFIDENCE = {"exact", "estimated", "low_confidence"}
 
-# Fallback target when the user has no nutrition_targets row (NOT persisted).
+# Fallback target when the user has no resolved nutrition_targets row (NOT persisted).
 FALLBACK_TARGETS: dict[str, int | None] = {
-    "kcal": 2200,
+    "kcal": None,
     "protein": None,
     "fat": None,
     "carbs": None,

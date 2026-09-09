@@ -24,7 +24,15 @@ from app.services import family as family_service
 from app.services import family_member_nutrition as member_nutrition
 from app.services import subscription as subscription_service
 from app.services.app_scope import AppScope
-from app.services.nutrition.target_provenance import mark_manual_or_clinician
+from app.services.nutrition.target_provenance import (
+    apply_resolution_to_row,
+    mark_manual_or_clinician,
+)
+from app.services.nutrition.target_resolver import (
+    SOURCE_VERSION,
+    facts_from_user_profile,
+    resolve_evidence_targets,
+)
 from app.services.onboarding import get_or_create_profile
 
 GOAL_LABELS: dict[str, str] = {
@@ -198,6 +206,7 @@ def get_training_history(
 
 
 def _estimate_targets(profile: UserProfile) -> NutritionTarget:
+    """Deprecated legacy fallback; do not use for canonical auto resolution."""
     weight = profile.weight_kg or 70.0
     goal = profile.nutrition_goal or "maintain"
     calories = int(weight * 24)
@@ -237,26 +246,36 @@ def get_nutrition_targets(
         .order_by(desc(NutritionTarget.updated_at))
         .first()
     )
-    if row is None:
-        profile = get_or_create_profile(db, user)
-        estimated = _estimate_targets(profile)
-        row = NutritionTarget(
-            user_id=user_id,
-            family_id=family_id,
-            calories_target=estimated.calories_target,
-            protein_target_g=estimated.protein_target_g,
-            fat_target_g=estimated.fat_target_g,
-            carbs_target_g=estimated.carbs_target_g,
-            fiber_target_g=estimated.fiber_target_g,
-            water_target_ml=estimated.water_target_ml,
-            goal_type=estimated.goal_type,
-            target_origin="legacy",
-            provenance_status="unreviewed",
-        )
-        db.add(row)
+    if row is not None:
+        if row.target_origin in {"manual", "clinician"}:
+            return _targets_response(row)
+        if (
+            row.target_origin == "evidence_auto"
+            and row.provenance_status == "verified"
+            and row.source_version == SOURCE_VERSION
+        ):
+            return _targets_response(row)
+
+    profile = get_or_create_profile(db, user)
+    resolution = resolve_evidence_targets(facts_from_user_profile(profile))
+    if resolution.resolved:
+        if row is None:
+            row = NutritionTarget(user_id=user_id, family_id=family_id)
+            db.add(row)
+        assert resolution.resolution is not None
+        apply_resolution_to_row(row, resolution.resolution)
+        row.user_id = user_id
+        row.family_id = family_id
         db.commit()
         db.refresh(row)
-    return _targets_response(row)
+        return _targets_response(row)
+
+    if row is None:
+        return _unresolved_targets_response(resolution.status, resolution.reason)
+
+    return _targets_response(
+        row, resolution_status=resolution.status, resolution_reason=resolution.reason
+    )
 
 
 def update_nutrition_targets(
@@ -633,15 +652,54 @@ def _training_response(entry: TrainingEntry) -> TrainingEntryResponse:
     )
 
 
-def _targets_response(row: NutritionTarget) -> NutritionTargetsResponse:
+def _fiber_range_from_row(row: NutritionTarget) -> tuple[int, int] | None:
+    inputs = row.calculation_inputs_json or {}
+    raw_range = inputs.get("fiber_g_range")
+    if (
+        isinstance(raw_range, list | tuple)
+        and len(raw_range) == 2
+        and all(isinstance(value, int) for value in raw_range)
+    ):
+        return (raw_range[0], raw_range[1])
+    return None
+
+
+def _unresolved_targets_response(
+    status: str, reason: str | None
+) -> NutritionTargetsResponse:
+    return NutritionTargetsResponse(
+        calories_target=None,
+        protein_target_g=None,
+        fat_target_g=None,
+        carbs_target_g=None,
+        fiber_target_g=None,
+        fiber_target_g_range=None,
+        water_target_ml=None,
+        goal_type=None,
+        resolution_status=status,  # type: ignore[arg-type]
+        resolution_reason=reason,
+        target_origin="legacy",
+        provenance_status="unreviewed",
+    )
+
+
+def _targets_response(
+    row: NutritionTarget,
+    *,
+    resolution_status: str = "resolved",
+    resolution_reason: str | None = None,
+) -> NutritionTargetsResponse:
     return NutritionTargetsResponse(
         calories_target=row.calories_target,
         protein_target_g=row.protein_target_g,
         fat_target_g=row.fat_target_g,
         carbs_target_g=row.carbs_target_g,
         fiber_target_g=row.fiber_target_g,
+        fiber_target_g_range=_fiber_range_from_row(row),
         water_target_ml=row.water_target_ml,
         goal_type=row.goal_type,
+        resolution_status=resolution_status,  # type: ignore[arg-type]
+        resolution_reason=resolution_reason,
         target_origin=row.target_origin or "legacy",
         provenance_status=row.provenance_status or "unreviewed",
         evidence_id=row.evidence_id,

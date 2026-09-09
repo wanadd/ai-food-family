@@ -30,6 +30,8 @@ class UserProfile(Base):
     weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
     nutrition_goal: Mapped[str | None] = mapped_column(String(32), nullable=True)
     activity_level: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    physical_activity_group: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    life_stage: Mapped[str | None] = mapped_column(String(32), nullable=True)
     medical_restrictions: Mapped[str] = mapped_column(Text, default="")
     banned_foods: Mapped[str] = mapped_column(Text, default="")
     dish_complexity: Mapped[str | None] = mapped_column(String(32), nullable=True)

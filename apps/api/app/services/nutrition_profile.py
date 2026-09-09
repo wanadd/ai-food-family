@@ -64,6 +64,8 @@ def profile_to_nutrition_schema(profile: UserProfile) -> NutritionProfileData:
         weight_kg=profile.weight_kg,
         nutrition_goal=profile.nutrition_goal,
         activity_level=profile.activity_level,
+        physical_activity_group=profile.physical_activity_group,
+        life_stage=profile.life_stage,
         allergies=profile.allergies or [],
         restrictions=normalize_restrictions(profile.restrictions or []),
         medical_restrictions=profile.medical_restrictions or "",
@@ -104,6 +106,8 @@ def save_nutrition_profile(
     profile.weight_kg = payload.weight_kg
     profile.nutrition_goal = payload.nutrition_goal
     profile.activity_level = payload.activity_level
+    profile.physical_activity_group = payload.physical_activity_group
+    profile.life_stage = payload.life_stage
     profile.allergies = payload.allergies
     profile.restrictions = normalize_restrictions(payload.restrictions)
     profile.medical_restrictions = payload.medical_restrictions

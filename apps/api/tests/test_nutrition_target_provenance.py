@@ -219,4 +219,4 @@ def test_evidence_registry_keeps_evidence_and_source_ids_separate():
 
     assert evidence_record["source_id"] == "SRC-RU-MR-0253-21"
     assert evidence_record["source_id"] != "EV-NT-001"
-    assert source_record["version"] is None
+    assert source_record["version"] == "MR-2.3.1.0253-21@2021-07-22"

@@ -168,6 +168,8 @@ def _schema_statements() -> list[str]:
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS weight_kg DOUBLE PRECISION",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS nutrition_goal VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS activity_level VARCHAR(32)",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS physical_activity_group VARCHAR(32)",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS life_stage VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS medical_restrictions TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS banned_foods TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS dish_complexity VARCHAR(32)",
@@ -391,6 +393,7 @@ def _schema_statements() -> list[str]:
             END IF;
         END $$;
         """,
+        "ALTER TABLE nutrition_targets DROP CONSTRAINT IF EXISTS ck_nutrition_targets_provenance_status",
         """
         DO $$
         BEGIN
@@ -400,7 +403,7 @@ def _schema_statements() -> list[str]:
             ) THEN
                 ALTER TABLE nutrition_targets
                 ADD CONSTRAINT ck_nutrition_targets_provenance_status
-                CHECK (provenance_status IN ('unreviewed', 'valid', 'invalid', 'needs_review'));
+                CHECK (provenance_status IN ('unreviewed', 'valid', 'verified', 'invalid', 'needs_review'));
             END IF;
         END $$;
         """,

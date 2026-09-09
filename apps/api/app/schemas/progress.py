@@ -6,7 +6,10 @@ from pydantic import BaseModel, Field, model_validator
 IntensityLevel = Literal["low", "medium", "high"]
 MemberProgressStatus = Literal["improving", "stable", "attention", "hidden"]
 TargetOrigin = Literal["evidence_auto", "manual", "clinician", "legacy"]
-ProvenanceStatus = Literal["unreviewed", "valid", "invalid", "needs_review"]
+ProvenanceStatus = Literal["unreviewed", "valid", "verified", "invalid", "needs_review"]
+NutritionTargetsAvailability = Literal[
+    "resolved", "insufficient_data", "unsupported_scope", "ambiguous_input"
+]
 
 
 class ProgressEntryCreate(BaseModel):
@@ -64,8 +67,11 @@ class NutritionTargetsResponse(BaseModel):
     fat_target_g: int | None
     carbs_target_g: int | None
     fiber_target_g: int | None
+    fiber_target_g_range: tuple[int, int] | None = None
     water_target_ml: int | None
     goal_type: str | None
+    resolution_status: NutritionTargetsAvailability = "resolved"
+    resolution_reason: str | None = None
     target_origin: TargetOrigin = "legacy"
     provenance_status: ProvenanceStatus = "unreviewed"
     evidence_id: str | None = None

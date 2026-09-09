@@ -21,6 +21,8 @@ class NutritionProfileData(BaseModel):
     weight_kg: float | None = Field(default=None, ge=20, le=300)
     nutrition_goal: str | None = None
     activity_level: str | None = None
+    physical_activity_group: str | None = None
+    life_stage: str | None = None
     allergies: list[str] = Field(default_factory=list)
     restrictions: list[str] = Field(default_factory=list)
     medical_restrictions: str = ""

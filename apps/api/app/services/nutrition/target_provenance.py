@@ -7,12 +7,13 @@ from typing import Literal
 from app.models.progress import NutritionTarget
 
 TargetOrigin = Literal["evidence_auto", "manual", "clinician", "legacy"]
-ProvenanceStatus = Literal["unreviewed", "valid", "invalid", "needs_review"]
+ProvenanceStatus = Literal["unreviewed", "valid", "verified", "invalid", "needs_review"]
 
 TARGET_ORIGINS: tuple[str, ...] = ("evidence_auto", "manual", "clinician", "legacy")
 PROVENANCE_STATUSES: tuple[str, ...] = (
     "unreviewed",
     "valid",
+    "verified",
     "invalid",
     "needs_review",
 )
@@ -33,6 +34,7 @@ class NutritionTargetValues:
     fat_target_g: int | None = None
     carbs_target_g: int | None = None
     fiber_target_g: int | None = None
+    fiber_target_g_range: tuple[int, int] | None = None
     water_target_ml: int | None = None
     goal_type: str | None = None
 
@@ -50,6 +52,10 @@ class NutritionTargetResolution:
     provenance_status: ProvenanceStatus = "unreviewed"
 
     def __post_init__(self) -> None:
+        if self.provenance_status not in PROVENANCE_STATUSES:
+            raise ValueError(
+                f"Unsupported nutrition provenance status: {self.provenance_status}"
+            )
         validate_provenance(
             target_origin=self.target_origin,
             evidence_id=self.evidence_id,
@@ -97,6 +103,8 @@ def apply_resolution_to_row(
     row: NutritionTarget, resolution: NutritionTargetResolution
 ) -> None:
     for key, value in resolution.targets.__dict__.items():
+        if key == "fiber_target_g_range":
+            continue
         setattr(row, key, value)
     row.target_origin = resolution.target_origin
     row.provenance_status = resolution.provenance_status
