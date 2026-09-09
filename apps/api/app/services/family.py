@@ -69,8 +69,9 @@ def _member_response(
         if linked:
             profile = get_or_create_profile(db, linked)
             virtual_nutrition = VirtualNutritionProfile(
-                age_months=profile.age * 12 if profile.age is not None else None,
+                age_months=profile.age_months,
                 age=profile.age,
+                gender=profile.gender,
                 nutrition_goal=profile.nutrition_goal,
                 allergies=profile.allergies or [],
                 restrictions=profile.restrictions or [],
@@ -356,6 +357,8 @@ def update_member_nutrition(
     nutrition = payload.nutrition
     profile_data = NutritionProfileData(
         age=nutrition.age,
+        age_months=nutrition.age_months,
+        gender=nutrition.gender or nutrition.sex,
         nutrition_goal=nutrition.nutrition_goal,
         allergies=nutrition.allergies,
         medical_restrictions=nutrition.notes,

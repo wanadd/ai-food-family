@@ -24,6 +24,7 @@ from app.services.pantry import format_leftovers_for_prompt, get_active_items_fo
 from app.services.recipe_storage import get_structured_ingredients
 from app.services.menu_selection import get_selected_menu
 from app.services.progress import user_has_pro
+from app.services.member_age import format_age_resolution_ru, resolve_age_for_profile
 
 
 @dataclass
@@ -149,8 +150,19 @@ def _profile_summary(profile) -> str:
     )
     if disliked:
         parts.append(f"не любит/запрещено: {disliked}")
-    if profile.age:
-        parts.append(f"возраст: {profile.age}")
+    age_resolution = resolve_age_for_profile(profile)
+    if age_resolution.age_source != "none":
+        parts.append(f"возраст: {format_age_resolution_ru(age_resolution)}")
+        parts.append(
+            f"age_scope: {age_resolution.population_scope}, "
+            f"age_band: {age_resolution.age_band or 'unknown'}, "
+            f"age_status: {age_resolution.resolution_status}"
+        )
+        if age_resolution.is_infant:
+            parts.append(
+                "infant_scope=true; обычное семейное меню не является "
+                "infant-specific рекомендацией"
+            )
     if profile.budget:
         parts.append(f"бюджет: {profile.budget}")
     if profile.cooking_time:

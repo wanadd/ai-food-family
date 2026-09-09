@@ -163,6 +163,7 @@ def _schema_statements() -> list[str]:
         """,
         # Nutrition profile (stage 2)
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS age INTEGER",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS age_months INTEGER",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS gender VARCHAR(24)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS height_cm INTEGER",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS weight_kg DOUBLE PRECISION",

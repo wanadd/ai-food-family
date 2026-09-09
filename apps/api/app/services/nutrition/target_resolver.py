@@ -10,6 +10,7 @@ from typing import Literal
 from app.models.family import FamilyMember
 from app.models.user_profile import UserProfile
 from app.services.family_member_nutrition import virtual_nutrition_from_member
+from app.services.member_age import nutrition_target_age_band, resolve_age
 from app.services.nutrition.target_provenance import (
     NutritionTargetResolution,
     NutritionTargetValues,
@@ -71,6 +72,7 @@ class TargetResolverResult:
 
 def facts_from_user_profile(profile: UserProfile) -> TargetResolverFacts:
     return TargetResolverFacts(
+        age_months=getattr(profile, "age_months", None),
         age_years=profile.age,
         sex=_normalize_sex(profile.gender),
         physical_activity_group=profile.physical_activity_group,
@@ -207,30 +209,22 @@ class _RowResult:
 
 
 def _resolve_age(facts: TargetResolverFacts) -> _AgeResult:
-    if facts.age_months is not None:
-        if facts.age_months < 0:
-            return _AgeResult(status="ambiguous_input", reason="negative_age_months")
-        if facts.age_months < 12:
-            return _AgeResult(status="unsupported_scope", reason="infant_scope")
-        age_years = facts.age_months // 12
-        population: Population = "child" if facts.age_months < 18 * 12 else "adult"
-        return _AgeResult(
-            status="resolved",
-            age_years=age_years,
-            age_source="age_months",
-            population=population,
-        )
-    if facts.age_years is None:
+    resolution = resolve_age(age_months=facts.age_months, age=facts.age_years)
+    if resolution.resolution_status == "unknown":
         return _AgeResult(status="insufficient_data", reason="missing_age")
-    if facts.age_years < 0:
-        return _AgeResult(status="ambiguous_input", reason="negative_age_years")
-    if facts.age_years < 1:
+    if resolution.has_conflict:
+        return _AgeResult(status="ambiguous_input", reason=resolution.resolution_reason)
+    if resolution.resolution_status == "ambiguous_input":
+        return _AgeResult(status="ambiguous_input", reason=resolution.resolution_reason)
+    if resolution.is_infant:
         return _AgeResult(status="unsupported_scope", reason="infant_scope")
+    if resolution.age_years_floor is None:
+        return _AgeResult(status="insufficient_data", reason="missing_age")
     return _AgeResult(
         status="resolved",
-        age_years=facts.age_years,
-        age_source="age_years",
-        population="child" if facts.age_years < 18 else "adult",
+        age_years=resolution.age_years_floor,
+        age_source=resolution.age_source,
+        population="child" if resolution.is_child else "adult",
     )
 
 
@@ -293,31 +287,11 @@ def _resolve_child_row(
 
 
 def adult_age_band(age_years: int) -> str | None:
-    if 18 <= age_years <= 29:
-        return "18-29"
-    if 30 <= age_years <= 44:
-        return "30-44"
-    if 45 <= age_years <= 64:
-        return "45-64"
-    if 65 <= age_years <= 74:
-        return "65-74"
-    if age_years >= 75:
-        return "75+"
-    return None
+    return nutrition_target_age_band(resolve_age(age=age_years))
 
 
 def child_age_band(age_years: int) -> str | None:
-    if 1 <= age_years <= 2:
-        return "1-2"
-    if 3 <= age_years <= 6:
-        return "3-6"
-    if 7 <= age_years <= 10:
-        return "7-10"
-    if 11 <= age_years <= 14:
-        return "11-14"
-    if 15 <= age_years <= 17:
-        return "15-17"
-    return None
+    return nutrition_target_age_band(resolve_age(age=age_years))
 
 
 @lru_cache(maxsize=1)

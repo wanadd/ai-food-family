@@ -12,6 +12,7 @@ from app.nutrition.restrictions_catalog import (
     normalize_restriction_key,
     normalize_restrictions,
 )
+from app.services.member_age import resolve_age_for_profile
 
 ConflictSource = Literal[
     "recipe_restrictions",
@@ -68,6 +69,7 @@ class RestrictionConflict:
     reason: str
     matched_ingredient: str | None = None
     source: ConflictSource = "unknown"
+    evidence_status: str | None = None
 
 
 def normalize_profile_restrictions(profile: Any) -> list[str]:
@@ -128,6 +130,24 @@ def explain_recipe_restriction_conflicts(recipe: Any, profile: Any) -> list[Rest
     recipe_restrictions = {_norm_token(r) for r in _collect_recipe_restrictions(recipe)}
 
     active_keys = normalize_profile_restrictions(profile)
+    age_resolution = resolve_age_for_profile(profile)
+
+    if age_resolution.is_infant and _has_generic_child_safe_signal(recipe):
+        _append_conflict(
+            conflicts,
+            seen,
+            RestrictionConflict(
+                restriction_key="infant_unsupported_scope",
+                label_ru="Питание младенца",
+                severity="hard",
+                reason=(
+                    "Для 0-11 месяцев generic child_safe является недостаточным "
+                    "основанием безопасности"
+                ),
+                source="profile",
+                evidence_status="generic_unverified_for_age",
+            ),
+        )
 
     for key in active_keys:
         definition = get_restriction_definition(key)
@@ -323,6 +343,17 @@ def _collect_recipe_restrictions(recipe: Any) -> list[str]:
     if rows:
         return [getattr(row, "restriction", str(row)) for row in rows]
     return list(getattr(recipe, "restrictions", None) or [])
+
+
+def _has_generic_child_safe_signal(recipe: Any) -> bool:
+    if bool(getattr(recipe, "suitable_for_children", False)):
+        return True
+    tokens = {
+        *(_norm_token(t) for t in _collect_recipe_tags(recipe)),
+        *(_norm_token(d) for d in _collect_recipe_diets(recipe)),
+        *(_norm_token(r) for r in _collect_recipe_restrictions(recipe)),
+    }
+    return any(token in {"child_safe", "детское", "для детей"} for token in tokens)
 
 
 def _collect_recipe_full_text(recipe: Any, ingredient_texts: list[str]) -> str:

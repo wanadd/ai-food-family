@@ -25,6 +25,7 @@ class UserProfile(Base):
     budget: Mapped[str | None] = mapped_column(String(32), nullable=True)
     cooking_time: Mapped[str | None] = mapped_column(String(32), nullable=True)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    age_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
     gender: Mapped[str | None] = mapped_column(String(24), nullable=True)
     height_cm: Mapped[int | None] = mapped_column(Integer, nullable=True)
     weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)

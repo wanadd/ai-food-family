@@ -11,6 +11,7 @@ from app.services.family_member_nutrition import (
     member_is_virtual,
     virtual_nutrition_from_member,
 )
+from app.services.member_age import age_resolution_to_dict, resolve_age, resolve_age_for_profile
 from app.services.meal_leftovers import list_active_leftovers
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import get_active_items_for_scope
@@ -23,6 +24,8 @@ def _profile_snapshot(profile) -> dict:
         "goal_details": goal_details,
         "activity_level": profile.activity_level,
         "age": profile.age,
+        "age_months": profile.age_months,
+        "age_resolution": age_resolution_to_dict(resolve_age_for_profile(profile)),
         "gender": profile.gender,
         "height_cm": profile.height_cm,
         "weight_kg": profile.weight_kg,
@@ -45,6 +48,9 @@ def _member_snapshot(db: Session, member) -> dict:
             "name": member.display_name,
             "virtual": True,
             "age_months": n.age_months,
+            "age_resolution": age_resolution_to_dict(
+                resolve_age(age_months=n.age_months, age=n.age)
+            ),
             "nutrition_goal": n.nutrition_goal,
             "allergies": n.allergies,
             "custom_allergies": n.custom_allergies,

@@ -238,7 +238,7 @@ _RESTRICTION_DEFINITIONS: tuple[RestrictionDefinition, ...] = (
         "Подходит детям",
         "medical_safety",
         "soft",
-        "Осторожность с острым, алкоголем и тяжёлыми добавками.",
+        "Generic product signal only; not verified age-specific pediatric safety.",
         aliases=("детское", "для детей", "child safe", "child_safe"),
         warning=("острый", "чили", "перец чили", "алкоголь", "кофеин"),
     ),

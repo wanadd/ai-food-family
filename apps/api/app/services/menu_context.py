@@ -23,6 +23,7 @@ from app.services.nutrition_profile_labels import (
     NUTRITION_GOAL_LABELS,
 )
 from app.services.family_menu_context import format_family_member_for_menu
+from app.services.member_age import format_age_resolution_ru, resolve_age_for_profile
 from app.services.onboarding import get_or_create_profile
 from app.services.meal_leftovers import (
     format_meal_leftovers_for_prompt,
@@ -125,8 +126,22 @@ def _format_user_block(name: str, profile) -> str:
         parts.append(
             f"  активность: {ACTIVITY_LABELS.get(profile.activity_level, profile.activity_level)}"
         )
-    if profile.age:
-        parts.append(f"  возраст: {profile.age}")
+    age_resolution = resolve_age_for_profile(profile)
+    if age_resolution.age_source != "none":
+        parts.append(f"  возраст: {format_age_resolution_ru(age_resolution)}")
+        parts.append(
+            "  возрастной профиль: "
+            f"{age_resolution.population_scope}; "
+            f"band={age_resolution.age_band or 'unknown'}; "
+            f"status={age_resolution.resolution_status}"
+        )
+        if age_resolution.is_infant:
+            parts.append(
+                "  infant_scope=true; обычное семейное меню не сертифицируется "
+                "как питание для младенца"
+            )
+        if age_resolution.has_conflict:
+            parts.append("  конфликт возраста: age_months не совпадает с age")
     if profile.gender:
         parts.append(
             f"  пол: {GENDER_LABELS.get(profile.gender, profile.gender)}"

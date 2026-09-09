@@ -59,6 +59,7 @@ def migrate_legacy_profile(db: Session, profile: UserProfile) -> bool:
 def profile_to_nutrition_schema(profile: UserProfile) -> NutritionProfileData:
     return NutritionProfileData(
         age=profile.age,
+        age_months=profile.age_months,
         gender=profile.gender,
         height_cm=profile.height_cm,
         weight_kg=profile.weight_kg,
@@ -100,7 +101,12 @@ def save_nutrition_profile(
     payload = normalize_profile_payload(payload)
     validate_measurable_goal(payload)
     profile = get_or_create_profile(db, user)
-    profile.age = payload.age
+    profile.age_months = payload.age_months
+    profile.age = (
+        payload.age_months // 12
+        if payload.age_months is not None
+        else payload.age
+    )
     profile.gender = payload.gender
     profile.height_cm = payload.height_cm
     profile.weight_kg = payload.weight_kg

@@ -9,6 +9,12 @@ from app.services.family_member_nutrition import (
     virtual_nutrition_from_member,
 )
 from app.services.member_age import format_age_months_ru
+from app.services.member_age import (
+    age_resolution_to_dict,
+    format_age_resolution_ru,
+    resolve_age,
+    resolve_age_for_profile,
+)
 from app.services.menu_labels import (
     ALLERGY_LABELS,
     DIET_LABELS,
@@ -46,12 +52,27 @@ def format_family_member_for_menu(db: Session, member: FamilyMember) -> str:
         parts = [f"- {name} ({role_note}):"]
 
         kind = member.virtual_kind
+        age_resolution = resolve_age(age_months=n.age_months, age=n.age)
         if n.age_months is not None:
             parts.append(
                 f"  возраст: {format_age_months_ru(n.age_months, kind=kind)}"
             )
         elif kind == "child":
             parts.append("  возраст: ребёнок, возраст не указан")
+        if age_resolution.age_source != "none":
+            parts.append(
+                "  возрастной профиль: "
+                f"{age_resolution.population_scope}; "
+                f"band={age_resolution.age_band or 'unknown'}; "
+                f"status={age_resolution.resolution_status}"
+            )
+            if age_resolution.is_infant:
+                parts.append(
+                    "  infant_scope=true; обычное семейное меню не сертифицируется "
+                    "как питание для младенца"
+                )
+            if age_resolution.has_conflict:
+                parts.append("  конфликт возраста: age_months не совпадает с age")
 
         goal_label = nutrition_goal_display(n)
         if goal_label:
@@ -98,6 +119,18 @@ def _format_telegram_profile_block(
 
     block = _format_user_block(name, profile)
     return block.replace(f"- {name}:", f"- {name} ({role_note}):", 1)
+
+
+def age_resolution_for_member(db: Session, member: FamilyMember) -> dict:
+    if member_is_virtual(member):
+        n = virtual_nutrition_from_member(member)
+        return age_resolution_to_dict(resolve_age(age_months=n.age_months, age=n.age))
+    if member.user_id is None:
+        return age_resolution_to_dict(resolve_age())
+    user = db.query(User).filter(User.id == member.user_id).one_or_none()
+    if user is None:
+        return age_resolution_to_dict(resolve_age())
+    return age_resolution_to_dict(resolve_age_for_profile(get_or_create_profile(db, user)))
 
 
 def _join(values: list[str], mapping: dict[str, str]) -> str:
