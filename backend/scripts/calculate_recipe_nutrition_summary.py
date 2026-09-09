@@ -61,6 +61,7 @@ _CONTENT_COLUMNS = [
     "nutrition_serving_size_text",
     "nutrition_confidence",
     "nutrition_source",
+    "nutrition_source_kind",
     "nutrition_needs_review",
     "nutrition_review_reason",
 ]
@@ -139,6 +140,7 @@ def _content_values(s: RecipeNutritionSummary) -> dict:
         "nutrition_serving_size_text": s.serving_size_text,
         "nutrition_confidence": s.confidence,
         "nutrition_source": s.source,
+        "nutrition_source_kind": s.source_kind,
         "nutrition_needs_review": bool(s.needs_review),
         "nutrition_review_reason": s.review_reason,
     }
@@ -148,20 +150,28 @@ def _norm_num(v):
     return None if v is None else round(float(v), 1)
 
 
-def _content_equal(current: dict, proposed: dict, current_coverage, proposed_coverage) -> bool:
+def _content_equal(
+    current: dict,
+    proposed: dict,
+    current_coverage,
+    proposed_coverage,
+    current_provenance,
+    proposed_provenance,
+) -> bool:
     for col in _CONTENT_COLUMNS:
         cv, pv = current.get(col), proposed.get(col)
         if col == "nutrition_needs_review":
             if _b(cv) != bool(pv):
                 return False
         elif col in {"nutrition_serving_size_text", "nutrition_confidence",
-                     "nutrition_source", "nutrition_review_reason"}:
+                     "nutrition_source", "nutrition_source_kind",
+                     "nutrition_review_reason"}:
             if (cv or None) != (pv or None):
                 return False
         else:
             if _norm_num(cv) != _norm_num(pv):
                 return False
-    return current_coverage == proposed_coverage
+    return current_coverage == proposed_coverage and current_provenance == proposed_provenance
 
 
 def load_current(engine, recipe_ids: list[int]) -> dict[int, dict]:
@@ -169,7 +179,8 @@ def load_current(engine, recipe_ids: list[int]) -> dict[int, dict]:
         return {}
     cols = ", ".join(_CONTENT_COLUMNS)
     query = text(
-        f"SELECT id, {cols}, nutrition_coverage_json FROM recipes WHERE id IN :ids"
+        f"SELECT id, {cols}, nutrition_coverage_json, nutrition_provenance_json "
+        "FROM recipes WHERE id IN :ids"
     ).bindparams(bindparam("ids", expanding=True))
     out: dict[int, dict] = {}
     with engine.connect() as conn:
@@ -182,6 +193,13 @@ def load_current(engine, recipe_ids: list[int]) -> dict[int, dict]:
                 except (ValueError, TypeError):
                     cov = None
             row["_coverage"] = cov
+            provenance = row.get("nutrition_provenance_json")
+            if isinstance(provenance, str):
+                try:
+                    provenance = json.loads(provenance)
+                except (ValueError, TypeError):
+                    provenance = None
+            row["_provenance"] = provenance
             out[row["id"]] = row
     return out
 
@@ -191,8 +209,10 @@ def apply_commit(engine, summaries: list[RecipeNutritionSummary]) -> int:
     current = load_current(engine, [s.recipe_id for s in summaries])
     cov_expr = "CAST(:coverage AS jsonb)" if is_pg else ":coverage"
     set_cols = ", ".join(f"{c} = :{c}" for c in _CONTENT_COLUMNS)
+    provenance_expr = "CAST(:provenance AS jsonb)" if is_pg else ":provenance"
     update = text(
         f"UPDATE recipes SET {set_cols}, nutrition_coverage_json = {cov_expr}, "
+        f"nutrition_provenance_json = {provenance_expr}, "
         "nutrition_calculated_at = :calculated_at WHERE id = :id"
     )
     now = datetime.now(timezone.utc)
@@ -201,10 +221,18 @@ def apply_commit(engine, summaries: list[RecipeNutritionSummary]) -> int:
         for s in summaries:
             proposed = _content_values(s)
             cur = current.get(s.recipe_id, {})
-            if cur and _content_equal(cur, proposed, cur.get("_coverage"), s.coverage):
+            if cur and _content_equal(
+                cur,
+                proposed,
+                cur.get("_coverage"),
+                s.coverage,
+                cur.get("_provenance"),
+                s.provenance or {},
+            ):
                 continue
             params = dict(proposed)
             params["coverage"] = json.dumps(s.coverage, ensure_ascii=False)
+            params["provenance"] = json.dumps(s.provenance or {}, ensure_ascii=False)
             params["calculated_at"] = now
             params["id"] = s.recipe_id
             conn.execute(update, params)
@@ -364,6 +392,13 @@ def build_json(summaries, summary, suspicious, *, committed, started_at, applied
             "db_changed": committed,
             "started_at": started_at,
             "source": NUTRITION_SOURCE,
+            "source_kinds": sorted(
+                {
+                    s.source_kind
+                    for s in summaries
+                    if s.source_kind
+                }
+            ),
             "summary": summary,
             "rows_changed": applied,
             "recipes": [s.to_dict() for s in summaries],

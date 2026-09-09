@@ -22,3 +22,22 @@ NUTRITION_TARGET_SOURCE_REGISTRY: dict[str, dict[str, str | None]] = {
         "status": "verified_for_P0_A2",
     }
 }
+
+RECIPE_NUTRITION_EVIDENCE_REGISTRY: dict[str, dict[str, str | None]] = {
+    "EV-RN-002": {
+        "domain": "recipe_nutrition",
+        "description": "Canonical nutrient facts require per-fact source provenance.",
+        "source_id": None,
+        "source_version": None,
+        "calculation_method": "food_nutrient_fact_provenance_contract_v1",
+        "status": "strong_partial_foundation",
+    },
+    "EV-RN-003": {
+        "domain": "recipe_nutrition",
+        "description": "PLANAM v1 hard-coded facts are internal legacy unsourced, not external evidence.",
+        "source_id": "SRC-PLANAM-V1-NUTRITION-FACTS",
+        "source_version": "planam_v1",
+        "calculation_method": "planam_v1_internal_legacy_macro_sum_v1",
+        "status": "match",
+    },
+}

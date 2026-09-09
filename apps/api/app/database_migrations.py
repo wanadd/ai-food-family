@@ -536,8 +536,109 @@ def _schema_statements() -> list[str]:
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_coverage_json JSONB",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_calculated_at TIMESTAMPTZ",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_source VARCHAR(64)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_source_kind VARCHAR(64)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_provenance_json JSONB",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_needs_review BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_review_reason VARCHAR(64)",
+        """
+        CREATE TABLE IF NOT EXISTS food_nutrient_facts (
+            id SERIAL PRIMARY KEY,
+            canonical_food_key VARCHAR(120) NOT NULL,
+            nutrient_key VARCHAR(48) NOT NULL,
+            value DOUBLE PRECISION,
+            unit VARCHAR(24) NOT NULL,
+            basis_amount DOUBLE PRECISION NOT NULL,
+            basis_unit VARCHAR(24) NOT NULL,
+            source_id VARCHAR(64) NOT NULL,
+            source_record_locator VARCHAR(256) NOT NULL,
+            source_version VARCHAR(64) NOT NULL,
+            source_data_type VARCHAR(64),
+            fdc_id INTEGER,
+            food_state VARCHAR(32) NOT NULL DEFAULT 'unknown',
+            provenance_status VARCHAR(32) NOT NULL,
+            source_food_name VARCHAR(200),
+            source_food_description TEXT,
+            source_nutrient_id VARCHAR(64),
+            source_nutrient_name VARCHAR(120),
+            match_method VARCHAR(64),
+            match_confidence VARCHAR(32),
+            review_status VARCHAR(32),
+            review_notes TEXT,
+            edible_portion_basis VARCHAR(120),
+            preparation_method VARCHAR(120),
+            loss_or_retention_metadata JSONB,
+            retrieved_or_imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            CONSTRAINT uq_food_nutrient_fact_source_record UNIQUE (
+                canonical_food_key,
+                nutrient_key,
+                food_state,
+                source_id,
+                source_record_locator
+            ),
+            CONSTRAINT ck_food_nutrient_fact_provenance_status CHECK (
+                provenance_status IN (
+                    'external_verified',
+                    'external_imported_unreviewed',
+                    'manual_reviewed',
+                    'internal_legacy_unsourced',
+                    'unavailable'
+                )
+            ),
+            CONSTRAINT ck_food_nutrient_fact_external_provenance CHECK (
+                provenance_status <> 'external_verified'
+                OR (
+                    source_id <> 'SRC-PLANAM-V1-NUTRITION-FACTS'
+                    AND source_record_locator IS NOT NULL
+                    AND source_version IS NOT NULL
+                )
+            ),
+            CONSTRAINT ck_food_nutrient_fact_planam_internal CHECK (
+                source_id <> 'SRC-PLANAM-V1-NUTRITION-FACTS'
+                OR provenance_status = 'internal_legacy_unsourced'
+            ),
+            CONSTRAINT ck_food_nutrient_fact_fdc_identity CHECK (
+                source_id <> 'SRC-USDA-FDC'
+                OR (fdc_id IS NOT NULL AND source_data_type IS NOT NULL)
+            )
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_food_nutrient_facts_food ON food_nutrient_facts (canonical_food_key);",
+        "CREATE INDEX IF NOT EXISTS ix_food_nutrient_facts_source ON food_nutrient_facts (source_id);",
+        "CREATE INDEX IF NOT EXISTS ix_food_nutrient_facts_fdc_id ON food_nutrient_facts (fdc_id);",
+        """
+        CREATE TABLE IF NOT EXISTS food_matches (
+            id SERIAL PRIMARY KEY,
+            normalized_ingredient_name VARCHAR(160) NOT NULL,
+            original_ingredient_text VARCHAR(300),
+            status VARCHAR(32) NOT NULL,
+            canonical_food_key VARCHAR(120),
+            source_id VARCHAR(64),
+            source_record_locator VARCHAR(256),
+            source_food_name VARCHAR(200),
+            food_state VARCHAR(32) NOT NULL DEFAULT 'unknown',
+            match_method VARCHAR(64) NOT NULL DEFAULT 'candidate_only',
+            match_confidence VARCHAR(32) NOT NULL DEFAULT 'none',
+            brand VARCHAR(120),
+            review_reason VARCHAR(120),
+            reviewed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            reviewed_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            CONSTRAINT uq_food_match_identity UNIQUE (
+                normalized_ingredient_name,
+                food_state,
+                brand
+            ),
+            CONSTRAINT ck_food_match_status CHECK (
+                status IN ('matched', 'ambiguous', 'unmatched', 'manual_review_required')
+            ),
+            CONSTRAINT ck_food_match_candidate_only CHECK (
+                status <> 'matched' OR match_method <> 'candidate_only'
+            )
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_food_matches_name ON food_matches (normalized_ingredient_name);",
+        "CREATE INDEX IF NOT EXISTS ix_food_matches_status ON food_matches (status);",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS original_title VARCHAR(200)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS normalized_title VARCHAR(200)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS display_title VARCHAR(200)",

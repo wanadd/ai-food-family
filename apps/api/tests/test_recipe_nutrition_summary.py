@@ -111,7 +111,8 @@ def _make_engine(url: str = "sqlite:///:memory:"):
                 "is_active BOOLEAN, source_type VARCHAR(16), ingredients TEXT" + extra
                 + ", nutrition_serving_size_text TEXT, nutrition_confidence VARCHAR(24), "
                 "nutrition_coverage_json TEXT, nutrition_calculated_at TIMESTAMP, "
-                "nutrition_source VARCHAR(64), nutrition_needs_review BOOLEAN, "
+                "nutrition_source VARCHAR(64), nutrition_source_kind VARCHAR(64), "
+                "nutrition_provenance_json TEXT, nutrition_needs_review BOOLEAN, "
                 "nutrition_review_reason VARCHAR(64))"
             )
         )
@@ -212,6 +213,9 @@ def test_mapper_builds_summary_when_present():
         nutrition_carbs_per_serving=30.0,
         nutrition_servings=4.0,
         nutrition_serving_size_text="1 порция",
+        nutrition_source="planam_v1_nutrition_facts",
+        nutrition_source_kind="internal_legacy_unsourced",
+        nutrition_provenance_json={"nutrition_source_kind": "internal_legacy_unsourced"},
         nutrition_needs_review=False,
         nutrition_review_reason=None,
     )
@@ -242,6 +246,9 @@ def test_mapper_normalizes_invalid_confidence_high():
         nutrition_carbs_total=None,
         nutrition_servings=4.0,
         nutrition_serving_size_text=None,
+        nutrition_source="planam_v1_nutrition_facts",
+        nutrition_source_kind="internal_legacy_unsourced",
+        nutrition_provenance_json={"nutrition_source_kind": "internal_legacy_unsourced"},
         nutrition_needs_review=False,
         nutrition_review_reason=None,
     )
@@ -291,6 +298,9 @@ def test_to_summary_with_invalid_nutrition_confidence():
         nutrition_carbs_total=None,
         nutrition_servings=4.0,
         nutrition_serving_size_text=None,
+        nutrition_source="planam_v1_nutrition_facts",
+        nutrition_source_kind="internal_legacy_unsourced",
+        nutrition_provenance_json={"nutrition_source_kind": "internal_legacy_unsourced"},
         nutrition_needs_review=False,
         nutrition_review_reason=None,
     )

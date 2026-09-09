@@ -6,7 +6,7 @@ from app.models.family_invite import FamilyInvite, FamilyInviteStatus
 from app.models.menu_selection import FamilyMenuSelection
 from app.models.notification_settings import UserNotificationSettings
 from app.models.pantry import FamilyPantryItem
-from app.models.recipe import Recipe, RecipeFavorite
+from app.models.recipe import FoodMatch, FoodNutrientFact, Recipe, RecipeFavorite
 from app.models.shopping_category import ShoppingCategory
 from app.models.shopping_list import FamilyShoppingList
 from app.models.user import User
@@ -37,6 +37,8 @@ __all__ = [
     "FamilyPantryItem",
     "Recipe",
     "RecipeFavorite",
+    "FoodNutrientFact",
+    "FoodMatch",
     "SubscriptionPlan",
     "UserSubscription",
     "AmaWallet",

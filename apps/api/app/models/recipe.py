@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
@@ -75,6 +76,8 @@ class Recipe(Base):
         DateTime(timezone=True), nullable=True
     )
     nutrition_source: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    nutrition_source_kind: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    nutrition_provenance_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     nutrition_needs_review: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
@@ -143,6 +146,119 @@ class RecipeIngredientRow(Base):
     manual_review_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     recipe = relationship("Recipe", back_populates="ingredient_rows")
+
+
+class FoodNutrientFact(Base):
+    __tablename__ = "food_nutrient_facts"
+    __table_args__ = (
+        UniqueConstraint(
+            "canonical_food_key",
+            "nutrient_key",
+            "food_state",
+            "source_id",
+            "source_record_locator",
+            name="uq_food_nutrient_fact_source_record",
+        ),
+        CheckConstraint(
+            "provenance_status IN ("
+            "'external_verified', 'external_imported_unreviewed', "
+            "'manual_reviewed', 'internal_legacy_unsourced', 'unavailable'"
+            ")",
+            name="ck_food_nutrient_fact_provenance_status",
+        ),
+        CheckConstraint(
+            "provenance_status <> 'external_verified' OR ("
+            "source_id <> 'SRC-PLANAM-V1-NUTRITION-FACTS' "
+            "AND source_record_locator IS NOT NULL "
+            "AND source_version IS NOT NULL"
+            ")",
+            name="ck_food_nutrient_fact_external_provenance",
+        ),
+        CheckConstraint(
+            "source_id <> 'SRC-PLANAM-V1-NUTRITION-FACTS' "
+            "OR provenance_status = 'internal_legacy_unsourced'",
+            name="ck_food_nutrient_fact_planam_internal",
+        ),
+        CheckConstraint(
+            "source_id <> 'SRC-USDA-FDC' OR (fdc_id IS NOT NULL AND source_data_type IS NOT NULL)",
+            name="ck_food_nutrient_fact_fdc_identity",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    canonical_food_key: Mapped[str] = mapped_column(String(120), index=True)
+    nutrient_key: Mapped[str] = mapped_column(String(48), index=True)
+    value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    unit: Mapped[str] = mapped_column(String(24))
+    basis_amount: Mapped[float] = mapped_column(Float)
+    basis_unit: Mapped[str] = mapped_column(String(24))
+    source_id: Mapped[str] = mapped_column(String(64), index=True)
+    source_record_locator: Mapped[str] = mapped_column(String(256))
+    source_version: Mapped[str] = mapped_column(String(64))
+    source_data_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    fdc_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    food_state: Mapped[str] = mapped_column(String(32), default="unknown", index=True)
+    provenance_status: Mapped[str] = mapped_column(String(32), index=True)
+    source_food_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    source_food_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_nutrient_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_nutrient_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    match_method: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    match_confidence: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    review_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    review_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    edible_portion_basis: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    preparation_method: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    loss_or_retention_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    retrieved_or_imported_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class FoodMatch(Base):
+    __tablename__ = "food_matches"
+    __table_args__ = (
+        UniqueConstraint(
+            "normalized_ingredient_name",
+            "food_state",
+            "brand",
+            name="uq_food_match_identity",
+        ),
+        CheckConstraint(
+            "status IN ('matched', 'ambiguous', 'unmatched', 'manual_review_required')",
+            name="ck_food_match_status",
+        ),
+        CheckConstraint(
+            "status <> 'matched' OR match_method <> 'candidate_only'",
+            name="ck_food_match_candidate_only",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    normalized_ingredient_name: Mapped[str] = mapped_column(String(160), index=True)
+    original_ingredient_text: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), index=True)
+    canonical_food_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_record_locator: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    source_food_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    food_state: Mapped[str] = mapped_column(String(32), default="unknown")
+    match_method: Mapped[str] = mapped_column(String(64), default="candidate_only")
+    match_confidence: Mapped[str] = mapped_column(String(32), default="none")
+    brand: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    review_reason: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    reviewed_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
 
 class RecipeStepRow(Base):

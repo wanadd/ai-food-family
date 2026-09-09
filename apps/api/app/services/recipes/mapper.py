@@ -101,6 +101,8 @@ def nutrition_summary(recipe: Recipe) -> NutritionSummary | None:
     calculated_at = getattr(recipe, "nutrition_calculated_at", None)
     if not confidence and calculated_at is None:
         return None
+    provenance = getattr(recipe, "nutrition_provenance_json", None)
+    source_kind = getattr(recipe, "nutrition_source_kind", None)
     return NutritionSummary(
         kcal_total=getattr(recipe, "nutrition_kcal_total", None),
         protein_total=getattr(recipe, "nutrition_protein_total", None),
@@ -113,10 +115,40 @@ def nutrition_summary(recipe: Recipe) -> NutritionSummary | None:
         servings=getattr(recipe, "nutrition_servings", None),
         serving_size_text=getattr(recipe, "nutrition_serving_size_text", None),
         confidence=confidence,
+        source=getattr(recipe, "nutrition_source", None),
+        source_kind=source_kind,
+        provenance=provenance,
         needs_review=bool(getattr(recipe, "nutrition_needs_review", False)),
         review_reason=getattr(recipe, "nutrition_review_reason", None),
         calculated_at=calculated_at,
     )
+
+
+def canonical_macro_display(recipe: Recipe) -> dict[str, float | str | None]:
+    """Return one coherent macro source for display/API compatibility."""
+    summary = nutrition_summary(recipe)
+    if (
+        summary
+        and summary.source_kind
+        and summary.source_kind not in {"unavailable"}
+        and summary.kcal_per_serving is not None
+    ):
+        return {
+            "kcal": summary.kcal_per_serving,
+            "protein": summary.protein_per_serving,
+            "fat": summary.fat_per_serving,
+            "carbs": summary.carbs_per_serving,
+            "status": summary.source_kind,
+        }
+    if getattr(recipe, "calories_per_serving", None) is not None:
+        return {
+            "kcal": recipe.calories_per_serving,
+            "protein": recipe.protein_g,
+            "fat": recipe.fat_g,
+            "carbs": recipe.carbs_g,
+            "status": "legacy_recipe_macro_fields",
+        }
+    return {"kcal": None, "protein": None, "fat": None, "carbs": None, "status": "unavailable"}
 
 
 def to_summary(
@@ -128,6 +160,7 @@ def to_summary(
     shown = public_title(recipe)
     full = (recipe.title or "").strip()
     full_title = full if full and full != shown.strip() else None
+    macros = canonical_macro_display(recipe)
     return RecipeSummary(
         id=recipe.id,
         title=shown,
@@ -145,10 +178,10 @@ def to_summary(
         is_favorited=recipe.id in favorite_ids,
         is_drink=bool(recipe.is_drink),
         is_alcoholic=bool(recipe.is_alcoholic),
-        calories_per_serving=recipe.calories_per_serving,
-        protein_g=recipe.protein_g,
-        fat_g=recipe.fat_g,
-        carbs_g=recipe.carbs_g,
+        calories_per_serving=macros["kcal"],
+        protein_g=macros["protein"],
+        fat_g=macros["fat"],
+        carbs_g=macros["carbs"],
         suitable_for_children=recipe.suitable_for_children,
         suitable_for_sport=recipe.suitable_for_sport,
         suitable_for_event=recipe.suitable_for_event,
