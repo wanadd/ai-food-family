@@ -9,6 +9,7 @@ from app.services.family_member_nutrition import (
     virtual_nutrition_from_member,
 )
 from app.services.member_age import format_age_months_ru
+from app.nutrition.allergen_ontology import CONCEPT_LABEL_RU, typed_entries_from_profile
 from app.services.member_age import (
     age_resolution_to_dict,
     format_age_resolution_ru,
@@ -90,6 +91,9 @@ def format_family_member_for_menu(db: Session, member: FamilyMember) -> str:
         parts.append(
             f"  ограничения: {_join(restriction_values, VIRTUAL_RESTRICTION_LABELS)}"
         )
+        typed = _format_typed_safety_entries(typed_entries_from_profile(n))
+        if typed:
+            parts.append(f"  typed safety: {typed}")
         if n.favorite_foods:
             parts.append(f"  любит: {n.favorite_foods}")
         if n.disliked_foods:
@@ -119,6 +123,14 @@ def _format_telegram_profile_block(
 
     block = _format_user_block(name, profile)
     return block.replace(f"- {name}:", f"- {name} ({role_note}):", 1)
+
+
+def _format_typed_safety_entries(entries) -> str:
+    parts = []
+    for entry in entries:
+        label = CONCEPT_LABEL_RU.get(entry.concept_id, entry.concept_id)
+        parts.append(f"{entry.kind}:{label}({entry.origin})")
+    return ", ".join(parts)
 
 
 def age_resolution_for_member(db: Session, member: FamilyMember) -> dict:

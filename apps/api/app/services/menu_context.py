@@ -24,6 +24,10 @@ from app.services.nutrition_profile_labels import (
 )
 from app.services.family_menu_context import format_family_member_for_menu
 from app.services.member_age import format_age_resolution_ru, resolve_age_for_profile
+from app.nutrition.allergen_ontology import (
+    CONCEPT_LABEL_RU,
+    typed_entries_from_profile,
+)
 from app.services.onboarding import get_or_create_profile
 from app.services.meal_leftovers import (
     format_meal_leftovers_for_prompt,
@@ -153,6 +157,9 @@ def _format_user_block(name: str, profile) -> str:
     parts.append(f"  диеты: {_join_labels(profile.diets, DIET_LABELS)}")
     parts.append(f"  аллергии: {_join_labels(profile.allergies, ALLERGY_LABELS)}")
     parts.append(f"  ограничения: {_join_labels(profile.restrictions, RESTRICTION_LABELS)}")
+    typed = _format_typed_safety_entries(typed_entries_from_profile(profile))
+    if typed:
+        parts.append(f"  typed safety: {typed}")
     if profile.medical_restrictions:
         parts.append(f"  мед. ограничения: {profile.medical_restrictions}")
     if profile.budget:
@@ -183,6 +190,14 @@ def _format_user_block(name: str, profile) -> str:
         extra = ", ".join(x for x in (goal, freq) if x)
         parts.append(f"  PRO: тренировки{' — ' + extra if extra else ''}")
     return "\n".join(parts)
+
+
+def _format_typed_safety_entries(entries) -> str:
+    parts = []
+    for entry in entries:
+        label = CONCEPT_LABEL_RU.get(entry.concept_id, entry.concept_id)
+        parts.append(f"{entry.kind}:{label}({entry.origin})")
+    return ", ".join(parts)
 
 
 def _format_member_block(

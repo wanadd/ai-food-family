@@ -172,6 +172,7 @@ def _schema_statements() -> list[str]:
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS physical_activity_group VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS life_stage VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS medical_restrictions TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS typed_safety_profile JSONB NOT NULL DEFAULT '[]'",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS banned_foods TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS dish_complexity VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS pro_data JSONB NOT NULL DEFAULT '{}'",
@@ -540,6 +541,9 @@ def _schema_statements() -> list[str]:
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_provenance_json JSONB",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_needs_review BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_review_reason VARCHAR(64)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS gluten_free_status VARCHAR(32)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS gluten_free_provenance_status VARCHAR(32)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS gluten_free_provenance_json JSONB",
         """
         CREATE TABLE IF NOT EXISTS food_nutrient_facts (
             id SERIAL PRIMARY KEY,
@@ -695,10 +699,25 @@ def _schema_statements() -> list[str]:
         CREATE TABLE IF NOT EXISTS recipe_allergens (
             id SERIAL PRIMARY KEY,
             recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
-            allergen VARCHAR(64) NOT NULL
+            allergen VARCHAR(64) NOT NULL,
+            concept_id VARCHAR(64),
+            relation_type VARCHAR(32),
+            provenance_status VARCHAR(32),
+            confidence VARCHAR(32),
+            source_id VARCHAR(64),
+            source_record_locator VARCHAR(256),
+            evidence_notes TEXT
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_recipe_allergens_recipe_id ON recipe_allergens (recipe_id);",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS concept_id VARCHAR(64)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS relation_type VARCHAR(32)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS provenance_status VARCHAR(32)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS confidence VARCHAR(32)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS source_id VARCHAR(64)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS source_record_locator VARCHAR(256)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS evidence_notes TEXT",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_allergens_concept_id ON recipe_allergens (concept_id);",
         """
         CREATE TABLE IF NOT EXISTS recipe_restrictions (
             id SERIAL PRIMARY KEY,

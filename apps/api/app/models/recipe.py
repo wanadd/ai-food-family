@@ -88,6 +88,11 @@ class Recipe(Base):
     estimated_servings: Mapped[float | None] = mapped_column(Float, nullable=True)
     yield_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
     nutrition_review_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    gluten_free_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    gluten_free_provenance_status: Mapped[str | None] = mapped_column(
+        String(32), nullable=True
+    )
+    gluten_free_provenance_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -294,6 +299,13 @@ class RecipeAllergenRow(Base):
         ForeignKey("recipes.id", ondelete="CASCADE"), index=True
     )
     allergen: Mapped[str] = mapped_column(String(64), index=True)
+    concept_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    relation_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    provenance_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    confidence: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_record_locator: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    evidence_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     recipe = relationship("Recipe", back_populates="allergen_rows")
 

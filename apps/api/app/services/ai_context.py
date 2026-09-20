@@ -25,6 +25,7 @@ from app.services.recipe_storage import get_structured_ingredients
 from app.services.menu_selection import get_selected_menu
 from app.services.progress import user_has_pro
 from app.services.member_age import format_age_resolution_ru, resolve_age_for_profile
+from app.nutrition.allergen_ontology import CONCEPT_LABEL_RU, typed_entries_from_profile
 
 
 @dataclass
@@ -143,6 +144,9 @@ def _profile_summary(profile) -> str:
     ]
     if profile.medical_restrictions:
         parts.append(f"мед. особенности: {profile.medical_restrictions}")
+    typed = _format_typed_safety_entries(typed_entries_from_profile(profile))
+    if typed:
+        parts.append(f"typed safety: {typed}")
     if profile.favorite_foods:
         parts.append(f"любит: {profile.favorite_foods}")
     disliked = ", ".join(
@@ -168,6 +172,14 @@ def _profile_summary(profile) -> str:
     if profile.cooking_time:
         parts.append(f"время готовки: {profile.cooking_time}")
     return "; ".join(parts)
+
+
+def _format_typed_safety_entries(entries) -> str:
+    parts = []
+    for entry in entries:
+        label = CONCEPT_LABEL_RU.get(entry.concept_id, entry.concept_id)
+        parts.append(f"{entry.kind}:{label}({entry.origin})")
+    return ", ".join(parts)
 
 
 def context_to_json_block(ctx: AiUserContext) -> str:

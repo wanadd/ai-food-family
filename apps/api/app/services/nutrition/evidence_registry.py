@@ -41,3 +41,62 @@ RECIPE_NUTRITION_EVIDENCE_REGISTRY: dict[str, dict[str, str | None]] = {
         "status": "match",
     },
 }
+
+ALLERGEN_SAFETY_EVIDENCE_REGISTRY: dict[str, dict[str, str | None]] = {
+    "EV-AL-001": {
+        "domain": "allergen_safety",
+        "description": "Typed profile safety entries enforce allergy/intolerance separation.",
+        "source_id": "SRC-NIAID-FOOD-ALLERGY",
+        "source_version": "selected_research_2026_09_09",
+        "calculation_method": "typed_safety_profile_v1",
+        "status": "match",
+    },
+    "EV-AL-002": {
+        "domain": "allergen_safety",
+        "description": "Milk-protein allergy and lactose intolerance are separate concepts.",
+        "source_id": "SRC-NIAID-FOOD-ALLERGY",
+        "source_version": "selected_research_2026_09_09",
+        "calculation_method": "typed_safety_profile_v1",
+        "status": "match",
+    },
+    "EV-AL-003": {
+        "domain": "allergen_safety",
+        "description": "Peanut/tree-nut and fish/crustacean/mollusc remain distinct canonical concepts.",
+        "source_id": "SRC-RU-TR-022",
+        "source_version": "selected_research_2026_09_09",
+        "calculation_method": "allergen_ontology_v1",
+        "status": "match",
+    },
+    "EV-AL-004": {
+        "domain": "allergen_safety",
+        "description": "Allergen relation types are modeled and consumed by deterministic safety.",
+        "source_id": "SRC-CODEX-CXS1",
+        "source_version": "selected_research_2026_09_09",
+        "calculation_method": "allergen_relation_v1",
+        "status": "strong_partial_foundation",
+    },
+    "EV-AL-006": {
+        "domain": "celiac_safety",
+        "description": "Keyword and bare gluten_free tags cannot certify celiac safety.",
+        "source_id": "SRC-NIDDK-CELIAC",
+        "source_version": "selected_research_2026_09_09",
+        "calculation_method": "celiac_gf_decision_v1",
+        "status": "match",
+    },
+    "EV-AL-007": {
+        "domain": "celiac_safety",
+        "description": "Verified gluten-free status requires acceptable structured provenance.",
+        "source_id": "SRC-NIDDK-CELIAC",
+        "source_version": "selected_research_2026_09_09",
+        "calculation_method": "celiac_gf_decision_v1",
+        "status": "strong_partial_foundation",
+    },
+    "EV-AL-008": {
+        "domain": "allergen_safety",
+        "description": "Typed profile identity survives account and virtual menu context paths.",
+        "source_id": None,
+        "source_version": None,
+        "calculation_method": "typed_profile_context_bridge_v1",
+        "status": "strong_partial_foundation",
+    },
+}
