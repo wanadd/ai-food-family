@@ -32,9 +32,8 @@ from app.services.meal_leftovers import list_active_leftovers
 from app.services.pantry import get_active_items_for_scope
 from app.services.menu_restriction_safety import (
     append_safety_notes_to_menus,
-    load_restriction_safe_recipe_pool,
-    resolve_menu_profile,
-    sanitize_menu_variants,
+    load_family_restriction_safe_recipe_pool,
+    sanitize_menu_variants_for_scope,
 )
 
 logger = logging.getLogger(__name__)
@@ -85,8 +84,7 @@ async def generate_menus_for_scope(
 
     plan_days = options.plan_days if options and options.plan_days else 1
 
-    profile = resolve_menu_profile(db, user)
-    safe_pool = load_restriction_safe_recipe_pool(db, profile) if profile else []
+    safe_pool = load_family_restriction_safe_recipe_pool(db, user, scope)
 
     menus, used_ai = await generate_menus(
         context,
@@ -99,10 +97,11 @@ async def generate_menus_for_scope(
         plan_days=plan_days,
     )
 
-    menus, safety_notes = sanitize_menu_variants(
+    menus, safety_notes = sanitize_menu_variants_for_scope(
         db,
         menus,
-        profile,
+        user,
+        scope,
         replacement_pool=safe_pool,
     )
     if safety_notes:
@@ -195,7 +194,11 @@ async def replace_dish(
         )
 
         updated = recompute_menu_ingredients_from_active_meals(
-            db, updated, preserve_existing_if_no_active=True
+            db,
+            updated,
+            preserve_existing_if_no_active=True,
+            user=user,
+            scope=scope,
         )
         menu_dict = updated.model_dump(mode="json")
         if isinstance(selection.menu_data, dict) and "_meta" in selection.menu_data:
@@ -252,7 +255,11 @@ def select_menu(
     )
 
     finalized_menu = recompute_menu_ingredients_from_active_meals(
-        db, finalized_menu, preserve_existing_if_no_active=True
+        db,
+        finalized_menu,
+        preserve_existing_if_no_active=True,
+        user=user,
+        scope=scope,
     )
     menu_dict = finalized_menu.model_dump(mode="json")
     mode_key = plan_mode or "healthy"

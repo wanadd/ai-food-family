@@ -18,6 +18,10 @@ from app.nutrition.restriction_safety import (
 )
 from app.recipes.gold_filter import query_active_recipes
 from app.schemas.menu import MenuDayPlan, MenuMeal, MenuVariant
+from app.services.app_scope import AppScope
+from app.services.family_food_aggregation import (
+    build_recipe_family_aggregation,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +87,53 @@ def apply_pre_ai_recipe_filter(
     return filtered, warnings
 
 
+def apply_pre_ai_family_recipe_filter(
+    db: Session,
+    user: User,
+    scope: AppScope,
+    recipes: list[Recipe],
+    *,
+    meal_type: str = "lunch",
+) -> tuple[list[Recipe], list[str]]:
+    """Remove recipes that block/escalate for any participating family member."""
+    if not recipes:
+        return [], []
+    if scope.is_personal:
+        return apply_pre_ai_recipe_filter(recipes, resolve_menu_profile(db, user))
+
+    filtered: list[Recipe] = []
+    excluded = 0
+    unknown = 0
+    for recipe in recipes:
+        recipe_meal_type = getattr(recipe, "meal_type", None) or meal_type
+        aggregation = build_recipe_family_aggregation(
+            db, user, scope, recipe, meal_type=recipe_meal_type
+        )
+        if aggregation.safety.aggregate_decision in {"BLOCK", "ESCALATE"}:
+            excluded += 1
+            continue
+        if aggregation.safety.aggregate_decision == "UNKNOWN":
+            unknown += 1
+        filtered.append(recipe)
+
+    warnings: list[str] = []
+    if excluded:
+        warnings.append(
+            f"{excluded} рецептов исключены: не подходят хотя бы одному участнику семьи."
+        )
+    if unknown:
+        warnings.append(
+            f"{unknown} рецептов имеют неполные семейные safety-факты и требуют проверки."
+        )
+    if not filtered:
+        warnings.append("Нет рецептов, безопасных для всех участвующих членов семьи.")
+    elif len(filtered) < MIN_RECIPE_POOL_SIZE:
+        warnings.append(
+            f"После семейной проверки осталось мало рецептов ({len(filtered)} из {len(recipes)})."
+        )
+    return filtered, warnings
+
+
 def load_restriction_safe_recipe_pool(
     db: Session,
     profile: Any | None,
@@ -93,6 +144,24 @@ def load_restriction_safe_recipe_pool(
         .all()
     )
     filtered, _ = apply_pre_ai_recipe_filter(recipes, profile)
+    return filtered
+
+
+def load_family_restriction_safe_recipe_pool(
+    db: Session,
+    user: User,
+    scope: AppScope,
+    *,
+    meal_type: str = "lunch",
+) -> list[Recipe]:
+    recipes = (
+        query_active_recipes(db)
+        .options(joinedload(Recipe.ingredient_rows))
+        .all()
+    )
+    filtered, _ = apply_pre_ai_family_recipe_filter(
+        db, user, scope, recipes, meal_type=meal_type
+    )
     return filtered
 
 
@@ -209,6 +278,79 @@ def _sanitize_meal(
     return None, notes
 
 
+def _sanitize_family_meal(
+    meal: MenuMeal,
+    *,
+    db: Session,
+    user: User,
+    scope: AppScope,
+    replacement_pool: list[Recipe],
+    used_ids: set[int],
+) -> tuple[MenuMeal | None, list[str]]:
+    notes: list[str] = []
+    recipe = _recipe_for_meal(db, meal, {r.id: r for r in replacement_pool})
+    if recipe is None:
+        return meal, notes
+
+    aggregation = build_recipe_family_aggregation(
+        db, user, scope, recipe, meal_type=meal.meal_type
+    )
+    if aggregation.safety.aggregate_decision not in {"BLOCK", "ESCALATE"}:
+        if aggregation.safety.aggregate_decision == "UNKNOWN":
+            notes.append(
+                "Семейная safety-проверка: есть участник с UNKNOWN, блюдо не сертифицировано как безопасное."
+            )
+        if meal.recipe_id:
+            used_ids.add(meal.recipe_id)
+        return meal, notes
+
+    replacement = None
+    for candidate in replacement_pool:
+        if candidate.id in used_ids or candidate.meal_type != meal.meal_type:
+            continue
+        candidate_agg = build_recipe_family_aggregation(
+            db, user, scope, candidate, meal_type=meal.meal_type
+        )
+        if candidate_agg.safety.aggregate_decision in {"SAFE", "WARN", "UNKNOWN"}:
+            replacement = candidate
+            break
+
+    unsafe_people = [
+        *aggregation.safety.blocking_people,
+        *aggregation.safety.escalating_people,
+    ]
+    person_note = ", ".join(result.person_id for result in unsafe_people) or "unknown"
+    if replacement:
+        used_ids.add(replacement.id)
+        notes.append(
+            f"Блюдо заменено: семейная safety-проверка {aggregation.safety.aggregate_decision}; участники: {person_note}."
+        )
+        return (
+            meal.model_copy(
+                update={
+                    "name": replacement.title,
+                    "description": replacement.description or meal.description,
+                    "recipe_id": replacement.id,
+                    "prep_time_minutes": (
+                        replacement.cooking_time_minutes
+                        or replacement.prep_time_minutes
+                        or meal.prep_time_minutes
+                    ),
+                    "calories_estimate": (
+                        int(replacement.calories_per_serving)
+                        if replacement.calories_per_serving
+                        else meal.calories_estimate
+                    ),
+                }
+            ),
+            notes,
+        )
+    notes.append(
+        f"Блюдо исключено: семейная safety-проверка {aggregation.safety.aggregate_decision}; участники: {person_note}."
+    )
+    return None, notes
+
+
 def _sanitize_meals_list(
     meals: list[MenuMeal],
     profile: Any | None,
@@ -315,6 +457,91 @@ def sanitize_menu_variants(
             "Часть вариантов меню исключена из-за жёстких ограничений питания."
         )
 
+    return sanitized or menus, all_notes
+
+
+def sanitize_menu_variants_for_scope(
+    db: Session,
+    menus: list[MenuVariant],
+    user: User,
+    scope: AppScope,
+    *,
+    replacement_pool: list[Recipe] | None = None,
+) -> tuple[list[MenuVariant], list[str]]:
+    if scope.is_personal:
+        profile = resolve_menu_profile(db, user)
+        return sanitize_menu_variants(
+            db,
+            menus,
+            profile,
+            replacement_pool=replacement_pool,
+        )
+    if not menus:
+        return menus, []
+
+    pool = replacement_pool or load_family_restriction_safe_recipe_pool(db, user, scope)
+    all_notes: list[str] = []
+    sanitized: list[MenuVariant] = []
+
+    for variant in menus:
+        used_ids: set[int] = set()
+        meals: list[MenuMeal] = []
+        for meal in variant.meals:
+            sanitized_meal, notes = _sanitize_family_meal(
+                meal,
+                db=db,
+                user=user,
+                scope=scope,
+                replacement_pool=pool,
+                used_ids=used_ids,
+            )
+            all_notes.extend(notes)
+            if sanitized_meal is not None:
+                meals.append(sanitized_meal)
+
+        days_out: list[MenuDayPlan] | None = None
+        if variant.days:
+            days_out = []
+            for day in variant.days:
+                day_meals: list[MenuMeal] = []
+                for meal in day.meals:
+                    sanitized_meal, notes = _sanitize_family_meal(
+                        meal,
+                        db=db,
+                        user=user,
+                        scope=scope,
+                        replacement_pool=pool,
+                        used_ids=used_ids,
+                    )
+                    all_notes.extend(notes)
+                    if sanitized_meal is not None:
+                        day_meals.append(sanitized_meal)
+                if day_meals:
+                    days_out.append(day.model_copy(update={"meals": day_meals}))
+
+        if not meals and not days_out:
+            all_notes.append(
+                f"Вариант «{variant.title}»: не осталось блюд после семейной проверки."
+            )
+            continue
+        variant_notes = [n for n in all_notes if n]
+        explanation = variant.explanation
+        if variant_notes:
+            explanation = (explanation + "\n" + "\n".join(dict.fromkeys(variant_notes))).strip()
+        sanitized.append(
+            variant.model_copy(
+                update={
+                    "meals": meals or variant.meals,
+                    "days": days_out,
+                    "explanation": explanation,
+                }
+            )
+        )
+
+    if len(sanitized) < len(menus):
+        all_notes.append(
+            "Часть вариантов меню исключена из-за семейной safety-проверки."
+        )
     return sanitized or menus, all_notes
 
 

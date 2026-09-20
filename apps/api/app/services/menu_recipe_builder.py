@@ -24,8 +24,9 @@ from app.services.app_scope import AppScope
 from app.services.meal_leftovers import list_active_leftovers
 from app.services.menu_restriction_safety import (
     MIN_RECIPE_POOL_SIZE,
-    apply_pre_ai_recipe_filter,
+    apply_pre_ai_family_recipe_filter,
 )
+from app.services.family_food_aggregation import scale_recipe_for_family_meal
 
 MealSlot = Literal["breakfast", "lunch", "dinner", "snack"]
 DrinkMode = Literal[
@@ -135,6 +136,9 @@ def _meal_from_recipe(recipe: Recipe, meal_type: str, persons: int) -> MenuMeal:
 
 
 def _ingredients_for_variant(
+    db: Session,
+    user: User,
+    scope: AppScope,
     meals_recipes: list[tuple[str, Recipe]],
     persons: int,
     pantry: set[str],
@@ -145,7 +149,14 @@ def _ingredients_for_variant(
         title_lower = recipe.title.lower()
         if any(lo in title_lower or title_lower in lo for lo in leftovers):
             continue
-        scaled = scale_ingredients(recipe, persons)
+        scaled, _quantity = scale_recipe_for_family_meal(
+            db,
+            user,
+            scope,
+            recipe,
+            meal_type=_slot,
+            fallback_servings=persons,
+        )
         for ing in scaled:
             name = ing["name"]
             name_lower = name.lower()
@@ -186,7 +197,9 @@ def build_menus_from_recipes(
     from app.services.onboarding import get_or_create_profile
 
     profile = get_or_create_profile(db, user)
-    recipes, pool_warnings = apply_pre_ai_recipe_filter(recipes, profile)
+    recipes, pool_warnings = apply_pre_ai_family_recipe_filter(
+        db, user, scope, recipes, meal_type="lunch"
+    )
     if len(recipes) < MIN_RECIPE_POOL_SIZE:
         return None
 
@@ -251,7 +264,9 @@ def build_menus_from_recipes(
             return None
 
         meals = [meal_from_catalog_recipe(r, slot, persons) for slot, r in meals_recipes]
-        ingredients = _ingredients_for_variant(meals_recipes, persons, pantry, leftovers)
+        ingredients = _ingredients_for_variant(
+            db, user, scope, meals_recipes, persons, pantry, leftovers
+        )
         total_prep = sum(m.prep_time_minutes for m in meals)
 
         variants.append(

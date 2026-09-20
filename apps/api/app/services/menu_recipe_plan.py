@@ -23,6 +23,7 @@ from app.services.recipe_storage import get_structured_ingredients
 from app.services.recipe_storage import aggregate_ingredients_for_shopping, scale_ingredients
 from app.services.recipes.mapper import public_title
 from app.services.recipes.title_normalize import catalog_meal_type
+from app.services.family_food_aggregation import required_servings_for_meal
 
 logger = logging.getLogger(__name__)
 
@@ -197,14 +198,52 @@ def _active_recipe_servings(menu: MenuVariant) -> dict[int, int]:
     return recipe_servings
 
 
+def _active_recipe_servings_for_scope(
+    db: Session,
+    menu: MenuVariant,
+    *,
+    user: User,
+    scope: AppScope,
+) -> dict[int, int]:
+    recipe_servings: dict[int, int] = {}
+    source_days = list(menu.days or [])
+    meal_groups = [day.meals for day in source_days] if source_days else [menu.meals]
+    for meals in meal_groups:
+        for meal in meals:
+            if meal.recipe_id is None:
+                continue
+            if not meal.name.strip() or meal.name == PLACEHOLDER_NAME:
+                continue
+            quantity = required_servings_for_meal(
+                db,
+                user,
+                scope,
+                meal_type=meal.meal_type,
+            )
+            if quantity.state == "complete" and quantity.total_serving_factor is not None:
+                servings = max(1, round(quantity.total_serving_factor))
+            else:
+                servings = meal.servings or DEFAULT_SERVINGS
+            recipe_servings[int(meal.recipe_id)] = recipe_servings.get(
+                int(meal.recipe_id), 0
+            ) + int(max(servings, 1))
+    return recipe_servings
+
+
 def recompute_menu_ingredients_from_active_meals(
     db: Session,
     menu: MenuVariant,
     *,
     preserve_existing_if_no_active: bool = False,
+    user: User | None = None,
+    scope: AppScope | None = None,
 ) -> MenuVariant:
     """Return menu with fresh ingredients rebuilt from active recipe slots."""
-    recipe_servings = _active_recipe_servings(menu)
+    recipe_servings = (
+        _active_recipe_servings_for_scope(db, menu, user=user, scope=scope)
+        if user is not None and scope is not None
+        else _active_recipe_servings(menu)
+    )
     if not recipe_servings:
         if preserve_existing_if_no_active:
             return menu
@@ -314,7 +353,9 @@ def add_recipe_to_plan(
             "total_prep_minutes": sum(m.prep_time_minutes for m in meals),
         }
     )
-    updated = recompute_menu_ingredients_from_active_meals(db, updated)
+    updated = recompute_menu_ingredients_from_active_meals(
+        db, updated, user=user, scope=scope
+    )
 
     from app.services.menu import select_menu
 
@@ -413,7 +454,9 @@ def remove_menu_item(
             ),
         }
     )
-    updated = recompute_menu_ingredients_from_active_meals(db, updated)
+    updated = recompute_menu_ingredients_from_active_meals(
+        db, updated, user=user, scope=scope
+    )
 
     from app.services.menu import select_menu
 
@@ -483,7 +526,9 @@ def replace_recipe_in_slot(
             "total_prep_minutes": sum(m.prep_time_minutes for m in meals),
         }
     )
-    updated = recompute_menu_ingredients_from_active_meals(db, updated)
+    updated = recompute_menu_ingredients_from_active_meals(
+        db, updated, user=user, scope=scope
+    )
 
     from app.services.menu import select_menu
 
