@@ -19,6 +19,7 @@ from app.services.meal_leftovers import (
 from app.services.menu_context import build_menu_context
 from app.services.menu_context import MenuGenerationContext
 from app.nutrition.restriction_safety import filter_recipes_for_profile
+from app.nutrition.medical_safety import format_medical_context
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import format_leftovers_for_prompt, get_active_items_for_scope
 from app.services.recipe_storage import get_structured_ingredients
@@ -147,6 +148,9 @@ def _profile_summary(profile) -> str:
     typed = _format_typed_safety_entries(typed_entries_from_profile(profile))
     if typed:
         parts.append(f"typed safety: {typed}")
+    medical = format_medical_context(profile)
+    if medical:
+        parts.append(f"typed medical context: {medical}")
     if profile.favorite_foods:
         parts.append(f"любит: {profile.favorite_foods}")
     disliked = ", ".join(

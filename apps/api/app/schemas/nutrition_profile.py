@@ -27,6 +27,7 @@ class NutritionProfileData(BaseModel):
     allergies: list[str] = Field(default_factory=list)
     restrictions: list[str] = Field(default_factory=list)
     typed_safety_profile: list[dict] = Field(default_factory=list)
+    typed_medical_context: list[dict] = Field(default_factory=list)
     medical_restrictions: str = ""
     banned_foods: str = ""
     diets: list[str] = Field(default_factory=list)

@@ -93,6 +93,10 @@ class Recipe(Base):
         String(32), nullable=True
     )
     gluten_free_provenance_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    sodium_mg_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    salt_g_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    phenylalanine_mg_per_serving: Mapped[float | None] = mapped_column(Float, nullable=True)
+    medical_safety_facts_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -173,6 +173,7 @@ def _schema_statements() -> list[str]:
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS life_stage VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS medical_restrictions TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS typed_safety_profile JSONB NOT NULL DEFAULT '[]'",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS typed_medical_context JSONB NOT NULL DEFAULT '[]'",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS banned_foods TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS dish_complexity VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS pro_data JSONB NOT NULL DEFAULT '{}'",
@@ -544,6 +545,10 @@ def _schema_statements() -> list[str]:
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS gluten_free_status VARCHAR(32)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS gluten_free_provenance_status VARCHAR(32)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS gluten_free_provenance_json JSONB",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS sodium_mg_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS salt_g_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS phenylalanine_mg_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS medical_safety_facts_json JSONB",
         """
         CREATE TABLE IF NOT EXISTS food_nutrient_facts (
             id SERIAL PRIMARY KEY,

@@ -100,3 +100,12 @@ ALLERGEN_SAFETY_EVIDENCE_REGISTRY: dict[str, dict[str, str | None]] = {
         "status": "strong_partial_foundation",
     },
 }
+
+MEDICAL_SAFETY_EVIDENCE_REGISTRY: dict[str, dict[str, str | None]] = {
+    "EV-MD-001": {"domain": "medical_safety", "description": "Typed person-scoped medical context and deterministic escalation.", "source_id": "SRC-HANDOFF-RU-FOOD-SAFETY-CORE", "source_version": "selected_research_2026_09_09", "calculation_method": "typed_medical_context_decision_v1", "status": "match"},
+    "EV-MD-002": {"domain": "medical_safety", "description": "PAH/PKU requires individualized phenylalanine target and specialist plan.", "source_id": "SRC-NCBI-PAH-2025", "source_version": "selected_research_2026_09_09", "calculation_method": "pku_phe_escalation_v1", "status": "strong_partial_foundation"},
+    "EV-MD-003": {"domain": "medical_safety", "description": "Diabetes nutrition context is individualized; general targets are not treatment macros.", "source_id": "SRC-ADA-2026", "source_version": "selected_research_2026_09_09", "calculation_method": "diabetes_mnt_context_v1", "status": "strong_partial_foundation"},
+    "EV-MD-004": {"domain": "medical_safety", "description": "CKD stage and clinician targets are required; no inferred stage or generic macros.", "source_id": "SRC-KDIGO-CKD-2024", "source_version": "selected_research_2026_09_09", "calculation_method": "ckd_context_escalation_v1", "status": "strong_partial_foundation"},
+    "EV-MD-005": {"domain": "medical_safety", "description": "Adult sodium target preserves sodium and salt units and does not invent child adjustment.", "source_id": "SRC-WHO-SODIUM", "source_version": "selected_research_2026_09_09", "calculation_method": "sodium_target_v1", "status": "strong_partial_foundation"},
+    "EV-MD-006": {"domain": "medical_safety", "description": "Pregnancy decisions require structured pasteurization and food-state/process facts.", "source_id": "SRC-CDC-PREGNANCY-FOOD-SAFETY", "source_version": "selected_research_2026_09_09", "calculation_method": "pregnancy_food_state_v1", "status": "strong_partial_foundation"},
+}

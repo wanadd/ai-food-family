@@ -70,6 +70,7 @@ def profile_to_nutrition_schema(profile: UserProfile) -> NutritionProfileData:
         allergies=profile.allergies or [],
         restrictions=normalize_restrictions(profile.restrictions or []),
         typed_safety_profile=getattr(profile, "typed_safety_profile", None) or [],
+        typed_medical_context=getattr(profile, "typed_medical_context", None) or [],
         medical_restrictions=profile.medical_restrictions or "",
         banned_foods=profile.banned_foods or "",
         diets=profile.diets or [],
@@ -118,6 +119,7 @@ def save_nutrition_profile(
     profile.allergies = payload.allergies
     profile.restrictions = normalize_restrictions(payload.restrictions)
     profile.typed_safety_profile = payload.typed_safety_profile
+    profile.typed_medical_context = payload.typed_medical_context
     profile.medical_restrictions = payload.medical_restrictions
     profile.banned_foods = payload.banned_foods
     profile.diets = payload.diets

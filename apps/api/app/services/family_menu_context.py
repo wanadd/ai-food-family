@@ -10,6 +10,7 @@ from app.services.family_member_nutrition import (
 )
 from app.services.member_age import format_age_months_ru
 from app.nutrition.allergen_ontology import CONCEPT_LABEL_RU, typed_entries_from_profile
+from app.nutrition.medical_safety import format_medical_context
 from app.services.member_age import (
     age_resolution_to_dict,
     format_age_resolution_ru,
@@ -94,6 +95,9 @@ def format_family_member_for_menu(db: Session, member: FamilyMember) -> str:
         typed = _format_typed_safety_entries(typed_entries_from_profile(n))
         if typed:
             parts.append(f"  typed safety: {typed}")
+        medical = format_medical_context(n)
+        if medical:
+            parts.append(f"  typed medical context: {medical}")
         if n.favorite_foods:
             parts.append(f"  любит: {n.favorite_foods}")
         if n.disliked_foods:

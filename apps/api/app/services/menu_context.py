@@ -28,6 +28,7 @@ from app.nutrition.allergen_ontology import (
     CONCEPT_LABEL_RU,
     typed_entries_from_profile,
 )
+from app.nutrition.medical_safety import format_medical_context
 from app.services.onboarding import get_or_create_profile
 from app.services.meal_leftovers import (
     format_meal_leftovers_for_prompt,
@@ -160,6 +161,9 @@ def _format_user_block(name: str, profile) -> str:
     typed = _format_typed_safety_entries(typed_entries_from_profile(profile))
     if typed:
         parts.append(f"  typed safety: {typed}")
+    medical = format_medical_context(profile)
+    if medical:
+        parts.append(f"  typed medical context: {medical}")
     if profile.medical_restrictions:
         parts.append(f"  мед. ограничения: {profile.medical_restrictions}")
     if profile.budget:

@@ -44,6 +44,7 @@ def virtual_nutrition_from_member(member: FamilyMember) -> VirtualNutritionProfi
         restrictions=restrictions,
         custom_restrictions=custom_restrictions,
         typed_safety_profile=raw.get("typed_safety_profile") or [],
+        typed_medical_context=raw.get("typed_medical_context") or [],
         favorite_foods=raw.get("favorite_foods") or "",
         disliked_foods=raw.get("disliked_foods") or "",
         notes=raw.get("notes") or "",

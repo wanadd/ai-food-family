@@ -21,6 +21,7 @@ class UserProfile(Base):
     allergies: Mapped[list] = mapped_column(JSONB, default=list)
     restrictions: Mapped[list] = mapped_column(JSONB, default=list)
     typed_safety_profile: Mapped[list] = mapped_column(JSONB, default=list)
+    typed_medical_context: Mapped[list] = mapped_column(JSONB, default=list)
     favorite_foods: Mapped[str] = mapped_column(Text, default="")
     disliked_foods: Mapped[str] = mapped_column(Text, default="")
     budget: Mapped[str | None] = mapped_column(String(32), nullable=True)

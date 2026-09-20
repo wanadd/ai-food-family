@@ -25,6 +25,10 @@ from app.nutrition.allergen_ontology import (
     normalize_typed_safety_entries,
     typed_entries_to_dicts,
 )
+from app.nutrition.medical_safety import (
+    medical_context_to_dicts,
+    normalize_medical_context_entries,
+)
 
 _T = TypeVar("_T")
 
@@ -75,6 +79,10 @@ def normalize_profile_dict(data: dict[str, Any]) -> dict[str, Any]:
         cleaned["typed_safety_profile"] = typed_entries_to_dicts(
             normalize_typed_safety_entries(cleaned.get("typed_safety_profile"))
         )
+    if "typed_medical_context" in cleaned:
+        cleaned["typed_medical_context"] = medical_context_to_dicts(
+            normalize_medical_context_entries(cleaned.get("typed_medical_context"))
+        )
     for text_field in (
         "medical_restrictions",
         "banned_foods",
@@ -111,6 +119,10 @@ def normalize_profile_payload(payload: _T) -> _T:
     if hasattr(payload, "typed_safety_profile"):
         updates["typed_safety_profile"] = typed_entries_to_dicts(
             normalize_typed_safety_entries(getattr(payload, "typed_safety_profile"))
+        )
+    if hasattr(payload, "typed_medical_context"):
+        updates["typed_medical_context"] = medical_context_to_dicts(
+            normalize_medical_context_entries(getattr(payload, "typed_medical_context"))
         )
 
     for text_field in (

@@ -15,6 +15,7 @@ from app.nutrition.allergen_ontology import (
     profile_has_celiac,
     typed_entries_from_profile,
 )
+from app.nutrition.medical_safety import medical_decision_conflicts
 from app.nutrition.restrictions_catalog import (
     RestrictionDefinition,
     get_restriction_definition,
@@ -160,6 +161,9 @@ def explain_recipe_restriction_conflicts(recipe: Any, profile: Any) -> list[Rest
         )
 
     for conflict in _typed_safety_conflicts(recipe, profile):
+        _append_conflict(conflicts, seen, conflict)
+
+    for conflict in medical_decision_conflicts(recipe, profile):
         _append_conflict(conflicts, seen, conflict)
 
     for key in active_keys:

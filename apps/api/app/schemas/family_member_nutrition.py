@@ -19,6 +19,7 @@ class VirtualNutritionProfile(BaseModel):
     restrictions: list[str] = Field(default_factory=list)
     custom_restrictions: list[str] = Field(default_factory=list)
     typed_safety_profile: list[dict] = Field(default_factory=list)
+    typed_medical_context: list[dict] = Field(default_factory=list)
     favorite_foods: str = ""
     disliked_foods: str = ""
     notes: str = ""
