@@ -10,7 +10,17 @@ from app.services.nutrition.food_composition_registry import (
     OBSOLETE_FOR_PRIMARY_SOURCE_IDS,
 )
 
-NUTRIENT_KEYS = ("energy_kcal", "protein_g", "fat_g", "carbohydrate_g")
+NUTRIENT_KEYS = (
+    "energy_kcal",
+    "protein_g",
+    "fat_g",
+    "carbohydrate_g",
+    "fiber_g",
+    "sodium_mg",
+    "phenylalanine_mg",
+    "potassium_mg",
+    "phosphorus_mg",
+)
 PROVENANCE_STATUSES = frozenset(
     {
         "external_verified",
@@ -118,6 +128,8 @@ class FoodNutrientFact:
             "food_state": self.food_state,
             "provenance_status": self.provenance_status,
             "source_food_name": self.source_food_name,
+            "source_nutrient_id": self.source_nutrient_id,
+            "source_nutrient_name": self.source_nutrient_name,
             "preparation_method": self.preparation_method,
             "match_method": self.match_method,
             "match_confidence": self.match_confidence,
