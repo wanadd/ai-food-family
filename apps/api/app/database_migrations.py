@@ -2,9 +2,80 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 
 from sqlalchemy import Connection, Engine, text
+
+# Schema authority is intentionally explicit. New shared-Base registrations must
+# not silently become CREATE_ALL-owned tables.
+M1_CUSTOM_TABLES: frozenset[str] = frozenset(
+    {
+        "food_identities",
+        "food_safety_facts",
+        "packaged_products",
+        "product_instances",
+        "derived_decisions",
+    }
+)
+
+# These tables have no current shared-Base owner and remain custom-SQL-owned.
+CUSTOM_SQL_TABLES: frozenset[str] = M1_CUSTOM_TABLES | frozenset(
+    {"deferred_nutrition_advice", "water_intake_logs"}
+)
+
+# Positive allowlist for the legacy tables owned by SQLAlchemy create_all.
+CREATE_ALL_TABLES: frozenset[str] = frozenset(
+    {
+        "admin_actions",
+        "admin_error_logs",
+        "admin_login_attempts",
+        "admin_sessions",
+        "ai_usage_logs",
+        "ama_transactions",
+        "ama_wallets",
+        "care_events",
+        "care_notifications",
+        "care_settings",
+        "cooking_batch_events",
+        "cooking_batches",
+        "event_plans",
+        "external_food_logs",
+        "families",
+        "family_invites",
+        "family_members",
+        "family_menu_selections",
+        "family_pantry_items",
+        "family_shopping_lists",
+        "food_matches",
+        "food_nutrient_facts",
+        "meal_checkins",
+        "meal_consumption_logs",
+        "meal_consumption_reminder_events",
+        "meal_eating_schedules",
+        "meal_leftovers",
+        "nutrition_targets",
+        "progress_entries",
+        "recipe_allergens",
+        "recipe_favorites",
+        "recipe_ingredients",
+        "recipe_import_jobs",
+        "recipe_ratings",
+        "recipe_restrictions",
+        "recipe_steps",
+        "recipe_tags",
+        "recipes",
+        "shopping_categories",
+        "subscription_plans",
+        "telegram_bot_sessions",
+        "training_entries",
+        "user_notification_settings",
+        "user_preferences",
+        "user_profiles",
+        "user_subscriptions",
+        "users",
+    }
+)
 
 # Recipe Engine v1 tables are created only via SQL below (not SQLAlchemy create_all).
 RECIPE_ENGINE_TABLES: frozenset[str] = frozenset(
@@ -17,6 +88,15 @@ RECIPE_ENGINE_TABLES: frozenset[str] = frozenset(
         "recipe_explanations",
     }
 )
+
+LEGACY_PREREQUISITE_TABLES: frozenset[str] = frozenset({"users", "families"})
+
+if CREATE_ALL_TABLES & CUSTOM_SQL_TABLES:
+    raise RuntimeError("schema authority sets overlap: CREATE_ALL and custom SQL")
+if CREATE_ALL_TABLES & RECIPE_ENGINE_TABLES:
+    raise RuntimeError("schema authority sets overlap: CREATE_ALL and Recipe Engine")
+if CUSTOM_SQL_TABLES & RECIPE_ENGINE_TABLES:
+    raise RuntimeError("schema authority sets overlap: custom SQL and Recipe Engine")
 
 # Stable advisory lock id for multi-worker startup (uvicorn --workers N).
 SCHEMA_ADVISORY_LOCK_ID = 739_284_651
@@ -1592,35 +1672,135 @@ def _execute_statements(connection: Connection, statements: Sequence[str]) -> No
         connection.execute(text(statement))
 
 
-def ensure_database_schema(engine: Engine, base: type) -> None:
-    """Create/upgrade schema once per startup cluster (safe with multiple uvicorn workers)."""
-    legacy_tables = [
+def _metadata_tables_for_authority(base: type, table_names: frozenset[str]) -> list:
+    """Select only explicitly CREATE_ALL-owned tables from shared metadata."""
+    return [
         table
         for table in base.metadata.sorted_tables
-        if table.name not in RECIPE_ENGINE_TABLES
+        if table.name in table_names
     ]
-    with engine.begin() as connection:
+
+
+def _create_all_allowlisted(connection: Connection, base: type, table_names: frozenset[str]) -> None:
+    base.metadata.create_all(
+        bind=connection,
+        tables=_metadata_tables_for_authority(base, table_names),
+        checkfirst=True,
+    )
+
+
+def _custom_post_create_statements() -> list[str]:
+    """Return custom operations that are safe after allowlisted create_all.
+
+    The historical stream still exposes its complete statement list for the
+    migration-contract tests. Bootstrap execution filters CREATE TABLE blocks
+    for CREATE_ALL-owned names, leaving only additive operations plus the
+    explicitly custom-owned M1 and Recipe Engine phases.
+    """
+    slices = (
+        _p0_data_schema_01d_m1_statements()
+        + _p0_data_schema_01d_m2_statements()
+        + _p0_data_schema_01d_m3_statements()
+        + _p0_data_schema_01d_m4_statements()
+    )
+    historical = _schema_statements()
+    post_legacy = historical[: -len(slices)]
+    filtered: list[str] = []
+    for statement in post_legacy:
+        match = re.search(
+            r"CREATE TABLE(?: IF NOT EXISTS)?\s+([A-Za-z_][A-Za-z0-9_]*)",
+            statement,
+            re.IGNORECASE,
+        )
+        if match and match.group(1) in CREATE_ALL_TABLES:
+            continue
+        filtered.append(statement)
+    return (
+        filtered
+        + _p0_data_schema_01d_m2_statements()
+        + _p0_data_schema_01d_m3_statements()
+        + _p0_data_schema_01d_m4_statements()
+    )
+
+
+def _bootstrap_phase_order() -> tuple[str, ...]:
+    return (
+        "legacy_prerequisites",
+        "m1_pre_create",
+        "legacy_create_all",
+        "custom_post_create",
+    )
+
+
+def _unlock_schema_advisory_lock(
+    connection: Connection,
+    *,
+    preserve_exception: bool,
+) -> None:
+    """Release the session lock without masking a bootstrap failure."""
+    try:
         connection.execute(
-            text("SELECT pg_advisory_lock(:lock_id)"),
+            text("SELECT pg_advisory_unlock(:lock_id)"),
             {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
         )
+    except BaseException:
+        if not preserve_exception:
+            try:
+                connection.invalidate()
+            except BaseException:
+                pass
+            raise
+
         try:
-            base.metadata.create_all(
-                bind=connection,
-                tables=legacy_tables,
-                checkfirst=True,
+            connection.invalidate()
+        except BaseException:
+            pass
+
+
+def ensure_database_schema(engine: Engine, base: type) -> None:
+    """Create/upgrade schema once per startup cluster (safe with multiple uvicorn workers)."""
+    with engine.begin() as connection:
+        lock_acquired = False
+        try:
+            connection.execute(
+                text("SELECT pg_advisory_lock(:lock_id)"),
+                {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
             )
-            _execute_statements(connection, _schema_statements())
+            lock_acquired = True
+            _create_all_allowlisted(connection, base, LEGACY_PREREQUISITE_TABLES)
+            _execute_statements(connection, _p0_data_schema_01d_m1_statements())
+            _create_all_allowlisted(
+                connection,
+                base,
+                CREATE_ALL_TABLES - LEGACY_PREREQUISITE_TABLES,
+            )
+            _execute_statements(connection, _custom_post_create_statements())
             from app.services.shopping_category_migration import (  # noqa: PLC0415
                 migrate_shopping_categories_v1,
             )
 
             migrate_shopping_categories_v1(connection)
-        finally:
-            connection.execute(
-                text("SELECT pg_advisory_unlock(:lock_id)"),
-                {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
-            )
+        except BaseException:
+            if lock_acquired:
+                try:
+                    connection.rollback()
+                except BaseException:
+                    try:
+                        connection.invalidate()
+                    except BaseException:
+                        pass
+                else:
+                    _unlock_schema_advisory_lock(
+                        connection,
+                        preserve_exception=True,
+                    )
+            raise
+        else:
+            if lock_acquired:
+                _unlock_schema_advisory_lock(
+                    connection,
+                    preserve_exception=False,
+                )
 
 
 def run_schema_migrations(engine: Engine) -> None:
