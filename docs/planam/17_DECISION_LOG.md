@@ -44,3 +44,8 @@ RI-2 remains `BLOCKING_BEFORE_BACKFILL`; this decision log does not resolve it.
 OD-01 transition: `LEGACY_SCHEMA_AUTHORITY -> VERIFIED_BASELINE -> SINGLE_V2_VERSIONED_MIGRATION_AUTHORITY`.
 
 OD-02 transition: `LEGACY_RECIPE_ID -> compatibility resolver -> canonical mapping if available -> archive fallback if unmapped`.
+
+## Implementation checkpoints
+
+- Wave 01 accepted the Alembic V2 migration authority foundation.
+- Wave 02 implements Core roots and idempotent legacy user/family/member mappings under V2 versioned migrations.

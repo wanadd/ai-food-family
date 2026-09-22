@@ -6,6 +6,8 @@ Historical acceptance: CREATE_ALL_TABLES 47, CUSTOM_SQL_TABLES 7, Recipe Engine 
 
 Known current-state gaps remain: profile DTO completeness, fail-open menu sanitization, unknown-as-zero health/inferred macros, OCR uncertainty loss, job durability, and duplicate recipe/consumption truth. They are preserved as remediation input, not silently represented as completed target behavior.
 
-Wave 01 V2 implementation is present as a foundation only: Alembic configuration, a marker-only baseline revision, explicit schema authority boundary checks, reference enum contracts, UUIDv7 generation, and a PostgreSQL migration acceptance harness.
+Wave 01 V2 implementation is present: Alembic configuration, a marker-only baseline revision, explicit schema authority boundary checks, reference enum contracts, UUIDv7 generation, and a PostgreSQL migration acceptance harness.
 
-Current runtime still uses the existing deterministic bootstrap authority for legacy tables during transition. V2 application objects are reserved for versioned migrations only, and Wave 01 creates no Core, FoodProfile, Recipe V2, planning, shopping, pantry, cooking, consumption, health, or ImportantDate tables.
+Wave 02 Core roots are present in versioned migrations only: accounts, auth identities, persons, households, memberships, person relationships, permission grants, and legacy id mappings. Legacy user/family/family_member mapping is additive and idempotent. Telegram auth and current Food family behavior remain on the existing compatibility path.
+
+Current runtime still uses the existing deterministic bootstrap authority for legacy tables during transition. V2 application objects are reserved for versioned migrations only, and Wave 02 creates no FoodProfile, Recipe V2, planning, shopping, pantry, cooking, consumption, health, or ImportantDate tables.

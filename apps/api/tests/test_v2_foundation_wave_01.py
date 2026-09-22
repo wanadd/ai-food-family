@@ -33,7 +33,7 @@ def test_wave_01_preserves_legacy_authority_counts_and_adds_v2_boundary():
     assert len(snapshot.legacy_create_all) == 47
     assert len(snapshot.legacy_custom_sql) == 7
     assert len(snapshot.legacy_recipe_engine) == 6
-    assert snapshot.v2_versioned_migration == frozenset()
+    assert snapshot.v2_versioned_migration == migration_authority.V2_VERSIONED_MIGRATION_TABLES
     assert snapshot.authority_overlaps == {}
 
     migration_authority.assert_no_schema_authority_overlaps()
@@ -47,7 +47,7 @@ def test_v2_authority_includes_all_legacy_sets_without_reclassifying_tables():
     assert snapshot.legacy_recipe_engine is database_migrations.RECIPE_ENGINE_TABLES
 
 
-def test_v2_baseline_revision_is_marker_only():
+def test_v2_wave_01_baseline_revision_is_marker_only():
     revision_path = API_ROOT / "alembic" / "versions" / "20260922_0001_v2_baseline.py"
     source = revision_path.read_text(encoding="utf-8")
     lowered = source.lower()

@@ -30,7 +30,9 @@ Dual authoritative write is prohibited. There must be one authoritative writer f
 
 RI-2 remains `BLOCKING_BEFORE_BACKFILL`. No backfill is authorized before RI-2 is resolved. Numeric SLO/RPO/RTO values are deferred until real operational baseline exists.
 
-Target schema authority transition is accepted as `LEGACY_SCHEMA_AUTHORITY -> VERIFIED_BASELINE -> SINGLE_V2_VERSIONED_MIGRATION_AUTHORITY`. Alembic is the intended V2 migration mechanism for the future implementation task, but no installation, configuration, baseline, or migration file is authorized here.
+Target schema authority transition is accepted as `LEGACY_SCHEMA_AUTHORITY -> VERIFIED_BASELINE -> SINGLE_V2_VERSIONED_MIGRATION_AUTHORITY`. Alembic is the V2 migration mechanism established in Wave 01. Wave 02 adds Core identity roots and legacy identity mappings under that authority.
+
+Current Food APIs remain compatibility consumers of legacy user/family/member tables until a later cutover wave explicitly switches read/write authority.
 
 Legacy recipe compatibility is bounded. Old public recipe IDs resolve through a compatibility resolver, then to canonical mapping when available, or to archive fallback when unmapped. Retirement requires explicit gates: canonical coverage sufficient, legacy references mapped or archive-resolvable, residual compatibility usage acceptable, historical records readable, no active canonical writer depends on the legacy recipe table, and owner approval.
 

@@ -16,9 +16,18 @@ class SchemaAuthority(str, Enum):
 V2_BASELINE_REVISION = "20260922_0001"
 V2_ALEMBIC_VERSION_TABLE = "alembic_version"
 
-# Wave 01 establishes the authority but intentionally creates no V2 application
-# tables. Later waves must add their objects here before migrations are accepted.
-V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset()
+V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
+    {
+        "core_accounts",
+        "core_auth_identities",
+        "core_persons",
+        "core_households",
+        "core_memberships",
+        "core_person_relationships",
+        "core_permission_grants",
+        "legacy_id_mappings",
+    }
+)
 
 
 @dataclass(frozen=True)

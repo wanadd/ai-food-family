@@ -4,7 +4,7 @@
 
 PLANAM is accepted as a modular monolith with explicit logical domain boundaries. This document is the durable navigation entrypoint for the accepted target architecture, the product/ecosystem direction, current implementation facts, and the next architecture stage.
 
-The accepted physical V2 blueprint is canonical in [24_PHYSICAL_V2_BLUEPRINT.md](docs/planam/24_PHYSICAL_V2_BLUEPRINT.md). Implementation remains wave-scoped and separately authorized. Wave 01 establishes the versioned migration foundation, reference enum contracts, UUIDv7 helper, and PostgreSQL migration test harness; it does not create Core, FoodProfile, Recipe V2, planning, shopping, pantry, cooking, consumption, health, or ImportantDate V2 tables.
+The accepted physical V2 blueprint is canonical in [24_PHYSICAL_V2_BLUEPRINT.md](docs/planam/24_PHYSICAL_V2_BLUEPRINT.md). Implementation remains wave-scoped and separately authorized. Wave 01 establishes the versioned migration foundation, reference enum contracts, UUIDv7 helper, and PostgreSQL migration test harness. Wave 02 establishes Core identity roots and idempotent legacy user/family/member mapping; it does not create FoodProfile, Recipe V2, planning, shopping, pantry, cooking, consumption, health, or ImportantDate V2 tables.
 
 ## Product and ecosystem vision
 
@@ -56,7 +56,7 @@ Compatibility layers are temporary and bounded. Dual-read may exist temporarily.
 
 Current implementation facts remain separated in [docs/planam/18_CURRENT_STATE.md](docs/planam/18_CURRENT_STATE.md). Historical implementation acceptance remains evidence: physical schema 60/60, `CREATE_ALL_TABLES = 47`, `CUSTOM_SQL_TABLES = 7`, Recipe Engine tables 6, authority overlap 0, RI-3 PASS, and full backend 1204 passed with 3 warnings.
 
-Wave 01 V2 implementation adds Alembic as the single future V2 versioned migration authority, with a marker-only baseline revision and explicit no-dual-authority checks. Current legacy bootstrap remains the runtime owner for existing legacy tables during transition; application startup does not run Alembic.
+Wave 01 V2 implementation adds Alembic as the single future V2 versioned migration authority, with a marker-only baseline revision and explicit no-dual-authority checks. Wave 02 adds `core_accounts`, `core_auth_identities`, `core_persons`, `core_households`, `core_memberships`, `core_person_relationships`, `core_permission_grants`, and `legacy_id_mappings` under V2 versioned migrations. Current legacy bootstrap remains the runtime owner for existing legacy tables during transition; application startup does not run Alembic.
 
 RI-2 remains visible and unresolved at runtime: `BLOCKING_BEFORE_BACKFILL`. The accepted physical design requires PostgreSQL range/exclusion protection before any NutritionTarget backfill.
 
@@ -72,4 +72,4 @@ RI-2 remains visible and unresolved at runtime: `BLOCKING_BEFORE_BACKFILL`. The 
 
 ## Next stage
 
-The next stage is implementation Wave 2 specification for Core roots. Each wave still requires its own scope, gates, and acceptance.
+The next stage is implementation Wave 3 specification for FoodProfile. Each wave still requires its own scope, gates, and acceptance.

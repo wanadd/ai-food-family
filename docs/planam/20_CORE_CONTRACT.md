@@ -10,6 +10,8 @@ Core conceptually owns Account, AuthIdentity, Person, Household, Membership, Per
 
 Core explicitly does not own FoodProfile, food evidence, nutrition facts, recipe truth, pantry/product facts, cooking facts, consumption facts, health-domain facts, domain-specific memories, Telegram delivery semantics, payment provider truth, or arbitrary domain profile data.
 
+Wave 02 implements the first physical Core identity roots inside the modular monolith: `core_accounts`, `core_auth_identities`, `core_persons`, `core_households`, `core_memberships`, `core_person_relationships`, `core_permission_grants`, and `legacy_id_mappings`. These tables are owned by V2 versioned migrations, not legacy `create_all`.
+
 ## Identity model
 
 `Account` represents authentication. `Person` represents a human. `Membership` connects a Person to a Household. `Household` is not Account. A dependent or child Person may exist without an Account. A Person may have multiple household memberships, while the current product UI may expose only one active household.
@@ -32,6 +34,8 @@ New canonical Core IDs use UUIDv7:
 - `membership_id`.
 
 UUIDv7 is used for global uniqueness, domain neutrality, transport neutrality, storage neutrality, stable lifecycle identity, and future physical separation. UUIDv7 ordering does not replace `created_at`; `created_at` remains the authoritative creation timestamp. Legacy IDs are bridged through explicit mappings and are not forcibly rewritten by this checkpoint.
+
+Wave 02 legacy mappings preserve `users.id`, `families.id`, and `family_members.id` in `legacy_id_mappings`. Mapping is deterministic and idempotent; reruns must not create duplicate Accounts, Persons, Households, Memberships, or mappings.
 
 ## Birth date, age, and profile data
 
