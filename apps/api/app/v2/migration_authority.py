@@ -28,7 +28,16 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "food_profile_facts",
         "food_profile_reconfirmations",
         "food_profiles",
+        "food_aliases",
+        "food_composition_facts",
+        "food_evidence_fact_links",
+        "evidence_applicability",
+        "evidence_claims",
+        "evidence_records",
+        "evidence_sources",
         "legacy_id_mappings",
+        "product_label_facts",
+        "source_snapshots",
     }
 )
 
