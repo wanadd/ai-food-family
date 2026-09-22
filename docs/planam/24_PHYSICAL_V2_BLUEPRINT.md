@@ -168,7 +168,7 @@ Physical migration has 15 stages:
 14. authority switch;
 15. legacy retirement.
 
-Implementation has 11 waves. Acceptance of this blueprint does not authorize all waves. The next stage is implementation Wave 1 specification.
+Implementation has 11 waves. Wave 01 establishes the versioned migration authority foundation, reference enum contracts, UUIDv7 helper, and PostgreSQL migration acceptance harness only. Later waves remain unauthorized until separately scoped and accepted.
 
 ## Compatibility and retirement
 
@@ -180,4 +180,4 @@ Compatibility adapters are required for User/Profile, Family, Recipe, Menu, Shop
 
 ## Implementation block
 
-Implementation is not authorized by this acceptance. The next accepted action is implementation Wave 1 specification.
+Wave 01 implementation is limited to the migration foundation and does not authorize Core roots, FoodProfile, Recipe V2, planning, shopping, pantry, cooking, consumption, health, ImportantDate, backfill, production deployment, or legacy deletion.
