@@ -12,8 +12,11 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.legacy_mapping import map_legacy_core_identities
 from app.core.models import CoreAccount, CoreHousehold, CoreMembership, CorePerson, LegacyIdMapping
+from app.food.profile_migration import migrate_legacy_food_profiles
+from app.food.profile_models import FoodProfile, FoodProfileFact, FoodProfileReconfirmation
 from app.models.family import Family, FamilyMember, FamilyRole
 from app.models.user import User
+from app.models.user_profile import UserProfile
 
 API_ROOT = Path(__file__).resolve().parents[1]
 
@@ -57,7 +60,7 @@ def _assert_alembic_head(url: str) -> None:
     finally:
         engine.dispose()
 
-    assert revision == "20260922_0002"
+    assert revision == "20260922_0003"
 
 
 def test_v2_baseline_real_postgresql_acceptance():
@@ -106,8 +109,11 @@ def test_v2_baseline_real_postgresql_acceptance():
         "core_person_relationships",
         "core_permission_grants",
         "legacy_id_mappings",
+        "food_profiles",
+        "food_profile_facts",
+        "food_profile_reconfirmations",
     } <= tables
-    assert "food_profiles" not in tables
+    assert "food_identities" not in tables
     assert "recipe_versions" not in tables
 
     _reset_public_schema(url)
@@ -167,6 +173,7 @@ def test_wave_02_real_postgresql_legacy_mapping_acceptance():
         User.__table__.create(engine)
         Family.__table__.create(engine)
         FamilyMember.__table__.create(engine)
+        UserProfile.__table__.create(engine)
         SessionLocal = sessionmaker(bind=engine)
 
         with SessionLocal() as db:
@@ -193,6 +200,18 @@ def test_wave_02_real_postgresql_legacy_mapping_acceptance():
                         nutrition_profile={"age_months": 84},
                     ),
                 ]
+            )
+            db.commit()
+            db.add(
+                UserProfile(
+                    user_id=user.id,
+                    allergies=["peanut"],
+                    diets=[],
+                    restrictions=["lactose_intolerance"],
+                    typed_safety_profile=[{"kind": "allergy", "concept_id": "fish"}],
+                    medical_restrictions="Needs review",
+                    age=40,
+                )
             )
             db.commit()
 
@@ -247,5 +266,49 @@ def test_wave_02_real_postgresql_legacy_mapping_acceptance():
         assert child.birth_date is None
         assert child.birth_date_precision == "unknown"
         assert child_accounts == 0
+
+        with SessionLocal() as db:
+            first_food = migrate_legacy_food_profiles(db)
+            first_food_counts = (
+                db.query(FoodProfile).count(),
+                db.query(FoodProfileFact).count(),
+                db.query(FoodProfileReconfirmation).count(),
+            )
+
+        with SessionLocal() as db:
+            second_food = migrate_legacy_food_profiles(db)
+            second_food_counts = (
+                db.query(FoodProfile).count(),
+                db.query(FoodProfileFact).count(),
+                db.query(FoodProfileReconfirmation).count(),
+            )
+
+        def run_food_mapping() -> dict:
+            with SessionLocal() as db:
+                return migrate_legacy_food_profiles(db).as_dict()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            food_concurrent_reports = list(executor.map(lambda _: run_food_mapping(), range(2)))
+
+        with SessionLocal() as db:
+            final_food_counts = (
+                db.query(FoodProfile).count(),
+                db.query(FoodProfileFact).count(),
+                db.query(FoodProfileReconfirmation).count(),
+            )
+            allergy = db.query(FoodProfileFact).filter_by(fact_type="allergy", fact_key="peanut").one()
+            age_reconfirmation_count = db.query(FoodProfileReconfirmation).filter_by(
+                fact_type="age_context",
+                reason="legacy_age_not_core_birth_date",
+            ).count()
+
+        assert first_food.food_profiles_created == 2
+        assert second_food.food_profiles_created == 0
+        assert second_food.facts_created == 0
+        assert second_food.reconfirmations_created == 0
+        assert first_food_counts == second_food_counts == final_food_counts
+        assert all(report["food_profiles_created"] == 0 for report in food_concurrent_reports)
+        assert allergy.knowledge_state == "KNOWN_PRESENT"
+        assert age_reconfirmation_count >= 1
     finally:
         engine.dispose()

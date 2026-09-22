@@ -136,7 +136,7 @@ def _seed_legacy_family(db):
 def test_wave_02_core_tables_are_v2_migration_owned_only():
     snapshot = current_schema_authority_snapshot()
 
-    assert V2_VERSIONED_MIGRATION_TABLES == CORE_TABLES
+    assert CORE_TABLES <= V2_VERSIONED_MIGRATION_TABLES
     assert snapshot.authority_overlaps == {}
     assert CORE_TABLES.isdisjoint(database_migrations.CREATE_ALL_TABLES)
     assert CORE_TABLES.isdisjoint(database_migrations.CUSTOM_SQL_TABLES)

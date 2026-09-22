@@ -25,6 +25,9 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "core_memberships",
         "core_person_relationships",
         "core_permission_grants",
+        "food_profile_facts",
+        "food_profile_reconfirmations",
+        "food_profiles",
         "legacy_id_mappings",
     }
 )
