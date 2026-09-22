@@ -1,37 +1,9 @@
-# 18 Current State
+# Current State
 
-## Checkpoint identity
+The repository is at the accepted architecture baseline on the feature branch. The current runtime remains the existing modular monolith and the accepted physical schema checkpoint is historical evidence, not a claim that the target architecture has been implemented.
 
-- Repository: `C:\Projects\ai-food-family`
-- Branch: `feat/food-evidence-engine-alignment-v1`
-- HEAD before this docs checkpoint: `a75b3723ecd4e04babb25d8611dae6194c4afc5b`
-- Checkpoint scope: documentation only
+Historical acceptance: CREATE_ALL_TABLES 47, CUSTOM_SQL_TABLES 7, Recipe Engine tables 6, authority overlap 0, physical schema 60/60, and full backend 1204 passed with 3 warnings. Fresh bootstrap, repeat bootstrap, preservation, concurrency 2/2, aborted-transaction recovery, failure restart, and Recipe Engine were accepted in the prior checkpoint. RI-2 is `BLOCKING_BEFORE_BACKFILL`.
 
-## Implemented baseline
+Known current-state gaps remain: profile DTO completeness, fail-open menu sanitization, unknown-as-zero health/inferred macros, OCR uncertainty loss, job durability, and duplicate recipe/consumption truth. They are preserved as remediation input, not silently represented as completed target behavior.
 
-- Physical evidence schema M1-M4: acceptance `60/60`, committed in `a75b372` (`feat(evidence): add P0 physical evidence schema`).
-- Backend baseline: `1196` tests, `3` known baseline failures as recorded in the existing audit context.
-- Earlier DDL hotfix corrected malformed PostgreSQL `DO $` quoting to `DO $$` and added focused validation.
-
-## Open review items
-
-- RI-1: `run_schema_migrations()` has zero callers. Classification: review item, not a reason to invent a second migration authority.
-- RI-2: nutrition target interval overlap must be resolved before backfill. Classification: review item/blocking for that data operation.
-- RI-3: real PostgreSQL execution remains pending. Classification: validation gap.
-
-## Blocked tracks
-
-- ORM adoption `P0-DATA-ORM-01E1`: `BLOCKED_METADATA_CONFLICT`.
-- Schema authority boundary: `BLOCKED_DEPENDENCY_ORDER`.
-
-## Next technical stage
-
-`P0-SCHEMA-BOOTSTRAP-ORDER-01` (or its explicitly approved successor) is next. This checkpoint does not start it.
-
-## Explicitly not authorized
-
-Legacy recipe reset/clean-slate deletion is not authorized. BF-1 through BF-8 backfill work is not authorized. No evidence-complete claim is made.
-
-## Working tree note
-
-The untracked `.local/` directory contains local task artifacts and is intentionally excluded from this checkpoint. It is not canonical project knowledge.
+The next stage is target physical V2 schema and module design before implementation. No source, schema, ORM, backfill, or production change is part of this acceptance.

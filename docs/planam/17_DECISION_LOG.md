@@ -1,20 +1,35 @@
-# 17 Decision Log
+# Decision Log
 
-These are durable decisions captured from the repository source documents and current implementation checkpoint.
+The owner decisions D01-D17 are accepted and override earlier recommendations or options wherever they differ. Status for all rows is `ACCEPTED`.
 
-| ID | Decision | Consequence |
-| --- | --- | --- |
-| ADR-001 | Custom SQL is authoritative for the physical evidence schema; Alembic does not own these tables. | Bootstrap ordering and metadata boundaries must be explicit. |
-| ADR-002 | `age_months` is the canonical age-sensitive representation. | Derivations are deterministic and source values are preserved. |
-| ADR-003 | Evidence facts retain source authority and provenance. | Unsupported synthesis cannot become authoritative. |
-| ADR-004 | `UNKNOWN` is distinct from `SAFE`. | Missing evidence escalates or remains unknown. |
-| ADR-005 | FoodIdentity is separate from source observations. | Matching and evidence ingestion remain auditable. |
-| ADR-006 | Nutrient facts require authoritative nutrient provenance. | Recipe values cannot silently replace source facts. |
-| ADR-007 | Protein does not imply phenylalanine. | PKU computation requires its own evidence. |
-| ADR-008 | Allergen and celiac facts are structured. | A single free-text dietary label is insufficient. |
-| ADR-009 | Family safety is evaluated per person before aggregation. | Strict precedence and explicit participation are preserved. |
-| ADR-010 | Gold V3 recipes are original, validated, structured production objects. | Source signals guide generation but are not user-facing recipes. |
-| ADR-011 | Recipe images use one master and derived variants. | Crop failures require review, not a second master. |
-| ADR-012 | Legacy recipe cleanup is a separate clean-slate direction, not an automatic migration. | No reset or deletion without authorization. |
-| ADR-013 | Schema bootstrap ordering precedes ORM adoption and backfill. | Current technical stage is `P0-SCHEMA-BOOTSTRAP-ORDER-01`. |
+| ID | Title | Decision | Rationale | Consequences | Timing |
+|---|---|---|---|---|---|
+| D01 | PLANAM topology | Modular monolith now; Core is a logical boundary. | Current scale does not justify physical service/database split. | Boundaries must still allow later extraction. | Now |
+| D02 | Global identifiers | New canonical Core IDs use UUIDv7. | IDs must be global, domain-neutral, transport-neutral, storage-neutral, and stable. | `created_at` remains creation-time authority; legacy IDs use mappings. | New Core IDs |
+| D03 | Household model | Multi-household data model with one active household UI allowed. | UI constraint must not become permanent data constraint. | Person relates to Household through Membership. | Target model |
+| D04 | Birth date and age | `birth_date` is restricted CorePerson PII; age is derived. | DOB has ecosystem value but requires purpose-limited access. | No competing editable DOB/age truths; no DOB invented from approximate age. | Contract now |
+| D05 | Guardian, relationship, permissions | Keep PersonRelationship, Membership, and PermissionGrant distinct. | Relationship is not universal authorization. | Sensitive domains need scoped permissions and may later require stronger verification. | Contract now |
+| D06 | Onboarding | Progressive onboarding; onboarding is not source of truth. | Missing answers must not become false. | All clients write through canonical contracts and preserve knowledge states. | Product/current target |
+| D07 | Recipe library | Build a clean canonical Gold V3 library; legacy 174 recipes are not canonical. | Existing content must not define target architecture by convenience. | Legacy recipes are preserved as transition data; deletion is not authorized. | Target library later |
+| D08 | Legacy profile migration | High-confidence migration only. | Sensitive ambiguity must not become deterministic truth. | Ambiguous facts are reconfirmed; derived facts recalculated; provenance preserved. | Migration stage |
+| D09 | Entitlements | Namespaced entitlement contracts. | Domains should consume entitlement decisions, not own payment truth. | `food.*`, `money.*`, `wellbeing.*`, `planner.*` remain compatible. | Contract now |
+| D10 | Notifications | Notification intent/delivery abstraction; Telegram is a channel. | Delivery channel must not become domain architecture. | Food creates intents; adapters deliver through Telegram or later channels. | Contract now |
+| D11 | Cutover cohorts | Staged cutover. | Risk decreases through controlled cohort progression. | Internal/disposable, opt-in, larger cohort, V2 authority, legacy retirement. | Migration stage |
+| D12 | Compatibility window | Bounded compatibility, single writer, no dual authoritative write. | Dual authority creates unrecoverable truth conflicts. | Dual-read may be temporary; compatibility must have retirement criteria. | Migration stage |
+| D13 | Sensitive/raw retention | Data minimization. | Raw sensitive artifacts should not persist indefinitely by default. | Purpose, retention, provenance, deletion, and derived-data handling are required. | Contract now |
+| D14 | Async jobs | DB-backed durable jobs/outbox first. | Durable, observable, idempotent jobs are needed without premature queue infrastructure. | Transport can evolve later without changing domain contracts. | Target implementation |
+| D15 | Production cutover | Controlled write pause is acceptable. | Current scale does not require unnecessary distributed zero-downtime complexity. | Freeze/snapshot/migrate/reconcile/switch/validate/resume is allowed. | Cutover stage |
+| D16 | SLO/RPO/RTO | Establish baseline before numeric targets. | Unsupported operational numbers would be fiction. | Define SLO, error budgets, RPO, RTO, and latency budgets after measurement. | Later |
+| D17 | Important dates and structured AI memory | ImportantDate/PersonalEvent plus structured AI memory tail; contract now, implement later. | Ecosystem memory needs structure, consent, scope, and ownership. | AI may propose persistent facts but should not silently promote unrestricted memory. | CONTRACT_NOW_IMPLEMENT_LATER |
 
+## Superseded assumptions
+
+- A global domain-heavy PersonProfile is superseded by CorePerson plus domain-owned profiles.
+- A legacy 174-recipe library as automatic canonical seed is superseded by clean Gold V3 target curation.
+- Telegram as notification architecture is superseded by intent/delivery/adapters.
+- Dual authoritative write is explicitly prohibited.
+- A physical Core service/database is deferred until a later accepted design, if justified.
+
+## Active blocker
+
+RI-2 remains `BLOCKING_BEFORE_BACKFILL`; this decision log does not resolve it.
