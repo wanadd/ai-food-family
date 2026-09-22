@@ -33,3 +33,14 @@ The owner decisions D01-D17 are accepted and override earlier recommendations or
 ## Active blocker
 
 RI-2 remains `BLOCKING_BEFORE_BACKFILL`; this decision log does not resolve it.
+
+## Physical V2 owner decisions
+
+| ID | Title | Status | Decision | Consequences | Timing |
+|---|---|---|---|---|---|
+| OD-01 | Target schema authority | ACCEPTED | Use one versioned migration authority at the V2 boundary. Intended implementation tool: Alembic, subject to the future implementation task validating and configuring it. | Existing deterministic bootstrap remains current-state evidence; V2 objects must not be dual-owned by create_all/custom SQL and the migration framework. | Blueprint accepted now, implementation later |
+| OD-02 | Legacy recipe public ID horizon | ACCEPTED | Bounded legacy recipe ID compatibility with archive fallback for unmapped legacy recipes. | Favorites, history, menu references, cooking history, media, and supported deep links remain resolvable during compatibility; legacy recipe deletion is not authorized. | Blueprint accepted now, retirement later |
+
+OD-01 transition: `LEGACY_SCHEMA_AUTHORITY -> VERIFIED_BASELINE -> SINGLE_V2_VERSIONED_MIGRATION_AUTHORITY`.
+
+OD-02 transition: `LEGACY_RECIPE_ID -> compatibility resolver -> canonical mapping if available -> archive fallback if unmapped`.

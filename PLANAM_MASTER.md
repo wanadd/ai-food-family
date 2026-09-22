@@ -4,7 +4,7 @@
 
 PLANAM is accepted as a modular monolith with explicit logical domain boundaries. This document is the durable navigation entrypoint for the accepted target architecture, the product/ecosystem direction, current implementation facts, and the next architecture stage.
 
-This checkpoint is documentation-only. It does not authorize implementation, database mutation, backfill, recipe deletion, ORM adoption, production deployment, Core service extraction, or a separate Core database.
+This checkpoint is documentation-only. It does not authorize implementation, database mutation, backfill, recipe deletion, ORM adoption, production deployment, Core service extraction, or a separate Core database. The accepted physical V2 blueprint is canonical in [24_PHYSICAL_V2_BLUEPRINT.md](docs/planam/24_PHYSICAL_V2_BLUEPRINT.md); implementation remains wave-scoped and separately authorized.
 
 ## Product and ecosystem vision
 
@@ -56,7 +56,7 @@ Compatibility layers are temporary and bounded. Dual-read may exist temporarily.
 
 Current implementation facts remain separated in [docs/planam/18_CURRENT_STATE.md](docs/planam/18_CURRENT_STATE.md). Historical implementation acceptance remains evidence: physical schema 60/60, `CREATE_ALL_TABLES = 47`, `CUSTOM_SQL_TABLES = 7`, Recipe Engine tables 6, authority overlap 0, RI-3 PASS, and full backend 1204 passed with 3 warnings.
 
-RI-2 remains visible and unresolved: `BLOCKING_BEFORE_BACKFILL`.
+RI-2 remains visible and unresolved at runtime: `BLOCKING_BEFORE_BACKFILL`. The accepted physical design requires PostgreSQL range/exclusion protection before any NutritionTarget backfill.
 
 ## Canonical document index
 
@@ -65,8 +65,9 @@ RI-2 remains visible and unresolved: `BLOCKING_BEFORE_BACKFILL`.
 - Food, evidence, nutrition, safety, recipes, and menus: [21_FOOD_PROFILE_AND_FACTS.md](docs/planam/21_FOOD_PROFILE_AND_FACTS.md), [07_EVIDENCE_ENGINE.md](docs/planam/07_EVIDENCE_ENGINE.md), [08_NUTRITION_AND_SAFETY.md](docs/planam/08_NUTRITION_AND_SAFETY.md), [09_RECIPE_GOLD_V3.md](docs/planam/09_RECIPE_GOLD_V3.md), [10_MENU_ENGINE.md](docs/planam/10_MENU_ENGINE.md).
 - Ecosystem and integrations: [22_ECOSYSTEM_CONTRACTS.md](docs/planam/22_ECOSYSTEM_CONTRACTS.md), [11_SHOPPING_AND_PANTRY.md](docs/planam/11_SHOPPING_AND_PANTRY.md), [13_TELEGRAM_AND_PLATFORM.md](docs/planam/13_TELEGRAM_AND_PLATFORM.md), [14_INFRASTRUCTURE_AND_DEPLOYMENT.md](docs/planam/14_INFRASTRUCTURE_AND_DEPLOYMENT.md).
 - Cutover and status: [23_REBUILD_AND_CUTOVER.md](docs/planam/23_REBUILD_AND_CUTOVER.md), [18_CURRENT_STATE.md](docs/planam/18_CURRENT_STATE.md), [19_ROADMAP.md](docs/planam/19_ROADMAP.md).
+- Physical V2 implementation blueprint: [24_PHYSICAL_V2_BLUEPRINT.md](docs/planam/24_PHYSICAL_V2_BLUEPRINT.md).
 - Decisions and prohibitions: [17_DECISION_LOG.md](docs/planam/17_DECISION_LOG.md), [16_DO_NOT_DO.md](docs/planam/16_DO_NOT_DO.md), [15_TESTING_AND_QA.md](docs/planam/15_TESTING_AND_QA.md).
 
 ## Next stage
 
-The next stage is target physical V2 schema and module design. Implementation is blocked until that design stage is accepted.
+The next stage is implementation Wave 1 specification. Implementation is not authorized by physical blueprint acceptance; each wave requires its own scope, gates, and acceptance.

@@ -7,3 +7,5 @@ Historical acceptance: CREATE_ALL_TABLES 47, CUSTOM_SQL_TABLES 7, Recipe Engine 
 Known current-state gaps remain: profile DTO completeness, fail-open menu sanitization, unknown-as-zero health/inferred macros, OCR uncertainty loss, job durability, and duplicate recipe/consumption truth. They are preserved as remediation input, not silently represented as completed target behavior.
 
 The next stage is target physical V2 schema and module design before implementation. No source, schema, ORM, backfill, or production change is part of this acceptance.
+
+Physical V2 blueprint acceptance is documentation only. Current runtime still uses the existing deterministic bootstrap authority until a separate wave-scoped implementation task creates, validates, and accepts the V2 migration authority.
