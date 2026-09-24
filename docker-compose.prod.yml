@@ -16,6 +16,7 @@ services:
       # Generated recipe images are served directly by nginx.
       - ${RECIPE_IMAGES_HOST_DIR:-/var/www/ai-food-family-data/recipe-images}:/var/www/recipe-images:ro
       - /var/www/planam_money/deploy/nginx/dengi.planam.ru.conf.template:/etc/nginx/conf.d/dengi.planam.ru.conf:ro
+      - /var/www/avito-automation/deploy/nginx/avito.planam.ru.conf.template:/etc/nginx/conf.d/avito.planam.ru.conf:ro
     networks:
       - default
       - planam_ingress
