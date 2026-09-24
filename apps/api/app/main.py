@@ -6,8 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+from fastapi.responses import JSONResponse
 
 from app.config import settings
+from app.cutover.application_boundary import ApplicationMutationBlocked
 from app.services import admin_errors
 from app.database import init_db
 from app.health import run_health_checks
@@ -77,6 +79,15 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+
+
+@app.exception_handler(ApplicationMutationBlocked)
+async def application_mutation_blocked(_: Request, exc: ApplicationMutationBlocked) -> JSONResponse:
+    return JSONResponse(
+        status_code=503,
+        headers={"Retry-After": "30"},
+        content={"detail": "Temporary write maintenance; please retry."},
+    )
 
 
 class AdminErrorLoggingMiddleware(BaseHTTPMiddleware):

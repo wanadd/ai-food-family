@@ -51,6 +51,11 @@ class PostgresBackfillEngine:
         source = Table(source_table, metadata, autoload_with=self.engine)
         result = DatabaseBackfillResult(run_id=run_id, dry_run=dry_run)
         last = resume_checkpoint
+        if resume_checkpoint is not None:
+            with self.engine.connect() as conn:
+                checkpoint_exists = conn.execute(select(source.c[source_id_column]).where(source.c[source_id_column] == resume_checkpoint)).first()
+            if checkpoint_exists is None:
+                raise ValueError("INVALID_BACKFILL_CHECKPOINT")
         counts = {"processed": 0, "migrated": 0, "recomputed": 0, "reconfirm_required": 0, "archived": 0, "skipped_by_policy": 0, "errors": 0}
         while True:
             with self.engine.connect() as conn:
@@ -73,7 +78,8 @@ class PostgresBackfillEngine:
                             raise ValueError("write_v2 callback is required for execute mode")
                         existing = conn.execute(select(backfill_mappings.c.target_id).where(backfill_mappings.c.run_id == run_id, backfill_mappings.c.source_table == source_table, backfill_mappings.c.source_id == source_id)).first()
                         if existing is None:
-                            write_v2(conn, row, target_id, outcome)
+                            if outcome not in {Outcome.RECONFIRM_REQUIRED, Outcome.ERROR, Outcome.SKIPPED_BY_POLICY}:
+                                write_v2(conn, row, target_id, outcome)
                             conn.execute(insert(backfill_mappings).values(run_id=run_id, source_table=source_table, source_id=source_id, target_id=target_id, outcome=outcome.value, checkpoint=source_id, payload_hash=hashlib.sha256(json.dumps(row, default=str, sort_keys=True).encode()).hexdigest()))
                     last = source_id
         return DatabaseBackfillResult(run_id=run_id, dry_run=dry_run, checkpoint=last, **counts)

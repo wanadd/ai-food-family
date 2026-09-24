@@ -35,3 +35,7 @@ class AsyncControl:
 
     def is_frozen(self) -> bool:
         return self.store.control_enabled("ASYNC_FROZEN")
+
+    def assert_can_acquire(self) -> None:
+        if self.is_frozen():
+            raise RuntimeError("CUTOVER_ASYNC_FROZEN")
