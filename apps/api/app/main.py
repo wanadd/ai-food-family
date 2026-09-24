@@ -12,7 +12,7 @@ from app.config import settings
 from app.cutover.application_boundary import ApplicationMutationBlocked
 from app.services import admin_errors
 from app.database import init_db
-from app.health import run_health_checks
+from app.health.checks import run_health_checks
 from app.routers import (
     admin,
     auth,
