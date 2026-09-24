@@ -39,6 +39,15 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "product_label_facts",
         "source_snapshots",
         "nutrition_target_versions",
+        "recipes_v2",
+        "recipe_versions",
+        "recipe_ingredients_v2",
+        "recipe_steps_v2",
+        "recipe_media_assets",
+        "recipe_version_media",
+        "recipe_legacy_mappings",
+        "recipe_archive_fallbacks",
+        "recipe_validation_runs",
     }
 )
 

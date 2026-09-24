@@ -60,19 +60,10 @@ def _assert_alembic_head(url: str) -> None:
     finally:
         engine.dispose()
 
-    assert revision == "20260924_0005"
+    assert revision == "20260924_0006"
 
 
 def test_v2_baseline_real_postgresql_acceptance():
-    url = _acceptance_url()
-    _reset_public_schema(url)
-
-    fresh = _run_alembic(url)
-    assert fresh.returncode == 0, fresh.stderr
-    _assert_alembic_head(url)
-
-
-def test_wave_05_postgresql_rejects_overlapping_target_intervals():
     url = _acceptance_url()
     _reset_public_schema(url)
     migrated = _run_alembic(url)
@@ -185,10 +176,17 @@ def test_wave_05_postgresql_rejects_overlapping_target_intervals():
         "food_evidence_fact_links",
         "product_label_facts",
         "nutrition_target_versions",
+        "recipes_v2",
+        "recipe_versions",
+        "recipe_ingredients_v2",
+        "recipe_steps_v2",
+        "recipe_media_assets",
+        "recipe_version_media",
+        "recipe_legacy_mappings",
+        "recipe_archive_fallbacks",
+        "recipe_validation_runs",
     } <= tables
     assert "food_identities" not in tables
-    assert "recipe_versions" not in tables
-
     _reset_public_schema(url)
     first = subprocess.Popen(
         [sys.executable, "-m", "alembic", "-c", "alembic.ini", "upgrade", "head"],
