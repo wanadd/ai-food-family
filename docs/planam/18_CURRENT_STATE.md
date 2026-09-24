@@ -10,6 +10,8 @@ Known current-state gaps remain: profile DTO completeness, fail-open menu saniti
 
 Wave 01 V2 implementation is present: Alembic configuration, a marker-only baseline revision, explicit schema authority boundary checks, reference enum contracts, UUIDv7 generation, and a PostgreSQL migration acceptance harness.
 
+Wave 11 C1 cutover-readiness tooling is present as a local-only additive layer: declarative legacy/V2 inventory and migration manifest, deterministic dry-run/execute backfill with stable mappings and checkpoint/resume, explicit reconciliation levels, normalized shadow comparison, bounded cutover state machine, write-pause and switch guards, backup/restore drill helpers, and production identity protection. C1 does not access or mutate production, does not auto-backfill at startup, and does not authorize C2.
+
 Wave 02 Core roots are present in versioned migrations only: accounts, auth identities, persons, households, memberships, person relationships, permission grants, and legacy id mappings. Legacy user/family/family_member mapping is additive and idempotent. Telegram auth and current Food family behavior remain on the existing compatibility path.
 
 Current runtime still uses the existing deterministic bootstrap authority for legacy tables during transition. V2 application objects are reserved for versioned migrations only, and Wave 02 creates no FoodProfile, Recipe V2, planning, shopping, pantry, cooking, consumption, health, or ImportantDate tables.
