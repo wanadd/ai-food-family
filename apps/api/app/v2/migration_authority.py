@@ -38,6 +38,7 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "legacy_id_mappings",
         "product_label_facts",
         "source_snapshots",
+        "nutrition_target_versions",
     }
 )
 

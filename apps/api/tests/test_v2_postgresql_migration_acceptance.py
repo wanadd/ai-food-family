@@ -60,7 +60,7 @@ def _assert_alembic_head(url: str) -> None:
     finally:
         engine.dispose()
 
-    assert revision == "20260922_0004"
+    assert revision == "20260924_0005"
 
 
 def test_v2_baseline_real_postgresql_acceptance():
@@ -70,6 +70,69 @@ def test_v2_baseline_real_postgresql_acceptance():
     fresh = _run_alembic(url)
     assert fresh.returncode == 0, fresh.stderr
     _assert_alembic_head(url)
+
+
+def test_wave_05_postgresql_rejects_overlapping_target_intervals():
+    url = _acceptance_url()
+    _reset_public_schema(url)
+    migrated = _run_alembic(url)
+    assert migrated.returncode == 0, migrated.stderr
+
+    engine = create_engine(url)
+    person_a = "01992222-2222-7222-8222-222222222222"
+    person_b = "01992222-2222-7222-8222-333333333333"
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("INSERT INTO core_persons (person_id, birth_date_precision) VALUES (:id, 'unknown'), (:other, 'unknown')"),
+                {"id": person_a, "other": person_b},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO nutrition_target_versions "
+                    "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                    "VALUES (:id, :person, 'calories', 'default', :start, :end, 'MANUAL')"
+                ),
+                {"id": "01992222-2222-7222-8222-444444444444", "person": person_a, "start": "2026-01-01T00:00:00Z", "end": "2026-01-10T00:00:00Z"},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO nutrition_target_versions "
+                    "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                    "VALUES (:id, :person, 'calories', 'default', :start, :end, 'MANUAL')"
+                ),
+                {"id": "01992222-2222-7222-8222-555555555555", "person": person_a, "start": "2026-01-10T00:00:00Z", "end": "2026-01-20T00:00:00Z"},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO nutrition_target_versions "
+                    "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                    "VALUES (:id, :person, 'calories', 'default', :start, NULL, 'MANUAL')"
+                ),
+                {"id": "01992222-2222-7222-8222-666666666666", "person": person_b, "start": "2026-01-01T00:00:00Z"},
+            )
+        with pytest.raises(Exception):
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "INSERT INTO nutrition_target_versions "
+                        "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                        "VALUES (:id, :person, 'calories', 'default', :start, :end, 'MANUAL')"
+                    ),
+                    {"id": "01992222-2222-7222-8222-777777777777", "person": person_a, "start": "2026-01-05T00:00:00Z", "end": "2026-01-06T00:00:00Z"},
+                )
+        with pytest.raises(Exception):
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "INSERT INTO nutrition_target_versions "
+                        "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                        "VALUES (:id, :person, 'calories', 'default', :start, NULL, 'MANUAL')"
+                    ),
+                    {"id": "01992222-2222-7222-8222-888888888888", "person": person_b, "start": "2026-01-10T00:00:00Z"},
+                )
+    finally:
+        engine.dispose()
 
     engine = create_engine(url)
     try:
@@ -121,6 +184,7 @@ def test_v2_baseline_real_postgresql_acceptance():
         "food_composition_facts",
         "food_evidence_fact_links",
         "product_label_facts",
+        "nutrition_target_versions",
     } <= tables
     assert "food_identities" not in tables
     assert "recipe_versions" not in tables
