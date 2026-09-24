@@ -2,12 +2,30 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import MetaData, Table, insert, select
+from sqlalchemy.exc import NoSuchTableError
 
 from app.cutover.backfill import Outcome
 from app.cutover.runtime_backfill import DatabaseBackfillResult, PostgresBackfillEngine
+
+
+class PersonResolution(StrEnum):
+    DIRECT_PERSON = "DIRECT_PERSON"
+    UNIQUE_USER_PERSON = "UNIQUE_USER_PERSON"
+    UNIQUE_MEMBER_PERSON = "UNIQUE_MEMBER_PERSON"
+    RECONFIRM_REQUIRED = "RECONFIRM_REQUIRED"
+    CONFLICT = "CONFLICT"
+    INVALID_SOURCE = "INVALID_SOURCE"
+
+
+@dataclass(frozen=True)
+class PersonResolutionResult:
+    classification: PersonResolution
+    person_id: str | None = None
+    reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -53,8 +71,47 @@ class NutritionTargetRuntime:
         with self.engine.connect() as conn:
             return [dict(row) for row in conn.execute(select(table)).mappings().all()]
 
+    def _person_mappings(self, legacy_table: str, legacy_id: Any) -> set[str]:
+        if legacy_id is None:
+            return set()
+        try:
+            mappings = Table("legacy_id_mappings", MetaData(), autoload_with=self.engine)
+        except NoSuchTableError:
+            return set()
+        with self.engine.connect() as conn:
+            rows = conn.execute(select(mappings.c.target_id_uuid).where(mappings.c.legacy_table == legacy_table, mappings.c.legacy_id_text == str(legacy_id), mappings.c.target_table == "core_persons")).all()
+        return {str(row[0]) for row in rows}
+
+    def resolve_person(self, row: dict[str, Any]) -> PersonResolutionResult:
+        """Resolve a legacy subject without household or current-user fallback."""
+        source_has_v2_shape = "target_kind" in row and "effective_from" in row
+        explicit = row.get("person_id")
+        user_persons = self._person_mappings("users", row.get("user_id"))
+        if explicit is not None:
+            member_persons = self._person_mappings("family_members", explicit)
+            if source_has_v2_shape:
+                direct = str(explicit)
+                if user_persons and direct not in user_persons:
+                    return PersonResolutionResult(PersonResolution.CONFLICT, reason="explicit person conflicts with unique user mapping")
+                return PersonResolutionResult(PersonResolution.DIRECT_PERSON, person_id=direct)
+            if len(member_persons) == 1:
+                person_id = next(iter(member_persons))
+                if len(user_persons) == 1 and person_id not in user_persons:
+                    return PersonResolutionResult(PersonResolution.CONFLICT, reason="member and user mappings disagree")
+                return PersonResolutionResult(PersonResolution.UNIQUE_MEMBER_PERSON, person_id=person_id)
+            return PersonResolutionResult(PersonResolution.INVALID_SOURCE, reason="explicit legacy member has no unique core person mapping")
+        if len(user_persons) == 1:
+            return PersonResolutionResult(PersonResolution.UNIQUE_USER_PERSON, person_id=next(iter(user_persons)))
+        if len(user_persons) > 1:
+            return PersonResolutionResult(PersonResolution.RECONFIRM_REQUIRED, reason="user has multiple core person mappings")
+        return PersonResolutionResult(PersonResolution.RECONFIRM_REQUIRED, reason="legacy row has no unique person evidence")
+
     def pre_state(self) -> str:
         return "BLOCKING_BEFORE_BACKFILL" if self._overlaps(self._rows(self.source_table)) else "PASS"
+
+    def _target_values(self, row: dict[str, Any]) -> dict[str, Any]:
+        fields = ("calories_target", "protein_target_g", "fat_target_g", "carbs_target_g", "fiber_target_g", "water_target_ml", "goal_type")
+        return {field: row[field] for field in fields if field in row and row[field] is not None}
 
     def backfill(self, *, run_id: str, dry_run: bool = False, resume_checkpoint: str | None = None) -> NutritionTargetProof:
         source_rows = self._rows(self.source_table)
@@ -66,23 +123,54 @@ class NutritionTargetRuntime:
                 same_scope = all(str(left.get(key, "default")) == str(right.get(key, "default")) for key in ("person_id", "target_kind", "context_key"))
                 if same_scope and (self._as_datetime(right.get("effective_from")) < self._as_datetime(left.get("effective_to"))) and (self._as_datetime(left.get("effective_from")) < self._as_datetime(right.get("effective_to"))):
                     overlapping_ids.update((str(left["id"]), str(right["id"])))
+        resolutions: dict[str, PersonResolutionResult] = {}
+
+        def resolution(row: dict[str, Any]) -> PersonResolutionResult:
+            source_id = str(row["id"])
+            if source_id not in resolutions:
+                resolutions[source_id] = self.resolve_person(row)
+            return resolutions[source_id]
 
         def classify(row: dict[str, Any]) -> Outcome:
             if str(row["id"]) in overlapping_ids or row.get("ambiguous"):
                 return Outcome.RECONFIRM_REQUIRED
+            resolved = resolution(row)
+            if resolved.classification in {PersonResolution.RECONFIRM_REQUIRED, PersonResolution.CONFLICT}:
+                return Outcome.RECONFIRM_REQUIRED
+            if resolved.classification is PersonResolution.INVALID_SOURCE:
+                return Outcome.ERROR
+            if row.get("effective_from") is None and row.get("created_at") is None:
+                return Outcome.ERROR
             return Outcome.MIGRATED
 
         target = Table(self.target_table, metadata, autoload_with=self.engine)
 
         def write(conn, row: dict[str, Any], target_id: str, outcome: Outcome) -> None:
-            values = {"target_id": target_id}
-            for column in target.columns.keys():
-                if column == "target_id":
-                    continue
-                if column in row:
-                    values[column] = row[column]
-            conn.execute(insert(target).values(values))
+            resolved = resolution(row)
+            values: dict[str, Any] = {"target_id": target_id, "person_id": resolved.person_id}
+            if "target_kind" in target.columns:
+                values["target_kind"] = row.get("target_kind") or "NUTRITION_TARGET"
+            if "context_key" in target.columns:
+                values["context_key"] = row.get("context_key") or "default"
+            if "effective_from" in target.columns:
+                values["effective_from"] = row.get("effective_from") or row.get("created_at")
+            if "effective_to" in target.columns:
+                values["effective_to"] = row.get("effective_to")
+            if "target_values_json" in target.columns:
+                values["target_values_json"] = row.get("target_values_json") or self._target_values(row)
+            if "origin" in target.columns:
+                values["origin"] = row.get("origin", "LEGACY_ESTIMATOR")
+            if "provenance_status" in target.columns:
+                values["provenance_status"] = row.get("provenance_status", "UNREVIEWED")
+            if "source_rule_version" in target.columns:
+                values["source_rule_version"] = "legacy_nutrition_target.v1"
+            if "calculation_version" in target.columns:
+                values["calculation_version"] = "legacy_preserve.v1"
+            if "provenance_json" in target.columns:
+                values["provenance_json"] = {"source_table": self.source_table, "source_id": str(row["id"]), "person_resolution": resolution(row).classification.value, "migration_policy": "evidence_only_no_fallback"}
+            conn.execute(insert(target).values({key: value for key, value in values.items() if key in target.columns}))
 
         result = PostgresBackfillEngine(self.engine).run(run_id=run_id, source_table=self.source_table, source_id_column="id", classify=classify, write_v2=write, dry_run=dry_run, resume_checkpoint=resume_checkpoint)
         after_rows = self._rows(self.target_table) if not dry_run else []
-        return NutritionTargetProof("BLOCKING_BEFORE_BACKFILL" if overlapping_ids else "PASS", "PASS" if not dry_run and self._overlaps(after_rows) == 0 and result.errors == 0 else "BLOCKING_BEFORE_BACKFILL", result, self._overlaps(after_rows), 0, result.reconfirm_required)
+        after = "PASS" if not dry_run and self._overlaps(after_rows) == 0 and result.errors == 0 and result.unexplained_source_loss == 0 else "BLOCKING_BEFORE_BACKFILL"
+        return NutritionTargetProof("BLOCKING_BEFORE_BACKFILL" if overlapping_ids else "PASS", after, result, self._overlaps(after_rows), 0, result.reconfirm_required)
