@@ -15,20 +15,44 @@ class ReconciliationLevel(StrEnum):
     ERROR = "ERROR"
 
 
+class IdentityResolutionStatus(StrEnum):
+    RESOLVED = "RESOLVED"
+    MISSING_MAPPING = "MISSING_MAPPING"
+    AMBIGUOUS_MAPPING = "AMBIGUOUS_MAPPING"
+    CONFLICTING_MAPPING = "CONFLICTING_MAPPING"
+    INVALID_MAPPING = "INVALID_MAPPING"
+    ERROR = "ERROR"
+
+
+@dataclass(frozen=True)
+class IdentityResolution:
+    status: IdentityResolutionStatus
+    canonical_id: str | None = None
+    reason: str = ""
+
+
 @dataclass(frozen=True)
 class ReconciliationResult:
     source_id: str
     level: ReconciliationLevel
     reason: str = ""
     severity: str = "INFORMATIONAL"
+    identity_resolution: IdentityResolutionStatus = IdentityResolutionStatus.RESOLVED
 
 
 @dataclass
 class ReconciliationReport:
     results: list[ReconciliationResult] = field(default_factory=list)
 
-    def add(self, source_id: str, level: ReconciliationLevel, reason: str = "", severity: str = "INFORMATIONAL") -> None:
-        self.results.append(ReconciliationResult(source_id, level, reason, severity))
+    def add(
+        self,
+        source_id: str,
+        level: ReconciliationLevel,
+        reason: str = "",
+        severity: str = "INFORMATIONAL",
+        identity_resolution: IdentityResolutionStatus = IdentityResolutionStatus.RESOLVED,
+    ) -> None:
+        self.results.append(ReconciliationResult(source_id, level, reason, severity, identity_resolution))
 
     def counts(self) -> dict[str, int]:
         return {level.value: sum(item.level is level for item in self.results) for level in ReconciliationLevel}

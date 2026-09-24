@@ -9,6 +9,7 @@ from sqlalchemy import MetaData, Table, insert, select
 from sqlalchemy.exc import NoSuchTableError
 
 from app.cutover.backfill import Outcome
+from app.cutover.runtime_reconciliation import ReconciliationIdentityAdapter
 from app.cutover.runtime_backfill import DatabaseBackfillResult, PostgresBackfillEngine
 
 
@@ -36,6 +37,38 @@ class NutritionTargetProof:
     overlap_violations: int
     fabricated_targets: int
     unclassified_rows: int
+
+
+class NutritionTargetIdentityAdapter(ReconciliationIdentityAdapter):
+    """Bridge legacy target IDs to V2 IDs through persisted source provenance."""
+
+    def __init__(self, *, source_table: str = "nutrition_targets") -> None:
+        self.source_table = source_table
+
+    def legacy_identity(self, row: dict[str, Any]) -> str:
+        return f"{self.source_table}:{row['id']}"
+
+    def v2_identity(self, row: dict[str, Any]) -> str | None:
+        provenance = row.get("provenance_json") or {}
+        if provenance.get("source_table") != self.source_table or provenance.get("source_id") is None:
+            return None
+        return f"{self.source_table}:{provenance['source_id']}"
+
+    @staticmethod
+    def _target_values(row: dict[str, Any]) -> dict[str, Any]:
+        fields = ("calories_target", "protein_target_g", "fat_target_g", "carbs_target_g", "fiber_target_g", "water_target_ml", "goal_type")
+        return {field: row[field] for field in fields if field in row and row[field] is not None}
+
+    def payload_matches(self, legacy: dict[str, Any], v2: dict[str, Any], fields: tuple[str, ...]) -> bool:
+        if fields and any(legacy.get(field) != v2.get(field) for field in fields):
+            return False
+        if "target_values_json" in v2 and v2.get("target_values_json") != self._target_values(legacy):
+            return False
+        source_start = legacy.get("effective_from") or legacy.get("created_at")
+        target_start = v2.get("effective_from")
+        if source_start is not None and target_start is not None and str(source_start) != str(target_start):
+            return False
+        return True
 
 
 class NutritionTargetRuntime:
@@ -108,6 +141,30 @@ class NutritionTargetRuntime:
 
     def pre_state(self) -> str:
         return "BLOCKING_BEFORE_BACKFILL" if self._overlaps(self._rows(self.source_table)) else "PASS"
+
+    def reconcile(self):
+        """Compare logical nutrition targets through persisted provenance identity."""
+        from app.cutover.runtime_reconciliation import DatabaseReconciliation
+
+        return DatabaseReconciliation(self.engine).compare_tables(
+            legacy_table=self.source_table,
+            v2_table=self.target_table,
+            legacy_id="id",
+            v2_id="target_id",
+            identity_adapter=NutritionTargetIdentityAdapter(source_table=self.source_table),
+        )
+
+    def shadow(self):
+        """Run shadow comparison with the same logical identity adapter."""
+        from app.cutover.runtime_shadow import PostgresShadowEngine
+
+        return PostgresShadowEngine(self.engine).run(
+            legacy_table=self.source_table,
+            v2_table=self.target_table,
+            legacy_id="id",
+            v2_id="target_id",
+            identity_adapter=NutritionTargetIdentityAdapter(source_table=self.source_table),
+        )
 
     def _target_values(self, row: dict[str, Any]) -> dict[str, Any]:
         fields = ("calories_target", "protein_target_g", "fat_target_g", "carbs_target_g", "fiber_target_g", "water_target_ml", "goal_type")
