@@ -54,6 +54,15 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "plan_slot_participants",
         "plan_slot_portions",
         "plan_legacy_mappings",
+        "shopping_lists_v2",
+        "shopping_demands",
+        "shopping_list_items_v2",
+        "purchase_events_v2",
+        "pantry_inventory_v2",
+        "pantry_movements_v2",
+        "receipt_documents_v2",
+        "receipt_proposals_v2",
+        "receipt_lines_v2",
     }
 )
 
