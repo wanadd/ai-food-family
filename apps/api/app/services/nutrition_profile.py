@@ -59,13 +59,18 @@ def migrate_legacy_profile(db: Session, profile: UserProfile) -> bool:
 def profile_to_nutrition_schema(profile: UserProfile) -> NutritionProfileData:
     return NutritionProfileData(
         age=profile.age,
+        age_months=profile.age_months,
         gender=profile.gender,
         height_cm=profile.height_cm,
         weight_kg=profile.weight_kg,
         nutrition_goal=profile.nutrition_goal,
         activity_level=profile.activity_level,
+        physical_activity_group=profile.physical_activity_group,
+        life_stage=profile.life_stage,
         allergies=profile.allergies or [],
         restrictions=normalize_restrictions(profile.restrictions or []),
+        typed_safety_profile=getattr(profile, "typed_safety_profile", None) or [],
+        typed_medical_context=getattr(profile, "typed_medical_context", None) or [],
         medical_restrictions=profile.medical_restrictions or "",
         banned_foods=profile.banned_foods or "",
         diets=profile.diets or [],
@@ -98,14 +103,23 @@ def save_nutrition_profile(
     payload = normalize_profile_payload(payload)
     validate_measurable_goal(payload)
     profile = get_or_create_profile(db, user)
-    profile.age = payload.age
+    profile.age_months = payload.age_months
+    profile.age = (
+        payload.age_months // 12
+        if payload.age_months is not None
+        else payload.age
+    )
     profile.gender = payload.gender
     profile.height_cm = payload.height_cm
     profile.weight_kg = payload.weight_kg
     profile.nutrition_goal = payload.nutrition_goal
     profile.activity_level = payload.activity_level
+    profile.physical_activity_group = payload.physical_activity_group
+    profile.life_stage = payload.life_stage
     profile.allergies = payload.allergies
     profile.restrictions = normalize_restrictions(payload.restrictions)
+    profile.typed_safety_profile = payload.typed_safety_profile
+    profile.typed_medical_context = payload.typed_medical_context
     profile.medical_restrictions = payload.medical_restrictions
     profile.banned_foods = payload.banned_foods
     profile.diets = payload.diets

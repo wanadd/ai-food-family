@@ -6,12 +6,23 @@ import re
 from dataclasses import dataclass
 from typing import Any, Iterable, Literal
 
+from app.nutrition.allergen_ontology import (
+    CONCEPT_LABEL_RU,
+    aggregate_allergen_facts,
+    collect_recipe_allergen_facts,
+    decide_celiac_gluten_free,
+    lactose_intolerance_conflicts,
+    profile_has_celiac,
+    typed_entries_from_profile,
+)
+from app.nutrition.medical_safety import medical_decision_conflicts
 from app.nutrition.restrictions_catalog import (
     RestrictionDefinition,
     get_restriction_definition,
     normalize_restriction_key,
     normalize_restrictions,
 )
+from app.services.member_age import resolve_age_for_profile
 
 ConflictSource = Literal[
     "recipe_restrictions",
@@ -19,6 +30,7 @@ ConflictSource = Literal[
     "tags",
     "diets",
     "allergens",
+    "typed_safety",
     "profile",
     "unknown",
 ]
@@ -68,6 +80,7 @@ class RestrictionConflict:
     reason: str
     matched_ingredient: str | None = None
     source: ConflictSource = "unknown"
+    evidence_status: str | None = None
 
 
 def normalize_profile_restrictions(profile: Any) -> list[str]:
@@ -128,6 +141,30 @@ def explain_recipe_restriction_conflicts(recipe: Any, profile: Any) -> list[Rest
     recipe_restrictions = {_norm_token(r) for r in _collect_recipe_restrictions(recipe)}
 
     active_keys = normalize_profile_restrictions(profile)
+    age_resolution = resolve_age_for_profile(profile)
+
+    if age_resolution.is_infant and _has_generic_child_safe_signal(recipe):
+        _append_conflict(
+            conflicts,
+            seen,
+            RestrictionConflict(
+                restriction_key="infant_unsupported_scope",
+                label_ru="Питание младенца",
+                severity="hard",
+                reason=(
+                    "Для 0-11 месяцев generic child_safe является недостаточным "
+                    "основанием безопасности"
+                ),
+                source="profile",
+                evidence_status="generic_unverified_for_age",
+            ),
+        )
+
+    for conflict in _typed_safety_conflicts(recipe, profile):
+        _append_conflict(conflicts, seen, conflict)
+
+    for conflict in medical_decision_conflicts(recipe, profile):
+        _append_conflict(conflicts, seen, conflict)
 
     for key in active_keys:
         definition = get_restriction_definition(key)
@@ -244,6 +281,80 @@ def explain_recipe_restriction_conflicts(recipe: Any, profile: Any) -> list[Rest
     return conflicts
 
 
+def _typed_safety_conflicts(recipe: Any, profile: Any) -> list[RestrictionConflict]:
+    conflicts: list[RestrictionConflict] = []
+    entries = typed_entries_from_profile(profile)
+    if not entries:
+        return conflicts
+
+    aggregated = aggregate_allergen_facts(collect_recipe_allergen_facts(recipe))
+    for entry in entries:
+        if entry.kind in {"allergy", "allergy_or_avoidance_legacy"}:
+            fact = aggregated.get(entry.concept_id)
+            if not fact:
+                continue
+            relation = fact["relation_type"]
+            label = CONCEPT_LABEL_RU.get(entry.concept_id, entry.concept_id)
+            severity: Severity = "hard" if relation in {"contains", "may_contain", "cross_contact", "unknown"} else "soft"
+            matched = _first_fact_ingredient(fact)
+            conflicts.append(
+                RestrictionConflict(
+                    restriction_key=f"allergen:{entry.concept_id}:{relation}",
+                    label_ru=f"Аллерген: {label}",
+                    severity=severity,
+                    reason=(
+                        f"Структурный allergen relation: {relation}; "
+                        f"профиль: {entry.kind}/{entry.origin}"
+                    ),
+                    matched_ingredient=matched,
+                    source="typed_safety",
+                    evidence_status=fact.get("provenance_status"),
+                )
+            )
+        elif entry.kind in {"intolerance", "intolerance_or_diet_legacy"} and (
+            entry.concept_id == "lactose_intolerance"
+        ):
+            for fact in lactose_intolerance_conflicts(recipe):
+                label = CONCEPT_LABEL_RU["lactose_intolerance"]
+                conflicts.append(
+                    RestrictionConflict(
+                        restriction_key="intolerance:lactose_intolerance",
+                        label_ru=label,
+                        severity="hard",
+                        reason="Есть молочный ингредиент без структурного признака безлактозности",
+                        matched_ingredient=fact.ingredient_name,
+                        source="typed_safety",
+                        evidence_status=fact.provenance_status,
+                    )
+                )
+
+    if profile_has_celiac(profile):
+        decision = decide_celiac_gluten_free(recipe)
+        if decision.status != "verified_gluten_free":
+            conflicts.append(
+                RestrictionConflict(
+                    restriction_key=f"medical_condition:celiac_disease:{decision.status}",
+                    label_ru="Целиакия",
+                    severity="hard",
+                    reason=(
+                        f"GF status: {decision.status}; {decision.reason}. "
+                        "Keyword/tag evidence is not enough for celiac clearance."
+                    ),
+                    source="typed_safety",
+                    evidence_status=decision.provenance_status,
+                )
+            )
+    return conflicts
+
+
+def _first_fact_ingredient(fact: dict[str, Any]) -> str | None:
+    for raw in fact.get("facts") or []:
+        ingredient = raw.get("ingredient_name")
+        if ingredient:
+            return str(ingredient)
+    return None
+
+
 def _norm_token(value: str) -> str:
     return str(value).strip().lower()
 
@@ -323,6 +434,17 @@ def _collect_recipe_restrictions(recipe: Any) -> list[str]:
     if rows:
         return [getattr(row, "restriction", str(row)) for row in rows]
     return list(getattr(recipe, "restrictions", None) or [])
+
+
+def _has_generic_child_safe_signal(recipe: Any) -> bool:
+    if bool(getattr(recipe, "suitable_for_children", False)):
+        return True
+    tokens = {
+        *(_norm_token(t) for t in _collect_recipe_tags(recipe)),
+        *(_norm_token(d) for d in _collect_recipe_diets(recipe)),
+        *(_norm_token(r) for r in _collect_recipe_restrictions(recipe)),
+    }
+    return any(token in {"child_safe", "детское", "для детей"} for token in tokens)
 
 
 def _collect_recipe_full_text(recipe: Any, ingredient_texts: list[str]) -> str:

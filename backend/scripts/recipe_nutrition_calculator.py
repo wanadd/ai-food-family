@@ -15,17 +15,31 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
+ROOT = SCRIPTS_DIR.parents[1]
+API_DIR = ROOT / "apps" / "api"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
+if str(API_DIR) not in sys.path:
+    sys.path.insert(0, str(API_DIR))
 
 from canonical_products import resolve_product  # noqa: E402
-from nutrition_data import compute_row_nutrition  # noqa: E402
+from nutrition_data import compute_row_nutrition, lookup_facts  # noqa: E402
+from app.services.nutrition.recipe_nutrition_provenance import (  # noqa: E402
+    FoodMatch,
+    FoodNutrientFact,
+    ResolvedServings,
+    resolve_servings_with_provenance,
+    summarize_provenance,
+)
 
 NUTRITION_SOURCE = "planam_v1_nutrition_facts"
+INTERNAL_LEGACY_SOURCE_ID = "SRC-PLANAM-V1-NUTRITION-FACTS"
 DEFAULT_SERVING_SIZE_TEXT = "1 порция"
+INTERNAL_LEGACY_IMPORTED_AT = datetime(2026, 9, 9, tzinfo=timezone.utc)
 
 # meal_type / category -> safe fallback servings when recipe.servings is missing.
 SINGLE_SERVING_MEALS = {"breakfast", "snack", "drink", "cocktail", "smoothie", "tea", "coffee"}
@@ -35,15 +49,7 @@ MULTI_SERVING_CATEGORIES = {"soup", "main", "salad", "event", "bbq"}
 
 def resolve_servings(servings: int | float | None, meal_type: str, category: str) -> float | None:
     """Use recipe.servings when present; otherwise a conservative fallback or None."""
-    if servings and servings >= 1:
-        return float(servings)
-    mt = (meal_type or "").strip().lower()
-    cat = (category or "").strip().lower()
-    if mt in SINGLE_SERVING_MEALS:
-        return 1.0
-    if mt in MULTI_SERVING_MEALS or cat in MULTI_SERVING_CATEGORIES:
-        return 4.0
-    return None  # do not invent portions
+    return resolve_servings_with_provenance(servings, meal_type, category).servings
 
 
 def _round(value: float, digits: int = 1) -> float:
@@ -92,6 +98,8 @@ class RecipeNutritionSummary:
     needs_review: bool
     review_reason: str | None
     source: str = NUTRITION_SOURCE
+    source_kind: str | None = None
+    provenance: dict | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -106,7 +114,77 @@ class RecipeNutritionSummary:
             "needs_review": self.needs_review,
             "review_reason": self.review_reason,
             "source": self.source,
+            "source_kind": self.source_kind,
+            "provenance": self.provenance,
         }
+
+
+def _legacy_match(name: str, *, generic: bool, has_facts: bool) -> FoodMatch:
+    normalized = (name or "").strip().lower().replace("ё", "е")
+    if generic:
+        return FoodMatch(
+            normalized_ingredient_name=normalized,
+            original_ingredient_text=name or "",
+            status="ambiguous",
+            food_state="unknown",
+            review_reason="generic_ingredient",
+        )
+    if not has_facts:
+        return FoodMatch(
+            normalized_ingredient_name=normalized,
+            original_ingredient_text=name or "",
+            status="unmatched",
+            food_state="unknown",
+            review_reason="no_nutrient_fact",
+        )
+    return FoodMatch(
+        normalized_ingredient_name=normalized,
+        original_ingredient_text=name or "",
+        status="matched",
+        canonical_food_key=normalized,
+        source_id=INTERNAL_LEGACY_SOURCE_ID,
+        source_record_locator=f"nutrition_data.py:{normalized}",
+        source_food_name=name or normalized,
+        food_state="unknown",
+        match_method="normalized_exact",
+        match_confidence="legacy_internal",
+        review_reason="internal_legacy_unsourced",
+    )
+
+
+def _legacy_fact_records(name: str) -> list[FoodNutrientFact]:
+    normalized = (name or "").strip().lower().replace("ё", "е")
+    facts = lookup_facts(name)
+    if facts is None:
+        return []
+    values = {
+        "energy_kcal": facts.kcal,
+        "protein_g": facts.protein,
+        "fat_g": facts.fat,
+        "carbohydrate_g": facts.carbs,
+    }
+    return [
+        FoodNutrientFact(
+            canonical_food_key=normalized,
+            nutrient_key=key,
+            value=value,
+            unit="kcal" if key == "energy_kcal" else "g",
+            basis_amount=100.0,
+            basis_unit="g",
+            source_id=INTERNAL_LEGACY_SOURCE_ID,
+            source_record_locator=f"nutrition_data.py:{normalized}",
+            source_version="planam_v1",
+            food_state="unknown",
+            provenance_status="internal_legacy_unsourced",
+            source_food_name=name or normalized,
+            match_method="normalized_exact",
+            match_confidence="legacy_internal",
+            review_status="legacy_unreviewed",
+            review_notes="Approximate internal constants; not external evidence.",
+            retrieved_or_imported_at=INTERNAL_LEGACY_IMPORTED_AT,
+        )
+        for key, value in values.items()
+    ]
 
 
 def calculate_recipe_nutrition(
@@ -133,7 +211,9 @@ def calculate_recipe_nutrition(
         "to_taste_ingredients": 0,
         "needs_review_ingredients": 0,
         "generic_ingredients": 0,
+        "legacy_unsourced_ingredients": 0,
     }
+    ingredient_records: list[dict] = []
 
     for ing in ingredients:
         counts["total_ingredients"] += 1
@@ -163,6 +243,23 @@ def calculate_recipe_nutrition(
             totals["protein"] += rn.protein
             totals["fat"] += rn.fat
             totals["carbs"] += rn.carbs
+            counts["legacy_unsourced_ingredients"] += 1
+        match = _legacy_match(name, generic=generic, has_facts=rn.has_facts)
+        ingredient_records.append(
+            {
+                "ingredient": {
+                    "name": name,
+                    "quantity": ing.get("quantity", ""),
+                    "unit": ing.get("unit", ""),
+                    "grams": rn.grams,
+                    "precision": rn.precision,
+                },
+                "match": match.to_record(),
+                "facts": [fact.to_record() for fact in _legacy_fact_records(name)]
+                if rn.grams is not None
+                else [],
+            }
+        )
 
     countable = counts["total_ingredients"] - counts["to_taste_ingredients"]
     counts["countable_ingredients"] = countable
@@ -173,7 +270,16 @@ def calculate_recipe_nutrition(
     review_reason = _review_reason(confidence, coverage_pct, counts)
     needs_review = confidence in {"low_confidence", "unavailable"}
 
-    resolved_servings = resolve_servings(servings, meal_type, category)
+    serving_resolution = resolve_servings_with_provenance(servings, meal_type, category)
+    resolved_servings = serving_resolution.servings
+    provenance = summarize_provenance(
+        ingredient_records,
+        method="planam_v1_internal_legacy_macro_sum_v1",
+        serving_resolution=serving_resolution,
+    )
+    counts["serving_source"] = serving_resolution.source
+    counts["canonical_per_serving"] = serving_resolution.canonical_per_serving
+    counts["provenance_source_kind"] = provenance["nutrition_source_kind"]
 
     if confidence == "unavailable":
         # Not enough data — never surface invented numbers.
@@ -188,6 +294,8 @@ def calculate_recipe_nutrition(
             coverage=counts,
             needs_review=True,
             review_reason=review_reason,
+            source_kind=provenance["nutrition_source_kind"],
+            provenance={**provenance, "ingredients": ingredient_records},
         )
 
     total = {k: _round(v) for k, v in totals.items()}
@@ -208,4 +316,6 @@ def calculate_recipe_nutrition(
         coverage=counts,
         needs_review=needs_review,
         review_reason=review_reason,
+        source_kind=provenance["nutrition_source_kind"],
+        provenance={**provenance, "ingredients": ingredient_records},
     )

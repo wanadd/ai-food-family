@@ -34,12 +34,17 @@ def virtual_nutrition_from_member(member: FamilyMember) -> VirtualNutritionProfi
 
     return VirtualNutritionProfile(
         age_months=age_months,
+        gender=raw.get("gender"),
+        sex=raw.get("sex"),
+        life_stage=raw.get("life_stage"),
         nutrition_goal=raw.get("nutrition_goal"),
         custom_nutrition_goal=raw.get("custom_nutrition_goal"),
         allergies=allergies,
         custom_allergies=custom_allergies,
         restrictions=restrictions,
         custom_restrictions=custom_restrictions,
+        typed_safety_profile=raw.get("typed_safety_profile") or [],
+        typed_medical_context=raw.get("typed_medical_context") or [],
         favorite_foods=raw.get("favorite_foods") or "",
         disliked_foods=raw.get("disliked_foods") or "",
         notes=raw.get("notes") or "",

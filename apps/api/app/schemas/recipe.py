@@ -55,6 +55,9 @@ class NutritionSummary(BaseModel):
     servings: float | None = None
     serving_size_text: str | None = None
     confidence: Literal["exact", "estimated", "low_confidence", "unavailable"] | None = None
+    source: str | None = None
+    source_kind: str | None = None
+    provenance: dict | None = None
     needs_review: bool = False
     review_reason: str | None = None
     calculated_at: datetime | None = None

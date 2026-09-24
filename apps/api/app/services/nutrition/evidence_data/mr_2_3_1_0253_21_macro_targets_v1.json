@@ -1,0 +1,672 @@
+{
+  "dataset_id": "PLANAM-MR-0253-21-MACRO-TARGETS-v1",
+  "source_id": "SRC-RU-MR-0253-21",
+  "source_version": "MR-2.3.1.0253-21@2021-07-22",
+  "status": "verified_for_P0_A2",
+  "scope": {
+    "included": [
+      "adults_18_plus",
+      "children_1_to_17",
+      "pregnancy_lactation_adjustments",
+      "energy_protein_fat_carbs",
+      "adult_fiber_range"
+    ],
+    "excluded": [
+      "infants_0_to_11_months",
+      "clinical_disease_targets",
+      "weight_loss_gain_sport_modifiers",
+      "micronutrients"
+    ]
+  },
+  "rules": {
+    "no_inference": true,
+    "missing_required_input": "insufficient_data",
+    "infant_scope": "unsupported_scope",
+    "adult_age_bands": [
+      "18-29",
+      "30-44",
+      "45-64",
+      "65-74",
+      "75+"
+    ],
+    "child_age_bands": [
+      "1-2",
+      "3-6",
+      "7-10",
+      "11-14",
+      "15-17"
+    ],
+    "adult_activity_groups": {
+      "kfa_1_4": 1.4,
+      "kfa_1_6": 1.6,
+      "kfa_1_9": 1.9,
+      "kfa_2_2": 2.2,
+      "kfa_1_7_desired": 1.7
+    },
+    "activity_mapping_from_planam_activity_level": "DO_NOT_INFER_WITHOUT_EXPLICIT_PRODUCT_MAPPING",
+    "far_north_adjustment": {
+      "supported_in_source": true,
+      "energy_and_macros_multiplier": 1.15,
+      "implementation_v1": "DO_NOT_APPLY_UNLESS_PROFILE_HAS_EXPLICIT_EVIDENCE_BACKED_FLAG"
+    }
+  },
+  "adult_rows": [
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "18-29",
+      "physical_activity_group": "kfa_1_4",
+      "targets": {
+        "energy_kcal": 2400,
+        "protein_g": 84,
+        "fat_g": 80,
+        "carbs_g": 336,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "30-44",
+      "physical_activity_group": "kfa_1_4",
+      "targets": {
+        "energy_kcal": 2300,
+        "protein_g": 81,
+        "fat_g": 77,
+        "carbs_g": 322,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "45-64",
+      "physical_activity_group": "kfa_1_4",
+      "targets": {
+        "energy_kcal": 2150,
+        "protein_g": 75,
+        "fat_g": 72,
+        "carbs_g": 301,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "18-29",
+      "physical_activity_group": "kfa_1_6",
+      "targets": {
+        "energy_kcal": 2750,
+        "protein_g": 89,
+        "fat_g": 92,
+        "carbs_g": 392,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "30-44",
+      "physical_activity_group": "kfa_1_6",
+      "targets": {
+        "energy_kcal": 2650,
+        "protein_g": 86,
+        "fat_g": 88,
+        "carbs_g": 378,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "45-64",
+      "physical_activity_group": "kfa_1_6",
+      "targets": {
+        "energy_kcal": 2450,
+        "protein_g": 80,
+        "fat_g": 82,
+        "carbs_g": 349,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "18-29",
+      "physical_activity_group": "kfa_1_9",
+      "targets": {
+        "energy_kcal": 3250,
+        "protein_g": 102,
+        "fat_g": 108,
+        "carbs_g": 467,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "30-44",
+      "physical_activity_group": "kfa_1_9",
+      "targets": {
+        "energy_kcal": 3150,
+        "protein_g": 98,
+        "fat_g": 105,
+        "carbs_g": 453,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "45-64",
+      "physical_activity_group": "kfa_1_9",
+      "targets": {
+        "energy_kcal": 2900,
+        "protein_g": 91,
+        "fat_g": 97,
+        "carbs_g": 417,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "18-29",
+      "physical_activity_group": "kfa_2_2",
+      "targets": {
+        "energy_kcal": 3800,
+        "protein_g": 114,
+        "fat_g": 127,
+        "carbs_g": 551,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "30-44",
+      "physical_activity_group": "kfa_2_2",
+      "targets": {
+        "energy_kcal": 3650,
+        "protein_g": 110,
+        "fat_g": 122,
+        "carbs_g": 529,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "45-64",
+      "physical_activity_group": "kfa_2_2",
+      "targets": {
+        "energy_kcal": 3400,
+        "protein_g": 102,
+        "fat_g": 113,
+        "carbs_g": 493,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "65-74",
+      "physical_activity_group": "kfa_1_7_desired",
+      "targets": {
+        "energy_kcal": 2400,
+        "protein_g": 84,
+        "fat_g": 80,
+        "carbs_g": 336,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "male",
+      "age_band_years": "75+",
+      "physical_activity_group": "kfa_1_7_desired",
+      "targets": {
+        "energy_kcal": 2300,
+        "protein_g": 81,
+        "fat_g": 77,
+        "carbs_g": 322,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 9
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "18-29",
+      "physical_activity_group": "kfa_1_4",
+      "targets": {
+        "energy_kcal": 1900,
+        "protein_g": 67,
+        "fat_g": 63,
+        "carbs_g": 266,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "30-44",
+      "physical_activity_group": "kfa_1_4",
+      "targets": {
+        "energy_kcal": 1800,
+        "protein_g": 63,
+        "fat_g": 60,
+        "carbs_g": 252,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "45-64",
+      "physical_activity_group": "kfa_1_4",
+      "targets": {
+        "energy_kcal": 1700,
+        "protein_g": 60,
+        "fat_g": 57,
+        "carbs_g": 238,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "18-29",
+      "physical_activity_group": "kfa_1_6",
+      "targets": {
+        "energy_kcal": 2200,
+        "protein_g": 72,
+        "fat_g": 73,
+        "carbs_g": 314,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "30-44",
+      "physical_activity_group": "kfa_1_6",
+      "targets": {
+        "energy_kcal": 2100,
+        "protein_g": 68,
+        "fat_g": 70,
+        "carbs_g": 299,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "45-64",
+      "physical_activity_group": "kfa_1_6",
+      "targets": {
+        "energy_kcal": 1950,
+        "protein_g": 63,
+        "fat_g": 65,
+        "carbs_g": 278,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "18-29",
+      "physical_activity_group": "kfa_1_9",
+      "targets": {
+        "energy_kcal": 2600,
+        "protein_g": 81,
+        "fat_g": 87,
+        "carbs_g": 374,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "30-44",
+      "physical_activity_group": "kfa_1_9",
+      "targets": {
+        "energy_kcal": 2500,
+        "protein_g": 78,
+        "fat_g": 83,
+        "carbs_g": 359,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "45-64",
+      "physical_activity_group": "kfa_1_9",
+      "targets": {
+        "energy_kcal": 2300,
+        "protein_g": 72,
+        "fat_g": 77,
+        "carbs_g": 331,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "18-29",
+      "physical_activity_group": "kfa_2_2",
+      "targets": {
+        "energy_kcal": 3000,
+        "protein_g": 90,
+        "fat_g": 100,
+        "carbs_g": 435,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "30-44",
+      "physical_activity_group": "kfa_2_2",
+      "targets": {
+        "energy_kcal": 2850,
+        "protein_g": 86,
+        "fat_g": 95,
+        "carbs_g": 413,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "45-64",
+      "physical_activity_group": "kfa_2_2",
+      "targets": {
+        "energy_kcal": 2700,
+        "protein_g": 81,
+        "fat_g": 90,
+        "carbs_g": 392,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "65-74",
+      "physical_activity_group": "kfa_1_7_desired",
+      "targets": {
+        "energy_kcal": 1900,
+        "protein_g": 67,
+        "fat_g": 63,
+        "carbs_g": 266,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    },
+    {
+      "population": "adult",
+      "sex": "female",
+      "age_band_years": "75+",
+      "physical_activity_group": "kfa_1_7_desired",
+      "targets": {
+        "energy_kcal": 1800,
+        "protein_g": 63,
+        "fat_g": 60,
+        "carbs_g": 252,
+        "fiber_g_range": [
+          20,
+          25
+        ]
+      },
+      "source_table": 14
+    }
+  ],
+  "child_rows": [
+    {
+      "population": "child",
+      "sex": "any",
+      "age_band_years": "1-2",
+      "physical_activity_group": null,
+      "targets": {
+        "energy_kcal": 1300,
+        "protein_g": 39,
+        "fat_g": 44,
+        "carbs_g": 188
+      },
+      "source_table": 22
+    },
+    {
+      "population": "child",
+      "sex": "any",
+      "age_band_years": "3-6",
+      "physical_activity_group": null,
+      "targets": {
+        "energy_kcal": 1800,
+        "protein_g": 54,
+        "fat_g": 60,
+        "carbs_g": 261
+      },
+      "source_table": 22
+    },
+    {
+      "population": "child",
+      "sex": "any",
+      "age_band_years": "7-10",
+      "physical_activity_group": null,
+      "targets": {
+        "energy_kcal": 2100,
+        "protein_g": 63,
+        "fat_g": 70,
+        "carbs_g": 305
+      },
+      "source_table": 22
+    },
+    {
+      "population": "child",
+      "sex": "male",
+      "age_band_years": "11-14",
+      "physical_activity_group": null,
+      "targets": {
+        "energy_kcal": 2500,
+        "protein_g": 75,
+        "fat_g": 83,
+        "carbs_g": 365
+      },
+      "source_table": 22
+    },
+    {
+      "population": "child",
+      "sex": "female",
+      "age_band_years": "11-14",
+      "physical_activity_group": null,
+      "targets": {
+        "energy_kcal": 2300,
+        "protein_g": 69,
+        "fat_g": 77,
+        "carbs_g": 334
+      },
+      "source_table": 22
+    },
+    {
+      "population": "child",
+      "sex": "male",
+      "age_band_years": "15-17",
+      "physical_activity_group": null,
+      "targets": {
+        "energy_kcal": 2900,
+        "protein_g": 87,
+        "fat_g": 97,
+        "carbs_g": 421
+      },
+      "source_table": 22
+    },
+    {
+      "population": "child",
+      "sex": "female",
+      "age_band_years": "15-17",
+      "physical_activity_group": null,
+      "targets": {
+        "energy_kcal": 2500,
+        "protein_g": 75,
+        "fat_g": 83,
+        "carbs_g": 363
+      },
+      "source_table": 22
+    }
+  ],
+  "life_stage_adjustments": [
+    {
+      "life_stage": "pregnancy_trimester_1",
+      "energy_kcal_add": 0,
+      "protein_g_add": 0,
+      "fat_g_add": 0,
+      "carbs_g_add": 0,
+      "source_table": 19
+    },
+    {
+      "life_stage": "pregnancy_trimester_2",
+      "energy_kcal_add": 250,
+      "protein_g_add": 10,
+      "fat_g_add": 10,
+      "carbs_g_add": 30,
+      "source_table": 19
+    },
+    {
+      "life_stage": "pregnancy_trimester_3",
+      "energy_kcal_add": 350,
+      "protein_g_add": 30,
+      "fat_g_add": 12,
+      "carbs_g_add": 30,
+      "source_table": 19
+    },
+    {
+      "life_stage": "lactation_months_1_6",
+      "energy_kcal_add": 500,
+      "protein_g_add": 40,
+      "fat_g_add": 15,
+      "carbs_g_add": 50,
+      "source_table": 19
+    },
+    {
+      "life_stage": "lactation_months_7_12",
+      "energy_kcal_add": 450,
+      "protein_g_add": 30,
+      "fat_g_add": 15,
+      "carbs_g_add": 50,
+      "source_table": 19
+    }
+  ],
+  "source_notes": [
+    "Adult tables contain activity-dependent rows for ages 18-64; ages 65+ are presented under desired KFA 1.7.",
+    "Child table uses sex-specific values from 11 years onward.",
+    "For children under 1 year, the source uses per-kg values; P0-A2 v1 must return unsupported_scope rather than fall back to adult or 1-2 year values.",
+    "Adult dietary fiber in the macro tables is 20-25 g/day; store as a range, do not silently collapse to a single value."
+  ]
+}

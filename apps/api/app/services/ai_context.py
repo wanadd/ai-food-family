@@ -19,11 +19,14 @@ from app.services.meal_leftovers import (
 from app.services.menu_context import build_menu_context
 from app.services.menu_context import MenuGenerationContext
 from app.nutrition.restriction_safety import filter_recipes_for_profile
+from app.nutrition.medical_safety import format_medical_context
 from app.services.onboarding import get_or_create_profile
 from app.services.pantry import format_leftovers_for_prompt, get_active_items_for_scope
 from app.services.recipe_storage import get_structured_ingredients
 from app.services.menu_selection import get_selected_menu
 from app.services.progress import user_has_pro
+from app.services.member_age import format_age_resolution_ru, resolve_age_for_profile
+from app.nutrition.allergen_ontology import CONCEPT_LABEL_RU, typed_entries_from_profile
 
 
 @dataclass
@@ -142,6 +145,12 @@ def _profile_summary(profile) -> str:
     ]
     if profile.medical_restrictions:
         parts.append(f"мед. особенности: {profile.medical_restrictions}")
+    typed = _format_typed_safety_entries(typed_entries_from_profile(profile))
+    if typed:
+        parts.append(f"typed safety: {typed}")
+    medical = format_medical_context(profile)
+    if medical:
+        parts.append(f"typed medical context: {medical}")
     if profile.favorite_foods:
         parts.append(f"любит: {profile.favorite_foods}")
     disliked = ", ".join(
@@ -149,13 +158,32 @@ def _profile_summary(profile) -> str:
     )
     if disliked:
         parts.append(f"не любит/запрещено: {disliked}")
-    if profile.age:
-        parts.append(f"возраст: {profile.age}")
+    age_resolution = resolve_age_for_profile(profile)
+    if age_resolution.age_source != "none":
+        parts.append(f"возраст: {format_age_resolution_ru(age_resolution)}")
+        parts.append(
+            f"age_scope: {age_resolution.population_scope}, "
+            f"age_band: {age_resolution.age_band or 'unknown'}, "
+            f"age_status: {age_resolution.resolution_status}"
+        )
+        if age_resolution.is_infant:
+            parts.append(
+                "infant_scope=true; обычное семейное меню не является "
+                "infant-specific рекомендацией"
+            )
     if profile.budget:
         parts.append(f"бюджет: {profile.budget}")
     if profile.cooking_time:
         parts.append(f"время готовки: {profile.cooking_time}")
     return "; ".join(parts)
+
+
+def _format_typed_safety_entries(entries) -> str:
+    parts = []
+    for entry in entries:
+        label = CONCEPT_LABEL_RU.get(entry.concept_id, entry.concept_id)
+        parts.append(f"{entry.kind}:{label}({entry.origin})")
+    return ", ".join(parts)
 
 
 def context_to_json_block(ctx: AiUserContext) -> str:

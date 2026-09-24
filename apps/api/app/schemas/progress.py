@@ -1,10 +1,15 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 IntensityLevel = Literal["low", "medium", "high"]
 MemberProgressStatus = Literal["improving", "stable", "attention", "hidden"]
+TargetOrigin = Literal["evidence_auto", "manual", "clinician", "legacy"]
+ProvenanceStatus = Literal["unreviewed", "valid", "verified", "invalid", "needs_review"]
+NutritionTargetsAvailability = Literal[
+    "resolved", "insufficient_data", "unsupported_scope", "ambiguous_input"
+]
 
 
 class ProgressEntryCreate(BaseModel):
@@ -62,8 +67,19 @@ class NutritionTargetsResponse(BaseModel):
     fat_target_g: int | None
     carbs_target_g: int | None
     fiber_target_g: int | None
+    fiber_target_g_range: tuple[int, int] | None = None
     water_target_ml: int | None
     goal_type: str | None
+    resolution_status: NutritionTargetsAvailability = "resolved"
+    resolution_reason: str | None = None
+    target_origin: TargetOrigin = "legacy"
+    provenance_status: ProvenanceStatus = "unreviewed"
+    evidence_id: str | None = None
+    source_id: str | None = None
+    source_version: str | None = None
+    calculation_method: str | None = None
+    calculation_inputs_json: dict | None = None
+    calculated_at: datetime | None = None
 
 
 class NutritionTargetsUpdate(BaseModel):
@@ -74,6 +90,13 @@ class NutritionTargetsUpdate(BaseModel):
     fiber_target_g: int | None = None
     water_target_ml: int | None = None
     goal_type: str | None = None
+    target_origin: Literal["manual", "clinician"] | None = None
+
+    @model_validator(mode="after")
+    def validate_origin(self) -> "NutritionTargetsUpdate":
+        if self.target_origin == "evidence_auto":
+            raise ValueError("Manual API updates cannot create evidence_auto targets")
+        return self
 
 
 class ProgressSettingsUpdate(BaseModel):

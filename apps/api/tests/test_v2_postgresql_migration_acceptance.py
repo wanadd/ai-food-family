@@ -1,0 +1,414 @@
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+import pytest
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+
+from app.core.legacy_mapping import map_legacy_core_identities
+from app.core.models import CoreAccount, CoreHousehold, CoreMembership, CorePerson, LegacyIdMapping
+from app.food.profile_migration import migrate_legacy_food_profiles
+from app.food.profile_models import FoodProfile, FoodProfileFact, FoodProfileReconfirmation
+from app.models.family import Family, FamilyMember, FamilyRole
+from app.models.user import User
+from app.models.user_profile import UserProfile
+
+API_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _acceptance_url() -> str:
+    url = os.getenv("PLANAM_V2_POSTGRES_ACCEPTANCE_URL")
+    if not url:
+        pytest.skip("PLANAM_V2_POSTGRES_ACCEPTANCE_URL is not configured")
+    return url
+
+
+def _reset_public_schema(url: str) -> None:
+    engine = create_engine(url, isolation_level="AUTOCOMMIT")
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
+            connection.execute(text("CREATE SCHEMA public"))
+    finally:
+        engine.dispose()
+
+
+def _run_alembic(url: str) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env["ALEMBIC_DATABASE_URL"] = url
+    env["DATABASE_URL"] = url
+    return subprocess.run(
+        [sys.executable, "-m", "alembic", "-c", "alembic.ini", "upgrade", "head"],
+        cwd=API_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def _assert_alembic_head(url: str) -> None:
+    engine = create_engine(url)
+    try:
+        with engine.connect() as connection:
+            revision = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+    finally:
+        engine.dispose()
+
+    assert revision == "20260924_0010"
+
+
+def test_v2_baseline_real_postgresql_acceptance():
+    url = _acceptance_url()
+    _reset_public_schema(url)
+    migrated = _run_alembic(url)
+    assert migrated.returncode == 0, migrated.stderr
+
+    engine = create_engine(url)
+    person_a = "01992222-2222-7222-8222-222222222222"
+    person_b = "01992222-2222-7222-8222-333333333333"
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("INSERT INTO core_persons (person_id, birth_date_precision) VALUES (:id, 'unknown'), (:other, 'unknown')"),
+                {"id": person_a, "other": person_b},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO nutrition_target_versions "
+                    "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                    "VALUES (:id, :person, 'calories', 'default', :start, :end, 'MANUAL')"
+                ),
+                {"id": "01992222-2222-7222-8222-444444444444", "person": person_a, "start": "2026-01-01T00:00:00Z", "end": "2026-01-10T00:00:00Z"},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO nutrition_target_versions "
+                    "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                    "VALUES (:id, :person, 'calories', 'default', :start, :end, 'MANUAL')"
+                ),
+                {"id": "01992222-2222-7222-8222-555555555555", "person": person_a, "start": "2026-01-10T00:00:00Z", "end": "2026-01-20T00:00:00Z"},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO nutrition_target_versions "
+                    "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                    "VALUES (:id, :person, 'calories', 'default', :start, NULL, 'MANUAL')"
+                ),
+                {"id": "01992222-2222-7222-8222-666666666666", "person": person_b, "start": "2026-01-01T00:00:00Z"},
+            )
+        with pytest.raises(Exception):
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "INSERT INTO nutrition_target_versions "
+                        "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                        "VALUES (:id, :person, 'calories', 'default', :start, :end, 'MANUAL')"
+                    ),
+                    {"id": "01992222-2222-7222-8222-777777777777", "person": person_a, "start": "2026-01-05T00:00:00Z", "end": "2026-01-06T00:00:00Z"},
+                )
+        with pytest.raises(Exception):
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "INSERT INTO nutrition_target_versions "
+                        "(target_id, person_id, target_kind, context_key, effective_from, effective_to, origin) "
+                        "VALUES (:id, :person, 'calories', 'default', :start, NULL, 'MANUAL')"
+                    ),
+                    {"id": "01992222-2222-7222-8222-888888888888", "person": person_b, "start": "2026-01-10T00:00:00Z"},
+                )
+    finally:
+        engine.dispose()
+
+    engine = create_engine(url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("CREATE TABLE wave01_sentinel (id INTEGER PRIMARY KEY, label TEXT NOT NULL)"))
+            connection.execute(text("INSERT INTO wave01_sentinel (id, label) VALUES (1, 'preserve')"))
+    finally:
+        engine.dispose()
+
+    repeat = _run_alembic(url)
+    assert repeat.returncode == 0, repeat.stderr
+
+    engine = create_engine(url)
+    try:
+        with engine.connect() as connection:
+            preserved = connection.execute(text("SELECT label FROM wave01_sentinel WHERE id = 1")).scalar_one()
+            tables = set(
+                connection.execute(
+                    text(
+                        "SELECT table_name FROM information_schema.tables "
+                        "WHERE table_schema = 'public'"
+                    )
+                ).scalars()
+            )
+    finally:
+        engine.dispose()
+
+    assert preserved == "preserve"
+    assert {
+        "alembic_version",
+        "wave01_sentinel",
+        "core_accounts",
+        "core_auth_identities",
+        "core_persons",
+        "core_households",
+        "core_memberships",
+        "core_person_relationships",
+        "core_permission_grants",
+        "legacy_id_mappings",
+        "food_profiles",
+        "food_profile_facts",
+        "food_profile_reconfirmations",
+        "evidence_sources",
+        "source_snapshots",
+        "evidence_records",
+        "evidence_claims",
+        "evidence_applicability",
+        "food_aliases",
+        "food_composition_facts",
+        "food_evidence_fact_links",
+        "product_label_facts",
+        "nutrition_target_versions",
+        "recipes_v2",
+        "recipe_versions",
+        "recipe_ingredients_v2",
+        "recipe_steps_v2",
+        "recipe_media_assets",
+        "recipe_version_media",
+        "recipe_legacy_mappings",
+        "recipe_archive_fallbacks",
+        "recipe_validation_runs",
+        "plans_v2",
+        "plan_revisions",
+        "plan_slots",
+        "plan_slot_participants",
+        "plan_slot_portions",
+        "plan_legacy_mappings",
+        "shopping_lists_v2",
+        "shopping_demands",
+        "shopping_list_items_v2",
+        "purchase_events_v2",
+        "pantry_inventory_v2",
+        "pantry_movements_v2",
+        "receipt_documents_v2",
+        "receipt_proposals_v2",
+        "receipt_lines_v2",
+        "cooking_batches_v2",
+        "cooking_events_v2",
+        "cooking_substitutions_v2",
+        "consumption_events_v2",
+        "consumption_items_v2",
+        "cooking_pantry_deductions_v2",
+        "health_projections_v2",
+        "health_deviations_v2",
+        "notification_intents_v2",
+        "notification_deliveries_v2",
+        "entitlement_grants_v2",
+        "entitlement_consumptions_v2",
+        "durable_jobs_v2",
+        "outbox_events_v2",
+    } <= tables
+    assert "food_identities" not in tables
+    _reset_public_schema(url)
+    first = subprocess.Popen(
+        [sys.executable, "-m", "alembic", "-c", "alembic.ini", "upgrade", "head"],
+        cwd=API_ROOT,
+        env={**os.environ, "ALEMBIC_DATABASE_URL": url, "DATABASE_URL": url},
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    second = subprocess.Popen(
+        [sys.executable, "-m", "alembic", "-c", "alembic.ini", "upgrade", "head"],
+        cwd=API_ROOT,
+        env={**os.environ, "ALEMBIC_DATABASE_URL": url, "DATABASE_URL": url},
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    first_stdout, first_stderr = first.communicate(timeout=30)
+    second_stdout, second_stderr = second.communicate(timeout=30)
+
+    assert first.returncode == 0, first_stderr or first_stdout
+    assert second.returncode == 0, second_stderr or second_stdout
+    _assert_alembic_head(url)
+
+    engine = create_engine(url)
+    try:
+        connection = engine.connect()
+        transaction = connection.begin()
+        try:
+            with pytest.raises(Exception):
+                connection.execute(text("SELECT * FROM definitely_missing_wave01_table"))
+            with pytest.raises(Exception):
+                connection.execute(text("SELECT 1"))
+        finally:
+            transaction.rollback()
+            connection.close()
+    finally:
+        engine.dispose()
+
+    after_abort = _run_alembic(url)
+    assert after_abort.returncode == 0, after_abort.stderr
+    _assert_alembic_head(url)
+
+
+def test_wave_02_real_postgresql_legacy_mapping_acceptance():
+    url = _acceptance_url()
+    _reset_public_schema(url)
+
+    migrated = _run_alembic(url)
+    assert migrated.returncode == 0, migrated.stderr
+    _assert_alembic_head(url)
+
+    engine = create_engine(url)
+    try:
+        User.__table__.create(engine)
+        Family.__table__.create(engine)
+        FamilyMember.__table__.create(engine)
+        UserProfile.__table__.create(engine)
+        SessionLocal = sessionmaker(bind=engine)
+
+        with SessionLocal() as db:
+            user = User(telegram_id=222001, username="pg_owner", first_name="PG")
+            family = Family(name="PG Household")
+            db.add_all([user, family])
+            db.flush()
+            db.add_all(
+                [
+                    FamilyMember(
+                        family_id=family.id,
+                        user_id=user.id,
+                        display_name="PG Owner",
+                        role=FamilyRole.ADMIN.value,
+                        is_virtual=False,
+                    ),
+                    FamilyMember(
+                        family_id=family.id,
+                        user_id=None,
+                        display_name="PG Child",
+                        role=FamilyRole.CHILD.value,
+                        is_virtual=True,
+                        virtual_kind="child",
+                        nutrition_profile={"age_months": 84},
+                    ),
+                ]
+            )
+            db.commit()
+            db.add(
+                UserProfile(
+                    user_id=user.id,
+                    allergies=["peanut"],
+                    diets=[],
+                    restrictions=["lactose_intolerance"],
+                    typed_safety_profile=[{"kind": "allergy", "concept_id": "fish"}],
+                    medical_restrictions="Needs review",
+                    age=40,
+                )
+            )
+            db.commit()
+
+        with SessionLocal() as db:
+            first = map_legacy_core_identities(db)
+            first_counts = (
+                db.query(CoreAccount).count(),
+                db.query(CorePerson).count(),
+                db.query(CoreHousehold).count(),
+                db.query(CoreMembership).count(),
+                db.query(LegacyIdMapping).count(),
+            )
+
+        with SessionLocal() as db:
+            second = map_legacy_core_identities(db)
+            second_counts = (
+                db.query(CoreAccount).count(),
+                db.query(CorePerson).count(),
+                db.query(CoreHousehold).count(),
+                db.query(CoreMembership).count(),
+                db.query(LegacyIdMapping).count(),
+            )
+
+        def run_mapping() -> dict:
+            with SessionLocal() as db:
+                return map_legacy_core_identities(db).as_dict()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            concurrent_reports = list(executor.map(lambda _: run_mapping(), range(2)))
+
+        with SessionLocal() as db:
+            final_counts = (
+                db.query(CoreAccount).count(),
+                db.query(CorePerson).count(),
+                db.query(CoreHousehold).count(),
+                db.query(CoreMembership).count(),
+                db.query(LegacyIdMapping).count(),
+            )
+            child = db.query(CorePerson).filter(CorePerson.display_name == "PG Child").one()
+            child_accounts = db.query(CoreAccount).filter(CoreAccount.primary_person_id == child.person_id).count()
+
+        assert first.accounts_created == 1
+        assert first.persons_created == 2
+        assert first.households_created == 1
+        assert first.memberships_created == 2
+        assert second.accounts_created == 0
+        assert second.persons_created == 0
+        assert second.households_created == 0
+        assert second.memberships_created == 0
+        assert first_counts == second_counts == final_counts
+        assert all(report["accounts_created"] == 0 for report in concurrent_reports)
+        assert child.birth_date is None
+        assert child.birth_date_precision == "unknown"
+        assert child_accounts == 0
+
+        with SessionLocal() as db:
+            first_food = migrate_legacy_food_profiles(db)
+            first_food_counts = (
+                db.query(FoodProfile).count(),
+                db.query(FoodProfileFact).count(),
+                db.query(FoodProfileReconfirmation).count(),
+            )
+
+        with SessionLocal() as db:
+            second_food = migrate_legacy_food_profiles(db)
+            second_food_counts = (
+                db.query(FoodProfile).count(),
+                db.query(FoodProfileFact).count(),
+                db.query(FoodProfileReconfirmation).count(),
+            )
+
+        def run_food_mapping() -> dict:
+            with SessionLocal() as db:
+                return migrate_legacy_food_profiles(db).as_dict()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            food_concurrent_reports = list(executor.map(lambda _: run_food_mapping(), range(2)))
+
+        with SessionLocal() as db:
+            final_food_counts = (
+                db.query(FoodProfile).count(),
+                db.query(FoodProfileFact).count(),
+                db.query(FoodProfileReconfirmation).count(),
+            )
+            allergy = db.query(FoodProfileFact).filter_by(fact_type="allergy", fact_key="peanut").one()
+            age_reconfirmation_count = db.query(FoodProfileReconfirmation).filter_by(
+                fact_type="age_context",
+                reason="legacy_age_not_core_birth_date",
+            ).count()
+
+        assert first_food.food_profiles_created == 2
+        assert second_food.food_profiles_created == 0
+        assert second_food.facts_created == 0
+        assert second_food.reconfirmations_created == 0
+        assert first_food_counts == second_food_counts == final_food_counts
+        assert all(report["food_profiles_created"] == 0 for report in food_concurrent_reports)
+        assert allergy.knowledge_state == "KNOWN_PRESENT"
+        assert age_reconfirmation_count >= 1
+    finally:
+        engine.dispose()

@@ -9,12 +9,17 @@ class VirtualNutritionProfile(BaseModel):
     """Stored in family_members.nutrition_profile JSON."""
 
     age_months: int | None = Field(default=None, ge=0, le=MAX_AGE_MONTHS)
+    gender: str | None = None
+    sex: str | None = None
+    life_stage: str | None = None
     nutrition_goal: str | None = None
     custom_nutrition_goal: str | None = Field(default=None, max_length=200)
     allergies: list[str] = Field(default_factory=list)
     custom_allergies: list[str] = Field(default_factory=list)
     restrictions: list[str] = Field(default_factory=list)
     custom_restrictions: list[str] = Field(default_factory=list)
+    typed_safety_profile: list[dict] = Field(default_factory=list)
+    typed_medical_context: list[dict] = Field(default_factory=list)
     favorite_foods: str = ""
     disliked_foods: str = ""
     notes: str = ""

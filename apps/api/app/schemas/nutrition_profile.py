@@ -16,13 +16,18 @@ class NutritionProData(BaseModel):
 
 class NutritionProfileData(BaseModel):
     age: int | None = Field(default=None, ge=1, le=120)
+    age_months: int | None = Field(default=None, ge=0, le=130 * 12)
     gender: str | None = None
     height_cm: int | None = Field(default=None, ge=50, le=250)
     weight_kg: float | None = Field(default=None, ge=20, le=300)
     nutrition_goal: str | None = None
     activity_level: str | None = None
+    physical_activity_group: str | None = None
+    life_stage: str | None = None
     allergies: list[str] = Field(default_factory=list)
     restrictions: list[str] = Field(default_factory=list)
+    typed_safety_profile: list[dict] = Field(default_factory=list)
+    typed_medical_context: list[dict] = Field(default_factory=list)
     medical_restrictions: str = ""
     banned_foods: str = ""
     diets: list[str] = Field(default_factory=list)

@@ -2,9 +2,80 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 
 from sqlalchemy import Connection, Engine, text
+
+# Schema authority is intentionally explicit. New shared-Base registrations must
+# not silently become CREATE_ALL-owned tables.
+M1_CUSTOM_TABLES: frozenset[str] = frozenset(
+    {
+        "food_identities",
+        "food_safety_facts",
+        "packaged_products",
+        "product_instances",
+        "derived_decisions",
+    }
+)
+
+# These tables have no current shared-Base owner and remain custom-SQL-owned.
+CUSTOM_SQL_TABLES: frozenset[str] = M1_CUSTOM_TABLES | frozenset(
+    {"deferred_nutrition_advice", "water_intake_logs"}
+)
+
+# Positive allowlist for the legacy tables owned by SQLAlchemy create_all.
+CREATE_ALL_TABLES: frozenset[str] = frozenset(
+    {
+        "admin_actions",
+        "admin_error_logs",
+        "admin_login_attempts",
+        "admin_sessions",
+        "ai_usage_logs",
+        "ama_transactions",
+        "ama_wallets",
+        "care_events",
+        "care_notifications",
+        "care_settings",
+        "cooking_batch_events",
+        "cooking_batches",
+        "event_plans",
+        "external_food_logs",
+        "families",
+        "family_invites",
+        "family_members",
+        "family_menu_selections",
+        "family_pantry_items",
+        "family_shopping_lists",
+        "food_matches",
+        "food_nutrient_facts",
+        "meal_checkins",
+        "meal_consumption_logs",
+        "meal_consumption_reminder_events",
+        "meal_eating_schedules",
+        "meal_leftovers",
+        "nutrition_targets",
+        "progress_entries",
+        "recipe_allergens",
+        "recipe_favorites",
+        "recipe_ingredients",
+        "recipe_import_jobs",
+        "recipe_ratings",
+        "recipe_restrictions",
+        "recipe_steps",
+        "recipe_tags",
+        "recipes",
+        "shopping_categories",
+        "subscription_plans",
+        "telegram_bot_sessions",
+        "training_entries",
+        "user_notification_settings",
+        "user_preferences",
+        "user_profiles",
+        "user_subscriptions",
+        "users",
+    }
+)
 
 # Recipe Engine v1 tables are created only via SQL below (not SQLAlchemy create_all).
 RECIPE_ENGINE_TABLES: frozenset[str] = frozenset(
@@ -17,6 +88,15 @@ RECIPE_ENGINE_TABLES: frozenset[str] = frozenset(
         "recipe_explanations",
     }
 )
+
+LEGACY_PREREQUISITE_TABLES: frozenset[str] = frozenset({"users", "families"})
+
+if CREATE_ALL_TABLES & CUSTOM_SQL_TABLES:
+    raise RuntimeError("schema authority sets overlap: CREATE_ALL and custom SQL")
+if CREATE_ALL_TABLES & RECIPE_ENGINE_TABLES:
+    raise RuntimeError("schema authority sets overlap: CREATE_ALL and Recipe Engine")
+if CUSTOM_SQL_TABLES & RECIPE_ENGINE_TABLES:
+    raise RuntimeError("schema authority sets overlap: custom SQL and Recipe Engine")
 
 # Stable advisory lock id for multi-worker startup (uvicorn --workers N).
 SCHEMA_ADVISORY_LOCK_ID = 739_284_651
@@ -40,6 +120,315 @@ def _create_table_if_missing(table_name: str, create_sql: str) -> str:
             END IF;
         END $$;
         """
+
+
+def _p0_data_schema_01d_m1_statements() -> list[str]:
+    """Return the first additive P0 evidence schema slice.
+
+    This slice is intentionally limited to new reference/evidence tables. It
+    does not alter existing tables, backfill data, or change runtime models.
+    """
+    return [
+        _create_table_if_missing(
+            "food_identities",
+            """
+            CREATE TABLE food_identities (
+                id SERIAL PRIMARY KEY,
+                canonical_key VARCHAR(160) NOT NULL,
+                canonical_name VARCHAR(200) NOT NULL,
+                food_class VARCHAR(64),
+                default_state VARCHAR(32),
+                status VARCHAR(24) NOT NULL DEFAULT 'review',
+                source_id VARCHAR(64),
+                source_version VARCHAR(128),
+                source_record_locator VARCHAR(512),
+                provenance_status VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                confidence VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                review_status VARCHAR(32) NOT NULL DEFAULT 'needs_review',
+                reviewed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                reviewed_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uq_food_identities_canonical_key UNIQUE (canonical_key)
+            )
+            """,
+        ),
+        _create_table_if_missing(
+            "food_safety_facts",
+            """
+            CREATE TABLE food_safety_facts (
+                id SERIAL PRIMARY KEY,
+                food_identity_id INTEGER NOT NULL REFERENCES food_identities(id) ON DELETE CASCADE,
+                concept_id VARCHAR(64) NOT NULL,
+                relation_type VARCHAR(32) NOT NULL,
+                fact_status VARCHAR(24) NOT NULL DEFAULT 'unknown',
+                source_id VARCHAR(64),
+                source_version VARCHAR(128),
+                source_record_locator VARCHAR(512),
+                evidence_notes TEXT,
+                confidence VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                provenance_status VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                review_status VARCHAR(32) NOT NULL DEFAULT 'needs_review',
+                effective_from TIMESTAMPTZ,
+                effective_to TIMESTAMPTZ,
+                is_current BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uq_food_safety_fact_current UNIQUE (
+                    food_identity_id,
+                    concept_id,
+                    relation_type,
+                    source_id,
+                    source_version,
+                    source_record_locator
+                )
+            )
+            """,
+        ),
+        _create_table_if_missing(
+            "packaged_products",
+            """
+            CREATE TABLE packaged_products (
+                id SERIAL PRIMARY KEY,
+                gtin VARCHAR(32),
+                brand VARCHAR(160),
+                product_name VARCHAR(240) NOT NULL,
+                market VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                status VARCHAR(24) NOT NULL DEFAULT 'review',
+                label_ingredients_text TEXT,
+                contains_allergens_json JSONB,
+                may_contain_text TEXT,
+                cross_contact_text TEXT,
+                nutrition_panel_json JSONB,
+                verified_gf_status VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                pasteurization_status VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                rte_status VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                aspartame_status VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                source_id VARCHAR(64),
+                source_version VARCHAR(128),
+                source_record_locator VARCHAR(512),
+                provenance_status VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                review_status VARCHAR(32) NOT NULL DEFAULT 'needs_review',
+                captured_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uq_packaged_products_gtin_market UNIQUE (gtin, market)
+            )
+            """,
+        ),
+        _create_table_if_missing(
+            "product_instances",
+            """
+            CREATE TABLE product_instances (
+                id SERIAL PRIMARY KEY,
+                packaged_product_id INTEGER NOT NULL REFERENCES packaged_products(id) ON DELETE RESTRICT,
+                family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                quantity VARCHAR(80),
+                unit VARCHAR(32),
+                opened_at TIMESTAMPTZ,
+                expires_at DATE,
+                acquired_at TIMESTAMPTZ,
+                status VARCHAR(24) NOT NULL DEFAULT 'active',
+                observation_json JSONB,
+                source_id VARCHAR(64),
+                source_version VARCHAR(128),
+                source_record_locator VARCHAR(512),
+                provenance_status VARCHAR(32) NOT NULL DEFAULT 'unknown',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT ck_product_instances_owner CHECK (
+                    family_id IS NOT NULL OR user_id IS NOT NULL
+                )
+            )
+            """,
+        ),
+        _create_table_if_missing(
+            "derived_decisions",
+            """
+            CREATE TABLE derived_decisions (
+                id SERIAL PRIMARY KEY,
+                subject_type VARCHAR(32) NOT NULL,
+                subject_id INTEGER NOT NULL,
+                decision VARCHAR(16) NOT NULL,
+                reason_codes_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+                algorithm_version VARCHAR(64) NOT NULL,
+                profile_version VARCHAR(64),
+                input_snapshot_json JSONB NOT NULL,
+                input_snapshot_hash VARCHAR(128) NOT NULL,
+                evaluated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                is_current BOOLEAN NOT NULL DEFAULT TRUE,
+                superseded_by_id INTEGER REFERENCES derived_decisions(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uq_derived_decision_snapshot UNIQUE (
+                    subject_type,
+                    subject_id,
+                    algorithm_version,
+                    input_snapshot_hash
+                )
+            )
+            """,
+        ),
+        "CREATE INDEX IF NOT EXISTS ix_food_safety_identity_current ON food_safety_facts (food_identity_id, concept_id, relation_type, is_current)",
+        "CREATE INDEX IF NOT EXISTS ix_packaged_products_status_review ON packaged_products (status, review_status)",
+        "CREATE INDEX IF NOT EXISTS ix_product_instances_family_status ON product_instances (family_id, status, packaged_product_id)",
+        "CREATE INDEX IF NOT EXISTS ix_derived_decisions_subject_time ON derived_decisions (subject_type, subject_id, evaluated_at)",
+    ]
+
+
+def _p0_data_schema_01d_m2_statements() -> list[str]:
+    """Return the accepted M2 identity/source/provenance extensions only."""
+    return [
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS food_identity_id INTEGER",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'recipe_ingredients_food_identity_id_fkey'
+            ) THEN
+                ALTER TABLE recipe_ingredients
+                ADD CONSTRAINT recipe_ingredients_food_identity_id_fkey
+                FOREIGN KEY (food_identity_id) REFERENCES food_identities(id) ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """,
+        "ALTER TABLE food_matches ADD COLUMN IF NOT EXISTS food_identity_id INTEGER",
+        "ALTER TABLE food_matches ADD COLUMN IF NOT EXISTS source_version VARCHAR(64)",
+        "ALTER TABLE food_matches ADD COLUMN IF NOT EXISTS is_current BOOLEAN NOT NULL DEFAULT TRUE",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'food_matches_food_identity_id_fkey'
+            ) THEN
+                ALTER TABLE food_matches
+                ADD CONSTRAINT food_matches_food_identity_id_fkey
+                FOREIGN KEY (food_identity_id) REFERENCES food_identities(id) ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """,
+        "ALTER TABLE food_nutrient_facts ADD COLUMN IF NOT EXISTS food_identity_id INTEGER",
+        "ALTER TABLE food_nutrient_facts ADD COLUMN IF NOT EXISTS is_current BOOLEAN NOT NULL DEFAULT TRUE",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'food_nutrient_facts_food_identity_id_fkey'
+            ) THEN
+                ALTER TABLE food_nutrient_facts
+                ADD CONSTRAINT food_nutrient_facts_food_identity_id_fkey
+                FOREIGN KEY (food_identity_id) REFERENCES food_identities(id) ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """,
+        "ALTER TABLE family_pantry_items ADD COLUMN IF NOT EXISTS product_instance_id INTEGER",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'family_pantry_items_product_instance_id_fkey'
+            ) THEN
+                ALTER TABLE family_pantry_items
+                ADD CONSTRAINT family_pantry_items_product_instance_id_fkey
+                FOREIGN KEY (product_instance_id) REFERENCES product_instances(id) ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_food_matches_identity_current ON food_matches (food_identity_id, source_id, is_current)",
+        "CREATE INDEX IF NOT EXISTS ix_food_nutrients_identity_current ON food_nutrient_facts (food_identity_id, nutrient_key, is_current)",
+        "CREATE INDEX IF NOT EXISTS ix_pantry_product_instance ON family_pantry_items (product_instance_id)",
+    ]
+
+
+def _p0_data_schema_01d_m3_statements() -> list[str]:
+    """Return the accepted Slice 3 recipe and target-history extensions."""
+    return [
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS food_match_status VARCHAR(24)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS normalized_quantity NUMERIC",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS normalized_unit VARCHAR(32)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS quantity_conversion_status VARCHAR(24)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS quantity_conversion_provenance_json JSONB",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS mass_equivalent_g NUMERIC",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS expected_process_state VARCHAR(32)",
+        "ALTER TABLE recipe_ingredients ADD COLUMN IF NOT EXISTS expected_process_source VARCHAR(512)",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS effective_from TIMESTAMPTZ",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS effective_to TIMESTAMPTZ",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS supersedes_id INTEGER",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'nutrition_targets_supersedes_id_fkey'
+            ) THEN
+                ALTER TABLE nutrition_targets
+                ADD CONSTRAINT nutrition_targets_supersedes_id_fkey
+                FOREIGN KEY (supersedes_id) REFERENCES nutrition_targets(id) ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """,
+    ]
+
+
+def _p0_data_schema_01d_m4_statements() -> list[str]:
+    """Return the accepted Slice 4 cooking and consumption extensions."""
+    return [
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS completion_status VARCHAR(24)",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS process_confirmation_status VARCHAR(24)",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS process_evidence_json JSONB",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS substitution_status VARCHAR(24)",
+        "ALTER TABLE cooking_batches ADD COLUMN IF NOT EXISTS safety_review_status VARCHAR(24)",
+        "ALTER TABLE cooking_batch_events ADD COLUMN IF NOT EXISTS product_instance_id INTEGER",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'cooking_batch_events_product_instance_id_fkey'
+            ) THEN
+                ALTER TABLE cooking_batch_events
+                ADD CONSTRAINT cooking_batch_events_product_instance_id_fkey
+                FOREIGN KEY (product_instance_id) REFERENCES product_instances(id) ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """,
+        "ALTER TABLE cooking_batch_events ADD COLUMN IF NOT EXISTS recipe_ingredient_id INTEGER",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'cooking_batch_events_recipe_ingredient_id_fkey'
+            ) THEN
+                ALTER TABLE cooking_batch_events
+                ADD CONSTRAINT cooking_batch_events_recipe_ingredient_id_fkey
+                FOREIGN KEY (recipe_ingredient_id) REFERENCES recipe_ingredients(id) ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """,
+        "ALTER TABLE meal_consumption_logs ADD COLUMN IF NOT EXISTS cooking_batch_id INTEGER",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'meal_consumption_logs_cooking_batch_id_fkey'
+            ) THEN
+                ALTER TABLE meal_consumption_logs
+                ADD CONSTRAINT meal_consumption_logs_cooking_batch_id_fkey
+                FOREIGN KEY (cooking_batch_id) REFERENCES cooking_batches(id) ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_cooking_batch_events_batch_captured ON cooking_batch_events (batch_id, created_at)",
+        "CREATE INDEX IF NOT EXISTS ix_consumption_member_date_batch ON meal_consumption_logs (family_member_id, planned_date, cooking_batch_id)",
+    ]
 
 
 def _schema_statements() -> list[str]:
@@ -163,12 +552,17 @@ def _schema_statements() -> list[str]:
         """,
         # Nutrition profile (stage 2)
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS age INTEGER",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS age_months INTEGER",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS gender VARCHAR(24)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS height_cm INTEGER",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS weight_kg DOUBLE PRECISION",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS nutrition_goal VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS activity_level VARCHAR(32)",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS physical_activity_group VARCHAR(32)",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS life_stage VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS medical_restrictions TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS typed_safety_profile JSONB NOT NULL DEFAULT '[]'",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS typed_medical_context JSONB NOT NULL DEFAULT '[]'",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS banned_foods TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS dish_complexity VARCHAR(32)",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS pro_data JSONB NOT NULL DEFAULT '{}'",
@@ -347,11 +741,110 @@ def _schema_statements() -> list[str]:
             fiber_target_g INTEGER,
             water_target_ml INTEGER,
             goal_type VARCHAR(32),
+            target_origin VARCHAR(32) NOT NULL DEFAULT 'legacy',
+            provenance_status VARCHAR(32) NOT NULL DEFAULT 'unreviewed',
+            evidence_id VARCHAR(64),
+            source_id VARCHAR(64),
+            source_version VARCHAR(64),
+            calculation_method VARCHAR(128),
+            calculation_inputs_json JSONB,
+            calculated_at TIMESTAMPTZ,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_nutrition_targets_user_id ON nutrition_targets (user_id);",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS target_origin VARCHAR(32) NOT NULL DEFAULT 'legacy'",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS provenance_status VARCHAR(32) NOT NULL DEFAULT 'unreviewed'",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS evidence_id VARCHAR(64)",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS source_id VARCHAR(64)",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS source_version VARCHAR(64)",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS calculation_method VARCHAR(128)",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS calculation_inputs_json JSONB",
+        "ALTER TABLE nutrition_targets ADD COLUMN IF NOT EXISTS calculated_at TIMESTAMPTZ",
+        """
+        UPDATE nutrition_targets
+        SET target_origin = 'legacy'
+        WHERE target_origin IS NULL;
+        """,
+        """
+        UPDATE nutrition_targets
+        SET provenance_status = 'unreviewed'
+        WHERE provenance_status IS NULL;
+        """,
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_nutrition_targets_origin'
+            ) THEN
+                ALTER TABLE nutrition_targets
+                ADD CONSTRAINT ck_nutrition_targets_origin
+                CHECK (target_origin IN ('evidence_auto', 'manual', 'clinician', 'legacy'));
+            END IF;
+        END $$;
+        """,
+        "ALTER TABLE nutrition_targets DROP CONSTRAINT IF EXISTS ck_nutrition_targets_provenance_status",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_nutrition_targets_provenance_status'
+            ) THEN
+                ALTER TABLE nutrition_targets
+                ADD CONSTRAINT ck_nutrition_targets_provenance_status
+                CHECK (provenance_status IN ('unreviewed', 'valid', 'verified', 'invalid', 'needs_review'));
+            END IF;
+        END $$;
+        """,
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_nutrition_targets_evidence_auto_provenance'
+            ) THEN
+                ALTER TABLE nutrition_targets
+                ADD CONSTRAINT ck_nutrition_targets_evidence_auto_provenance
+                CHECK (
+                    target_origin <> 'evidence_auto'
+                    OR (
+                        evidence_id IS NOT NULL
+                        AND source_id IS NOT NULL
+                        AND source_version IS NOT NULL
+                        AND calculation_method IS NOT NULL
+                        AND calculation_inputs_json IS NOT NULL
+                        AND calculated_at IS NOT NULL
+                    )
+                );
+            END IF;
+        END $$;
+        """,
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_nutrition_targets_non_evidence_no_provenance'
+            ) THEN
+                ALTER TABLE nutrition_targets
+                ADD CONSTRAINT ck_nutrition_targets_non_evidence_no_provenance
+                CHECK (
+                    target_origin = 'evidence_auto'
+                    OR (
+                        evidence_id IS NULL
+                        AND source_id IS NULL
+                        AND source_version IS NULL
+                        AND calculation_method IS NULL
+                        AND calculation_inputs_json IS NULL
+                        AND calculated_at IS NULL
+                    )
+                );
+            END IF;
+        END $$;
+        """,
         # Per-meal cook reminders
         "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_breakfast_enabled BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE user_notification_settings ADD COLUMN IF NOT EXISTS cook_lunch_enabled BOOLEAN NOT NULL DEFAULT TRUE",
@@ -434,8 +927,116 @@ def _schema_statements() -> list[str]:
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_coverage_json JSONB",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_calculated_at TIMESTAMPTZ",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_source VARCHAR(64)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_source_kind VARCHAR(64)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_provenance_json JSONB",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_needs_review BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS nutrition_review_reason VARCHAR(64)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS gluten_free_status VARCHAR(32)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS gluten_free_provenance_status VARCHAR(32)",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS gluten_free_provenance_json JSONB",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS sodium_mg_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS salt_g_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS phenylalanine_mg_per_serving DOUBLE PRECISION",
+        "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS medical_safety_facts_json JSONB",
+        """
+        CREATE TABLE IF NOT EXISTS food_nutrient_facts (
+            id SERIAL PRIMARY KEY,
+            canonical_food_key VARCHAR(120) NOT NULL,
+            nutrient_key VARCHAR(48) NOT NULL,
+            value DOUBLE PRECISION,
+            unit VARCHAR(24) NOT NULL,
+            basis_amount DOUBLE PRECISION NOT NULL,
+            basis_unit VARCHAR(24) NOT NULL,
+            source_id VARCHAR(64) NOT NULL,
+            source_record_locator VARCHAR(256) NOT NULL,
+            source_version VARCHAR(64) NOT NULL,
+            source_data_type VARCHAR(64),
+            fdc_id INTEGER,
+            food_state VARCHAR(32) NOT NULL DEFAULT 'unknown',
+            provenance_status VARCHAR(32) NOT NULL,
+            source_food_name VARCHAR(200),
+            source_food_description TEXT,
+            source_nutrient_id VARCHAR(64),
+            source_nutrient_name VARCHAR(120),
+            match_method VARCHAR(64),
+            match_confidence VARCHAR(32),
+            review_status VARCHAR(32),
+            review_notes TEXT,
+            edible_portion_basis VARCHAR(120),
+            preparation_method VARCHAR(120),
+            loss_or_retention_metadata JSONB,
+            retrieved_or_imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            CONSTRAINT uq_food_nutrient_fact_source_record UNIQUE (
+                canonical_food_key,
+                nutrient_key,
+                food_state,
+                source_id,
+                source_record_locator
+            ),
+            CONSTRAINT ck_food_nutrient_fact_provenance_status CHECK (
+                provenance_status IN (
+                    'external_verified',
+                    'external_imported_unreviewed',
+                    'manual_reviewed',
+                    'internal_legacy_unsourced',
+                    'unavailable'
+                )
+            ),
+            CONSTRAINT ck_food_nutrient_fact_external_provenance CHECK (
+                provenance_status <> 'external_verified'
+                OR (
+                    source_id <> 'SRC-PLANAM-V1-NUTRITION-FACTS'
+                    AND source_record_locator IS NOT NULL
+                    AND source_version IS NOT NULL
+                )
+            ),
+            CONSTRAINT ck_food_nutrient_fact_planam_internal CHECK (
+                source_id <> 'SRC-PLANAM-V1-NUTRITION-FACTS'
+                OR provenance_status = 'internal_legacy_unsourced'
+            ),
+            CONSTRAINT ck_food_nutrient_fact_fdc_identity CHECK (
+                source_id <> 'SRC-USDA-FDC'
+                OR (fdc_id IS NOT NULL AND source_data_type IS NOT NULL)
+            )
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_food_nutrient_facts_food ON food_nutrient_facts (canonical_food_key);",
+        "CREATE INDEX IF NOT EXISTS ix_food_nutrient_facts_source ON food_nutrient_facts (source_id);",
+        "CREATE INDEX IF NOT EXISTS ix_food_nutrient_facts_fdc_id ON food_nutrient_facts (fdc_id);",
+        """
+        CREATE TABLE IF NOT EXISTS food_matches (
+            id SERIAL PRIMARY KEY,
+            normalized_ingredient_name VARCHAR(160) NOT NULL,
+            original_ingredient_text VARCHAR(300),
+            status VARCHAR(32) NOT NULL,
+            canonical_food_key VARCHAR(120),
+            source_id VARCHAR(64),
+            source_record_locator VARCHAR(256),
+            source_food_name VARCHAR(200),
+            food_state VARCHAR(32) NOT NULL DEFAULT 'unknown',
+            match_method VARCHAR(64) NOT NULL DEFAULT 'candidate_only',
+            match_confidence VARCHAR(32) NOT NULL DEFAULT 'none',
+            brand VARCHAR(120),
+            review_reason VARCHAR(120),
+            reviewed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            reviewed_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            CONSTRAINT uq_food_match_identity UNIQUE (
+                normalized_ingredient_name,
+                food_state,
+                brand
+            ),
+            CONSTRAINT ck_food_match_status CHECK (
+                status IN ('matched', 'ambiguous', 'unmatched', 'manual_review_required')
+            ),
+            CONSTRAINT ck_food_match_candidate_only CHECK (
+                status <> 'matched' OR match_method <> 'candidate_only'
+            )
+        );
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_food_matches_name ON food_matches (normalized_ingredient_name);",
+        "CREATE INDEX IF NOT EXISTS ix_food_matches_status ON food_matches (status);",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS original_title VARCHAR(200)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS normalized_title VARCHAR(200)",
         "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS display_title VARCHAR(200)",
@@ -492,10 +1093,25 @@ def _schema_statements() -> list[str]:
         CREATE TABLE IF NOT EXISTS recipe_allergens (
             id SERIAL PRIMARY KEY,
             recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
-            allergen VARCHAR(64) NOT NULL
+            allergen VARCHAR(64) NOT NULL,
+            concept_id VARCHAR(64),
+            relation_type VARCHAR(32),
+            provenance_status VARCHAR(32),
+            confidence VARCHAR(32),
+            source_id VARCHAR(64),
+            source_record_locator VARCHAR(256),
+            evidence_notes TEXT
         );
         """,
         "CREATE INDEX IF NOT EXISTS ix_recipe_allergens_recipe_id ON recipe_allergens (recipe_id);",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS concept_id VARCHAR(64)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS relation_type VARCHAR(32)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS provenance_status VARCHAR(32)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS confidence VARCHAR(32)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS source_id VARCHAR(64)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS source_record_locator VARCHAR(256)",
+        "ALTER TABLE recipe_allergens ADD COLUMN IF NOT EXISTS evidence_notes TEXT",
+        "CREATE INDEX IF NOT EXISTS ix_recipe_allergens_concept_id ON recipe_allergens (concept_id);",
         """
         CREATE TABLE IF NOT EXISTS recipe_restrictions (
             id SERIAL PRIMARY KEY,
@@ -1048,7 +1664,7 @@ def _schema_statements() -> list[str]:
         WHERE notifications_onboarded = FALSE
           AND (buy_reminder_enabled OR cook_reminder_enabled);
         """,
-    ]
+    ] + _p0_data_schema_01d_m1_statements() + _p0_data_schema_01d_m2_statements() + _p0_data_schema_01d_m3_statements() + _p0_data_schema_01d_m4_statements()
 
 
 def _execute_statements(connection: Connection, statements: Sequence[str]) -> None:
@@ -1056,35 +1672,135 @@ def _execute_statements(connection: Connection, statements: Sequence[str]) -> No
         connection.execute(text(statement))
 
 
-def ensure_database_schema(engine: Engine, base: type) -> None:
-    """Create/upgrade schema once per startup cluster (safe with multiple uvicorn workers)."""
-    legacy_tables = [
+def _metadata_tables_for_authority(base: type, table_names: frozenset[str]) -> list:
+    """Select only explicitly CREATE_ALL-owned tables from shared metadata."""
+    return [
         table
         for table in base.metadata.sorted_tables
-        if table.name not in RECIPE_ENGINE_TABLES
+        if table.name in table_names
     ]
-    with engine.begin() as connection:
+
+
+def _create_all_allowlisted(connection: Connection, base: type, table_names: frozenset[str]) -> None:
+    base.metadata.create_all(
+        bind=connection,
+        tables=_metadata_tables_for_authority(base, table_names),
+        checkfirst=True,
+    )
+
+
+def _custom_post_create_statements() -> list[str]:
+    """Return custom operations that are safe after allowlisted create_all.
+
+    The historical stream still exposes its complete statement list for the
+    migration-contract tests. Bootstrap execution filters CREATE TABLE blocks
+    for CREATE_ALL-owned names, leaving only additive operations plus the
+    explicitly custom-owned M1 and Recipe Engine phases.
+    """
+    slices = (
+        _p0_data_schema_01d_m1_statements()
+        + _p0_data_schema_01d_m2_statements()
+        + _p0_data_schema_01d_m3_statements()
+        + _p0_data_schema_01d_m4_statements()
+    )
+    historical = _schema_statements()
+    post_legacy = historical[: -len(slices)]
+    filtered: list[str] = []
+    for statement in post_legacy:
+        match = re.search(
+            r"CREATE TABLE(?: IF NOT EXISTS)?\s+([A-Za-z_][A-Za-z0-9_]*)",
+            statement,
+            re.IGNORECASE,
+        )
+        if match and match.group(1) in CREATE_ALL_TABLES:
+            continue
+        filtered.append(statement)
+    return (
+        filtered
+        + _p0_data_schema_01d_m2_statements()
+        + _p0_data_schema_01d_m3_statements()
+        + _p0_data_schema_01d_m4_statements()
+    )
+
+
+def _bootstrap_phase_order() -> tuple[str, ...]:
+    return (
+        "legacy_prerequisites",
+        "m1_pre_create",
+        "legacy_create_all",
+        "custom_post_create",
+    )
+
+
+def _unlock_schema_advisory_lock(
+    connection: Connection,
+    *,
+    preserve_exception: bool,
+) -> None:
+    """Release the session lock without masking a bootstrap failure."""
+    try:
         connection.execute(
-            text("SELECT pg_advisory_lock(:lock_id)"),
+            text("SELECT pg_advisory_unlock(:lock_id)"),
             {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
         )
+    except BaseException:
+        if not preserve_exception:
+            try:
+                connection.invalidate()
+            except BaseException:
+                pass
+            raise
+
         try:
-            base.metadata.create_all(
-                bind=connection,
-                tables=legacy_tables,
-                checkfirst=True,
+            connection.invalidate()
+        except BaseException:
+            pass
+
+
+def ensure_database_schema(engine: Engine, base: type) -> None:
+    """Create/upgrade schema once per startup cluster (safe with multiple uvicorn workers)."""
+    with engine.begin() as connection:
+        lock_acquired = False
+        try:
+            connection.execute(
+                text("SELECT pg_advisory_lock(:lock_id)"),
+                {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
             )
-            _execute_statements(connection, _schema_statements())
+            lock_acquired = True
+            _create_all_allowlisted(connection, base, LEGACY_PREREQUISITE_TABLES)
+            _execute_statements(connection, _p0_data_schema_01d_m1_statements())
+            _create_all_allowlisted(
+                connection,
+                base,
+                CREATE_ALL_TABLES - LEGACY_PREREQUISITE_TABLES,
+            )
+            _execute_statements(connection, _custom_post_create_statements())
             from app.services.shopping_category_migration import (  # noqa: PLC0415
                 migrate_shopping_categories_v1,
             )
 
             migrate_shopping_categories_v1(connection)
-        finally:
-            connection.execute(
-                text("SELECT pg_advisory_unlock(:lock_id)"),
-                {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
-            )
+        except BaseException:
+            if lock_acquired:
+                try:
+                    connection.rollback()
+                except BaseException:
+                    try:
+                        connection.invalidate()
+                    except BaseException:
+                        pass
+                else:
+                    _unlock_schema_advisory_lock(
+                        connection,
+                        preserve_exception=True,
+                    )
+            raise
+        else:
+            if lock_acquired:
+                _unlock_schema_advisory_lock(
+                    connection,
+                    preserve_exception=False,
+                )
 
 
 def run_schema_migrations(engine: Engine) -> None:

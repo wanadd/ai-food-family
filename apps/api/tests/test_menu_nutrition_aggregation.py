@@ -146,7 +146,7 @@ def db_session():
 
 def test_resolve_targets_fallback_when_missing(db_session):
     targets = agg.resolve_targets(db_session, user_id=999)
-    assert targets == FALLBACK  # kcal 2200, macros None — not persisted
+    assert targets == FALLBACK  # no fabricated numeric targets — not persisted
     assert db_session.query(NutritionTarget).count() == 0  # nothing written
 
 

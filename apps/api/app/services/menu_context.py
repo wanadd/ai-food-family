@@ -23,6 +23,12 @@ from app.services.nutrition_profile_labels import (
     NUTRITION_GOAL_LABELS,
 )
 from app.services.family_menu_context import format_family_member_for_menu
+from app.services.member_age import format_age_resolution_ru, resolve_age_for_profile
+from app.nutrition.allergen_ontology import (
+    CONCEPT_LABEL_RU,
+    typed_entries_from_profile,
+)
+from app.nutrition.medical_safety import format_medical_context
 from app.services.onboarding import get_or_create_profile
 from app.services.meal_leftovers import (
     format_meal_leftovers_for_prompt,
@@ -125,8 +131,22 @@ def _format_user_block(name: str, profile) -> str:
         parts.append(
             f"  активность: {ACTIVITY_LABELS.get(profile.activity_level, profile.activity_level)}"
         )
-    if profile.age:
-        parts.append(f"  возраст: {profile.age}")
+    age_resolution = resolve_age_for_profile(profile)
+    if age_resolution.age_source != "none":
+        parts.append(f"  возраст: {format_age_resolution_ru(age_resolution)}")
+        parts.append(
+            "  возрастной профиль: "
+            f"{age_resolution.population_scope}; "
+            f"band={age_resolution.age_band or 'unknown'}; "
+            f"status={age_resolution.resolution_status}"
+        )
+        if age_resolution.is_infant:
+            parts.append(
+                "  infant_scope=true; обычное семейное меню не сертифицируется "
+                "как питание для младенца"
+            )
+        if age_resolution.has_conflict:
+            parts.append("  конфликт возраста: age_months не совпадает с age")
     if profile.gender:
         parts.append(
             f"  пол: {GENDER_LABELS.get(profile.gender, profile.gender)}"
@@ -138,6 +158,12 @@ def _format_user_block(name: str, profile) -> str:
     parts.append(f"  диеты: {_join_labels(profile.diets, DIET_LABELS)}")
     parts.append(f"  аллергии: {_join_labels(profile.allergies, ALLERGY_LABELS)}")
     parts.append(f"  ограничения: {_join_labels(profile.restrictions, RESTRICTION_LABELS)}")
+    typed = _format_typed_safety_entries(typed_entries_from_profile(profile))
+    if typed:
+        parts.append(f"  typed safety: {typed}")
+    medical = format_medical_context(profile)
+    if medical:
+        parts.append(f"  typed medical context: {medical}")
     if profile.medical_restrictions:
         parts.append(f"  мед. ограничения: {profile.medical_restrictions}")
     if profile.budget:
@@ -168,6 +194,14 @@ def _format_user_block(name: str, profile) -> str:
         extra = ", ".join(x for x in (goal, freq) if x)
         parts.append(f"  PRO: тренировки{' — ' + extra if extra else ''}")
     return "\n".join(parts)
+
+
+def _format_typed_safety_entries(entries) -> str:
+    parts = []
+    for entry in entries:
+        label = CONCEPT_LABEL_RU.get(entry.concept_id, entry.concept_id)
+        parts.append(f"{entry.kind}:{label}({entry.origin})")
+    return ", ".join(parts)
 
 
 def _format_member_block(
