@@ -32,7 +32,7 @@ The owner decisions D01-D17 are accepted and override earlier recommendations or
 
 ## Active blocker
 
-RI-2 remains `BLOCKING_BEFORE_BACKFILL`; this decision log does not resolve it.
+RI-2 is PASS for V2 temporal schema integrity after Wave 5; no target values were backfilled.
 
 ## Physical V2 owner decisions
 

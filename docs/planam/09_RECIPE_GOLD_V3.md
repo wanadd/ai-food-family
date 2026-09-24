@@ -19,3 +19,5 @@ Do not preserve an original source title, description, or step structure. Do not
 ## Image relationship
 
 One recipe produces one image master and derived variants. The image contract is in [`../recipe-images/IMAGE_CONTRACT.md`](../recipe-images/IMAGE_CONTRACT.md).
+
+Run A Wave 6 adapts the Gold V3 contract boundary to Recipe V2 without mass generation or legacy conversion. New canonical content targets RecipeVersion; legacy recipes remain compatibility/archive input.

@@ -58,7 +58,7 @@ Current implementation facts remain separated in [docs/planam/18_CURRENT_STATE.m
 
 Wave 01 V2 implementation adds Alembic as the single future V2 versioned migration authority, with a marker-only baseline revision and explicit no-dual-authority checks. Wave 02 adds `core_accounts`, `core_auth_identities`, `core_persons`, `core_households`, `core_memberships`, `core_person_relationships`, `core_permission_grants`, and `legacy_id_mappings` under V2 versioned migrations. Current legacy bootstrap remains the runtime owner for existing legacy tables during transition; application startup does not run Alembic.
 
-RI-2 remains visible and unresolved at runtime: `BLOCKING_BEFORE_BACKFILL`. The accepted physical design requires PostgreSQL range/exclusion protection before any NutritionTarget backfill.
+Run A Waves 5-7 are accepted in three independent checkpoints. RI-2 is PASS for V2 schema integrity through PostgreSQL range/exclusion protection; no NutritionTarget backfill was performed. Recipe V2 and Planning V2 are additive and legacy-compatible. Wave 8+ remains separately unauthorized.
 
 ## Canonical document index
 

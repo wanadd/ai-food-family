@@ -48,6 +48,12 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "recipe_legacy_mappings",
         "recipe_archive_fallbacks",
         "recipe_validation_runs",
+        "plans_v2",
+        "plan_revisions",
+        "plan_slots",
+        "plan_slot_participants",
+        "plan_slot_portions",
+        "plan_legacy_mappings",
     }
 )
 

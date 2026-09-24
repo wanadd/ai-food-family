@@ -28,7 +28,7 @@ Legacy recipes are not the target canonical recipe library. Legacy recipe deleti
 
 Dual authoritative write is prohibited. There must be one authoritative writer for a given source of truth at every stage.
 
-RI-2 remains `BLOCKING_BEFORE_BACKFILL`. No backfill is authorized before RI-2 is resolved. Numeric SLO/RPO/RTO values are deferred until real operational baseline exists.
+RI-2 is PASS for V2 database temporal integrity after Run A Wave 5. No uncontrolled NutritionTarget backfill is authorized; numeric SLO/RPO/RTO values remain deferred until real operational baseline exists.
 
 Target schema authority transition is accepted as `LEGACY_SCHEMA_AUTHORITY -> VERIFIED_BASELINE -> SINGLE_V2_VERSIONED_MIGRATION_AUTHORITY`. Alembic is the V2 migration mechanism established in Wave 01. Wave 02 adds Core identity roots and legacy identity mappings under that authority.
 
@@ -36,4 +36,4 @@ Current Food APIs remain compatibility consumers of legacy user/family/member ta
 
 Legacy recipe compatibility is bounded. Old public recipe IDs resolve through a compatibility resolver, then to canonical mapping when available, or to archive fallback when unmapped. Retirement requires explicit gates: canonical coverage sufficient, legacy references mapped or archive-resolvable, residual compatibility usage acceptable, historical records readable, no active canonical writer depends on the legacy recipe table, and owner approval.
 
-This checkpoint does not implement target physical V2 schema, ImportantDate, AI memory, ORM 01E1, recipe migration, profile migration, database mutation, push, merge, deploy, or production change.
+Run A implements the additive Wave 5-7 V2 schema contracts only. It does not implement ImportantDate, AI memory, ORM 01E1, mass recipe migration, profile migration, database mutation, push, merge, deploy, or production change.

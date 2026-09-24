@@ -23,3 +23,5 @@ The result is a menu that can be cooked, understood, and converted into a unifie
 ## Constraints
 
 Planning must support a single-person path. Family aggregation must preserve the strictest person-level state. Delivery integrations remain downstream adapters.
+
+Run A Wave 7 adds the additive Planning V2 Plan/Revision/Slot contract with explicit empty slots and person-scoped participants/portions. Shopping and Pantry V2 remain later waves.
