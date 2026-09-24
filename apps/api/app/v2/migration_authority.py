@@ -63,6 +63,12 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "receipt_documents_v2",
         "receipt_proposals_v2",
         "receipt_lines_v2",
+        "cooking_batches_v2",
+        "cooking_events_v2",
+        "cooking_substitutions_v2",
+        "consumption_events_v2",
+        "consumption_items_v2",
+        "cooking_pantry_deductions_v2",
     }
 )
 
