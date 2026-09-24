@@ -69,6 +69,14 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "consumption_events_v2",
         "consumption_items_v2",
         "cooking_pantry_deductions_v2",
+        "health_projections_v2",
+        "health_deviations_v2",
+        "notification_intents_v2",
+        "notification_deliveries_v2",
+        "entitlement_grants_v2",
+        "entitlement_consumptions_v2",
+        "durable_jobs_v2",
+        "outbox_events_v2",
     }
 )
 

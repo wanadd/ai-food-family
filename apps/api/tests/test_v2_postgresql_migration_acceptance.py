@@ -60,7 +60,7 @@ def _assert_alembic_head(url: str) -> None:
     finally:
         engine.dispose()
 
-    assert revision == "20260924_0009"
+    assert revision == "20260924_0010"
 
 
 def test_v2_baseline_real_postgresql_acceptance():
@@ -206,6 +206,14 @@ def test_v2_baseline_real_postgresql_acceptance():
         "consumption_events_v2",
         "consumption_items_v2",
         "cooking_pantry_deductions_v2",
+        "health_projections_v2",
+        "health_deviations_v2",
+        "notification_intents_v2",
+        "notification_deliveries_v2",
+        "entitlement_grants_v2",
+        "entitlement_consumptions_v2",
+        "durable_jobs_v2",
+        "outbox_events_v2",
     } <= tables
     assert "food_identities" not in tables
     _reset_public_schema(url)
