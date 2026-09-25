@@ -28,6 +28,11 @@ RUN npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
+ARG SOURCE_REVISION=unknown
+ARG BUILD_TIMESTAMP=unknown
+LABEL org.opencontainers.image.revision="$SOURCE_REVISION" \
+      org.opencontainers.image.created="$BUILD_TIMESTAMP" \
+      org.opencontainers.image.source="planam/ai-food-family"
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
