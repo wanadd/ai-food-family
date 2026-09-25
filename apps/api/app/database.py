@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
@@ -47,24 +47,37 @@ def init_db() -> None:
     from app.models import care as care_models  # noqa: F401
     from app.models import progress as progress_models  # noqa: F401
 
-    from app.database_migrations import ensure_database_schema
+    from app.database_migrations import (
+        SCHEMA_ADVISORY_LOCK_ID,
+        _ensure_database_schema_on_connection,
+    )
 
     # Legacy tables: SQLAlchemy create_all. Recipe Engine tables: SQL migrations only.
-    ensure_database_schema(engine, Base)
-
     from app.services.recipes import seed_recipes_if_empty
     from app.services.subscription import (
         ensure_all_users_have_billing,
         seed_subscription_plans,
     )
 
-    db = SessionLocal()
-    try:
-        seed_subscription_plans(db)
-        seed_recipes_if_empty(db)
-        ensure_all_users_have_billing(db)
-    finally:
-        db.close()
+    # Keep schema DDL and all first-boot seed reads/writes under one transaction
+    # scoped lock. Releasing the lock before seeding lets another worker run DDL
+    # while this worker is reading the catalog, which can deadlock in PostgreSQL.
+    with engine.begin() as connection:
+        connection.execute(
+            text("SELECT pg_advisory_xact_lock(:lock_id)"),
+            {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
+        )
+        _ensure_database_schema_on_connection(connection, Base)
+        db = Session(
+            bind=connection,
+            join_transaction_mode="create_savepoint",
+        )
+        try:
+            seed_subscription_plans(db)
+            seed_recipes_if_empty(db)
+            ensure_all_users_have_billing(db)
+        finally:
+            db.close()
 
 
 def get_db() -> Generator[Session, None, None]:

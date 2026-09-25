@@ -1732,75 +1732,41 @@ def _bootstrap_phase_order() -> tuple[str, ...]:
     )
 
 
-def _unlock_schema_advisory_lock(
-    connection: Connection,
-    *,
-    preserve_exception: bool,
-) -> None:
-    """Release the session lock without masking a bootstrap failure."""
-    try:
-        connection.execute(
-            text("SELECT pg_advisory_unlock(:lock_id)"),
-            {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
-        )
-    except BaseException:
-        if not preserve_exception:
-            try:
-                connection.invalidate()
-            except BaseException:
-                pass
-            raise
+def _ensure_database_schema_on_connection(connection: Connection, base: type) -> None:
+    """Run the ordered schema phases inside the caller's transaction and lock."""
+    _create_all_allowlisted(connection, base, LEGACY_PREREQUISITE_TABLES)
+    _execute_statements(connection, _p0_data_schema_01d_m1_statements())
+    _create_all_allowlisted(
+        connection,
+        base,
+        CREATE_ALL_TABLES - LEGACY_PREREQUISITE_TABLES,
+    )
+    _execute_statements(connection, _custom_post_create_statements())
+    from app.services.shopping_category_migration import (  # noqa: PLC0415
+        migrate_shopping_categories_v1,
+    )
 
-        try:
-            connection.invalidate()
-        except BaseException:
-            pass
+    migrate_shopping_categories_v1(connection)
 
 
 def ensure_database_schema(engine: Engine, base: type) -> None:
     """Create/upgrade schema once per startup cluster (safe with multiple uvicorn workers)."""
     with engine.begin() as connection:
-        lock_acquired = False
         try:
             connection.execute(
-                text("SELECT pg_advisory_lock(:lock_id)"),
+                text("SELECT pg_advisory_xact_lock(:lock_id)"),
                 {"lock_id": SCHEMA_ADVISORY_LOCK_ID},
             )
-            lock_acquired = True
-            _create_all_allowlisted(connection, base, LEGACY_PREREQUISITE_TABLES)
-            _execute_statements(connection, _p0_data_schema_01d_m1_statements())
-            _create_all_allowlisted(
-                connection,
-                base,
-                CREATE_ALL_TABLES - LEGACY_PREREQUISITE_TABLES,
-            )
-            _execute_statements(connection, _custom_post_create_statements())
-            from app.services.shopping_category_migration import (  # noqa: PLC0415
-                migrate_shopping_categories_v1,
-            )
-
-            migrate_shopping_categories_v1(connection)
+            _ensure_database_schema_on_connection(connection, base)
         except BaseException:
-            if lock_acquired:
+            try:
+                connection.rollback()
+            except BaseException:
                 try:
-                    connection.rollback()
+                    connection.invalidate()
                 except BaseException:
-                    try:
-                        connection.invalidate()
-                    except BaseException:
-                        pass
-                else:
-                    _unlock_schema_advisory_lock(
-                        connection,
-                        preserve_exception=True,
-                    )
+                    pass
             raise
-        else:
-            if lock_acquired:
-                _unlock_schema_advisory_lock(
-                    connection,
-                    preserve_exception=False,
-                )
 
 
 def run_schema_migrations(engine: Engine) -> None:

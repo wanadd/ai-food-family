@@ -112,14 +112,14 @@ def test_bootstrap_order_keeps_lock_and_authority_phases(monkeypatch):
         "create_all",
         "post",
     ]
-    assert phases[-2:] == ["shopping_categories", "connection"]
+    assert phases[-1] == "shopping_categories"
     assert events[1][1] == migrations.LEGACY_PREREQUISITE_TABLES
     assert events[3][1] == migrations.CREATE_ALL_TABLES - migrations.LEGACY_PREREQUISITE_TABLES
-    assert "pg_advisory_lock" in events[0][1]
-    assert "pg_advisory_unlock" in events[-1][1]
+    assert "pg_advisory_xact_lock" in events[0][1]
+    assert not any("pg_advisory_unlock" in event[1] for event in events if event[0] == "connection")
 
 
-def test_bootstrap_failure_rolls_back_before_unlock_and_reraises_original(monkeypatch):
+def test_bootstrap_failure_rolls_back_and_reraises_original(monkeypatch):
     events: list[str] = []
     original = RuntimeError("bootstrap failed")
 
@@ -158,26 +158,26 @@ def test_bootstrap_failure_rolls_back_before_unlock_and_reraises_original(monkey
     else:
         raise AssertionError("expected bootstrap failure")
 
-    assert events[0].startswith("SELECT pg_advisory_lock")
+    assert events[0].startswith("SELECT pg_advisory_xact_lock")
     assert events[1] == "rollback"
-    assert "pg_advisory_unlock" in events[2]
-    assert "invalidate" not in events
+    assert len(events) == 2
 
 
-def test_unlock_failure_does_not_replace_original_exception(monkeypatch):
+def test_rollback_failure_does_not_replace_original_exception(monkeypatch):
     events: list[str] = []
     original = RuntimeError("bootstrap failed")
-    unlock_failure = RuntimeError("unlock failed")
+    rollback_failure = RuntimeError("rollback failed")
 
     class Connection:
         def execute(self, statement, params=None):
             sql = str(statement)
             events.append(sql)
-            if "pg_advisory_unlock" in sql:
-                raise unlock_failure
+            if "pg_advisory_xact_lock" in sql:
+                return
 
         def rollback(self):
             events.append("rollback")
+            raise rollback_failure
 
         def invalidate(self):
             events.append("invalidate")
@@ -206,12 +206,12 @@ def test_unlock_failure_does_not_replace_original_exception(monkeypatch):
     else:
         raise AssertionError("expected bootstrap failure")
 
+    assert events[0].startswith("SELECT pg_advisory_xact_lock")
     assert events[1] == "rollback"
-    assert "pg_advisory_unlock" in events[2]
-    assert events[3] == "invalidate"
+    assert events[2] == "invalidate"
 
 
-def test_normal_contention_path_still_unlocks_after_success(monkeypatch):
+def test_normal_contention_path_holds_lock_until_transaction_exit(monkeypatch):
     events: list[str] = []
 
     class Connection:
@@ -248,8 +248,8 @@ def test_normal_contention_path_still_unlocks_after_success(monkeypatch):
 
     migrations.ensure_database_schema(Engine(), SimpleNamespace())
 
-    assert "pg_advisory_lock" in events[0]
-    assert "pg_advisory_unlock" in events[-1]
+    assert "pg_advisory_xact_lock" in events[0]
+    assert not any("pg_advisory_unlock" in event for event in events)
     assert "rollback" not in events
     assert "invalidate" not in events
 
