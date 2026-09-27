@@ -19,7 +19,7 @@ from app.models.user import User
 from app.models.user_profile import UserProfile
 
 API_ROOT = Path(__file__).resolve().parents[1]
-CURRENT_ALEMBIC_HEAD = "20260927_0018"
+CURRENT_ALEMBIC_HEAD = "20260927_0019"
 
 
 def _acceptance_url() -> str:
@@ -222,6 +222,14 @@ def test_v2_baseline_real_postgresql_acceptance():
         "entitlement_plans",
         "entitlement_grants",
         "entitlement_consumptions",
+        "events_v2",
+        "event_invitations_v2",
+        "event_participants_v2",
+        "event_participant_food_facts_v2",
+        "event_menu_revisions_v2",
+        "event_menu_items_v2",
+        "event_menu_item_participants_v2",
+        "event_shopping_demands_v2",
     } <= tables
     assert "food_identities" not in tables
     _reset_public_schema(url)

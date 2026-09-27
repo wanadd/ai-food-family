@@ -15,6 +15,7 @@ class Base(DeclarativeBase):
 
 
 def init_db() -> None:
+    from app.events import v2_models as events_v2_models  # noqa: F401
     from app.planning import v2_models as planning_v2_models  # noqa: F401
     from app.shopping import v2_models as shopping_v2_models  # noqa: F401
     from app.cooking_health import v2_models as cooking_health_v2_models  # noqa: F401
