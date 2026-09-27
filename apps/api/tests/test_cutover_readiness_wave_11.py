@@ -137,7 +137,7 @@ def test_inventory_is_fully_classified_and_authority_is_zero():
     assert counts["unclassified_writers"] == 0
     assert counts["unclassified_readers"] == 0
     report = collect_inventory_report()
-    assert report.v2_pre_c1 == 59
-    assert report.physical_union_pre_c1 == 120
+    assert report.v2_pre_c1 == 63
+    assert report.physical_union_pre_c1 == 124
     assert report.authority_overlaps == 0
     assert sum(manifest_class_counts().values()) == len(manifest_as_dicts())

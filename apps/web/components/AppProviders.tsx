@@ -11,6 +11,7 @@ import { AppShellBridge } from "@/components/layout/AppShellBridge";
 import { PaywallProvider } from "@/components/monetization-2026/PaywallProvider";
 import { SubscriptionProvider } from "@/components/subscription/SubscriptionProvider";
 import { TelegramProvider } from "@/components/TelegramProvider";
+import { PlatformProvider } from "@/components/platform/PlatformProvider";
 
 function AdminSessionBootstrap() {
   useLayoutEffect(() => {
@@ -22,18 +23,20 @@ function AdminSessionBootstrap() {
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <TelegramProvider>
-      <AdminSessionBootstrap />
-      <AppGate>
-        <Onboarding2026Redirect>
-          <AppModeProvider>
-            <SubscriptionProvider>
-              <PaywallProvider>
-                <AppShellBridge>{children}</AppShellBridge>
-              </PaywallProvider>
-            </SubscriptionProvider>
-          </AppModeProvider>
-        </Onboarding2026Redirect>
-      </AppGate>
+      <PlatformProvider>
+        <AdminSessionBootstrap />
+        <AppGate>
+          <Onboarding2026Redirect>
+            <AppModeProvider>
+              <SubscriptionProvider>
+                <PaywallProvider>
+                  <AppShellBridge>{children}</AppShellBridge>
+                </PaywallProvider>
+              </SubscriptionProvider>
+            </AppModeProvider>
+          </Onboarding2026Redirect>
+        </AppGate>
+      </PlatformProvider>
     </TelegramProvider>
   );
 }

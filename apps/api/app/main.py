@@ -42,6 +42,9 @@ from app.routers import (
 )
 from app.services.notification_scheduler import run_notification_scheduler
 from app.telegram.bot import setup_bot_commands, setup_menu_button, setup_webhook
+from app.routers import v2_foundation
+from app.v2.correlation import RequestCorrelationMiddleware
+from app.v2.errors import V2Error
 
 
 async def _startup_telegram() -> None:
@@ -79,6 +82,24 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+
+
+@app.exception_handler(V2Error)
+async def v2_error_handler(request: Request, exc: V2Error) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": {
+                "code": exc.code,
+                "message": exc.message,
+                "details": exc.details or {},
+                "request_id": getattr(request.state, "request_id", None),
+            }
+        },
+    )
+
+
+app.add_middleware(RequestCorrelationMiddleware)
 
 
 @app.exception_handler(ApplicationMutationBlocked)
@@ -145,6 +166,7 @@ app.include_router(recipes.router)
 app.include_router(event_plans.router)
 app.include_router(telegram_bot.router)
 app.include_router(telegram_bot.bot_router)
+app.include_router(v2_foundation.router)
 
 
 @app.get("/")

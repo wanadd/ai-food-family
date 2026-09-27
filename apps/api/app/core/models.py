@@ -220,3 +220,101 @@ class LegacyIdMapping(Base):
     provenance_json: Mapped[dict] = mapped_column(CoreJSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ExternalIdentity(Base):
+    """Provider identity owned by PLANAM, not a provider-specific business row."""
+
+    __tablename__ = "external_identities"
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_subject", name="uq_external_identity_provider_subject"),
+        CheckConstraint("provider <> ''", name="ck_external_identities_provider_not_blank"),
+        CheckConstraint("provider_subject <> ''", name="ck_external_identities_subject_not_blank"),
+        CheckConstraint(
+            "status IN ('active', 'revoked')",
+            name="ck_external_identities_status",
+        ),
+        Index("ix_external_identities_account", "account_id"),
+    )
+
+    identity_id: Mapped[str] = mapped_column(CoreUUID, primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        CoreUUID,
+        ForeignKey("core_accounts.account_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    provider: Mapped[str] = mapped_column(String(64), nullable=False)
+    provider_subject: Mapped[str] = mapped_column(String(160), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="active")
+    provider_payload_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    provider_metadata_json: Mapped[dict] = mapped_column(CoreJSON, nullable=False, default=dict)
+    linked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class VerifiedContact(Base):
+    __tablename__ = "verified_contacts"
+    __table_args__ = (
+        UniqueConstraint("account_id", "contact_kind", "value_hash", name="uq_verified_contact_account_value"),
+        CheckConstraint("contact_kind IN ('phone', 'email')", name="ck_verified_contacts_kind"),
+        Index("ix_verified_contacts_value", "contact_kind", "value_hash"),
+    )
+
+    contact_id: Mapped[str] = mapped_column(CoreUUID, primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        CoreUUID,
+        ForeignKey("core_accounts.account_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    contact_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    value_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    masked_value: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    verified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CoreSession(Base):
+    __tablename__ = "sessions"
+    __table_args__ = (
+        CheckConstraint("client_type <> ''", name="ck_sessions_client_type_not_blank"),
+        CheckConstraint("expires_at > issued_at", name="ck_sessions_expiry"),
+        Index("ix_sessions_account_status", "account_id", "revoked_at", "expires_at"),
+    )
+
+    session_id: Mapped[str] = mapped_column(CoreUUID, primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        CoreUUID,
+        ForeignKey("core_accounts.account_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    client_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    refresh_token_hash: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_activity_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rotation_counter: Mapped[int] = mapped_column(nullable=False, default=0)
+    security_metadata_json: Mapped[dict] = mapped_column(CoreJSON, nullable=False, default=dict)
+
+
+class IdentityLinkIntent(Base):
+    __tablename__ = "identity_link_intents"
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'consumed', 'expired', 'cancelled')", name="ck_identity_link_intents_status"),
+        CheckConstraint("expires_at > created_at", name="ck_identity_link_intents_expiry"),
+        Index("ix_identity_link_intents_account_status", "initiating_account_id", "status"),
+    )
+
+    intent_id: Mapped[str] = mapped_column(CoreUUID, primary_key=True)
+    initiating_account_id: Mapped[str] = mapped_column(
+        CoreUUID,
+        ForeignKey("core_accounts.account_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    provider: Mapped[str] = mapped_column(String(64), nullable=False)
+    secret_hash: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

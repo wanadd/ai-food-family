@@ -9,6 +9,7 @@
 
 @layer base {
   :root {
+    --planam-viewport-height: 100dvh;
     --font-manrope: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
       Roboto, sans-serif;
     --pa-cream: #ffffff;
@@ -30,6 +31,11 @@
     --pa-warning: #d97706;
     --pa-error: #dc2626;
     --pa-border: #e2e8e0;
+  }
+
+  html,
+  body {
+    min-height: var(--planam-viewport-height);
   }
 
   .dark {

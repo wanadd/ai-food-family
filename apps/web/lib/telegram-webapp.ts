@@ -31,6 +31,8 @@ export type TelegramWebApp = {
   };
   ready: () => void;
   expand: () => void;
+  requestFullscreen?: () => void | Promise<void>;
+  close?: () => void;
 };
 
 type TelegramGlobal = Window & {

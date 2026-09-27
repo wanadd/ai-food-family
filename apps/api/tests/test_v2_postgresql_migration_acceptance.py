@@ -60,7 +60,7 @@ def _assert_alembic_head(url: str) -> None:
     finally:
         engine.dispose()
 
-    assert revision == "20260924_0010"
+    assert revision == "20260927_0011"
 
 
 def test_v2_baseline_real_postgresql_acceptance():
@@ -157,6 +157,10 @@ def test_v2_baseline_real_postgresql_acceptance():
         "wave01_sentinel",
         "core_accounts",
         "core_auth_identities",
+        "external_identities",
+        "verified_contacts",
+        "sessions",
+        "identity_link_intents",
         "core_persons",
         "core_households",
         "core_memberships",

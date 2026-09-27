@@ -14,12 +14,17 @@ class SchemaAuthority(str, Enum):
 
 
 V2_BASELINE_REVISION = "20260922_0001"
+V2_MIGRATION_HEAD = "20260927_0011"
 V2_ALEMBIC_VERSION_TABLE = "alembic_version"
 
 V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
     {
         "core_accounts",
         "core_auth_identities",
+        "external_identities",
+        "verified_contacts",
+        "sessions",
+        "identity_link_intents",
         "core_persons",
         "core_households",
         "core_memberships",
