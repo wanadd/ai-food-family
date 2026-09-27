@@ -88,9 +88,11 @@ PLANAM **не** семейное приложение — семья **один 
 
 ```mermaid
 flowchart TB
-  subgraph daily [Ежедневно — Bottom Nav]
-    H[Дом — центр дня]
+    subgraph daily [Ежедневно — Bottom Nav]
     P[План — что готовить]
+    S[Покупки — что купить]
+    H[Дом — центр дня]
+    E[События — особые случаи]
     W[Забота — здоровье и цели]
   end
   subgraph rare [Редко — Overflow]
@@ -100,6 +102,8 @@ flowchart TB
   end
   H --> P
   H --> W
+  H --> S
+  H --> E
   P --> H
   W --> H
 ```
@@ -109,9 +113,10 @@ flowchart TB
 | **Дом** | Что сделать **сейчас**? | Полный каталог рецептов |
 | **План** | **Что** готовим и **как**? | Настройки аккаунта |
 | **Забота** | **Как** я себя чувствую / к чему иду? | Список покупок |
+| **События** | Что планируем для особого случая? | Постоянная Household-конфигурация |
 | **Аккаунт** | Кто я, как платить, кого кормим? | Ежедневные задачи |
 
-### 1.2 Route map (целевой, ~22 user routes)
+### 1.2 Route map (целевой, ~23 user routes including the reserved Events root)
 
 | Route | Тип | Назначение |
 |-------|-----|------------|
@@ -128,6 +133,7 @@ flowchart TB
 | `/plan/collections` | Screen | Коллекции |
 | `/plan/collections/[id]` | Screen | Коллекция |
 | `/wellness` | Screen | Забота — единый scroll |
+| `/events` | Reserved root | События — стабильная точка входа; реальный Event domain pending W7.5 |
 | `/wellness/chat` | Screen | AI-нутрициолог (вторичный) |
 | `/wellness/progress` | Screen | PRO прогресс |
 | `/account` | Sheet/screen | Профиль, scope, семья |
@@ -144,7 +150,7 @@ flowchart TB
 
 | As-is | Решение 2026 | Почему |
 |-------|--------------|--------|
-| 5 bottom tabs | 3 + overflow | Profile tab отвлекал от «сегодня» ([`NAVIGATION_GRAPH.md`](NAVIGATION_GRAPH.md)) |
+| 5 bottom tabs | План · Покупки · Дом · События · Забота | Profile/Account is configuration and remains in the app shell, not persistent root navigation |
 | `/` как hub плиток | `/` = Home дня | Плитки = равные функции, не ответ на вопрос дня |
 | `/menu` дублирует Home | `/plan/today` только блюда | Один «today» — на Home compact, в Plan — full |
 | `/health` + `/health/today` | `/wellness` один scroll | Лишний tap ([`UX_FLOW_MAP.md`](UX_FLOW_MAP.md) #4) |
@@ -391,21 +397,22 @@ Home = **центр дня**, не dashboard статистики и не кат
 
 ## 4. Навигация — оптимальная структура 2026
 
-### 4.1 Bottom Navigation (3 + center emphasis)
+### 4.1 Bottom Navigation (five roots, Home center emphasis)
 
 | Position | Label | Icon | Route |
 |----------|-------|------|-------|
-| Left | План | dish SVG | `/plan/today` (default child) |
-| **Center** | **Дом** | home SVG | `/` |
-| Right | Забота | heart SVG | `/wellness` |
-| — | ⋯ | dots | `AccountSheet` (modal, не tab) |
+| 1 | План | dish SVG | `/plan/today` (default child) |
+| 2 | Покупки | shopping SVG | `/home/shopping` |
+| **3 Center** | **Дом** | home SVG | `/` |
+| 4 | События | calendar/event SVG | `/events` (stable reserved root; domain pending) |
+| 5 | Забота | heart SVG | `/wellness` |
 
-**Центр = Дом** — отличие от as-is (центр был бренд без ясной роли).
+**Центр = Дом** — ежедневный ответ на вопрос «что мне нужно сделать сегодня?». Profile/Account is opened from the app shell/Home account control and is not a persistent root.
 
 **Обоснование:**
 
 - 80% DAU задач: «сегодня» → центр;
-- План и Забота симметричны по частоте, но не конкурируют с Hero;
+- План, Покупки, События и Забота remain persistent workflow roots while Дом remains the daily center;
 - Profile убран с tab bar → +12% focus на Hero (industry pattern: primary action center).
 
 ### 4.2 Внутренняя навигация «План»
@@ -1030,7 +1037,7 @@ Trial: copy «Включено в пробный период».
 | # | Решение | Альтернатива | Почему выбрано |
 |---|---------|--------------|----------------|
 | D1 | Home = центр дня, не hub | 6 HubTiles | Отвечает на «что сегодня»; audit friction #3–4 |
-| D2 | 3 bottom tabs | 5 tabs | Меньше когнитивной нагрузки; 3 = Plan/Home/Wellness pillars |
+| D2 | Five bottom roots | 5 tabs | Daily and occasion workflows remain directly reachable; Profile is configuration, not a daily root |
 | D3 | Дом в центре tab bar | Меню в центре | Daily return path — Home, не каталог |
 | D4 | Рецепты внутри Плана, витрина | Recipes as settings | Фото-ядро связано с «что готовить» |
 | D5 | Immersive recipe page | Modal route | Large photos need scroll/steps |
@@ -1045,7 +1052,7 @@ Trial: copy «Включено в пробный период».
 | D14 | Scope chip, не Family tab | `/family` required | Not family-only app |
 | D15 | `overview` BFF | 3 screens fetch | Performance + single advice |
 | D16 | Удалить `/menu/event` route | Keep orphan | SCREEN_MAP orphan |
-| D17 | Overflow account | Profile tab | Profile = rare; daily tabs compete |
+| D17 | Profile/Account in shell, not persistent root | Profile tab | Profile = configuration; OD-16 additionally reserves Events as a persistent root |
 | D18 | Shopping single screen | 3 sub-tabs | Minimize scroll/tab friction |
 | D19 | Wellness one scroll | health + health/today | UX_FLOW #4 duplication |
 | D20 | Sage/cream only new UI | Migrate emerald | UI audit 2.5/5 dual palette |
@@ -1118,7 +1125,7 @@ Trial: copy «Включено в пробный период».
 | Phase | Scope | Exit criteria |
 |-------|-------|---------------|
 | **UX-0** | Design tokens light/dark + PhotoCard + HomeHero | Figma + 1 static page |
-| **UX-1** | Home + overview bundle + 3-tab nav | Home answers «что сегодня» in 1 tap |
+| **UX-1** | Home + overview bundle + five-root nav | Home answers «что сегодня» in 1 tap |
 | **UX-2** | Onboarding WOW + `/plan/today` | First plan < 90s |
 | **UX-3** | Recipe vitrine + immersive detail | 100% cards show photo L0/L1 |
 | **UX-4** | Shopping + pantry + meal outcome | Single shopping path |
@@ -1149,7 +1156,7 @@ PLANAM UX/UI 2026 проектируется **как новый продукт*
 
 **Home** становится центром дня: один Hero CTA, горизонтальная лента **блюд с большими фото**, компактные полоски покупок/запасов/заботы — без hub-плиток и без списка функций.
 
-**Навигация:** три вкладки (**План · Дом · Забота**) + overflow аккаунта; **Дом в центре**. Profile, подписка и уведомления уходят из tab bar. Старые разделы `/menu`, `/shopping`, `/health` — grace redirects, не эталон.
+**Навигация:** пять корневых вкладок (**План · Покупки · Дом · События · Забота**); **Дом в центре**. Profile/Account, подписка и уведомления доступны из shell/account control, но не входят в persistent bottom nav. `/events` is a stable reserved root; its real Event domain requires a dedicated pre-W8 contract wave. Старые разделы `/menu`, `/shopping`, `/health` — grace redirects, не эталон.
 
 **Рецепты** — визуальное ядро: витрина 2-column photo grid, immersive detail с KBJU, временем, шагами; архитектура фото через `image_url` + CDN + fallback ladder + batch generation.
 
@@ -1165,7 +1172,7 @@ PLANAM UX/UI 2026 проектируется **как новый продукт*
 
 **Сохранено всё ядро** (меню, рецепты, покупки, запасы, остатки, семья, нутрициолог, здоровье, уведомления, подписки, AI) — изменён **способ доступа** и иерархия.
 
-**Следующий шаг реализации:** UX-0 design tokens + PhotoCard, затем UX-1 Home + 3-tab nav ([`SECURITY_FIX_ROADMAP.md`](SECURITY_FIX_ROADMAP.md) Phase 0 параллельно).
+**Следующий шаг реализации:** UX-0 design tokens + PhotoCard, затем UX-1 Home + five-root nav ([`SECURITY_FIX_ROADMAP.md`](SECURITY_FIX_ROADMAP.md) Phase 0 параллельно).
 
 ---
 

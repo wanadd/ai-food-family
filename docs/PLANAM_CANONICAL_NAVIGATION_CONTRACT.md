@@ -4,10 +4,15 @@ Sprint: 1.8B-0
 
 ## Root Bottom-Nav Screens
 
-- `/` — ПланАм / главная.
-- `/plan/today` — меню на сегодня.
-- `/home/shopping` — покупки.
-- `/wellness` — здоровье.
+- `/plan/today` — План.
+- `/home/shopping` — Покупки.
+- `/` — Дом / главная.
+- `/events` — События, stable reserved root; real Event domain is pending a dedicated pre-W8 contract wave.
+- `/wellness` — Забота / здоровье.
+
+Root order is: `План | Покупки | Дом | События | Забота`.
+`/account` remains canonical user-facing Profile/Account access from the
+application shell or Home account control; it is not a persistent root.
 
 Root screens must not show an in-app BackButton. Telegram BackButton should be
 hidden on root screens.
@@ -25,7 +30,7 @@ hidden on root screens.
 - `/account/settings/documents` — документы.
 - `/account/settings/support` — поддержка.
 - `/account/settings/about` — о приложении.
-- `/events` — future scaffold placeholder: "Раздел скоро появится".
+- `/events` — reserved future-domain scaffold; do not treat its legacy placeholder as canonical Event support.
 
 Nested screens should show an in-app BackButton in a consistent location.
 Telegram BackButton should be visible on nested screens.

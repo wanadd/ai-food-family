@@ -22,6 +22,26 @@ The owner decisions D01-D17 are accepted and override earlier recommendations or
 | D16 | SLO/RPO/RTO | Establish baseline before numeric targets. | Unsupported operational numbers would be fiction. | Define SLO, error budgets, RPO, RTO, and latency budgets after measurement. | Later |
 | D17 | Important dates and structured AI memory | ImportantDate/PersonalEvent plus structured AI memory tail; contract now, implement later. | Ecosystem memory needs structure, consent, scope, and ownership. | AI may propose persistent facts but should not silently promote unrestricted memory. | CONTRACT_NOW_IMPLEMENT_LATER |
 
+## OD-16 — W8 navigation and Events direction
+
+| ID | Title | Status | Decision | Consequences | Timing |
+|---|---|---|---|---|---|
+| OD-16 | Five-root consumer navigation with Profile in settings | ACCEPTED | Persistent bottom navigation is `План | Покупки | Дом | События | Забота`. Profile/Account remains a canonical user-facing destination accessed from the application shell or Home account control, but is not a persistent bottom-navigation root. | Events is a stable root destination, but its real domain implementation is deferred to a dedicated dependency wave. The root icon is stable; it is not replaced dynamically by event type. | W8 prerequisite |
+
+### OD-16 Events product direction
+
+Frozen now: Events is a first-class future product domain; multiple independent
+Events are supported conceptually; an Event is not a Household; an Event
+participant is not automatically a Household member; unknown food restrictions
+remain unknown; Event safety reuses the canonical W2 authority; and future
+invitations must be provider-neutral.
+
+Requires dedicated Event design: temporary guest identity, invitation and
+low-friction RSVP, collaboration modes, participant and headcount model,
+Event menu ownership, shopping responsibility, lifecycle, privacy/retention,
+and explicit linking to permanent Account/CorePerson identity. These are not
+physical schema decisions and are not implemented by OD-16.
+
 ## Superseded assumptions
 
 - A global domain-heavy PersonProfile is superseded by CorePerson plus domain-owned profiles.

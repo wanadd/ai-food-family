@@ -18,7 +18,7 @@
 | `/shopping` → `/home/shopping` | Redirect при UI_2026, список, sync |
 | `/shopping/pantry` → `/home/pantry` | Redirect, запасы |
 | `/shopping/leftovers` | 2026-страница остатков |
-| Bottom nav | План · Дом · Забота · Профиль |
+| Bottom nav | План · Покупки · Дом · События · Забота |
 | Light / Dark / System | ThemeProvider + `data-planam-ui="2026"` |
 | Legacy `UI_2026=false` | Build не ломается (см. §6) |
 
@@ -133,4 +133,4 @@ npm run build  → OK
 
 Основные маршруты 2026 стабильны: нет вечных skeleton, нет тупиковых subscription/wellness экранов, CTA ведут на существующие маршруты, ошибки API не роняют UI.
 
-**Рекомендуемый ручной smoke перед бетой:** Telegram Mini App, все 4 bottom tabs, Light/Dark toggle в Account, «Создать меню» с пустого плана, «В меню» с карточки рецепта.
+**Рекомендуемый ручной smoke перед бетой:** Telegram Mini App, все 5 bottom roots, Light/Dark toggle in Account, «Создать меню» с пустого плана, «В меню» с карточки рецепта. Events remains a reserved root placeholder until its dedicated domain contract is implemented.
