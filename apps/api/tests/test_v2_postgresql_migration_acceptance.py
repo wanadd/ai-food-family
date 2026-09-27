@@ -19,6 +19,7 @@ from app.models.user import User
 from app.models.user_profile import UserProfile
 
 API_ROOT = Path(__file__).resolve().parents[1]
+CURRENT_ALEMBIC_HEAD = "20260927_0018"
 
 
 def _acceptance_url() -> str:
@@ -60,7 +61,7 @@ def _assert_alembic_head(url: str) -> None:
     finally:
         engine.dispose()
 
-    assert revision == "20260927_0013"
+    assert revision == CURRENT_ALEMBIC_HEAD
 
 
 def test_v2_baseline_real_postgresql_acceptance():

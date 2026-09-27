@@ -309,11 +309,7 @@ def test_send_creates_sent_event(db, monkeypatch):
     )
     monkeypatch.setattr(reminders, "get_notif_settings", lambda _db, _u: _notif())
     monkeypatch.setattr(reminders, "_is_quiet_hours", lambda *_: False)
-    monkeypatch.setattr(
-        reminders,
-        "send_telegram_message",
-        AsyncMock(return_value=True),
-    )
+    monkeypatch.setattr(reminders, "enqueue_legacy_notification", lambda *_args, **_kwargs: True)
 
     counts = asyncio.run(
         reminders.send_due_meal_consumption_reminders(
@@ -324,7 +320,7 @@ def test_send_creates_sent_event(db, monkeypatch):
     )
     assert counts["sent"] == 1
     event = db.query(MealConsumptionReminderEvent).one()
-    assert event.status == "sent"
+    assert event.status == "queued"
 
 
 def test_send_dry_run_no_telegram(db, monkeypatch):
@@ -341,8 +337,6 @@ def test_send_dry_run_no_telegram(db, monkeypatch):
     )
     monkeypatch.setattr(reminders, "get_notif_settings", lambda _db, _u: _notif())
     monkeypatch.setattr(reminders, "_is_quiet_hours", lambda *_: False)
-    mock_send = AsyncMock(return_value=True)
-    monkeypatch.setattr(reminders, "send_telegram_message", mock_send)
 
     counts = asyncio.run(
         reminders.send_due_meal_consumption_reminders(
@@ -353,7 +347,6 @@ def test_send_dry_run_no_telegram(db, monkeypatch):
         )
     )
     assert counts["dry_run"] == 1
-    mock_send.assert_not_called()
     assert db.query(MealConsumptionReminderEvent).count() == 0
 
 
@@ -378,8 +371,6 @@ def test_send_skips_when_eaten(db, monkeypatch):
     )
     monkeypatch.setattr(reminders, "get_notif_settings", lambda _db, _u: _notif())
     monkeypatch.setattr(reminders, "_is_quiet_hours", lambda *_: False)
-    mock_send = AsyncMock(return_value=True)
-    monkeypatch.setattr(reminders, "send_telegram_message", mock_send)
 
     counts = asyncio.run(
         reminders.send_due_meal_consumption_reminders(
@@ -389,7 +380,6 @@ def test_send_skips_when_eaten(db, monkeypatch):
         )
     )
     assert counts["skipped"] == 1
-    mock_send.assert_not_called()
     assert db.query(MealConsumptionReminderEvent).one().status == "skipped_already_logged"
 
 
@@ -413,14 +403,20 @@ def test_idempotent_second_run(db, monkeypatch):
     )
     monkeypatch.setattr(reminders, "get_notif_settings", lambda _db, _u: _notif())
     monkeypatch.setattr(reminders, "_is_quiet_hours", lambda *_: False)
-    mock_send = AsyncMock(return_value=True)
-    monkeypatch.setattr(reminders, "send_telegram_message", mock_send)
+    enqueue_calls = 0
+
+    def enqueue(*_args, **_kwargs):
+        nonlocal enqueue_calls
+        enqueue_calls += 1
+        return True
+
+    monkeypatch.setattr(reminders, "enqueue_legacy_notification", enqueue)
     now = datetime(2026, 6, 10, 16, 0, tzinfo=MOSCOW)
 
     asyncio.run(reminders.send_due_meal_consumption_reminders(db, now, dry_run=False))
     asyncio.run(reminders.send_due_meal_consumption_reminders(db, now, dry_run=False))
 
-    assert mock_send.await_count == 1
+    assert enqueue_calls == 1
     assert db.query(MealConsumptionReminderEvent).count() == 1
 
 
@@ -447,12 +443,10 @@ def test_sender_error_does_not_stop_job(db, monkeypatch):
     monkeypatch.setattr(reminders, "get_notif_settings", lambda _db, _u: _notif())
     monkeypatch.setattr(reminders, "_is_quiet_hours", lambda *_: False)
 
-    async def _flaky(telegram_id, *_args, **_kwargs):
-        if telegram_id == 111:
-            raise RuntimeError("telegram down")
-        return True
+    def _flaky(_db, user, **_kwargs):
+        return user.telegram_id != 111
 
-    monkeypatch.setattr(reminders, "send_telegram_message", _flaky)
+    monkeypatch.setattr(reminders, "enqueue_legacy_notification", _flaky)
 
     counts = asyncio.run(
         reminders.send_due_meal_consumption_reminders(
@@ -465,7 +459,7 @@ def test_sender_error_does_not_stop_job(db, monkeypatch):
     assert counts["sent"] == 1
     statuses = {e.user_id: e.status for e in db.query(MealConsumptionReminderEvent).all()}
     assert statuses[10] == "failed"
-    assert statuses[20] == "sent"
+    assert statuses[20] == "queued"
 
 
 def test_virtual_members_not_in_user_scan():

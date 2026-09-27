@@ -19,7 +19,7 @@ from app.services.app_scope import AppScope
 from app.services.care import _is_quiet_hours, get_or_create_care_settings
 from app.services.menu_selection import get_latest_selection, menu_from_storage
 from app.services.notifications import get_or_create_settings as get_notif_settings
-from app.telegram.messages import send_telegram_message
+from app.notifications.legacy_bridge import enqueue_legacy_notification
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,7 @@ LOGGED_STATUSES = frozenset({"eaten", "skipped", "ate_out", "unknown"})
 TERMINAL_EVENT_STATUSES = frozenset(
     {
         "sent",
+        "queued",
         "skipped_already_logged",
         "skipped_too_late",
         "skipped_no_telegram",
@@ -441,33 +442,18 @@ async def send_due_meal_consumption_reminders(
 
         text = build_meal_reminder_message(due.meal_type)
         path = build_meal_reminder_web_app_path(due.meal_type)
-        try:
-            sent = await send_telegram_message(
-                due.user.telegram_id,
-                text,
-                web_app_path=path,
-                button_text="Отметить съеденное",
-            )
-        except Exception as exc:
-            counts["failed"] += 1
-            _upsert_event(
-                db,
-                user_id=due.user.id,
-                family_id=due.family_id,
-                menu_selection_id=due.menu_selection_id,
-                day_index=due.day_index,
-                planned_date=due.planned_date,
-                meal_type=due.meal_type,
-                status="failed",
-                due_at=due.due_at,
-                error_message=str(exc)[:500],
-            )
-            logger.exception(
-                "Meal consumption reminder failed user=%s", due.user.id
-            )
-            continue
-
-        if sent:
+        queued = enqueue_legacy_notification(
+            db,
+            due.user,
+            intent_type="meal_consumption.missing",
+            occurrence_key=(
+                f"meal:{due.planned_date.isoformat()}:{due.meal_type}:"
+                f"{due.menu_selection_id}:{due.day_index}"
+            ),
+            text=text,
+            navigation={"path": path, "label": "Отметить съеденное"},
+        )
+        if queued:
             counts["sent"] += 1
             _upsert_event(
                 db,
@@ -477,12 +463,12 @@ async def send_due_meal_consumption_reminders(
                 day_index=due.day_index,
                 planned_date=due.planned_date,
                 meal_type=due.meal_type,
-                status="sent",
+                status="queued",
                 due_at=due.due_at,
                 sent_at=now,
             )
             logger.info(
-                "Meal consumption reminder sent user=%s meal=%s",
+                "Meal consumption reminder queued user=%s meal=%s",
                 due.user.id,
                 due.meal_type,
             )
@@ -498,7 +484,7 @@ async def send_due_meal_consumption_reminders(
                 meal_type=due.meal_type,
                 status="failed",
                 due_at=due.due_at,
-                error_message="send_telegram_message returned false",
+                error_message="No active canonical Telegram identity is linked",
             )
 
     return counts

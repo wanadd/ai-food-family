@@ -3,6 +3,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
+from sqlalchemy import inspect
 
 from app.config import settings
 
@@ -59,6 +60,16 @@ async def _telegram_webhook_handler(
 
     if not should_process_telegram_update(update):
         return {"ok": True}
+
+    # W7 durable provider dedupe is an integration boundary. Legacy deployments
+    # without the additive table retain their existing compatibility guard.
+    if inspect(db.bind).has_table("outbox_events"):
+        from app.notifications.update_dedupe import claim_telegram_update
+
+        if update_id is not None and not claim_telegram_update(db, int(update_id)):
+            db.rollback()
+            return {"ok": True}
+        db.commit()
 
     try:
         await process_telegram_update(db, update)

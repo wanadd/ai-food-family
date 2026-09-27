@@ -32,7 +32,7 @@ from app.services.notifications import get_or_create_settings as get_notif_setti
 from app.services.onboarding import get_or_create_profile
 from app.services import pantry as pantry_service
 from app.services import shopping_list as shopping_list_service
-from app.telegram.messages import send_telegram_message
+from app.notifications.legacy_bridge import enqueue_legacy_notification
 
 logger = logging.getLogger(__name__)
 
@@ -425,7 +425,7 @@ async def send_telegram_care_notification(
     user: User,
 ) -> bool:
     if notification.status != "pending":
-        return notification.status == "sent"
+        return notification.status in {"queued", "sent"}
 
     if not user.telegram_id:
         _mark_notification_failed(
@@ -437,20 +437,6 @@ async def send_telegram_care_notification(
         logger.info("Care notification skipped: no telegram_id for user %s", user.id)
         return False
 
-    claimed = (
-        db.query(CareNotification)
-        .filter(
-            CareNotification.id == notification.id,
-            CareNotification.status == "pending",
-        )
-        .update({"status": "sending"}, synchronize_session=False)
-    )
-    db.commit()
-    if claimed != 1:
-        db.refresh(notification)
-        return notification.status == "sent"
-    db.refresh(notification)
-
     template = CARE_TEMPLATES.get(notification.type, {})
     web_path = (notification.payload or {}).get(
         "web_app_path", template.get("web_app_path", "/")
@@ -460,51 +446,32 @@ async def send_telegram_care_notification(
     )
     text = f"<b>{notification.title}</b>\n\n{notification.message}"
 
-    try:
-        sent = await send_telegram_message(
-            user.telegram_id,
-            text,
-            web_app_path=web_path,
-            button_text=button,
-        )
-    except Exception as exc:
-        logger.exception(
-            "Telegram care notification failed for user %s notification %s",
-            user.id,
-            notification.id,
-        )
+    queued = enqueue_legacy_notification(
+        db,
+        user,
+        intent_type=f"care.{notification.type}",
+        occurrence_key=f"care:{notification.id}",
+        text=text,
+        navigation={"path": web_path, "label": button},
+    )
+    if not queued:
         _mark_notification_failed(
             notification,
-            error_type=exc.__class__.__name__,
-            error_message=str(exc),
+            error_type="canonical_identity_missing",
+            error_message="No active canonical Telegram identity is linked",
         )
         db.commit()
-        log_care_event(
-            db,
-            user,
-            f"care_{notification.type}_failed",
-            payload={"notification_id": notification.id},
-        )
         return False
-
-    if sent:
-        notification.status = "sent"
-        notification.sent_at = datetime.now(timezone.utc)
-    else:
-        _mark_notification_failed(
-            notification,
-            error_type="telegram_not_ok",
-            error_message="Telegram send returned false",
-        )
+    notification.status = "queued"
     db.commit()
 
     log_care_event(
         db,
         user,
-        f"care_{notification.type}_{'sent' if sent else 'failed'}",
+        f"care_{notification.type}_queued",
         payload={"notification_id": notification.id},
     )
-    return sent
+    return True
 
 
 def _mark_notification_failed(
@@ -631,9 +598,9 @@ async def send_care_notification_by_type(
     )
     if notification is None:
         return False, "Такое напоминание уже отправлялось недавно.", None
-    sent = await send_telegram_care_notification(db, notification, user)
-    if sent:
-        return True, "Сообщение отправлено в Telegram.", notification
+    queued = await send_telegram_care_notification(db, notification, user)
+    if queued:
+        return True, "Уведомление поставлено в очередь доставки.", notification
     if not settings.telegram_bot_token:
         return (
             False,

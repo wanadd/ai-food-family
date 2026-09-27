@@ -452,9 +452,6 @@ def test_failed_send_marks_failed_and_prevents_duplicate_cycle(db_sqlite, monkey
     from app.models.care import CareNotification
     from app.services.care import create_care_notification, send_telegram_care_notification
 
-    async def fail_send(*_args, **_kwargs):
-        raise RuntimeError("telegram unavailable")
-
     db = db_sqlite
     user = _make_user(db)
     notif_service.apply_onboarding(
@@ -465,7 +462,7 @@ def test_failed_send_marks_failed_and_prevents_duplicate_cycle(db_sqlite, monkey
             enabled_notification_types=["water"],
         ),
     )
-    monkeypatch.setattr("app.services.care.send_telegram_message", fail_send)
+    monkeypatch.setattr("app.services.care.enqueue_legacy_notification", lambda *_args, **_kwargs: False)
 
     notification = create_care_notification(db, user, "water")
     assert notification is not None
@@ -482,7 +479,7 @@ def test_failed_send_marks_failed_and_prevents_duplicate_cycle(db_sqlite, monkey
     ]
     assert sent is False
     assert notification.status == "failed"
-    assert notification.payload["error_type"] == "RuntimeError"
+    assert notification.payload["error_type"] == "canonical_identity_missing"
     assert "failed_at" in notification.payload
     assert "pending" not in statuses
     assert duplicate is None

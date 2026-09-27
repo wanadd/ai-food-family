@@ -14,7 +14,7 @@ from app.services.notification_messages import (
     build_meal_cook_reminder_text,
 )
 from app.services.scheduler_lock import notification_scheduler_lock
-from app.telegram.messages import send_telegram_message
+from app.notifications.legacy_bridge import enqueue_legacy_notification
 
 logger = logging.getLogger(__name__)
 
@@ -116,15 +116,13 @@ async def _maybe_send_buy(
         return
 
     text = build_buy_reminder_text(db, user)
-    sent = await send_telegram_message(
-        user.telegram_id,
-        text,
-        web_app_path="/shopping",
-        button_text="Список покупок",
+    queued = enqueue_legacy_notification(
+        db, user, intent_type="shopping.reminder", occurrence_key=f"buy:{today.isoformat()}",
+        text=text, navigation={"path": "/shopping", "label": "Список покупок"},
     )
-    if sent:
+    if queued:
         notification_settings.last_buy_sent_date = today
-        logger.info("Buy reminder sent to user %s", user.id)
+        logger.info("Buy reminder queued for user %s", user.id)
 
 
 async def _maybe_send_meal_cook(
@@ -151,16 +149,15 @@ async def _maybe_send_meal_cook(
     if not text:
         return
 
-    sent = await send_telegram_message(
-        user.telegram_id,
-        text,
-        web_app_path="/menu",
-        button_text="Открыть меню",
+    queued = enqueue_legacy_notification(
+        db, user, intent_type="menu.cook_reminder",
+        occurrence_key=f"cook:{meal_type}:{today.isoformat()}", text=text,
+        navigation={"path": "/menu", "label": "Открыть меню"},
     )
-    if sent:
+    if queued:
         setattr(notification_settings, sent_attr, today)
         notification_settings.last_cook_sent_date = today
-        logger.info("%s cook reminder sent to user %s", meal_type, user.id)
+        logger.info("%s cook reminder queued for user %s", meal_type, user.id)
 
 
 def _now_in_timezone(timezone_name: str) -> tuple[date, str]:
