@@ -20,6 +20,11 @@ ERROR_MESSAGES = {
     "link_expired": "The identity link intent has expired.",
     "link_replayed": "The identity link intent has already been consumed.",
     "validation_error": "The request is invalid.",
+    "not_found": "The requested resource was not found.",
+    "conflict": "The request conflicts with current state.",
+    "entitlement_required": "The requested capability is not available.",
+    "permission_required": "The required permission is not available.",
+    "last_identity": "At least one usable authentication method must remain.",
 }
 
 

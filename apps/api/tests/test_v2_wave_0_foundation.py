@@ -41,6 +41,8 @@ def db() -> Session:
             "core_accounts",
             "core_households",
             "core_memberships",
+            "core_person_relationships",
+            "core_permission_grants",
             "external_identities",
             "verified_contacts",
             "sessions",

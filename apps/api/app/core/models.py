@@ -50,6 +50,7 @@ class CorePerson(Base):
     birth_date_precision: Mapped[str] = mapped_column(String(24), nullable=False, default="unknown")
     birth_date_provenance_json: Mapped[dict] = mapped_column(CoreJSON, nullable=False, default=dict)
     birth_date_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_mutation_idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="active")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -91,6 +92,12 @@ class CoreHousehold(Base):
     household_id: Mapped[str] = mapped_column(CoreUUID, primary_key=True)
     name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="active")
+    created_by_account_id: Mapped[str | None] = mapped_column(
+        CoreUUID,
+        ForeignKey("core_accounts.account_id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    creation_idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -120,6 +127,7 @@ class CoreMembership(Base):
     active_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     active_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ui_default_rank: Mapped[int | None] = mapped_column(nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
     created_by_account_id: Mapped[str | None] = mapped_column(
         CoreUUID,
         ForeignKey("core_accounts.account_id", ondelete="SET NULL"),
@@ -318,3 +326,66 @@ class IdentityLinkIntent(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EntitlementPlan(Base):
+    __tablename__ = "entitlement_plans"
+    __table_args__ = (
+        UniqueConstraint("plan_key", "version", name="uq_entitlement_plan_key_version"),
+        CheckConstraint("status IN ('active', 'inactive', 'archived')", name="ck_entitlement_plans_status"),
+        CheckConstraint("version > 0", name="ck_entitlement_plans_version_positive"),
+    )
+
+    plan_id: Mapped[str] = mapped_column(CoreUUID, primary_key=True)
+    plan_key: Mapped[str] = mapped_column(String(96), nullable=False)
+    version: Mapped[int] = mapped_column(nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="active")
+    policy_json: Mapped[dict] = mapped_column(CoreJSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EntitlementGrant(Base):
+    __tablename__ = "entitlement_grants"
+    __table_args__ = (
+        CheckConstraint(
+            "(account_id IS NOT NULL AND household_id IS NULL AND person_id IS NULL) "
+            "OR (account_id IS NULL AND household_id IS NOT NULL AND person_id IS NULL) "
+            "OR (account_id IS NULL AND household_id IS NULL AND person_id IS NOT NULL)",
+            name="ck_entitlement_grants_one_subject",
+        ),
+        CheckConstraint("effective_to IS NULL OR effective_to > effective_from", name="ck_entitlement_grants_period"),
+        CheckConstraint("grant_status IN ('active', 'revoked', 'expired')", name="ck_entitlement_grants_status"),
+        CheckConstraint("limit_value IS NULL OR limit_value >= 0", name="ck_entitlement_grants_limit_nonnegative"),
+        UniqueConstraint("idempotency_key", name="uq_entitlement_grants_idempotency"),
+        Index("ix_entitlement_grants_subject_capability", "account_id", "household_id", "person_id", "capability", "grant_status"),
+    )
+
+    grant_id: Mapped[str] = mapped_column(CoreUUID, primary_key=True)
+    account_id: Mapped[str | None] = mapped_column(CoreUUID, ForeignKey("core_accounts.account_id", ondelete="CASCADE"), nullable=True)
+    household_id: Mapped[str | None] = mapped_column(CoreUUID, ForeignKey("core_households.household_id", ondelete="CASCADE"), nullable=True)
+    person_id: Mapped[str | None] = mapped_column(CoreUUID, ForeignKey("core_persons.person_id", ondelete="CASCADE"), nullable=True)
+    capability: Mapped[str] = mapped_column(String(128), nullable=False)
+    limit_value: Mapped[int | None] = mapped_column(nullable=True)
+    effective_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    effective_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    grant_status: Mapped[str] = mapped_column(String(24), nullable=False, default="active")
+    source: Mapped[str] = mapped_column(String(96), nullable=False, default="policy")
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    provenance_json: Mapped[dict] = mapped_column(CoreJSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EntitlementConsumption(Base):
+    __tablename__ = "entitlement_consumptions"
+    __table_args__ = (
+        CheckConstraint("amount >= 0", name="ck_entitlement_consumptions_amount_nonnegative"),
+        UniqueConstraint("grant_id", "idempotency_key", name="uq_entitlement_consumptions_grant_idempotency"),
+        Index("ix_entitlement_consumptions_grant", "grant_id", "consumed_at"),
+    )
+
+    consumption_id: Mapped[str] = mapped_column(CoreUUID, primary_key=True)
+    grant_id: Mapped[str] = mapped_column(CoreUUID, ForeignKey("entitlement_grants.grant_id", ondelete="CASCADE"), nullable=False)
+    amount: Mapped[int] = mapped_column(nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    consumed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    provenance_json: Mapped[dict] = mapped_column(CoreJSON, nullable=False, default=dict)

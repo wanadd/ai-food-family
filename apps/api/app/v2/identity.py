@@ -227,3 +227,21 @@ def complete_link_intent(db: Session, intent_id: str, secret: str, auth: AuthRes
     intent.consumed_at = now
     db.flush()
     return existing
+
+
+def unlink_identity(db: Session, *, account_id: str, identity_id: str) -> ExternalIdentity:
+    identity = db.get(ExternalIdentity, identity_id)
+    if identity is None or identity.account_id != account_id:
+        raise error("not_found", 404)
+    if identity.status != "active":
+        raise error("conflict", 409)
+    active_count = db.query(ExternalIdentity).filter(
+        ExternalIdentity.account_id == account_id,
+        ExternalIdentity.status == "active",
+    ).count()
+    if active_count <= 1:
+        raise error("last_identity", 409)
+    identity.status = "revoked"
+    identity.revoked_at = utc_now()
+    db.flush()
+    return identity
