@@ -1,0 +1,41 @@
+METHOD,PATH,DOMAIN,USE_CASE,AUTH,RESOURCE_SCOPE,INPUT,OUTPUT,MUTATION,IDEMPOTENCY,ENTITLEMENT,SAFETY_BOUNDARY
+GET,/v2/me,CORE,resolve actor,required,account,none,AccountContext,no,no,none,scope only
+POST,/v2/auth/bootstrap,CORE,verify provider and create session,provider evidence,provider bootstrap,provider proof,SessionContext,yes,required,none,server verifies provider
+GET,/v2/session,CORE,read current session,required,session,none,SessionContext,no,no,none,revocation state
+POST,/v2/session/refresh,CORE,refresh session,required,session,refresh proof,SessionContext,yes,required,none,rotation/replay protection
+POST,/v2/session/revoke,CORE,revoke session,required,session,session id,Revocation,yes,required,none,audit
+GET,/v2/households,CORE,list memberships,required,account,none,HouseholdSummary,no,no,none,membership
+POST,/v2/households,CORE,create household,required,account,name,Household,yes,required,none,none
+GET,/v2/households/{household_id}/members,CORE,list members,required,household,none,PersonSummary,no,no,none,member scope
+POST,/v2/households/{household_id}/members,CORE,add person,required,household,person/relationship,Membership,yes,required,household.members.max,delegation
+PATCH,/v2/people/{person_id},CORE,update person,required,person,core facts,Person,yes,required,none,PII policy
+GET,/v2/account/identities,CORE,list external identities,required,account,none,ExternalIdentitySummary[],no,no,none,masked provider data
+POST,/v2/account/link-intents,CORE,start identity link,required,account,provider,LinkIntent,yes,required,none,one-time expiry
+POST,/v2/account/link-intents/{intent_id}/complete,CORE,complete identity link,provider proof,account,provider proof,LinkResult,yes,required,none,provider verification
+DELETE,/v2/account/identities/{identity_id},CORE,unlink identity,required,account,identity id,ExternalIdentity,yes,required,none,last-login protection
+GET,/v2/people/{person_id}/food-profile,FOOD_PROFILE,read profile,required,person,none,FoodProfile,no,no,none,person scope
+PUT,/v2/people/{person_id}/food-profile,FOOD_PROFILE,replace profile facts,required,person,facts,FoodProfile,yes,required,none,reconfirmation
+POST,/v2/people/{person_id}/food-profile/reconfirm,FOOD_PROFILE,reconfirm facts,required,person,fact refs,Confirmation,yes,required,none,evidence required
+GET,/v2/foods/search,FOOD_SAFETY,search food,required,global/query,query,FoodIdentity[],no,no,none,no clearance
+GET,/v2/foods/{food_id},FOOD_SAFETY,read food,required,global,none,FoodDetail,no,no,none,provenance
+POST,/v2/safety/evaluate,FOOD_SAFETY,evaluate candidate,required,person/household,candidate/process,SafetyDecision,no,required,none,mandatory
+GET,/v2/recipes,RECIPE,search recipes,required,global/query,filters,RecipeSummary[],no,no,none,published only
+GET,/v2/recipes/{recipe_id},RECIPE,read recipe,required,global,version,RecipeDetail,no,no,none,published
+POST,/v2/recipes/{recipe_id}/favorite,RECIPE,favorite recipe,required,person,none,Favorite,yes,required,none,none
+POST,/v2/plans,PLANNING,create plan,required,person/household,owner scope + range/mode,Plan,yes,required,planner.create,pre-evaluate against owner scope
+POST,/v2/plans/{plan_id}/generate,PLANNING,generate revision,required,plan owner (person/household),inputs,PlanRevision,yes,required,planner.generate,safety gate against owner scope
+POST,/v2/plans/{plan_id}/revisions/{revision_id}/replace,PLANNING,replace slot,required,plan owner (person/household),slot/candidate,Assignment,yes,required,planner.replace,safety gate against owner scope
+POST,/v2/plans/{plan_id}/slots/{slot_id}/empty,PLANNING,explicit empty,required,plan owner (person/household),reason,PlanSlot,yes,required,none,explicit empty is retained
+GET,/v2/households/{household_id}/shopping,SHOPPING,list shopping,required,household,filters,ShoppingList,no,no,none,source trace
+POST,/v2/households/{household_id}/shopping/items,SHOPPING,add manual item,required,household,item,ShoppingItem,yes,required,none,optional safety
+POST,/v2/shopping/items/{item_id}/purchase,SHOPPING,purchase item,required,household,pantry option,PurchaseResult,yes,required,none,product safety
+GET,/v2/households/{household_id}/pantry,PANTRY,list inventory,required,household,filters,Inventory,no,no,none,scope
+POST,/v2/households/{household_id}/pantry/adjust,PANTRY,adjust stock,required,household,lot/movement,Movement,yes,required,none,product identity
+POST,/v2/households/{household_id}/receipts,RECEIPT,submit receipt,required,household,media,ReceiptDocument,yes,required,receipt.ocr,raw only
+POST,/v2/receipts/{receipt_id}/proposals/{proposal_id}/accept,RECEIPT,accept OCR proposal,required,household,confirmed lines,ImportResult,yes,required,receipt.ocr,match validation
+POST,/v2/households/{household_id}/cooking-sessions,COOKING,start cooking,required,household,plan/session,CookingSession,yes,required,none,process state
+POST,/v2/cooking-sessions/{session_id}/complete,COOKING,complete cooking,required,household,prepared facts,CookingSession,yes,required,none,not consumption
+POST,/v2/people/{person_id}/meal-checkins,CONSUMPTION,record intake,required,person/household,portion/actual,ConsumptionEvent,yes,required,none,person safety
+GET,/v2/people/{person_id}/health/deviations,HEALTH,read deviations,required,person,range,HealthDeviation[],no,no,health.read,derived only
+POST,/v2/notification-preferences,ASYNC_NOTIFICATION,update preferences,required,person/household,policy,Preferences,yes,required,none,quiet hours
+GET,/v2/entitlements,ENTITLEMENT,read effective grants,required,account/household,none,Entitlement[],no,no,none,server truth
