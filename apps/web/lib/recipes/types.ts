@@ -4,6 +4,14 @@ export type RecipeIngredient = {
   quantity?: string | null;
   unit?: string | null;
   is_optional?: boolean;
+  display_name?: string;
+  shopping_name?: string | null;
+  food_identity?: string | null;
+  mapping_status?: "KNOWN" | "UNKNOWN" | "AMBIGUOUS" | string;
+  normalized_quantity?: number | null;
+  normalized_unit?: string | null;
+  quantity_mode?: "MASS" | "VOLUME" | "COUNT" | "TO_TASTE" | "UNKNOWN" | string;
+  process_state?: string | null;
 };
 
 export type NutritionConfidence =
@@ -31,6 +39,8 @@ export type NutritionSummary = {
 
 export type RecipeSummary = {
   id: number;
+  recipe_id?: string;
+  recipe_version_id?: string | null;
   title: string;
   display_title?: string | null;
   full_title?: string | null;
@@ -58,12 +68,16 @@ export type RecipeSummary = {
   hero_image_url?: string | null;
   thumbnail_url?: string | null;
   nutrition_summary?: NutritionSummary | null;
+  safety_state?: "SAFE" | "WARN" | "UNKNOWN" | "ESCALATE" | "BLOCK" | string;
+  publication_state?: string | null;
+  quality_score?: number | null;
 };
 
 export type RecipeDetail = RecipeSummary & {
   original_title?: string | null;
   ingredients: RecipeIngredient[];
   steps: string[];
+  structured_steps?: { step_number?: number; instruction?: string; process?: Record<string, unknown> }[];
   allergens?: string[];
   restrictions?: string[];
   sugar_g?: number | null;

@@ -115,7 +115,7 @@ export async function fetchRecipes(
 
 export async function fetchRecipe(
   initData: string,
-  recipeId: number,
+  recipeId: number | string,
 ): Promise<RecipeDetail> {
   return recipeFetch<RecipeDetail>(`/recipes/${recipeId}`, initData);
 }
@@ -242,10 +242,12 @@ export async function rateRecipeForFamily(
 
 export async function toggleRecipeFavorite(
   initData: string,
-  recipeId: number,
-): Promise<{ recipe_id: number; is_favorited: boolean }> {
+  recipeId: number | string,
+  idempotencyKey = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${recipeId}`,
+): Promise<{ recipe_id: number | string; is_favorited: boolean }> {
   return recipeFetch(`/recipes/${recipeId}/favorite`, initData, {
     method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
   });
 }
 
