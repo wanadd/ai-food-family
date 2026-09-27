@@ -18,7 +18,14 @@ class ShoppingDemandV2:
         return "KNOWN" if self.quantity is not None and self.unit else "UNKNOWN"
 
 def can_merge_demands(left: ShoppingDemandV2, right: ShoppingDemandV2) -> bool:
-    return left.unit == right.unit and left.product_requirement == right.product_requirement and left.source_kind != "MANUAL" and right.source_kind != "MANUAL"
+    return (
+        left.quantity is not None
+        and right.quantity is not None
+        and left.unit == right.unit
+        and left.product_requirement == right.product_requirement
+        and left.source_kind != "MANUAL"
+        and right.source_kind != "MANUAL"
+    )
 
 def merge_demands(left: ShoppingDemandV2, right: ShoppingDemandV2) -> ShoppingDemandV2 | None:
     if not can_merge_demands(left, right):
