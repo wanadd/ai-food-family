@@ -56,7 +56,7 @@ class FoodProfileFact(Base):
             name="uq_food_profile_fact_legacy_source",
         ),
         CheckConstraint(
-            "knowledge_state IN ('UNKNOWN', 'NOT_PROVIDED', 'KNOWN_NONE', 'KNOWN_PRESENT')",
+            "knowledge_state IN ('UNKNOWN', 'NOT_PROVIDED', 'KNOWN_NONE', 'KNOWN_PRESENT', 'DECLINED', 'NOT_APPLICABLE')",
             name="ck_food_profile_facts_knowledge_state",
         ),
         CheckConstraint(
@@ -67,7 +67,7 @@ class FoodProfileFact(Base):
         CheckConstraint(
             "(knowledge_state = 'KNOWN_PRESENT' AND value_json IS NOT NULL) OR "
             "(knowledge_state = 'KNOWN_NONE' AND value_json IS NULL) OR "
-            "(knowledge_state IN ('UNKNOWN', 'NOT_PROVIDED'))",
+            "(knowledge_state IN ('UNKNOWN', 'NOT_PROVIDED', 'DECLINED', 'NOT_APPLICABLE'))",
             name="ck_food_profile_facts_value_known_state",
         ),
         Index("ix_food_profile_facts_profile_type_state", "food_profile_id", "fact_type", "knowledge_state"),

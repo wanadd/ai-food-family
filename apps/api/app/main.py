@@ -42,7 +42,7 @@ from app.routers import (
 )
 from app.services.notification_scheduler import run_notification_scheduler
 from app.telegram.bot import setup_bot_commands, setup_menu_button, setup_webhook
-from app.routers import v2_foundation
+from app.routers import v2_foundation, v2_food
 from app.v2.correlation import RequestCorrelationMiddleware
 from app.v2.errors import V2Error
 
@@ -167,6 +167,7 @@ app.include_router(event_plans.router)
 app.include_router(telegram_bot.router)
 app.include_router(telegram_bot.bot_router)
 app.include_router(v2_foundation.router)
+app.include_router(v2_food.router)
 
 
 @app.get("/")

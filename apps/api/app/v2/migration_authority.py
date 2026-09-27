@@ -14,7 +14,7 @@ class SchemaAuthority(str, Enum):
 
 
 V2_BASELINE_REVISION = "20260922_0001"
-V2_MIGRATION_HEAD = "20260927_0012"
+V2_MIGRATION_HEAD = "20260927_0013"
 V2_ALEMBIC_VERSION_TABLE = "alembic_version"
 
 V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
@@ -85,6 +85,10 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "entitlement_plans",
         "entitlement_grants",
         "entitlement_consumptions",
+        "source_registry",
+        "food_evidence_links",
+        "safety_rules",
+        "safety_decisions",
     }
 )
 

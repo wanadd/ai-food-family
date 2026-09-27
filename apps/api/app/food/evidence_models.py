@@ -39,6 +39,7 @@ class SourceSnapshot(Base):
 
     snapshot_id: Mapped[str] = mapped_column(CoreUUID, primary_key=True)
     source_id: Mapped[str] = mapped_column(CoreUUID, ForeignKey("evidence_sources.source_id", ondelete="CASCADE"))
+    source_registry_id: Mapped[str | None] = mapped_column(CoreUUID, ForeignKey("source_registry.source_registry_id", ondelete="SET NULL"), nullable=True)
     source_version: Mapped[str] = mapped_column(String(128), nullable=False)
     fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     content_hash: Mapped[str] = mapped_column(String(128), nullable=False)

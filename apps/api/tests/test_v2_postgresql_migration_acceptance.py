@@ -60,7 +60,7 @@ def _assert_alembic_head(url: str) -> None:
     finally:
         engine.dispose()
 
-    assert revision == "20260927_0012"
+    assert revision == "20260927_0013"
 
 
 def test_v2_baseline_real_postgresql_acceptance():
