@@ -24,6 +24,10 @@ function isOnboarding2026Route(pathname: string | null): boolean {
   return Boolean(pathname?.startsWith("/onboarding"));
 }
 
+function isEventInviteRoute(pathname: string | null): boolean {
+  return Boolean(pathname?.startsWith("/events/invite"));
+}
+
 function isPlanamAuditDevRoute(pathname: string | null): boolean {
   return Boolean(pathname?.startsWith("/dev/audit"));
 }
@@ -34,6 +38,7 @@ function isExemptRoute(pathname: string | null): boolean {
     isPlanamDevPreviewRoute(pathname) ||
     isPlanamAuditDevRoute(pathname) ||
     isOnboarding2026Route(pathname)
+    || isEventInviteRoute(pathname)
   );
 }
 

@@ -19,10 +19,11 @@ export function AppShellBridge({ children }: { children: ReactNode }) {
   const isDevPreview = isPlanamDevPreviewPath(pathname);
   const isAuditDev = isAuditDevPath(pathname);
   const isOnboarding = Boolean(pathname?.startsWith("/onboarding"));
+  const isEventInvite = Boolean(pathname?.startsWith("/events/invite"));
   const use2026Shell =
-    isPlanamUi2026Enabled() && !isDevPreview && !isAuditDev && !isOnboarding;
+    isPlanamUi2026Enabled() && !isDevPreview && !isAuditDev && !isOnboarding && !isEventInvite;
 
-  if (isDevPreview || isAuditDev || isOnboarding) {
+  if (isDevPreview || isAuditDev || isOnboarding || isEventInvite) {
     return (
       <ToastProvider>
         <ThemeProvider active scope2026>

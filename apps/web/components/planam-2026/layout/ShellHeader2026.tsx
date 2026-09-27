@@ -1,8 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 import { ScreenBack2026 } from "@/components/planam-2026/navigation/ScreenBack2026";
+import { NavIcon2026 } from "@/components/planam-2026/navigation/NavIcon2026";
 
 import {
   getScreenTitle2026,
@@ -24,6 +26,15 @@ export function ShellHeader2026() {
       <div className="mx-auto flex max-w-lg items-center gap-2 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <ScreenBack2026 />
         <h1 className="pa26-page-title min-w-0 flex-1 truncate">{title}</h1>
+        {pathname !== "/account" && !pathname.startsWith("/account/") ? (
+          <Link
+            href="/account"
+            aria-label="Профиль и настройки"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-pa-border bg-pa-surface text-pa-muted transition hover:bg-pa-elevated"
+          >
+            <NavIcon2026 id="account" className="size-5" />
+          </Link>
+        ) : null}
       </div>
     </header>
   );

@@ -21,6 +21,7 @@ export type PlatformAdapter = {
   readonly clientType: PlatformType;
   readonly capabilities: ReadonlySet<PlatformCapability>;
   requestFullscreen: () => Promise<boolean>;
+  share: (data: { title?: string; text?: string; url?: string }) => Promise<boolean>;
   close: () => void;
   back: () => void;
 };

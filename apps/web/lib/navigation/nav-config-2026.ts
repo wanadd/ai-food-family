@@ -4,7 +4,7 @@
  * @see docs/SPRINT_1_COMPLETION_REPORT.md
  */
 
-export type Nav2026TabId = "plan" | "shopping" | "planam" | "wellness" | "events";
+export type Nav2026TabId = "plan" | "shopping" | "home" | "wellness" | "events";
 
 export type Nav2026IconId =
   | "plan"
@@ -51,12 +51,12 @@ export type Nav2026RouteMeta = {
   planned?: boolean;
 };
 
-/** Нижняя навигация: Меню · Покупки · ПланАм · Здоровье */
+/** Каноническая нижняя навигация: План · Покупки · Дом · События · Забота. */
 export const NAV_TABS_2026: Nav2026Tab[] = [
   {
     id: "plan",
     href: "/plan/today",
-    label: "Меню",
+    label: "План",
     icon: "plan",
     matchPrefixes: ["/plan"],
   },
@@ -68,17 +68,24 @@ export const NAV_TABS_2026: Nav2026Tab[] = [
     matchPrefixes: ["/shopping", "/home/shopping"],
   },
   {
-    id: "planam",
+    id: "home",
     href: "/",
-    label: "ПланАм",
+    label: "Дом",
     icon: "home",
     matchPrefixes: ["/", "/home"],
     isCenter: true,
   },
   {
+    id: "events",
+    href: "/events",
+    label: "События",
+    icon: "events",
+    matchPrefixes: ["/events"],
+  },
+  {
     id: "wellness",
     href: "/wellness",
-    label: "Здоровье",
+    label: "Забота",
     icon: "wellness",
     matchPrefixes: ["/wellness"],
   },
@@ -180,7 +187,7 @@ export const ROUTES_2026: Nav2026RouteMeta[] = [
   { href: "/plan", title: "План питания", tabId: "plan", sectionId: "plan" },
   { href: "/plan/today", title: "Меню", tabId: "plan", sectionId: "today" },
   { href: "/plan/recipes", title: "Рецепты", tabId: "plan", sectionId: "recipes" },
-  { href: "/wellness", title: "Здоровье", tabId: "wellness", sectionId: "wellness" },
+  { href: "/wellness", title: "Забота", tabId: "wellness", sectionId: "wellness" },
   { href: "/wellness/chat", title: "AI помощник", sectionId: "wellness-chat" },
   { href: "/events", title: "События", tabId: "events", sectionId: "events" },
   { href: "/account", title: "Профиль", sectionId: "account" },
@@ -296,7 +303,7 @@ export const LEGACY_FALLBACK_BY_2026_PATH: Record<string, string> = {
 
 export function getActiveTabId2026(pathname: string): Nav2026TabId | null {
   if (pathname === "/" || pathname === "/home") {
-    return "planam";
+    return "home";
   }
   if (
     pathname === "/home/shopping" ||
@@ -382,7 +389,7 @@ export function getSubTabsForTab2026(tabId: Nav2026TabId): Nav2026SubTab[] {
     case "plan":
       return PLAN_SUBTABS_2026;
     case "shopping":
-    case "planam":
+    case "home":
     case "wellness":
     case "events":
       return [];

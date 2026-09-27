@@ -19,6 +19,7 @@
 /** Активные (canonical) маршруты PLANAM 2026. */
 export const PLANAM_ROUTES = {
   home: "/",
+  events: "/events",
   planToday: "/plan/today",
   planWeek: "/plan",
   planGenerate: "/plan/generate",

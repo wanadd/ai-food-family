@@ -29,6 +29,17 @@ export function createTelegramPlatformAdapter(): PlatformAdapter | null {
         return false;
       }
     },
+    share: async (data) => {
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share(data);
+        return true;
+      }
+      if (typeof navigator !== "undefined" && navigator.clipboard && data.url) {
+        await navigator.clipboard.writeText(data.url);
+        return true;
+      }
+      return false;
+    },
     close: () => webApp.close?.(),
     back: () => undefined,
   };

@@ -13,14 +13,16 @@ import {
 import { resolveMigrationTarget } from "./route-migration-2026";
 
 describe("account surfaces 2026 navigation", () => {
-  it("keeps canonical bottom nav unchanged and events hidden", () => {
+  it("keeps the five canonical root destinations", () => {
     expect(NAV_TABS_2026.map((tab) => tab.href)).toEqual([
       "/plan/today",
       "/home/shopping",
       "/",
+      "/events",
       "/wellness",
     ]);
-    expect(NAV_TABS_2026.some((tab) => tab.href === "/events")).toBe(false);
+    expect(NAV_TABS_2026).toHaveLength(5);
+    expect(NAV_TABS_2026.map((tab) => tab.label)).toEqual(["План", "Покупки", "Дом", "События", "Забота"]);
     expect(getActiveTabId2026("/events")).toBe("events");
   });
 

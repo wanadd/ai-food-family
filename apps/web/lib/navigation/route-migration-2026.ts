@@ -27,9 +27,9 @@ export const ROUTE_MIGRATION_2026: RouteMigrationEntry[] = [
   { from: "/menu/collections", to: "/plan/collections", exact: true, note: "Sprint 5+" },
   {
     from: "/menu/event",
-    to: "/plan/generate",
+    to: "/events",
     exact: true,
-    note: "Event planner → plan generate",
+    note: "Legacy EventPlan → canonical Events",
   },
   {
     from: "/menu/settings",

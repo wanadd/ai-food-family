@@ -13,6 +13,17 @@ export const webPlatformAdapter: PlatformAdapter = {
     "external_browser",
   ]),
   requestFullscreen: async () => false,
+  share: async (data) => {
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      await navigator.share(data);
+      return true;
+    }
+    if (typeof navigator !== "undefined" && navigator.clipboard && data.url) {
+      await navigator.clipboard.writeText(data.url);
+      return true;
+    }
+    return false;
+  },
   close: () => undefined,
   back: () => {
     if (typeof window !== "undefined") window.history.back();

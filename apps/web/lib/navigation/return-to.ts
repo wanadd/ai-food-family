@@ -46,7 +46,7 @@ export function readReturnTo(
 
 export function backLabelForReturnTo(returnTo: string): string {
   if (returnTo.startsWith("/wellness") || returnTo.startsWith("/health")) {
-    return "Здоровье";
+    return "Забота";
   }
   if (returnTo.startsWith("/plan/today") || returnTo.startsWith("/menu/current")) {
     return "Сегодня";
