@@ -16,6 +16,11 @@ class Base(DeclarativeBase):
 
 def init_db() -> None:
     from app.events import v2_models as events_v2_models  # noqa: F401
+    # Register canonical Recipe V2 tables before SQLAlchemy resolves foreign
+    # keys from planning, shopping, events, and cooking/health models. The
+    # schema authority still keeps recipe DDL on its approved SQL/migration
+    # path; this import only makes metadata dependency resolution complete.
+    from app.recipes import v2_models as recipes_v2_models  # noqa: F401
     from app.planning import v2_models as planning_v2_models  # noqa: F401
     from app.shopping import v2_models as shopping_v2_models  # noqa: F401
     from app.cooking_health import v2_models as cooking_health_v2_models  # noqa: F401

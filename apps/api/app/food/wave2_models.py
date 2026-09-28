@@ -14,7 +14,7 @@ class FoodIdentity(Base):
     __table_args__ = (
         CheckConstraint("canonical_key <> ''", name="ck_food_identities_key_not_blank"),
     )
-    food_identity_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    food_identity_id: Mapped[int] = mapped_column("id", Integer, primary_key=True)
     identity_key: Mapped[str] = mapped_column("canonical_key", String(160), nullable=False)
     display_name: Mapped[str] = mapped_column("canonical_name", String(240), nullable=False)
     food_kind: Mapped[str | None] = mapped_column("food_class", String(64), nullable=True)
@@ -26,7 +26,7 @@ class FoodIdentity(Base):
 
 class PackagedProduct(Base):
     __tablename__ = "packaged_products"
-    packaged_product_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    packaged_product_id: Mapped[int] = mapped_column("id", Integer, primary_key=True)
     product_key: Mapped[str | None] = mapped_column("gtin", String(32), nullable=True)
     brand: Mapped[str | None] = mapped_column(String(160), nullable=True)
     product_name: Mapped[str] = mapped_column(String(240), nullable=False)
