@@ -4,6 +4,7 @@ from typing import Any
 import httpx
 
 from app.config import settings
+from app.services.legacy_outbound_guard import outbound_allowed
 from app.telegram.api_urls import telegram_bot_api_url
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,8 @@ async def send_telegram_message(
         payload["reply_markup"] = reply_markup
 
     async with httpx.AsyncClient(timeout=15.0) as client:
+        if not outbound_allowed():
+            return
         response = await client.post(api_url("sendMessage"), json=payload)
         data = response.json()
     if not data.get("ok"):
@@ -46,6 +49,8 @@ async def answer_callback_query(callback_query_id: str, text: str = "") -> None:
     if text:
         payload["text"] = text
     async with httpx.AsyncClient(timeout=15.0) as client:
+        if not outbound_allowed():
+            return
         await client.post(api_url("answerCallbackQuery"), json=payload)
 
 

@@ -20,6 +20,9 @@ server {
     }
 
     location / {
+        if (-f /etc/nginx/templates/planam-maintenance.enabled) {
+            return 503 'PLANAM is temporarily unavailable';
+        }
         return 301 https://$host$request_uri;
     }
 }
@@ -42,6 +45,9 @@ server {
     # Strip the /api prefix before forwarding to FastAPI.
     # proxy_pass with a variable forces Docker DNS re-resolution (see above).
     location /api/ {
+        if (-f /etc/nginx/templates/planam-maintenance.enabled) {
+            return 503 'PLANAM is temporarily unavailable';
+        }
         set $api_upstream http://api:8000;
         rewrite ^/api/(.*) /$1 break;
         proxy_pass $api_upstream;
@@ -61,6 +67,9 @@ server {
     # ------------------------------------------------------ Recipe images ----
     # Serve generated recipe images directly from the persistent host volume.
     location /recipe-images/ {
+        if (-f /etc/nginx/templates/planam-maintenance.enabled) {
+            return 503 'PLANAM is temporarily unavailable';
+        }
         alias /var/www/recipe-images/;
         try_files $uri =404;
         access_log off;
@@ -69,6 +78,9 @@ server {
 
     # --------------------------------------------------------------- Frontend -
     location / {
+        if (-f /etc/nginx/templates/planam-maintenance.enabled) {
+            return 503 'PLANAM is temporarily unavailable';
+        }
         set $web_upstream http://web:3000;
         proxy_pass $web_upstream;
 

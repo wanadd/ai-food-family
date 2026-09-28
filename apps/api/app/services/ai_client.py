@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 from app.config import settings
+from app.services.legacy_outbound_guard import assert_outbound_available
 from app.services.ai_errors import AiResponseError, AiUnavailableError
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ async def chat_text(
         raise AiUnavailableError()
 
     try:
+        assert_outbound_available()
         response = await client.chat.completions.create(
             model=_effective_model(),
             messages=[
@@ -102,6 +104,7 @@ async def chat_json(
 
     for attempt in range(retries + 1):
         try:
+            assert_outbound_available()
             response = await client.chat.completions.create(
                 model=effective_model,
                 messages=[
@@ -146,6 +149,7 @@ async def transcribe_audio(
 
         file_obj = io.BytesIO(audio_bytes)
         file_obj.name = filename
+        assert_outbound_available()
         response = await client.audio.transcriptions.create(
             model="whisper-1",
             file=file_obj,
@@ -182,6 +186,7 @@ async def vision_json(
         "Ты помощник приложения ПланАм. Отвечай только валидным JSON на русском."
     )
     try:
+        assert_outbound_available()
         response = await client.chat.completions.create(
             model=_effective_model(),
             messages=[

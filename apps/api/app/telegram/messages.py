@@ -3,6 +3,7 @@ import logging
 import httpx
 
 from app.config import settings
+from app.services.legacy_outbound_guard import outbound_allowed
 from app.telegram.api_urls import telegram_bot_api_url
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,8 @@ async def send_telegram_message(
     url = telegram_bot_api_url("sendMessage")
 
     async with httpx.AsyncClient(timeout=15.0) as client:
+        if not outbound_allowed():
+            return False
         response = await client.post(url, json=payload)
         data = response.json()
 

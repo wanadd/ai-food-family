@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.services.legacy_outbound_guard import outbound_allowed
 from app.models.family import FamilyRole
 from app.models.family_invite import FamilyInvite
 from app.models.user import User
@@ -99,6 +100,8 @@ async def send_telegram_message(
         payload["reply_markup"] = reply_markup
 
     async with httpx.AsyncClient(timeout=15.0) as client:
+        if not outbound_allowed():
+            return
         response = await client.post(telegram_bot_api_url("sendMessage"), json=payload)
         data = response.json()
     if not data.get("ok"):
@@ -114,6 +117,8 @@ async def answer_callback_query(callback_query_id: str, text: str = "") -> None:
     if text:
         payload["text"] = text
     async with httpx.AsyncClient(timeout=15.0) as client:
+        if not outbound_allowed():
+            return
         await client.post(telegram_bot_api_url("answerCallbackQuery"), json=payload)
 
 

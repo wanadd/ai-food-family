@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     telegram_webhook_secret: str = ""
     database_url: str = "postgresql://aifood:aifood@postgres:5432/aifood"
     redis_url: str = "redis://redis:6379/0"
+    legacy_outbound_guard_enabled: bool = False
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
     # Separate key for the recipe image pipeline (never reuse the app key).

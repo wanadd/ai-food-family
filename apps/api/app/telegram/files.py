@@ -3,6 +3,7 @@ import logging
 import httpx
 
 from app.config import settings
+from app.services.legacy_outbound_guard import outbound_allowed
 from app.telegram.api_urls import telegram_bot_api_url, telegram_file_url
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,8 @@ async def download_telegram_file(file_id: str) -> bytes | None:
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
+            if not outbound_allowed():
+                return None
             meta_resp = await client.get(
                 telegram_bot_api_url("getFile"),
                 params={"file_id": file_id},
@@ -23,6 +26,8 @@ async def download_telegram_file(file_id: str) -> bytes | None:
                 logger.warning("getFile failed: %s", meta)
                 return None
             file_path = meta["result"]["file_path"]
+            if not outbound_allowed():
+                return None
             file_resp = await client.get(telegram_file_url(file_path))
             file_resp.raise_for_status()
             return file_resp.content

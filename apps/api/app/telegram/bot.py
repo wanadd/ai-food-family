@@ -3,6 +3,7 @@ import logging
 import httpx
 
 from app.config import settings
+from app.services.legacy_outbound_guard import assert_outbound_available
 from app.telegram.api_urls import telegram_bot_api_url
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ def resolve_webhook_url() -> str | None:
 async def _telegram_api(method: str, payload: dict | None = None) -> dict:
     url = telegram_bot_api_url(method)
     async with httpx.AsyncClient(timeout=20.0) as client:
+        assert_outbound_available()
         response = await client.post(url, json=payload or {})
         return response.json()
 

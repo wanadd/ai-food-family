@@ -1,6 +1,7 @@
 from collections.abc import Generator
+import sys
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
@@ -46,24 +47,43 @@ def init_db() -> None:
     from app.models import care as care_models  # noqa: F401
     from app.models import progress as progress_models  # noqa: F401
 
-    from app.database_migrations import ensure_database_schema
+    from app.database_migrations import SCHEMA_ADVISORY_LOCK_ID, ensure_database_schema
 
-    # Legacy tables: SQLAlchemy create_all. Recipe Engine tables: SQL migrations only.
-    ensure_database_schema(engine, Base)
+    startup_lock_id = SCHEMA_ADVISORY_LOCK_ID + 1
+    with engine.connect() as lock_connection:
+        lock_connection.execute(
+            text("SELECT pg_advisory_lock(:lock_id)"), {"lock_id": startup_lock_id}
+        )
+        lock_connection.commit()
+        try:
+            # Keep schema changes and legacy seed/ensure writes serialized across workers.
+            ensure_database_schema(engine, Base)
 
-    from app.services.recipes import seed_recipes_if_empty
-    from app.services.subscription import (
-        ensure_all_users_have_billing,
-        seed_subscription_plans,
-    )
+            from app.services.recipes import seed_recipes_if_empty
+            from app.services.subscription import (
+                ensure_all_users_have_billing,
+                seed_subscription_plans,
+            )
 
-    db = SessionLocal()
-    try:
-        seed_subscription_plans(db)
-        seed_recipes_if_empty(db)
-        ensure_all_users_have_billing(db)
-    finally:
-        db.close()
+            db = SessionLocal()
+            try:
+                seed_subscription_plans(db)
+                seed_recipes_if_empty(db)
+                ensure_all_users_have_billing(db)
+            finally:
+                db.close()
+        finally:
+            startup_failed = sys.exc_info()[0] is not None
+            try:
+                lock_connection.execute(
+                    text("SELECT pg_advisory_unlock(:lock_id)"),
+                    {"lock_id": startup_lock_id},
+                )
+                lock_connection.commit()
+            except Exception:
+                lock_connection.invalidate()
+                if not startup_failed:
+                    raise
 
 
 def get_db() -> Generator[Session, None, None]:
