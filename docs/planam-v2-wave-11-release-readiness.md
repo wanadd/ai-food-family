@@ -1,6 +1,6 @@
 # PLANAM V2 Wave 11 Release Readiness
 
-Status: `NO-GO` as of 2026-09-28.
+Status: `GO` as of 2026-09-28.
 
 ## Baseline
 
@@ -22,7 +22,31 @@ Status: `NO-GO` as of 2026-09-28.
 | Lint/typecheck/build | PASS | local commands completed successfully |
 | W10 selective import fixture | PASS | 16 source records, 11 created, 4 reconfirmations, 0 fatal conflicts |
 | Browser visual QA | PASS | Playwright Chromium launch, 120 screenshots across 12 personas, light/dark/desktop spot checks; `valid=true`, 0 auth/network/blank/route/forbidden findings |
-| Representative import | BLOCKED | only 16-record fixture is safe and available; no approved representative source copy |
+| Representative import | PASS | sanitized read-only production-shaped source; 1,223 source records, 0 fatal conflicts |
+
+## W11.2 representative import closure
+
+- Production source: `PASS`; read-only export from the verified host
+  `msk-1-vm-21mr`, project `/var/www/ai-food-family`, database inventory only
+  before export. No production DML, DDL, migration, restart, deploy, or
+  notification was performed.
+- Sanitization: `PASS`; deterministic local replacement of identity/provider
+  values and secrets, controlled free-text replacement, preserved row
+  cardinalities and knowledge-state semantics. Privacy checks all passed,
+  including `AUTH_SECRET_RETENTION=0`, with no PII in the manifest.
+- Representative source: `1,223` records across `4` users, `3` profiles,
+  `263` recipes, `949` notification rows, and `3` shopping rows. Non-promotable
+  delivery/admin rows were classified for DROP; recipes were retained as
+  archive-only because Gold V3 validation was unavailable.
+- Dry-run: `PASS`; `1,235` pipeline source records, `19` expected canonical
+  records, `4` reconfirmations, `266` archive-only, `950` dropped, `0` fatal.
+- Apply: `PASS`; first apply created `19` records. Repeated apply created `0`
+  records with no collisions. Recreated target produced identical target
+  counts and head `20260927_0019`.
+- Post-import: `PASS`; safety and referential-integrity assertions passed,
+  admin sessions and delivery tables were not promoted.
+- Cleanup: `RAW_SOURCE_DB_DESTROYED=YES`, `RAW_PRODUCTION_DUMP_RETAINED=NO`.
+  Non-sensitive evidence is under `.local/w11-representative-source/`.
 
 ## W11.1 blocker closure evidence
 
@@ -50,20 +74,15 @@ open.
 - Local evidence is retained under `.local/w11-visual-qa/`; bulk screenshots
   remain uncommitted.
 
-### W11-B02: OPEN
+### W11-B02: CLOSED
 
 Severity: `P1`, release blocker.
 
-The approved 16-record W10 fixture is not representative. Existing dump-like
-artifacts under `.local` remain production-shaped or potentially sensitive and
-were not opened or used. No approved sanitized representative source is
-available, so representative import apply, idempotency, recreate determinism,
-referential integrity, and performance evidence remain unavailable.
-
-Web `typecheck` and `lint` were attempted after the narrow B01 fix but the
-local Node 24 process exhausted its heap before completion. The previous W11
-baseline results remain unchanged; this environment limitation is recorded and
-is not treated as a new product defect.
+The representative source export, local sanitization, W10 dry-run/apply,
+idempotency, recreate determinism, referential-integrity, and safety gates all
+passed. The approved W10 fixture remains covered separately as a regression
+fixture. Local Node heap was bounded for the final frontend checks; lint,
+typecheck, and production build all passed.
 
 ## W11 correction
 
@@ -81,7 +100,7 @@ Severity: `P1`, release blocker.
 This was the state before W11.1 closure. The current closure evidence is recorded
 above; this historical section is retained for auditability.
 
-### W11-B02: representative import unavailable
+### W11-B02: representative import unavailable (historical)
 
 Severity: `P1`, release blocker.
 
@@ -93,13 +112,15 @@ unknown.
 
 ## Safety boundary
 
-No production DB, old production DB, VPS, Telegram relay, webhook, shared ingress,
-Dengi, Avito, DNS, or deployment was contacted or mutated. No production
-notifications were sent. Existing dirty files unrelated to W11 were preserved.
+The verified production VPS was contacted only for the explicitly authorized
+read-only inventory and PostgreSQL export. No production DB write, DDL,
+migration, import, restore, restart, Telegram relay, webhook, shared ingress,
+Dengi, Avito, DNS, or deployment was performed. No production notifications
+were sent. Existing dirty files unrelated to W11 were preserved.
 
 ## Decision
 
-`PLANAM_P0_V2_WAVE_11_FULL_ACCEPTANCE_NO_GO`
+`PLANAM_P0_V2_WAVE_11_FULL_ACCEPTANCE_GO`
 
-Do not proceed to production replacement or cutover. Obtain an approved
-representative sanitized source rehearsal before requesting GO.
+Production replacement or cutover remains outside this task and was not
+performed.
