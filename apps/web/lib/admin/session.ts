@@ -16,6 +16,11 @@ export function getAdminSessionToken(): string | null {
   return sessionStorage.getItem(STORAGE_KEY);
 }
 
+export function storeAdminSessionToken(token: string): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(STORAGE_KEY, token);
+}
+
 export function clearAdminSessionToken(): void {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(STORAGE_KEY);

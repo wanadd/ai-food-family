@@ -1,5 +1,5 @@
-import { AdminDashboard } from "@/components/admin/AdminDashboard";
+import { AdminOverviewV2 } from "@/components/admin/AdminOverviewV2";
 
 export default function AdminPage() {
-  return <AdminDashboard forcedTab="summary" />;
+  return <AdminOverviewV2 />;
 }

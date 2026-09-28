@@ -34,7 +34,8 @@ def panel_enabled() -> bool:
 
 def admin_webapp_url(session_token: str) -> str:
     base = (settings.telegram_webapp_url or "https://planam.ru").rstrip("/")
-    return f"{base}/admin?admin_session={session_token}"
+    del session_token
+    return f"{base}/admin"
 
 
 def _count_failed_attempts(db: Session, telegram_id: int, since: datetime) -> int:

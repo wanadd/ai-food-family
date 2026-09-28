@@ -21,13 +21,13 @@ _MSG_PIN_BAD = "Неверный PIN"
 _MSG_LOCKED = "Слишком много попыток. Повторите через 15 минут."
 
 
-def _admin_panel_button(session_token: str) -> dict[str, Any]:
+def _admin_panel_button() -> dict[str, Any]:
     return {
         "inline_keyboard": [
             [
                 {
                     "text": "📊 Открыть админ-панель",
-                    "web_app": {"url": admin_auth.admin_webapp_url(session_token)},
+                    "web_app": {"url": admin_auth.admin_webapp_url("")},
                 }
             ],
         ],
@@ -103,6 +103,6 @@ async def handle_admin_pin_message(
     await send_telegram_message(
         chat_id,
         _MSG_PIN_OK,
-        reply_markup=_admin_panel_button(admin_session.session_token),
+        reply_markup=_admin_panel_button(),
     )
     return True

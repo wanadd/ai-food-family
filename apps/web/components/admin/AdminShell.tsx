@@ -6,20 +6,12 @@ import { useEffect, useState } from "react";
 
 import { PageLoading } from "@/components/ui/PageLoading";
 import { useTelegram } from "@/components/TelegramProvider";
-import { pingAdmin } from "@/lib/admin/api";
-import {
-  captureAdminSessionFromUrl,
-  getAdminSessionToken,
-} from "@/lib/admin/session";
+import { exchangeAdminSession, fetchAdminOverview } from "@/lib/admin/v2-api";
+import { getAdminSessionToken } from "@/lib/admin/session";
 
 const NAV = [
   { href: "/admin", label: "Дашборд", exact: true },
-  { href: "/admin/users", label: "Пользователи" },
-  { href: "/admin/families", label: "Семьи" },
-  { href: "/admin/subscriptions", label: "Подписки" },
-  { href: "/admin/ams", label: "Амы" },
-  { href: "/admin/openai", label: "OpenAI" },
-  { href: "/admin/errors", label: "Ошибки" },
+  { href: "/admin/analytics", label: "Аналитика" },
 ] as const;
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -31,7 +23,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    captureAdminSessionFromUrl();
     const token = getAdminSessionToken();
 
     const finish = (ok: boolean) => {
@@ -41,15 +32,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       }
     };
 
-    if (token) {
-      (async () => {
-        const ok = await pingAdmin(initData || null);
-        finish(ok);
-      })();
-      return () => {
-        cancelled = true;
-      };
-    }
+    const authorize = async () => {
+      try {
+        if (!token) {
+          if (!initData) return finish(false);
+          await exchangeAdminSession(initData);
+        }
+        await fetchAdminOverview();
+        finish(true);
+      } catch {
+        finish(false);
+      }
+    };
+
+    if (token || initData) authorize();
 
     if (isAuthenticating) {
       setChecking(true);
@@ -58,17 +54,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       };
     }
 
-    if (initData) {
-      (async () => {
-        const ok = await pingAdmin(initData);
-        finish(ok);
-      })();
-      return () => {
-        cancelled = true;
-      };
-    }
+    if (!token && !initData) finish(false);
 
-    finish(false);
     return () => {
       cancelled = true;
     };
@@ -83,8 +70,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="mx-auto max-w-lg px-4 py-10 text-center">
         <h1 className="text-lg font-bold text-stone-900">Нет доступа</h1>
         <p className="mt-2 text-sm text-stone-600">
-          Откройте Telegram-бота, выполните команду /admin и подтвердите PIN. После
-          этого нажмите кнопку открытия панели.
+          Откройте Telegram-бота, выполните команду /admin и подтвердите PIN.
+        </p>
+      </div>
+    );
+  }
+
+  const isV2AdminPath = pathname === "/admin" || pathname === "/admin/analytics";
+  if (!isV2AdminPath) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-10 text-center">
+        <h1 className="text-lg font-bold text-stone-900">Раздел ещё не перенесён</h1>
+        <p className="mt-2 text-sm text-stone-600">
+          Этот legacy-раздел отключён до появления соответствующего V2 read model.
         </p>
       </div>
     );
@@ -116,7 +114,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
       </header>
-      <main className="mx-auto max-w-lg px-4 py-4">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-4">{children}</main>
     </div>
   );
 }
