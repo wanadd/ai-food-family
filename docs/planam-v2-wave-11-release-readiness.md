@@ -21,8 +21,49 @@ Status: `NO-GO` as of 2026-09-28.
 | Full frontend | PASS | 33 files, 220 tests passed |
 | Lint/typecheck/build | PASS | local commands completed successfully |
 | W10 selective import fixture | PASS | 16 source records, 11 created, 4 reconfirmations, 0 fatal conflicts |
-| Browser visual QA | BLOCKED | Playwright package/browser unavailable; local install did not complete |
+| Browser visual QA | PASS | Playwright Chromium launch, 120 screenshots across 12 personas, light/dark/desktop spot checks; `valid=true`, 0 auth/network/blank/route/forbidden findings |
 | Representative import | BLOCKED | only 16-record fixture is safe and available; no approved representative source copy |
+
+## W11.1 blocker closure evidence
+
+Previous result: `PLANAM_P0_V2_WAVE_11_FULL_ACCEPTANCE_NO_GO` with B01 and B02
+open.
+
+### W11-B01: CLOSED
+
+- Playwright package: `PASS`.
+- Chromium launch: `PASS` using the existing local Playwright cache.
+- Local Next app access: `PASS` on the supported `next dev` audit path.
+- Audit walkthrough: `PASS`; `valid=true`, 120 screenshots, 12 personas,
+  `network_failed=0`, `blank=0`, `route_assert=0`, `auth=0`, and
+  `forbidden=0`.
+- Visual spot checks: light mobile, dark mobile, and desktop home; Events and
+  Wellness representative screens; Russian text, navigation, cards, safe-area
+  bottom navigation, and dark contrast were visually inspected.
+- Responsive capture: small mobile (`390x844`) and desktop (`1440x900`) were
+  captured; browser-without-Telegram audit mode completed without Telegram SDK.
+- Browser journey spot check: Home → Plan passed. The Events V2 client path was
+  corrected to the canonical `/api/v2` prefix, and local audit requests now
+  receive a fail-closed canonical V2 session bridge.
+- Focused regression: Events V2, selective import, and PostgreSQL acceptance
+  passed (`7 passed, 2 skipped`); frontend Events API tests passed (`2 passed`).
+- Local evidence is retained under `.local/w11-visual-qa/`; bulk screenshots
+  remain uncommitted.
+
+### W11-B02: OPEN
+
+Severity: `P1`, release blocker.
+
+The approved 16-record W10 fixture is not representative. Existing dump-like
+artifacts under `.local` remain production-shaped or potentially sensitive and
+were not opened or used. No approved sanitized representative source is
+available, so representative import apply, idempotency, recreate determinism,
+referential integrity, and performance evidence remain unavailable.
+
+Web `typecheck` and `lint` were attempted after the narrow B01 fix but the
+local Node 24 process exhausted its heap before completion. The previous W11
+baseline results remain unchanged; this environment limitation is recorded and
+is not treated as a new product defect.
 
 ## W11 correction
 
@@ -33,17 +74,12 @@ columns. No migration was added; PostgreSQL acceptance passed after the fix.
 
 ## Release blockers
 
-### W11-B01: visual acceptance unavailable
+### W11-B01: historical visual acceptance unavailable
 
 Severity: `P1`, release blocker.
 
-The required Home, Plan, Recipe, Shopping, Pantry, Receipt, Events, Wellness,
-Account, FoodProfile, Notifications, Onboarding, and Admin screenshot/interaction
-acceptance was not observed. The repository harness requires Playwright, but the
-package and browser binary are absent. Installing Playwright locally did not
-complete, and no supported system browser was available. Therefore light/dark,
-responsive, journey, accessibility, Cyrillic, and browser-without-Telegram gates
-remain unverified.
+This was the state before W11.1 closure. The current closure evidence is recorded
+above; this historical section is retained for auditability.
 
 ### W11-B02: representative import unavailable
 
@@ -65,6 +101,5 @@ notifications were sent. Existing dirty files unrelated to W11 were preserved.
 
 `PLANAM_P0_V2_WAVE_11_FULL_ACCEPTANCE_NO_GO`
 
-Do not proceed to production replacement or cutover. Re-run the browser harness
-with an approved local Playwright/browser environment and obtain an approved
+Do not proceed to production replacement or cutover. Obtain an approved
 representative sanitized source rehearsal before requesting GO.

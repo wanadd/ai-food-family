@@ -137,6 +137,71 @@ def issue_session(
     return IssuedSession(session, access_token, refresh_token)
 
 
+def resolve_or_create_audit_session(db: Session, init_data: str) -> CoreSession:
+    """Resolve a deterministic local-only V2 session for browser audit fixtures."""
+    from app.services.audit_auth import (
+        get_or_create_audit_user,
+        is_audit_init_data,
+        is_audit_mode_enabled,
+        persona_from_audit_init_data,
+    )
+
+    if not is_audit_mode_enabled() or not is_audit_init_data(init_data):
+        raise error("authentication_required", 401)
+    persona = persona_from_audit_init_data(init_data)
+    if persona is None:
+        raise error("authentication_required", 401)
+
+    user, _ = get_or_create_audit_user(db, persona)
+    provider_subject = str(user.telegram_id)
+    identity = (
+        db.query(ExternalIdentity)
+        .filter(
+            ExternalIdentity.provider == "telegram",
+            ExternalIdentity.provider_subject == provider_subject,
+        )
+        .one_or_none()
+    )
+    if identity is None:
+        person = CorePerson(person_id=uuid7_str(), status="active", birth_date_precision="unknown")
+        db.add(person)
+        db.flush()
+        account = CoreAccount(account_id=uuid7_str(), primary_person_id=person.person_id, status="active")
+        db.add(account)
+        db.flush()
+        identity = ExternalIdentity(
+            identity_id=uuid7_str(),
+            account_id=account.account_id,
+            provider="telegram",
+            provider_subject=provider_subject,
+            provider_payload_hash=digest_secret(init_data),
+            provider_metadata_json={"audit_persona": persona},
+        )
+        db.add(identity)
+        db.flush()
+    session = (
+        db.query(CoreSession)
+        .filter(CoreSession.token_hash == digest_secret(init_data))
+        .one_or_none()
+    )
+    if session is None:
+        now = utc_now()
+        session = CoreSession(
+            session_id=uuid7_str(),
+            account_id=identity.account_id,
+            client_type="audit",
+            token_hash=digest_secret(init_data),
+            issued_at=now,
+            expires_at=now + SESSION_TTL,
+            last_activity_at=now,
+            security_metadata_json={"audit_persona": persona},
+        )
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+    return session
+
+
 def resolve_session(db: Session, access_token: str) -> CoreSession:
     session = db.query(CoreSession).filter(CoreSession.token_hash == digest_secret(access_token)).one_or_none()
     now = utc_now()

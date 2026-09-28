@@ -27,8 +27,15 @@ def _context(
     authorization: str | None = Header(default=None),
     session_token: str | None = Header(default=None, alias="X-Planam-Session"),
     household_id: str | None = Header(default=None, alias="X-Planam-Household-Id"),
+    telegram_init_data: str | None = Header(default=None, alias="X-Telegram-Init-Data"),
 ) -> AuthorizedContext:
-    return authorized_context(db, authorization=authorization, x_planam_session=session_token, x_household_id=household_id)
+    return authorized_context(
+        db,
+        authorization=authorization,
+        x_planam_session=session_token,
+        x_household_id=household_id,
+        x_telegram_init_data=telegram_init_data,
+    )
 
 
 def _key(value: str | None) -> str:

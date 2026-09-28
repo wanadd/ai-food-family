@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.models import CoreAccount, CoreMembership, CorePerson, CorePermissionGrant, CoreSession
 from app.v2.errors import error
-from app.v2.identity import resolve_session
+from app.v2.identity import resolve_or_create_audit_session, resolve_session
 
 
 @dataclass(frozen=True)
@@ -42,9 +42,15 @@ def authorized_context(
     x_household_id: str | None = None,
     x_person_id: str | None = None,
     required_capability: str | None = None,
+    x_telegram_init_data: str | None = None,
 ) -> AuthorizedContext:
-    token = get_v2_access_token(authorization, x_planam_session)
-    session = resolve_session(db, token)
+    if authorization or x_planam_session:
+        token = get_v2_access_token(authorization, x_planam_session)
+        session = resolve_session(db, token)
+    elif x_telegram_init_data:
+        session = resolve_or_create_audit_session(db, x_telegram_init_data)
+    else:
+        raise error("authentication_required", 401)
     account = db.get(CoreAccount, session.account_id)
     if account is None or account.status != "active":
         raise error("forbidden", 403)
