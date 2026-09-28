@@ -72,10 +72,13 @@ export function formatNetworkError(
 }
 
 function formatHttpError(status: number, detail?: unknown): Error {
+  const parsed = parseApiErrorDetail(detail);
+  if (parsed?.code === "WRITE_PAUSED") {
+    return new ApiRequestError("ПланАм временно на обслуживании.", parsed);
+  }
   if (isRetryableStatus(status)) {
     return new Error("Сервер временно недоступен. Попробуйте через несколько секунд.");
   }
-  const parsed = parseApiErrorDetail(detail);
   if (parsed?.message) {
     return new ApiRequestError(parsed.message, parsed);
   }
@@ -96,7 +99,7 @@ async function fetchWithRetry(
     try {
       const response = await fetch(url, init);
 
-      if (isRetryableStatus(response.status) && attempt < maxAttempts) {
+      if (isRetryableStatus(response.status) && response.headers.get("x-planam-write-paused") !== "1" && attempt < maxAttempts) {
         await sleep(delayMs);
         continue;
       }
@@ -146,12 +149,17 @@ export async function apiFetch<T>(
     let detail: unknown;
     if (errText.trim()) {
       try {
-        detail = (JSON.parse(errText) as { detail?: unknown }).detail;
+        const body = JSON.parse(errText) as { detail?: unknown; error?: unknown };
+        detail = body.error ?? body.detail;
       } catch {
         detail = errText;
       }
     }
-    throw formatHttpError(response.status, detail);
+    const err = formatHttpError(response.status, detail);
+    if (err instanceof ApiRequestError && err.code === "WRITE_PAUSED" && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("planam:write-paused"));
+    }
+    throw err;
   }
 
   if (response.status === 204) {

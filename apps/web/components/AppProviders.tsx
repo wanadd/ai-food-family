@@ -12,6 +12,7 @@ import { PaywallProvider } from "@/components/monetization-2026/PaywallProvider"
 import { SubscriptionProvider } from "@/components/subscription/SubscriptionProvider";
 import { TelegramProvider } from "@/components/TelegramProvider";
 import { PlatformProvider } from "@/components/platform/PlatformProvider";
+import { MaintenanceBoundary } from "@/components/cutover/MaintenanceBoundary";
 
 function AdminSessionBootstrap() {
   useLayoutEffect(() => {
@@ -22,6 +23,7 @@ function AdminSessionBootstrap() {
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
+    <MaintenanceBoundary>
     <TelegramProvider>
       <PlatformProvider>
         <AdminSessionBootstrap />
@@ -38,5 +40,6 @@ export function AppProviders({ children }: { children: ReactNode }) {
         </AppGate>
       </PlatformProvider>
     </TelegramProvider>
+    </MaintenanceBoundary>
   );
 }

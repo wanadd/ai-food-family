@@ -29,7 +29,10 @@ def test_wave_5_migration_has_exact_nine_canonical_tables_and_guards():
     assert "uq_receipt_proposals_idempotency" in text
 
 
-def test_w5_router_contains_exact_frozen_public_routes():
+def test_shopping_router_retains_household_and_adds_person_routes():
     text = (ROOT / "app" / "routers" / "v2_shopping.py").read_text(encoding="utf-8")
-    assert text.count("@router.") == 7
+    assert text.count("@router.") == 15
+    for path in ("shopping", "shopping/items", "pantry", "pantry/adjust", "receipts"):
+        assert f'"/persons/{{person_id}}/{path}"' in text
+        assert f'"/households/{{household_id}}/{path}"' in text
     assert "@router.post(\"/households/{household_id}/plans" not in text

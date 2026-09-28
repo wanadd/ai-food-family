@@ -32,7 +32,7 @@ export async function addPantryItem(
 export async function updatePantryItem(
   initData: string,
   mode: AppMode,
-  itemId: number,
+  itemId: string | number,
   draft: Partial<PantryItemDraft>,
 ): Promise<PantryItem> {
   return apiFetch<PantryItem>(initData, mode, `/pantry/items/${itemId}`, {
@@ -51,7 +51,7 @@ export async function updatePantryItem(
 export async function deletePantryItem(
   initData: string,
   mode: AppMode,
-  itemId: number,
+  itemId: string | number,
 ): Promise<void> {
   await apiFetch<void>(initData, mode, `/pantry/items/${itemId}`, {
     method: "DELETE",

@@ -26,6 +26,8 @@ class NotificationPreference(Base):
     subject_id: Mapped[str] = mapped_column(CoreUUID)
     channel: Mapped[str] = mapped_column(String(32))
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    shopping_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    cooking_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     timezone: Mapped[str | None] = mapped_column(String(64))
     quiet_hours_start: Mapped[str | None] = mapped_column(String(5))
     quiet_hours_end: Mapped[str | None] = mapped_column(String(5))

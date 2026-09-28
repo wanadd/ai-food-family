@@ -57,6 +57,8 @@ def upsert_preference(
     subject_id: str,
     channel: str,
     enabled: bool,
+    shopping_enabled: bool | None = None,
+    cooking_enabled: bool | None = None,
     timezone_name: str | None,
     quiet_hours_start: str | None,
     quiet_hours_end: str | None,
@@ -67,6 +69,8 @@ def upsert_preference(
         "subject_id": subject_id,
         "channel": channel,
         "enabled": enabled,
+        "shopping_enabled": shopping_enabled,
+        "cooking_enabled": cooking_enabled,
         "timezone": timezone_name,
         "quiet_hours_start": quiet_hours_start,
         "quiet_hours_end": quiet_hours_end,
@@ -103,6 +107,8 @@ def upsert_preference(
             subject_id=subject_id,
             channel=channel,
             enabled=enabled,
+            shopping_enabled=shopping_enabled,
+            cooking_enabled=cooking_enabled,
             timezone=timezone_name,
             quiet_hours_start=quiet_hours_start,
             quiet_hours_end=quiet_hours_end,
@@ -112,6 +118,8 @@ def upsert_preference(
         db.add(row)
     else:
         row.enabled = enabled
+        row.shopping_enabled = shopping_enabled
+        row.cooking_enabled = cooking_enabled
         row.timezone = timezone_name
         row.quiet_hours_start = quiet_hours_start
         row.quiet_hours_end = quiet_hours_end

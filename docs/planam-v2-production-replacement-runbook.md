@@ -9,7 +9,7 @@ Required before maintenance:
 
 - owner-approved checkpoint SHA;
 - W11 GO, including visual QA and representative import;
-- clean V2 target and Alembic head `20260927_0019`;
+- clean V2 target and Alembic head `20260928_0020`;
 - verified disk, DB connectivity, backup destination, and rollback operator;
 - Telegram/provider checks that do not send a real notification;
 - shared ingress health confirmed for PLANAM, `dengi.planam.ru`, and Avito.
@@ -26,7 +26,7 @@ npm run typecheck
 npm run build
 ```
 
-Use a fresh disposable PostgreSQL database, run `alembic upgrade 20260927_0019`,
+Use a fresh disposable PostgreSQL database, run `alembic upgrade 20260928_0020`,
 run selective-import dry-run, review classifications, apply once, repeat for
 idempotency, then destroy and recreate the target for determinism.
 
@@ -38,7 +38,7 @@ idempotency, then destroy and recreate the target for determinism.
 # 2. Inventory the immutable legacy source read-only.
 # 3. Create a timestamped restricted backup and verify its SHA-256.
 # 4. Create the clean V2 target database.
-# 5. Run migrations to 20260927_0019.
+# 5. Run migrations to 20260928_0020.
 # 6. Run selective-import dry-run; stop on fatal conflicts or production guard failure.
 # 7. Review source counts, classifications, reconfirmations, archive/drop counts, and mappings.
 # 8. Run the approved import once.
@@ -52,6 +52,27 @@ admin sessions, bearer tokens, cooking-as-consumption state, or ambiguous safety
 facts. Do not infer dates, allergies, portions, participants, or pantry stock.
 
 ## Maintenance write boundary
+
+The production application does not run `create_all`, legacy schema bootstrap,
+or automatic migration. Startup validates Alembic head `20260928_0020` and
+fails closed when the head or required tables are wrong. Development and test
+startup retain the explicit legacy bootstrap path for compatibility.
+
+Before opening writes, the local rehearsal sequence is:
+
+```text
+1. Enable WRITE_PAUSED and verify a representative mutation returns 503.
+2. Request ASYNC_FROZEN; stop new claims and wait for the bounded provider
+   drain until INFLIGHT_PROVIDER_CALLS=0 and jobs/outbox are terminal.
+3. Export the immutable source snapshot and record its SHA-256.
+4. Create the clean PostgreSQL target and run `alembic upgrade 20260928_0020`.
+5. Run CUTOVER dry-run and verify zero target mutation.
+6. Apply once with explicit confirmation, validate counts and provenance, then
+   repeat with the previous report to prove idempotency.
+7. Start the production-mode candidate; verify schema head and internal smoke.
+8. Keep writes paused until the person/household shopping checks pass, then
+   reopen writes and verify one new V2 write.
+```
 
 Keep maintenance/write pause enabled through migration, import, validation, and
 smoke. Open writes only after the new target is accepted. This prevents new V2

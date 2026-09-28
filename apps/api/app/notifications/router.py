@@ -18,6 +18,8 @@ class NotificationPreferenceRequest(BaseModel):
     subject_id: str
     channel: str = Field(min_length=1, max_length=32)
     enabled: bool = True
+    shopping_enabled: bool | None = None
+    cooking_enabled: bool | None = None
     timezone: str | None = Field(default=None, max_length=64)
     quiet_hours_start: str | None = Field(default=None, pattern=r"^([01][0-9]|2[0-3]):[0-5][0-9]$")
     quiet_hours_end: str | None = Field(default=None, pattern=r"^([01][0-9]|2[0-3]):[0-5][0-9]$")
@@ -46,6 +48,7 @@ def set_notification_preferences(
     row = upsert_preference(
         db, context=context, subject_kind=payload.subject_kind, subject_id=payload.subject_id,
         channel=payload.channel, enabled=payload.enabled, timezone_name=payload.timezone,
+        shopping_enabled=payload.shopping_enabled, cooking_enabled=payload.cooking_enabled,
         quiet_hours_start=payload.quiet_hours_start, quiet_hours_end=payload.quiet_hours_end,
         idempotency_key=idempotency_key,
     )
@@ -53,6 +56,7 @@ def set_notification_preferences(
     return {
         "preference_id": row.preference_id, "subject_kind": row.subject_kind,
         "subject_id": row.subject_id, "channel": row.channel, "enabled": row.enabled,
+        "shopping_enabled": row.shopping_enabled, "cooking_enabled": row.cooking_enabled,
         "timezone": row.timezone, "quiet_hours_start": row.quiet_hours_start,
         "quiet_hours_end": row.quiet_hours_end,
     }

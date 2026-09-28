@@ -42,6 +42,20 @@ Event menu ownership, shopping responsibility, lifecycle, privacy/retention,
 and explicit linking to permanent Account/CorePerson identity. These are not
 physical schema decisions and are not implemented by OD-16.
 
+## OD-17 — Person or Household scoped Shopping
+
+| ID | Title | Status | Decision | Consequences | Timing |
+|---|---|---|---|---|---|
+| OD-17 | PERSON_OR_HOUSEHOLD_SCOPED_SHOPPING | ACCEPTED | A ShoppingList belongs to exactly one CorePerson or one Household, enforced by an owner XOR constraint. PantryInventory and ReceiptDocument use the same explicit scope. Child rows inherit ownership through their aggregate parent. | Personal shopping, pantry, and receipts require no Household. Authorization follows the owning Person or Household; migration must preserve existing Household ownership and must not invent a Household for legacy personal lists. | Cutover prerequisite |
+
+PurchaseEvent inherits ownership through ShoppingItem and ShoppingList;
+PantryMovement inherits it through PantryInventory; ReceiptProposal and
+ReceiptLine inherit it through ReceiptDocument. Their legacy household_id
+columns remain nullable compatibility metadata, not independent authority.
+Person and Household plans may generate demand only within the same owner
+scope. Historical July 2026 menu selections are archive-only because the
+verified current production inventory contains no current or future days.
+
 ## Superseded assumptions
 
 - A global domain-heavy PersonProfile is superseded by CorePerson plus domain-owned profiles.

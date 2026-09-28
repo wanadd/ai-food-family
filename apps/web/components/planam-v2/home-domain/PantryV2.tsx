@@ -44,14 +44,9 @@ import {
   formatPreparedLeftoverAmount,
   type PreparedDish,
 } from "@/lib/plan/leftovers-api";
-import {
-  addPantryItem,
-  deletePantryItem,
-  fetchPantry,
-} from "@/lib/pantry/api";
+import { addPantryItemV2Compat, deletePantryItemV2Compat, fetchPantryV2 } from "@/lib/shopping/v2-api";
 import type { PantryItem, PantryItemDraft } from "@/lib/pantry/types";
 import { EMPTY_PANTRY_DRAFT } from "@/lib/pantry/types";
-import { fetchShoppingCategories } from "@/lib/shopping/api";
 import { SHOPPING_CATEGORIES_V1 } from "@/lib/shopping/categories-v1";
 import { categoryMeta } from "@/lib/shopping/labels";
 import type { ShoppingCategory } from "@/lib/shopping/types";
@@ -101,8 +96,8 @@ export function PantryV2() {
     setLoading(true);
     try {
       const [data, cats] = await Promise.all([
-        fetchPantry(initData, mode),
-        fetchShoppingCategories(initData, mode).catch(() => []),
+        fetchPantryV2(initData, mode),
+        Promise.resolve([]),
       ]);
       setCached(cacheK, {
         items: data.items,
@@ -204,7 +199,7 @@ export function PantryV2() {
     }
     setBusy(true);
     try {
-      await deletePantryItem(initData, mode, item.id);
+      await deletePantryItemV2Compat(initData, mode, item, crypto.randomUUID());
       invalidateCache("pantry");
       invalidateCache("menu-overview");
       setSelected(null);
@@ -241,10 +236,10 @@ export function PantryV2() {
     setBusy(true);
     setError(null);
     try {
-      await addPantryItem(initData, mode, {
+      await addPantryItemV2Compat(initData, mode, {
         ...draft,
         category: detectProductCategory(draft.name, draft.category),
-      });
+      }, crypto.randomUUID());
       invalidateCache("pantry");
       invalidateCache("menu-overview");
       setAddOpen(false);

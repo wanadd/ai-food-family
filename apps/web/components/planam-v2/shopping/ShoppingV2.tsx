@@ -28,7 +28,7 @@ import {
   setCached,
 } from "@/lib/cache/session-cache";
 import { groupShoppingItems } from "@/lib/dom/shopping-groups";
-import { fetchPantry } from "@/lib/pantry/api";
+import { fetchPantryV2 } from "@/lib/shopping/v2-api";
 import type { PantryItem } from "@/lib/pantry/types";
 import { fetchRecipesFromPantry } from "@/lib/recipes/api";
 import type { FromPantryRecipe } from "@/lib/recipes/types";
@@ -40,13 +40,11 @@ import {
 } from "@/lib/planam/productTaxonomy";
 import { PLANAM_ROUTES } from "@/lib/planam/routes";
 import {
-  createShoppingItem,
-  deleteShoppingItem,
-  fetchShoppingCategories,
-  fetchShoppingList,
-  syncShoppingList,
-  toggleShoppingItem,
-} from "@/lib/shopping/api";
+  addShoppingItemV2Compat,
+  deleteShoppingItemV2Compat,
+  fetchShoppingV2,
+  purchaseShoppingItemV2Compat,
+} from "@/lib/shopping/v2-api";
 import { SHOPPING_CATEGORIES_V1 } from "@/lib/shopping/categories-v1";
 import type {
   ShoppingItemDraft,
@@ -103,9 +101,9 @@ export function ShoppingV2() {
     setLoading(true);
     try {
       const [data, extraCats, pantryData, fromPantry] = await Promise.all([
-        fetchShoppingList(initData, mode),
-        fetchShoppingCategories(initData, mode).catch(() => []),
-        fetchPantry(initData, mode).catch(() => null),
+        fetchShoppingV2(initData, mode),
+        Promise.resolve([]),
+        fetchPantryV2(initData, mode).catch(() => null),
         fetchRecipesFromPantry(initData, mode).catch(() => ({ items: [] })),
       ]);
       const catMap = new Map<number, ShoppingList["categories"][number]>();
@@ -195,7 +193,7 @@ export function ShoppingV2() {
     setSyncing(true);
     setError(null);
     try {
-      const data = await syncShoppingList(initData, mode);
+      const data = await fetchShoppingV2(initData, mode);
       setCached(cacheK, data);
       setList(data);
       invalidateCache("menu-overview");
@@ -221,9 +219,10 @@ export function ShoppingV2() {
     }
     setTogglingId(item.id);
     try {
-      const data = await toggleShoppingItem(initData, mode, item.id, nextChecked, {
-        removeFromPantry,
-      });
+      if (!nextChecked) {
+        throw new Error("Купленный товар нельзя вернуть в список через V2 API");
+      }
+      const data = await purchaseShoppingItemV2Compat(initData, mode, item.id, Boolean(removeFromPantry), crypto.randomUUID());
       setCached(cacheK, data);
       setList(data);
       if (nextChecked || removeFromPantry) {
@@ -256,10 +255,7 @@ export function ShoppingV2() {
         draft.category && draft.category !== "другое"
           ? draft.category
           : detectProductCategory(draft.name, draft.category);
-      const data = await createShoppingItem(initData, mode, {
-        ...draft,
-        category,
-      });
+      const data = await addShoppingItemV2Compat(initData, mode, { name: draft.name, quantity: draft.quantity, unit: draft.unit, category }, crypto.randomUUID());
       setCached(cacheK, data);
       setList(data);
       setAddOpen(false);
@@ -278,7 +274,7 @@ export function ShoppingV2() {
     setTogglingId(item.id);
     setError(null);
     try {
-      const data = await deleteShoppingItem(initData, mode, item.id);
+      const data = await deleteShoppingItemV2Compat(initData, mode, item.id, crypto.randomUUID());
       setCached(cacheK, data);
       setList(data);
       invalidateCache("menu-overview");

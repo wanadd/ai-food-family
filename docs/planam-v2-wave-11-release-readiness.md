@@ -6,7 +6,7 @@ Status: `GO` as of 2026-09-28.
 
 - Branch: `main`
 - W10 checkpoint: `9840e072a7524c376b51af4d4cdaadb759789459`
-- Alembic head: `20260927_0019`
+- Alembic baseline: `20260927_0019`; OD-17 head: `20260928_0020`
 - Backend: `1395 passed, 3 skipped, 3 warnings`
 - Frontend: `220 passed`
 - Frontend lint, typecheck, and production build: `PASS`
@@ -42,7 +42,7 @@ Status: `GO` as of 2026-09-28.
   records, `4` reconfirmations, `266` archive-only, `950` dropped, `0` fatal.
 - Apply: `PASS`; first apply created `19` records. Repeated apply created `0`
   records with no collisions. Recreated target produced identical target
-  counts and head `20260927_0019`.
+  counts and head `20260928_0020`.
 - Post-import: `PASS`; safety and referential-integrity assertions passed,
   admin sessions and delivery tables were not promoted.
 - Cleanup: `RAW_SOURCE_DB_DESTROYED=YES`, `RAW_PRODUCTION_DUMP_RETAINED=NO`.

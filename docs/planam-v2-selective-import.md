@@ -10,7 +10,7 @@ legacy IDs remain only in `legacy_id_mappings` and provenance.
 
 The first pass is always `--mode dry-run`. It does not flush or commit. Apply
 mode is permitted only against a disposable target and the exact Alembic head
-`20260927_0019`; production-like URLs and overrides are rejected. Re-running a
+`20260928_0020`; production-like URLs and overrides are rejected. Re-running a
 source uses existing mappings and canonical keys, so it does not duplicate core
 records.
 

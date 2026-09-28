@@ -1,5 +1,5 @@
 export type PantryItem = {
-  id: number;
+  id: string | number;
   scope_mode: string;
   user_id: number | null;
   family_id: number | null;

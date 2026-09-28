@@ -15,6 +15,14 @@ class Base(DeclarativeBase):
 
 
 def init_db() -> None:
+    if settings.environment.strip().lower() == "production":
+        # Production schema authority is Alembic. Workers validate the exact
+        # release head and never repair or create schema during startup.
+        from app.v2.startup import assert_v2_schema_compatible
+
+        assert_v2_schema_compatible(engine, expected_head="20260928_0020")
+        return
+
     from app.events import v2_models as events_v2_models  # noqa: F401
     # Register canonical Recipe V2 tables before SQLAlchemy resolves foreign
     # keys from planning, shopping, events, and cooking/health models. The

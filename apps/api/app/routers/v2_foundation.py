@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.models import CoreSession
+from app.config import settings
 from app.database import get_db
 from app.v2.authorization import AuthorizedContext, authorized_context
 from app.v2.entitlements import list_effective_entitlements
@@ -16,6 +17,7 @@ from app.v2.identity import (
     create_link_intent,
     issue_session,
     resolve_or_create_account,
+    resolve_or_create_audit_session,
     resolve_session_by_refresh,
     rotate_session,
     unlink_identity,
@@ -91,6 +93,18 @@ def _context(
 
 @router.post("/auth/bootstrap")
 def auth_bootstrap(payload: AuthBootstrapRequest, db: Session = Depends(get_db)) -> dict:
+    if settings.planam_audit_mode and payload.init_data.startswith("planam-audit-v1:"):
+        session = resolve_or_create_audit_session(db, payload.init_data)
+        return {
+            "session_id": session.session_id,
+            "account_id": session.account_id,
+            "client_type": session.client_type,
+            "access_token": payload.init_data,
+            "refresh_token": "audit-session",
+            "expires_at": session.expires_at.isoformat(),
+            "is_new_account": False,
+            "provider": "telegram",
+        }
     auth = verify_provider_bootstrap(payload.provider, payload.init_data)
     account, is_new = resolve_or_create_account(db, auth)
     issued = issue_session(

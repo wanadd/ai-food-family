@@ -8,9 +8,9 @@ from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from sqlalchemy.engine import make_url
 
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect, select
 from sqlalchemy.orm import Session
 
 from app.core.models import (
@@ -20,9 +20,16 @@ from app.core.models import (
     CoreMembership,
     CorePerson,
     LegacyIdMapping,
+    EntitlementGrant,
+    EntitlementConsumption,
 )
 from app.food.profile_models import FoodProfile, FoodProfileFact, FoodProfileReconfirmation
+from app.nutrition.target_models import NutritionTargetVersion
+from app.notifications.v2_models import NotificationPreference
 from app.recipes.v2_models import CanonicalArchiveFallback, CanonicalLegacyMapping, CanonicalRecipe, CanonicalRecipeVersion
+from app.shopping.v2_models import ShoppingItem, ShoppingList
+from app.services.shopping_item_utils import normalize_shopping_unit
+from app.services.subscription_catalog import START_MENU_GENERATIONS
 
 
 class ImportDisposition(StrEnum):
@@ -39,10 +46,13 @@ class ImportPipelineError(RuntimeError):
 
 @dataclass(frozen=True)
 class ImportConfig:
-    target_schema_head: str = "20260927_0019"
+    target_schema_head: str = "20260928_0020"
     target_environment: str = "DISPOSABLE"
     production_import_override: bool = False
     code_checkpoint: str = "working-tree"
+    source_database_name: str = ""
+    confirmed_source_snapshot: str = ""
+    confirmed_target_database: str = ""
 
 
 @dataclass
@@ -51,8 +61,10 @@ class ImportReport:
     source_identity: str
     target_schema_head: str
     mode: str
+    environment: str
     started_at: str
     completed_at: str | None = None
+    target_database: str = ""
     source_records: int = 0
     target_records_created: int = 0
     reconfirmation_count: int = 0
@@ -67,6 +79,7 @@ class ImportReport:
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     manifest: dict[str, str] = field(default_factory=dict)
+    source_domains: dict[str, str] = field(default_factory=dict)
 
     def classify(self, domain: str, disposition: ImportDisposition, count: int = 1) -> None:
         bucket = self.classifications.setdefault(domain, {})
@@ -85,6 +98,8 @@ class ImportReport:
             "source_identity": self.source_identity,
             "target_schema_head": self.target_schema_head,
             "mode": self.mode,
+            "environment": self.environment,
+            "target_database": self.target_database,
             "started_at": self.started_at,
             "completed_at": self.completed_at,
             "source_records": self.source_records,
@@ -101,6 +116,7 @@ class ImportReport:
             "warnings": self.warnings,
             "errors": self.errors,
             "manifest": self.manifest,
+            "source_domains": self.source_domains,
         }
 
 
@@ -113,6 +129,11 @@ def load_source(path: str | Path) -> tuple[dict[str, Any], str]:
         raise ImportPipelineError(f"source is not readable JSON: {source_path}") from exc
     if not isinstance(source, dict) or not isinstance(source.get("snapshot"), str):
         raise ImportPipelineError("source requires a non-sensitive snapshot identity")
+    if source["snapshot"].startswith("sha256:"):
+        content = {key: value for key, value in source.items() if key != "snapshot"}
+        expected = hashlib.sha256(json.dumps(content, sort_keys=True, default=str, separators=(",", ":")).encode()).hexdigest()
+        if source["snapshot"] != f"sha256:{expected}":
+            raise ImportPipelineError("source snapshot content hash mismatch")
     return source, hashlib.sha256(raw).hexdigest()
 
 
@@ -132,14 +153,19 @@ def _canonical_json(value: Any) -> str:
 
 
 class SelectiveImportPipeline:
-    """Extract/classify/transform/import/verify a non-production source snapshot."""
+    """Classify and import an explicit immutable legacy source snapshot."""
 
     _ONTOLOGY = {"peanut", "lactose", "gluten", "celiac"}
     _DOMAINS = (
         "accounts", "external_identities", "persons", "households", "memberships",
         "relationships", "entitlements", "food_profiles", "recipes", "plans",
         "shopping", "pantry", "receipts", "cooking", "consumption", "events",
-        "notifications", "admin_sessions",
+        "notifications", "admin_sessions", "nutrition_goals", "notification_preferences",
+    )
+    _CUTOVER_SOURCE_DOMAINS = (
+        "users", "profiles", "families", "family_members", "recipes", "shopping",
+        "entitlements", "nutrition_goals", "notification_preferences", "plans",
+        "pantry", "events", "cooking", "consumption", "notifications", "admin_sessions",
     )
 
     def __init__(self, db: Session, *, target_url: str, config: ImportConfig | None = None):
@@ -148,17 +174,38 @@ class SelectiveImportPipeline:
         self.config = config or ImportConfig()
 
     def precheck(self, source: dict[str, Any]) -> None:
-        if self.config.target_schema_head != "20260927_0019":
-            raise ImportPipelineError("target schema must be at Alembic head 20260927_0019")
-        parsed = urlparse(self.target_url)
-        target = f"{parsed.hostname or ''}/{parsed.path}".lower()
+        if self.config.target_schema_head != "20260928_0020":
+            raise ImportPipelineError("target schema must be at Alembic head 20260928_0020")
+        parsed = make_url(self.target_url)
+        target = f"{parsed.host or ''}/{parsed.database or ''}".lower()
         production_markers = ("planam.ru", "production", "prod", "old-production")
-        if any(marker in target for marker in production_markers):
-            raise ImportPipelineError("production-like target rejected; W10 override is disabled")
-        if self.config.target_environment.upper() != "DISPOSABLE":
-            raise ImportPipelineError("W10 requires a DISPOSABLE target environment")
-        if self.config.production_import_override:
-            raise ImportPipelineError("PRODUCTION_IMPORT_OVERRIDE is disabled for W10")
+        environment = self.config.target_environment.upper()
+        if environment == "DISPOSABLE":
+            if any(marker in target for marker in production_markers):
+                raise ImportPipelineError("production-like target rejected in DISPOSABLE mode")
+            if self.config.production_import_override:
+                raise ImportPipelineError("production override is disabled in DISPOSABLE mode")
+        elif environment == "CUTOVER":
+            if not parsed.drivername.startswith("postgresql") or not self.config.production_import_override:
+                raise ImportPipelineError("CUTOVER requires PostgreSQL and explicit authorization")
+            if not self.config.source_database_name or not self.config.confirmed_target_database:
+                raise ImportPipelineError("CUTOVER requires source and target database identities")
+            if self.config.source_database_name.lower() == self.config.confirmed_target_database.lower():
+                raise ImportPipelineError("legacy source and V2 target databases must differ")
+            if source.get("source_database") != self.config.source_database_name:
+                raise ImportPipelineError("source snapshot database identity mismatch")
+            if source.get("snapshot") != self.config.confirmed_source_snapshot:
+                raise ImportPipelineError("source snapshot confirmation mismatch")
+            states = source.get("source_domains")
+            if not isinstance(states, dict) or any(
+                states.get(domain) not in {"SOURCE_DOMAIN_PRESENT", "SOURCE_DOMAIN_ZERO"}
+                or not isinstance(source.get(domain), list)
+                or (states.get(domain) == "SOURCE_DOMAIN_ZERO") != (len(source[domain]) == 0)
+                for domain in self._CUTOVER_SOURCE_DOMAINS
+            ):
+                raise ImportPipelineError("CUTOVER source domain coverage incomplete")
+        else:
+            raise ImportPipelineError("unknown import environment")
         if not isinstance(source.get("snapshot"), str) or not source["snapshot"].strip():
             raise ImportPipelineError("source snapshot identity is required")
 
@@ -172,15 +219,24 @@ class SelectiveImportPipeline:
             source_identity=source["snapshot"],
             target_schema_head=self.config.target_schema_head,
             mode="DRY_RUN" if dry_run else "IMPORT",
+            environment=self.config.target_environment.upper(),
+            target_database=self.config.confirmed_target_database,
             started_at=started.isoformat(),
             manifest={"source_sha256": source_hash, "config_sha256": config_hash, "code_checkpoint": self.config.code_checkpoint},
+            source_domains=dict(source.get("source_domains") or {}),
         )
         try:
             self._run_core(source, report, dry_run=dry_run)
             self._run_profiles(source, report, dry_run=dry_run)
             self._run_recipes(source, report, dry_run=dry_run)
+            self._run_shopping(source, report, dry_run=dry_run)
+            self._run_entitlements(source, report, dry_run=dry_run)
+            self._run_nutrition_goals(source, report, dry_run=dry_run)
+            self._run_notification_preferences(source, report, dry_run=dry_run)
             self._classify_non_promotable_domains(source, report)
             report.target_counts = self._target_counts()
+            if report.unresolved_fatal_conflicts and not dry_run:
+                raise ImportPipelineError("unresolved fatal source conflicts")
             if not dry_run:
                 self.db.commit()
             report.completed_at = datetime.now(timezone.utc).isoformat()
@@ -202,8 +258,15 @@ class SelectiveImportPipeline:
             ("food_profile_reconfirmations", FoodProfileReconfirmation),
             ("recipes_v2", CanonicalRecipe),
             ("recipe_versions", CanonicalRecipeVersion),
+            ("shopping_lists", ShoppingList),
+            ("shopping_items", ShoppingItem),
+            ("entitlement_grants", EntitlementGrant),
+            ("entitlement_consumptions", EntitlementConsumption),
+            ("nutrition_target_versions", NutritionTargetVersion),
+            ("notification_preferences", NotificationPreference),
         ):
-            counts[name] = int(self.db.scalar(select(func.count()).select_from(model)) or 0)
+            if inspect(self.db.get_bind()).has_table(name):
+                counts[name] = int(self.db.scalar(select(func.count()).select_from(model)) or 0)
         return counts
 
     def _run_core(self, source: dict[str, Any], report: ImportReport, *, dry_run: bool) -> None:
@@ -314,9 +377,208 @@ class SelectiveImportPipeline:
                 self.db.add(CanonicalLegacyMapping(mapping_id=_stable_uuid7("recipe_mapping", legacy_id), legacy_recipe_id=int(legacy_id), canonical_recipe_id=recipe_id, canonical_version_id=version_id, mapping_status="MAPPED", mapping_reason="validated_gold_v3", provenance_json={"source": "legacy", "legacy_id": legacy_id}))
                 report.target_records_created += 2
 
+    def _run_shopping(self, source: dict[str, Any], report: ImportReport, *, dry_run: bool) -> None:
+        users = {str(row["id"]) for row in source.get("users", [])}
+        families = {str(row["id"]) for row in source.get("families", [])}
+        for row in source.get("shopping", []):
+            legacy_id = str(row["id"])
+            family_id = row.get("family_id")
+            user_id = row.get("user_id")
+            if family_id is not None:
+                if str(family_id) not in families:
+                    report.classify("shopping", ImportDisposition.RECONFIRM_REQUIRED)
+                    report.unresolved_fatal_conflicts += 1
+                    continue
+                household_id = self._mapped_id("families", str(family_id), "core_households")
+                person_id = None
+            elif user_id is not None and str(user_id) in users:
+                household_id = None
+                person_id = self._mapped_id("users", str(user_id), "core_persons")
+            else:
+                report.classify("shopping", ImportDisposition.RECONFIRM_REQUIRED)
+                if self.config.target_environment.upper() == "CUTOVER":
+                    report.unresolved_fatal_conflicts += 1
+                continue
+            items = row.get("items")
+            if not isinstance(items, list):
+                report.classify("shopping", ImportDisposition.RECONFIRM_REQUIRED)
+                report.unresolved_fatal_conflicts += 1
+                continue
+            list_id = self._mapped_id("family_shopping_lists", legacy_id, "shopping_lists")
+            report.classify("shopping", ImportDisposition.IMPORT_WITH_TRANSFORMATION)
+            existing = self.db.get(ShoppingList, list_id)
+            if existing is not None and (existing.person_id != person_id or existing.household_id != household_id):
+                report.unresolved_fatal_conflicts += 1
+                continue
+            if not dry_run and existing is None:
+                self.db.add(ShoppingList(
+                    shopping_list_id=list_id, person_id=person_id, household_id=household_id,
+                    status="ACTIVE", idempotency_key=f"legacy:{legacy_id}",
+                ))
+                report.target_records_created += 1
+            for index, item in enumerate(items):
+                if not isinstance(item, dict):
+                    report.classify("shopping", ImportDisposition.RECONFIRM_REQUIRED)
+                    report.unresolved_fatal_conflicts += 1
+                    continue
+                source_item_id = str(item.get("id") or index)
+                name = str(item.get("name") or "").strip()
+                if not name or len(name) > 240:
+                    report.classify("shopping", ImportDisposition.RECONFIRM_REQUIRED)
+                    report.unresolved_fatal_conflicts += 1
+                    continue
+                raw_unit = str(item.get("unit") or "").strip()
+                unit = normalize_shopping_unit(raw_unit) or None
+                raw_quantity = str(item.get("quantity") or "").strip().replace(",", ".")
+                try:
+                    quantity = float(raw_quantity)
+                except ValueError:
+                    quantity = None
+                if quantity is not None and (not 0 < quantity < 1_000_000_000):
+                    quantity = None
+                uncertainty = "KNOWN" if quantity is not None and unit else "UNKNOWN"
+                if uncertainty == "UNKNOWN":
+                    quantity = None
+                state = "CHECKED" if item.get("checked") is True else "NEEDED"
+                report.classify("shopping", ImportDisposition.IMPORT_WITH_TRANSFORMATION)
+                item_id = self._mapped_id("family_shopping_items", f"{legacy_id}:{source_item_id}", "shopping_items")
+                if not dry_run and self.db.get(ShoppingItem, item_id) is None:
+                    self.db.add(ShoppingItem(
+                        shopping_item_id=item_id, shopping_list_id=list_id, display_text=name,
+                        quantity=quantity, unit=unit, uncertainty=uncertainty,
+                        category=str(item.get("category"))[:64] if item.get("category") else None,
+                        state=state, source_kind="LEGACY_MIGRATED",
+                        provenance_json={"legacy_table": "family_shopping_lists", "legacy_list_id": legacy_id,
+                                         "legacy_item_id": source_item_id, "raw_quantity": item.get("quantity"),
+                                         "raw_unit": raw_unit, "checked": item.get("checked"),
+                                         "added_to_pantry": item.get("added_to_pantry"),
+                                         "owner_scope": "PERSON" if person_id else "HOUSEHOLD"},
+                        idempotency_key=f"legacy:{hashlib.sha256(f'{legacy_id}:{source_item_id}'.encode()).hexdigest()[:32]}",
+                    ))
+                    report.target_records_created += 1
+
+    @staticmethod
+    def _instant(value: object) -> datetime | None:
+        if isinstance(value, datetime):
+            result = value
+        elif isinstance(value, str):
+            try:
+                result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError:
+                return None
+        else:
+            return None
+        return result if result.tzinfo is not None else None
+
+    def _run_entitlements(self, source: dict[str, Any], report: ImportReport, *, dry_run: bool) -> None:
+        users = {str(row["id"]) for row in source.get("users", [])}
+        now = datetime.now(timezone.utc)
+        for row in source.get("entitlements", []):
+            legacy_id = str(row["id"])
+            status = str(row.get("status") or "").lower()
+            if status in {"expired", "cancelled"}:
+                report.classify("entitlements", ImportDisposition.ARCHIVE_ONLY)
+                continue
+            account_id = self._mapped_id("users", str(row.get("user_id")), "core_accounts")
+            start = self._instant(row.get("started_at"))
+            end = self._instant(row.get("trial_ends_at" if status == "trial" else "current_period_ends_at"))
+            if (status not in {"trial", "active", "manually_granted"}
+                    or row.get("plan_code") != "start" or str(row.get("user_id")) not in users
+                    or start is None or end is None or end <= now or end <= start
+                    or row.get("family_id") is not None):
+                report.classify("entitlements", ImportDisposition.RECONFIRM_REQUIRED)
+                report.reconfirmations.append({"domain": "entitlements", "source_id": legacy_id, "reason": "commercial_state_unmapped"})
+                report.unresolved_fatal_conflicts += 1
+                continue
+            used = row.get("menu_generations_used")
+            if not isinstance(used, int) or used < 0:
+                report.classify("entitlements", ImportDisposition.RECONFIRM_REQUIRED)
+                report.unresolved_fatal_conflicts += 1
+                continue
+            report.classify("entitlements", ImportDisposition.IMPORT_WITH_TRANSFORMATION)
+            grant_id = self._mapped_id("user_subscriptions", legacy_id, "entitlement_grants")
+            if not dry_run and self.db.get(EntitlementGrant, grant_id) is None:
+                self.db.add(EntitlementGrant(
+                    grant_id=grant_id, account_id=account_id, capability="planner.generate",
+                    limit_value=START_MENU_GENERATIONS, effective_from=start, effective_to=end,
+                    grant_status="active", source="legacy_subscription",
+                    idempotency_key=f"legacy-subscription:{legacy_id}",
+                    provenance_json={"legacy_table": "user_subscriptions", "legacy_id": legacy_id,
+                                     "status": status, "plan_code": "start", "trial_ends_at": end.isoformat()},
+                ))
+                report.target_records_created += 1
+                if used:
+                    self.db.add(EntitlementConsumption(
+                        consumption_id=self._mapped_id("user_subscriptions", legacy_id, "entitlement_consumptions"),
+                        grant_id=grant_id, amount=used, idempotency_key=f"legacy-usage:{legacy_id}",
+                        provenance_json={"legacy_table": "user_subscriptions", "legacy_id": legacy_id},
+                    ))
+                    report.target_records_created += 1
+
+    def _run_nutrition_goals(self, source: dict[str, Any], report: ImportReport, *, dry_run: bool) -> None:
+        users = {str(row["id"]) for row in source.get("users", [])}
+        units = {"calories_target": "kcal", "protein_target_g": "g", "fat_target_g": "g",
+                 "carbs_target_g": "g", "fiber_target_g": "g", "water_target_ml": "ml"}
+        for row in source.get("nutrition_goals", []):
+            legacy_id = str(row["id"])
+            values = {key: {"value": row[key], "unit": unit} for key, unit in units.items() if row.get(key) is not None}
+            if (str(row.get("user_id")) not in users or row.get("person_id") is not None
+                    or row.get("family_id") is not None or not values
+                    or any(not isinstance(v["value"], int) or v["value"] <= 0 for v in values.values())):
+                report.classify("nutrition_goals", ImportDisposition.RECONFIRM_REQUIRED)
+                continue
+            report.classify("nutrition_goals", ImportDisposition.IMPORT_WITH_TRANSFORMATION)
+            target_id = self._mapped_id("nutrition_targets", legacy_id, "nutrition_target_versions")
+            effective_from = self._instant(row.get("created_at"))
+            if effective_from is None:
+                report.classify("nutrition_goals", ImportDisposition.RECONFIRM_REQUIRED)
+                report.reconfirmations.append({
+                    "domain": "nutrition_goals",
+                    "source_id": legacy_id,
+                    "reason": "missing_deterministic_effective_timestamp",
+                })
+                continue
+            if not dry_run and self.db.get(NutritionTargetVersion, target_id) is None:
+                self.db.add(NutritionTargetVersion(
+                    target_id=target_id,
+                    person_id=self._mapped_id("users", str(row["user_id"]), "core_persons"),
+                    target_kind="daily_nutrition", context_key="legacy_current",
+                    effective_from=effective_from,
+                    target_values_json={"basis": "daily", "metrics": values, "goal_type": row.get("goal_type")},
+                    origin="LEGACY_ESTIMATOR", provenance_status="UNREVIEWED",
+                    provenance_json={"legacy_table": "nutrition_targets", "legacy_id": legacy_id,
+                                     "source_units": "legacy_column_names", "clinical_authority": False},
+                ))
+                report.target_records_created += 1
+
+    def _run_notification_preferences(self, source: dict[str, Any], report: ImportReport, *, dry_run: bool) -> None:
+        for row in source.get("notification_preferences", []):
+            user_id = str(row.get("user_id"))
+            if not row.get("notifications_onboarded") or not any(
+                isinstance(row.get(key), bool) for key in ("buy_reminder_enabled", "cook_reminder_enabled")
+            ):
+                report.classify("notification_preferences", ImportDisposition.RECONFIRM_REQUIRED)
+                report.reconfirmations.append({"domain": "notification_preferences", "source_id": str(row["id"]),
+                                               "reason": "notification_intent_not_explicit"})
+                continue
+            report.classify("notification_preferences", ImportDisposition.IMPORT_WITH_TRANSFORMATION)
+            preference_id = self._mapped_id("notification_settings", str(row["id"]), "notification_preferences")
+            if not dry_run and self.db.get(NotificationPreference, preference_id) is None:
+                self.db.add(NotificationPreference(
+                    preference_id=preference_id, subject_kind="PERSON",
+                    subject_id=self._mapped_id("users", user_id, "core_persons"), channel="telegram",
+                    enabled=True, shopping_enabled=row.get("buy_reminder_enabled"),
+                    cooking_enabled=row.get("cook_reminder_enabled"), timezone=row.get("timezone"),
+                    idempotency_key=f"legacy-notification-settings:{row['id']}",
+                    request_hash=hashlib.sha256(
+                        json.dumps({"legacy_table": "notification_settings", "legacy_id": str(row["id"])}, sort_keys=True).encode()
+                    ).hexdigest(),
+                ))
+                report.target_records_created += 1
+
     def _classify_non_promotable_domains(self, source: dict[str, Any], report: ImportReport) -> None:
         for domain, rows in ((name, source.get(name, [])) for name in self._DOMAINS):
-            if domain in {"accounts", "external_identities", "persons", "households", "memberships", "food_profiles", "recipes"}:
+            if domain in {"accounts", "external_identities", "persons", "households", "memberships", "food_profiles", "recipes", "shopping", "entitlements", "nutrition_goals", "notification_preferences"}:
                 continue
             for row in rows:
                 legacy_id = str(row.get("id", "unknown"))

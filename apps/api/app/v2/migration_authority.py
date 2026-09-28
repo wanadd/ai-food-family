@@ -14,7 +14,7 @@ class SchemaAuthority(str, Enum):
 
 
 V2_BASELINE_REVISION = "20260922_0001"
-V2_MIGRATION_HEAD = "20260927_0013"
+V2_MIGRATION_HEAD = "20260928_0020"
 V2_ALEMBIC_VERSION_TABLE = "alembic_version"
 
 V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
@@ -89,6 +89,24 @@ V2_VERSIONED_MIGRATION_TABLES: frozenset[str] = frozenset(
         "food_evidence_links",
         "safety_rules",
         "safety_decisions",
+    }
+)
+
+# Later waves use the canonical unsuffixed tables above the original V2
+# foundation names.  Production startup validation must cover both parts of
+# the Alembic-owned schema, including the OD-17 ownership roots.
+V2_VERSIONED_MIGRATION_TABLES = V2_VERSIONED_MIGRATION_TABLES | frozenset(
+    {
+        "recipe_version_tags_v2", "recipe_favorites_v2", "plans", "plan_assignments",
+        "plan_participants", "plan_portions", "shopping_lists", "shopping_items",
+        "purchase_events", "pantry_inventory", "pantry_movements", "receipt_documents",
+        "receipt_proposals", "receipt_lines", "cooking_sessions", "prepared_foods",
+        "cooking_events", "consumption_events", "consumption_items", "health_projections",
+        "health_deviations", "notification_preferences", "notification_intents",
+        "notification_deliveries", "jobs", "outbox_events", "events_v2",
+        "event_invitations_v2", "event_participants_v2", "event_participant_food_facts_v2",
+        "event_menu_revisions_v2", "event_menu_items_v2", "event_menu_item_participants_v2",
+        "event_shopping_demands_v2",
     }
 )
 

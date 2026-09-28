@@ -5,7 +5,8 @@ from zoneinfo import ZoneInfo
 
 from app.config import settings
 from app.cutover.application_boundary import async_execution
-from app.database import SessionLocal
+from app.cutover.maintenance import MaintenanceControlUnavailable, assert_async_available
+from app.database import SessionLocal, engine
 from app.models.notification_settings import UserNotificationSettings
 from app.models.user import User
 from app.services.care_guard import can_send_scheduled_reminder
@@ -48,6 +49,11 @@ async def _process_due_reminders() -> None:
         return
     if not settings.telegram_bot_token:
         return
+    if settings.environment.strip().lower() == "production":
+        try:
+            assert_async_available(engine)
+        except MaintenanceControlUnavailable:
+            return
 
     db = SessionLocal()
     try:
