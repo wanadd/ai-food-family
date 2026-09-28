@@ -1,0 +1,14 @@
+{
+  "snapshot": "w10-safe-fixture-v1",
+  "users": [
+    {"id": 101, "display_name": "Fixture Account", "provider": "telegram", "provider_subject": "fixture-101"},
+    {"id": 102, "display_name": "Possible Duplicate", "provider": "telegram", "provider_subject": "fixture-102", "duplicate_candidate": true}
+  ],
+  "families": [{"id": 201, "name": "Fixture Household"}],
+  "family_members": [{"id": 301, "family_id": 201, "user_id": 101, "role": "admin"}],
+  "profiles": [{"id": 401, "user_id": 101, "allergies": ["peanut", "free text: maybe reaction"], "medical_notes": "requires reconfirmation"}],
+  "recipes": [{"id": 501, "title": "Unvalidated fixture recipe", "gold_v3_validated": false}],
+  "events": [{"id": 601, "allergies_note": "guest note is not canonical food fact"}],
+  "notifications": [{"id": 701, "status": "pending"}],
+  "admin_sessions": [{"id": 801, "session_token": "never-import-this"}]
+}
